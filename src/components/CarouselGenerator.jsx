@@ -193,20 +193,19 @@ function buildSlideHTML(slide, idx, total, opts) {
       .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:26px; font-weight:800; color:${C.accent}; font-family:'${font}',sans-serif; flex-shrink:0; }
     `,
     split: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:${topPad}px 0 ${botPad}px; overflow:hidden; gap:0; }
-      .tag { position:absolute; top:${topPad-52}px; left:50%; transform:translateX(-50%); flex-shrink:0; white-space:nowrap; }
-      .panels { display:grid; grid-template-columns:1fr 1fr; flex:1; position:relative; width:100%; min-height:0; }
-      .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px 50px; text-align:center; gap:12px; overflow:hidden; }
+      .c { position:absolute; inset:0; z-index:5; overflow:hidden; }
+      .st { position:absolute; top:255px; left:60px; right:60px; text-align:center; }
+      .tag { display:inline-block; margin-bottom:16px; }
+      .hl { font-size:${isPortrait?72:54}px; font-weight:900; line-height:1.06; ${ts} font-family:'${font}',sans-serif; }
+      .panels { position:absolute; top:${isPortrait?600:490}px; left:0; right:0; bottom:60px; display:grid; grid-template-columns:1fr 1fr; }
+      .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 40px; text-align:center; gap:10px; overflow:hidden; }
       .panel:first-child { background:${C.accent}10; border-right:1px solid ${C.accent}28; }
-      .pl { font-size:${isPortrait?48:40}px; font-weight:900; font-family:'${font}',sans-serif; line-height:1.1; }
-      .ps { font-size:${isPortrait?26:22}px; color:${C.sub}; font-family:'${font}',sans-serif; line-height:1.4; }
+      .pl { font-size:${isPortrait?44:34}px; font-weight:900; font-family:'${font}',sans-serif; line-height:1.1; }
+      .ps { font-size:${isPortrait?23:19}px; color:${C.sub}; font-family:'${font}',sans-serif; line-height:1.35; }
       .vs { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:6;
-        width:90px; height:90px; border-radius:50%; background:${C.bg};
+        width:76px; height:76px; border-radius:50%; background:${C.bg};
         border:1.5px solid ${C.accent}44; display:flex; align-items:center; justify-content:center; }
-      .vt { font-size:28px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; }
-      .sb { padding:20px 80px 0; text-align:center; flex-shrink:0; width:100%; }
-      .hl { font-size:${isPortrait?76:64}px; font-weight:900; line-height:1.08; ${ts} font-family:'${font}',sans-serif; }
-      .body { font-size:${isPortrait?28:24}px; line-height:1.5; color:${C.sub}; margin-top:14px; font-family:'${font}',sans-serif; }
+      .vt { font-size:24px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; }
     `,
     cards: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:${topPad}px 72px ${botPad}px; overflow:hidden; }
@@ -242,13 +241,15 @@ function buildSlideHTML(slide, idx, total, opts) {
     if (layout==="split" && slide.items?.length >= 2) {
       const [a,b] = slide.items;
       return `<div class="c">
-        ${tag}
-        <div class="panels" style="position:relative;width:100%;flex:1;min-height:0">
+        <div class="st">
+          ${tag}
+          <div class="hl">${hl}</div>
+        </div>
+        <div class="panels" style="position:relative">
           <div class="panel"><div class="pl" style="color:${C.accent}">${escHtml(a.label||"")}</div>${a.sub?`<div class="ps">${escHtml(a.sub)}</div>`:""}</div>
           <div class="vs"><div class="vt">${escHtml(slide.vs_label||"VS")}</div></div>
           <div class="panel"><div class="pl" style="opacity:0.75">${escHtml(b.label||"")}</div>${b.sub?`<div class="ps">${escHtml(b.sub)}</div>`:""}</div>
         </div>
-        <div class="sb"><div class="hl">${hl}</div>${slide.body?divider+body:""}</div>
       </div>`;
     }
 
