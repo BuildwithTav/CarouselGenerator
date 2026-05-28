@@ -17,6 +17,7 @@ export async function POST(request) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json({ error: 'Generation failed' }, { status: 500 });
+    console.error('API Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
