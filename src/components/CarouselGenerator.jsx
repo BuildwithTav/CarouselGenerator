@@ -40,16 +40,66 @@ const BUSINESS_TYPES = [
 
 const STORAGE_KEY = "bwt_v8";
 
+// ─── IMAGE BRIGHTNESS SAMPLER ────────────────────────────
+// Samples the top-left area of an image where the badge sits
+// Returns true if that area is dark (badge should be light)
+
+async function sampleImageBrightness(imageUrl) {
+  if (!imageUrl) return null;
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 300; canvas.height = 200;
+        const ctx = canvas.getContext("2d");
+        // Draw just the top-left portion where badge sits
+        ctx.drawImage(img, 0, 0, img.width * 0.35, img.height * 0.25, 0, 0, 300, 200);
+        const data = ctx.getImageData(0, 0, 300, 200).data;
+        let total = 0, count = 0;
+        for (let i = 0; i < data.length; i += 16) { // sample every 4th pixel
+          total += (data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114);
+          count++;
+        }
+        const brightness = total / count; // 0-255
+        resolve(brightness < 128 ? "dark" : "light"); // dark area = need light pill
+      } catch { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = imageUrl;
+  });
+}
+
 // ─── HTML SLIDE BUILDER ───────────────────────────────────
 
 function buildSlideHTML(slide, idx, total, opts) {
   const { theme, fontId, bgImageUrl, overlayDark, profileUrl,
-          name, handle, blueTick, websiteUrl, showNums, customBg, customAccent, ratio } = opts;
+          name, handle, blueTick, websiteUrl, showNums, customBg, customAccent, ratio,
+          badgeArea } = opts;
 
   const themeObj = THEMES.find(t => t.id === theme) || THEMES[0];
   const C = theme === "custom"
     ? { ...themeObj, bg: customBg||"#0A0A0A", accent: customAccent||"#C9A84C" }
     : themeObj;
+
+  // Badge pill colour — smart based on what's actually behind it
+  // If image sampled: use result. If no image: use theme. If unknown: safe dark.
+  const badgeOnDark = bgImageUrl
+    ? (badgeArea === "light" ? false : true)  // light image area = dark pill needed? No — light area = use light pill
+    : C.dark;
+
+  // Correct logic: light image area behind badge = badge needs dark pill to stand out
+  // dark image area = badge needs light pill... wait, with overlay it's always darkened
+  // With overlay applied, top-left is always quite dark. So always use semi-dark pill on images.
+  const pillBg = bgImageUrl
+    ? badgeArea === "light"
+      ? "rgba(0,0,0,0.72)"   // light image area — strong dark pill
+      : "rgba(0,0,0,0.58)"   // dark image area — moderate dark pill
+    : C.dark ? "rgba(0,0,0,0.62)" : "rgba(255,255,255,0.88)";
+
+  const pillTextColor = bgImageUrl ? "#fff" : C.dark ? "#fff" : "#111";
+  const pillSubColor = bgImageUrl ? "rgba(255,255,255,0.55)" : C.dark ? "rgba(255,255,255,0.52)" : "rgba(0,0,0,0.45)";
 
   const font = (FONTS.find(f => f.id === fontId) || FONTS[0]).css;
   const isPortrait = ratio === "portrait";
@@ -91,17 +141,17 @@ function buildSlideHTML(slide, idx, total, opts) {
       background:linear-gradient(to bottom,transparent,rgba(0,0,0,0.58)); }
     .badge { position:absolute; top:88px; left:88px; z-index:10;
       display:inline-flex; align-items:center; gap:14px;
-      background:${bgImageUrl ? "rgba(0,0,0,0.65)" : C.dark ? "rgba(0,0,0,0.62)" : "rgba(255,255,255,0.88)"};
+      background:${pillBg};
       padding:10px 20px 10px 10px; border-radius:60px;
-      max-width:520px; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
-    .av { width:64px; height:64px; border-radius:50%; border:3px solid ${C.accent};
+      max-width:520px; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+    .av { width:110px; height:110px; border-radius:50%; border:3px solid ${C.accent};
       overflow:hidden; flex-shrink:0; background:${C.dark?"#1a1a1a":"#ddd"};
       display:flex; align-items:center; justify-content:center; position:relative; }
     .av img { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
       width:100%; height:100%; object-fit:cover; }
-    .av-i { font-size:26px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; }
-    .bn { font-size:20px; font-weight:800; color:${bgImageUrl ? "#fff" : C.dark?"#fff":"#111"}; line-height:1.2; font-family:'${font}',sans-serif; }
-    .bh { font-size:14px; color:${bgImageUrl ? "rgba(255,255,255,0.55)" : C.dark?"rgba(255,255,255,0.52)":"rgba(0,0,0,0.45)"}; font-family:'${font}',sans-serif; }
+    .av-i { font-size:44px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; }
+    .bn { font-size:22px; font-weight:800; color:${pillTextColor}; line-height:1.2; font-family:'${font}',sans-serif; }
+    .bh { font-size:16px; color:${pillSubColor}; font-family:'${font}',sans-serif; }
     .tick { display:inline-flex; align-items:center; justify-content:center;
       width:18px; height:18px; background:#1D9BF0; border-radius:50%;
       font-size:10px; color:#fff; margin-left:5px; vertical-align:middle; }
@@ -125,57 +175,61 @@ function buildSlideHTML(slide, idx, total, opts) {
       width:10px; height:10px; background:${C.accent}; opacity:0.9; }
   `;
 
+  // Badge is at top:88px, height ~134px — content must start below 240px
+  const topPad = isPortrait ? 380 : 260;
+  const botPad = isPortrait ? 200 : 140;
+
   const layouts = {
     standard: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:200px 90px 120px; text-align:center; gap:0; }
-      .hl { font-size:88px; font-weight:900; line-height:1.08; ${ts} margin-bottom:32px; font-family:'${font}',sans-serif; }
-      .body { font-size:30px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:32px; ${ts2} font-family:'${font}',sans-serif; }
-      .cta { margin-top:44px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:24px 60px; border-radius:8px; font-size:28px; font-weight:800; color:${C.accent}; font-family:'${font}',sans-serif; width:100%; max-width:860px; text-align:center; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; gap:0; }
+      .hl { font-size:${isPortrait?100:88}px; font-weight:900; line-height:1.08; ${ts} margin-bottom:32px; font-family:'${font}',sans-serif; }
+      .body { font-size:${isPortrait?34:30}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:32px; ${ts2} font-family:'${font}',sans-serif; }
+      .cta { margin-top:44px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:24px 60px; border-radius:8px; font-size:${isPortrait?32:28}px; font-weight:800; color:${C.accent}; font-family:'${font}',sans-serif; width:100%; max-width:860px; text-align:center; }
     `,
     statement: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:180px 70px 120px; text-align:center; gap:0; }
-      .hl { font-size:112px; font-weight:900; line-height:1.0; ${ts} letter-spacing:-2px; margin-bottom:36px; font-family:'${font}',sans-serif; }
-      .body { font-size:30px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:32px; font-family:'${font}',sans-serif; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 70px ${botPad}px; text-align:center; gap:0; }
+      .hl { font-size:${isPortrait?128:112}px; font-weight:900; line-height:1.0; ${ts} letter-spacing:-2px; margin-bottom:36px; font-family:'${font}',sans-serif; }
+      .body { font-size:${isPortrait?34:30}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:32px; font-family:'${font}',sans-serif; }
       .cta { margin-top:44px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:24px 60px; border-radius:8px; font-size:28px; font-weight:800; color:${C.accent}; font-family:'${font}',sans-serif; }
     `,
     split: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; padding:160px 0 100px; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; padding:${topPad}px 0 100px; }
       .panels { display:grid; grid-template-columns:1fr 1fr; flex:1; position:relative; }
       .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 64px; text-align:center; gap:16px; }
       .panel:first-child { background:${C.accent}10; border-right:1px solid ${C.accent}28; }
-      .pl { font-size:44px; font-weight:900; font-family:'${font}',sans-serif; line-height:1.1; }
-      .ps { font-size:26px; color:${C.sub}; font-family:'${font}',sans-serif; line-height:1.5; }
+      .pl { font-size:${isPortrait?52:44}px; font-weight:900; font-family:'${font}',sans-serif; line-height:1.1; }
+      .ps { font-size:${isPortrait?30:26}px; color:${C.sub}; font-family:'${font}',sans-serif; line-height:1.5; }
       .vs { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:6;
         width:100px; height:100px; border-radius:50%; background:${C.bg};
         border:1.5px solid ${C.accent}44; display:flex; align-items:center; justify-content:center; }
       .vt { font-size:30px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; }
       .sb { padding:36px 90px 0; text-align:center; }
-      .hl { font-size:72px; font-weight:900; line-height:1.08; ${ts} font-family:'${font}',sans-serif; }
-      .body { font-size:28px; line-height:1.6; color:${C.sub}; margin-top:20px; font-family:'${font}',sans-serif; }
+      .hl { font-size:${isPortrait?84:72}px; font-weight:900; line-height:1.08; ${ts} font-family:'${font}',sans-serif; }
+      .body { font-size:${isPortrait?32:28}px; line-height:1.6; color:${C.sub}; margin-top:20px; font-family:'${font}',sans-serif; }
     `,
     cards: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:200px 80px 100px; }
-      .hl { font-size:80px; font-weight:900; line-height:1.1; ${ts} text-align:center; margin-bottom:12px; font-family:'${font}',sans-serif; }
-      .cg { width:100%; display:flex; flex-direction:column; gap:16px; margin-top:32px; }
-      .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:14px; padding:26px 34px; display:flex; align-items:flex-start; gap:22px; }
-      .cn { font-size:32px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; flex-shrink:0; width:46px; line-height:1; }
-      .ct { font-size:27px; color:${C.text}; font-family:'${font}',sans-serif; line-height:1.45; font-weight:600; }
-      .cs { font-size:22px; color:${C.sub}; margin-top:4px; font-family:'${font}',sans-serif; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:${topPad}px 80px 100px; }
+      .hl { font-size:${isPortrait?92:80}px; font-weight:900; line-height:1.1; ${ts} text-align:center; margin-bottom:12px; font-family:'${font}',sans-serif; }
+      .cg { width:100%; display:flex; flex-direction:column; gap:${isPortrait?20:16}px; margin-top:32px; }
+      .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:14px; padding:${isPortrait?30:26}px 34px; display:flex; align-items:flex-start; gap:22px; }
+      .cn { font-size:${isPortrait?36:32}px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; flex-shrink:0; width:46px; line-height:1; }
+      .ct { font-size:${isPortrait?30:27}px; color:${C.text}; font-family:'${font}',sans-serif; line-height:1.45; font-weight:600; }
+      .cs { font-size:${isPortrait?24:22}px; color:${C.sub}; margin-top:4px; font-family:'${font}',sans-serif; }
     `,
     quote: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:200px 110px 160px; text-align:center; gap:0; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 110px ${botPad+40}px; text-align:center; gap:0; }
       .qm { font-size:300px; font-weight:900; color:${C.accent}20; line-height:0.65; font-family:'${font}',sans-serif; margin-bottom:-20px; }
-      .hl { font-size:96px; font-weight:900; line-height:1.06; ${ts} font-style:italic; letter-spacing:-1px; margin-bottom:36px; font-family:'${font}',sans-serif; }
-      .body { font-size:30px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:32px; font-family:'${font}',sans-serif; }
+      .hl { font-size:${isPortrait?108:96}px; font-weight:900; line-height:1.06; ${ts} font-style:italic; letter-spacing:-1px; margin-bottom:36px; font-family:'${font}',sans-serif; }
+      .body { font-size:${isPortrait?34:30}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:32px; font-family:'${font}',sans-serif; }
     `,
     hero: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:200px 90px 160px; gap:30px; text-align:center; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad+40}px; gap:30px; text-align:center; }
       .hi { width:220px; height:220px; border-radius:50%; border:1.5px solid ${C.accent}40; background:${C.accent}12; display:flex; align-items:center; justify-content:center; margin-bottom:8px; }
       .hs { font-size:130px; line-height:1; }
-      .hl { font-size:92px; font-weight:900; line-height:1.06; ${ts} font-family:'${font}',sans-serif; }
-      .body { font-size:30px; line-height:1.65; color:${C.sub}; max-width:820px; font-family:'${font}',sans-serif; }
+      .hl { font-size:${isPortrait?104:92}px; font-weight:900; line-height:1.06; ${ts} font-family:'${font}',sans-serif; }
+      .body { font-size:${isPortrait?34:30}px; line-height:1.65; color:${C.sub}; max-width:820px; font-family:'${font}',sans-serif; }
       .cs { width:100%; max-width:860px; display:flex; flex-direction:column; gap:14px; margin-top:8px; }
-      .cb { padding:28px 50px; border-radius:12px; font-size:28px; font-weight:800; font-family:'${font}',sans-serif; text-align:center; }
+      .cb { padding:${isPortrait?34:28}px 50px; border-radius:12px; font-size:${isPortrait?32:28}px; font-weight:800; font-family:'${font}',sans-serif; text-align:center; }
       .cp { background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
       .cx { border:1.5px solid ${C.accent}50; color:${C.accent}; background:${C.accent}14; }
     `,
@@ -272,8 +326,10 @@ function SlidePreview({ slide, idx, total, opts, onClick, isActive }) {
   const ref = useRef(null);
   const isPortrait = opts.ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1080;
-  const scale = 320 / W;
-  const ph = H * scale;
+  // For portrait, use narrower preview so they fit in the grid
+  const previewW = isPortrait ? 200 : 320;
+  const scale = previewW / W;
+  const previewH = H * scale;
   const html = buildSlideHTML(slide, idx, total, opts);
 
   useEffect(() => {
@@ -284,7 +340,7 @@ function SlidePreview({ slide, idx, total, opts, onClick, isActive }) {
   }, [html]);
 
   return (
-    <div onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#0A0A0A":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:320, height:ph, flexShrink:0 }}>
+    <div onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#0A0A0A":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:previewW, height:previewH, flexShrink:0 }}>
       <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin" title={`slide-${idx+1}`}/>
       <div style={{ position:"absolute", bottom:4, right:4, fontSize:10, color:"rgba(255,255,255,0.85)", background:"rgba(0,0,0,0.6)", padding:"2px 6px", borderRadius:4, fontWeight:700 }}>{idx+1}</div>
     </div>
@@ -341,6 +397,7 @@ export default function App() {
   const [coverImage, setCoverImage] = useState(null);
   const [imageMode, setImageMode] = useState("cover");
   const [overlayDark, setOverlayDark] = useState(65);
+  const [badgeArea, setBadgeArea] = useState(null); // "dark" | "light" | null
   const [ratio, setRatio] = useState("square");
   const [err, setErr] = useState("");
   const [view, setView] = useState("setup");
@@ -359,7 +416,16 @@ export default function App() {
 
   useEffect(() => { saveS({profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,theme,fontId,showNums,customBg,customAccent}); }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,theme,fontId,showNums,customBg,customAccent]);
 
-  const readFile = (e,cb) => { const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>cb(ev.target.result); r.readAsDataURL(f); };
+  const readFile = (e,cb) => {
+    const f=e.target.files[0]; if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      cb(ev.target.result);
+      // Sample badge area brightness
+      sampleImageBrightness(ev.target.result).then(setBadgeArea);
+    };
+    r.readAsDataURL(f);
+  };
 
   const fetchWithRetry = async (body, tries=4) => {
     for (let i=0;i<=tries;i++) {
@@ -454,8 +520,9 @@ Return ONLY valid JSON array:
   const slideOpts = useCallback(i => ({
     theme, fontId, showNums, name, handle, blueTick,
     websiteUrl: showWebsite?website:"", ratio, overlayDark, customBg, customAccent, profileUrl,
+    badgeArea,
     bgImageUrl: coverImage?(imageMode==="all"?coverImage:(i===0?coverImage:null)):null,
-  }), [theme,fontId,showNums,name,handle,blueTick,website,showWebsite,ratio,overlayDark,customBg,customAccent,profileUrl,coverImage,imageMode]);
+  }), [theme,fontId,showNums,name,handle,blueTick,website,showWebsite,ratio,overlayDark,customBg,customAccent,profileUrl,badgeArea,coverImage,imageMode]);
 
   const downloadOne = async i => {
     setDownloading(true);
@@ -720,6 +787,13 @@ Return ONLY valid JSON array:
         {/* PREVIEW */}
         {view==="preview"&&slides.length>0&&(
           <div style={{animation:"fadeUp 0.3s ease"}}>
+            {/* Format toggle in preview */}
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+              <span style={{fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:A.muted}}>Format:</span>
+              {[["square","Square 1:1"],["portrait","Stories 9:16"]].map(([id,label])=>(
+                <button key={id} onClick={()=>setRatio(id)} style={{background:ratio===id?A.text:A.surface,border:`1.5px solid ${ratio===id?A.text:A.border}`,color:ratio===id?A.accentText:A.muted,padding:"5px 14px",borderRadius:7,fontSize:12,fontWeight:700}}>{label}</button>
+              ))}
+            </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 360px",gap:28,alignItems:"start"}}>
               <div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
@@ -764,10 +838,23 @@ Return ONLY valid JSON array:
                     />
                   </div>
                   <div>
-                    <label style={lbl}>Layout <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(auto-set by AI)</span></label>
-                    <select value={slides[active]?.layout||"standard"} onChange={e=>updateSlide("layout",e.target.value)} style={{...inp,height:42}}>
-                      {["standard","statement","split","cards","quote","hero"].map(l=><option key={l} value={l}>{l}</option>)}
+                    <label style={lbl}>Layout</label>
+                    <select value={slides[active]?.layout||"standard"} onChange={e=>updateSlide("layout",e.target.value)} style={{...inp,height:42,cursor:"pointer"}}>
+                      <option value="standard">Standard — headline + body</option>
+                      <option value="statement">Statement — big bold claim</option>
+                      <option value="split">Split — VS comparison</option>
+                      <option value="cards">Cards — numbered list</option>
+                      <option value="quote">Quote — powerful truth</option>
+                      <option value="hero">Hero — final CTA slide</option>
                     </select>
+                  </div>
+                  <div>
+                    <label style={lbl}>Format</label>
+                    <div style={{display:"flex",gap:6}}>
+                      {[["square","Square 1:1"],["portrait","Stories 9:16"]].map(([id,label])=>(
+                        <button key={id} onClick={()=>setRatio(id)} style={{flex:1,background:ratio===id?A.text:A.bg,border:`1.5px solid ${ratio===id?A.text:A.border}`,color:ratio===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18}}>
