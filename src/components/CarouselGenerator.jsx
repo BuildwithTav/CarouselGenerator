@@ -194,28 +194,28 @@ function buildSlideHTML(slide, idx, total, opts) {
     `,
     split: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:${topPad}px 0 ${botPad}px; overflow:hidden; gap:0; }
-      .tag { margin-bottom:20px; flex-shrink:0; }
+      .tag { position:absolute; top:${topPad-52}px; left:50%; transform:translateX(-50%); flex-shrink:0; white-space:nowrap; }
       .panels { display:grid; grid-template-columns:1fr 1fr; flex:1; position:relative; width:100%; min-height:0; }
       .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px 50px; text-align:center; gap:12px; overflow:hidden; }
       .panel:first-child { background:${C.accent}10; border-right:1px solid ${C.accent}28; }
       .pl { font-size:${isPortrait?48:40}px; font-weight:900; font-family:'${font}',sans-serif; line-height:1.1; }
-      .ps { font-size:${isPortrait?27:23}px; color:${C.sub}; font-family:'${font}',sans-serif; line-height:1.45; }
+      .ps { font-size:${isPortrait?26:22}px; color:${C.sub}; font-family:'${font}',sans-serif; line-height:1.4; }
       .vs { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:6;
         width:90px; height:90px; border-radius:50%; background:${C.bg};
         border:1.5px solid ${C.accent}44; display:flex; align-items:center; justify-content:center; }
       .vt { font-size:28px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; }
-      .sb { padding:24px 80px 0; text-align:center; flex-shrink:0; width:100%; }
-      .hl { font-size:${isPortrait?78:66}px; font-weight:900; line-height:1.08; ${ts} font-family:'${font}',sans-serif; }
-      .body { font-size:${isPortrait?30:26}px; line-height:1.55; color:${C.sub}; margin-top:16px; font-family:'${font}',sans-serif; }
+      .sb { padding:20px 80px 0; text-align:center; flex-shrink:0; width:100%; }
+      .hl { font-size:${isPortrait?76:64}px; font-weight:900; line-height:1.08; ${ts} font-family:'${font}',sans-serif; }
+      .body { font-size:${isPortrait?28:24}px; line-height:1.5; color:${C.sub}; margin-top:14px; font-family:'${font}',sans-serif; }
     `,
     cards: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:${topPad}px 80px ${botPad}px; overflow:hidden; }
-      .hl { font-size:${isPortrait?88:74}px; font-weight:900; line-height:1.1; ${ts} text-align:center; margin-bottom:8px; font-family:'${font}',sans-serif; flex-shrink:0; }
-      .cg { width:100%; display:flex; flex-direction:column; gap:${isPortrait?16:12}px; margin-top:24px; overflow:hidden; }
-      .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:12px; padding:${isPortrait?26:20}px 28px; display:flex; align-items:flex-start; gap:18px; flex-shrink:0; }
-      .cn { font-size:${isPortrait?32:26}px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; flex-shrink:0; width:40px; line-height:1; }
-      .ct { font-size:${isPortrait?27:23}px; color:${C.text}; font-family:'${font}',sans-serif; line-height:1.4; font-weight:600; }
-      .cs { font-size:${isPortrait?22:19}px; color:${C.sub}; margin-top:3px; font-family:'${font}',sans-serif; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:${topPad}px 72px ${botPad}px; overflow:hidden; }
+      .hl { font-size:${isPortrait?84:66}px; font-weight:900; line-height:1.08; ${ts} text-align:center; margin-bottom:4px; font-family:'${font}',sans-serif; flex-shrink:0; }
+      .cg { width:100%; display:flex; flex-direction:column; gap:${isPortrait?14:9}px; margin-top:20px; overflow:hidden; }
+      .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:10px; padding:${isPortrait?22:14}px 24px; display:flex; align-items:flex-start; gap:16px; flex-shrink:0; }
+      .cn { font-size:${isPortrait?28:20}px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; flex-shrink:0; width:36px; line-height:1; }
+      .ct { font-size:${isPortrait?25:19}px; color:${C.text}; font-family:'${font}',sans-serif; line-height:1.35; font-weight:600; }
+      .cs { font-size:${isPortrait?20:16}px; color:${C.sub}; margin-top:2px; font-family:'${font}',sans-serif; }
     `,
     quote: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 110px ${botPad+40}px; text-align:center; gap:0; overflow:hidden; }
