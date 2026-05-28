@@ -1,6 +1,8 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
 
+const GOLD = "#C9A84C";
+
 const THEMES = [
   { id:"dark-gold", label:"Dark Gold",  bg:"#0A0A0A", accent:"#C9A84C", text:"#FFFFFF", sub:"rgba(255,255,255,0.72)", dark:true },
   { id:"midnight",  label:"Midnight",   bg:"#0D1117", accent:"#7C9EFF", text:"#E8EAF2", sub:"rgba(232,234,242,0.72)", dark:true },
@@ -36,7 +38,7 @@ const BUSINESS_TYPES = [
   { id:"other",      label:"Other" },
 ];
 
-const STORAGE_KEY = "bwt_v7";
+const STORAGE_KEY = "bwt_v8";
 
 // ─── HTML SLIDE BUILDER ───────────────────────────────────
 
@@ -46,7 +48,7 @@ function buildSlideHTML(slide, idx, total, opts) {
 
   const themeObj = THEMES.find(t => t.id === theme) || THEMES[0];
   const C = theme === "custom"
-    ? { ...themeObj, bg: customBg || "#0A0A0A", accent: customAccent || "#C9A84C" }
+    ? { ...themeObj, bg: customBg||"#0A0A0A", accent: customAccent||"#C9A84C" }
     : themeObj;
 
   const font = (FONTS.find(f => f.id === fontId) || FONTS[0]).css;
@@ -54,339 +56,265 @@ function buildSlideHTML(slide, idx, total, opts) {
   const W = 1080, H = isPortrait ? 1920 : 1080;
   const layout = slide.layout || "standard";
 
-  // Accent word in headline
+  function escHtml(s) {
+    return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
   function accentHL(text) {
-    const aw = (slide.accent_word || "").trim();
+    const aw = (slide.accent_word||"").trim();
     if (!aw || !text.includes(aw)) return escHtml(text);
     const i = text.indexOf(aw);
     return escHtml(text.slice(0,i)) + `<span style="color:${C.accent}">${escHtml(aw)}</span>` + escHtml(text.slice(i+aw.length));
   }
-  function escHtml(s) { return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
   const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:wght@700;900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&display=swap`;
 
-  // Noise SVG for dark themes
-  const noiseSVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`;
+  const ts = C.dark ? "text-shadow:0 2px 24px rgba(0,0,0,0.95);" : "";
+  const ts2 = C.dark ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : "";
 
-  // Base CSS
   const base = `
     @import url('${gFonts}');
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: ${W}px; height: ${H}px; overflow: hidden; background: ${C.bg}; }
-    .slide {
-      width: ${W}px; height: ${H}px; overflow: hidden;
-      background: ${C.bg};
-      font-family: '${font}', sans-serif;
-      position: relative;
-      color: ${C.text};
-    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    html, body { width:${W}px; height:${H}px; overflow:hidden; background:${C.bg}; }
+    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${C.bg}; font-family:'${font}',sans-serif; position:relative; color:${C.text}; }
     .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; }
-    .bg-overlay { position:absolute; inset:0; z-index:1; pointer-events:none; }
-    .noise-layer { position:absolute; inset:0; z-index:2; pointer-events:none; background-image:${noiseSVG}; background-repeat:repeat; opacity:${C.dark?0.4:0}; }
-    .bracket { position:absolute; width:52px; height:52px; z-index:3; }
+    .bg-ov { position:absolute; inset:0; z-index:1; pointer-events:none; }
+    .noise { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0.35;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+      background-repeat:repeat; }
+    .bk { position:absolute; width:52px; height:52px; z-index:3; }
     .tl { top:44px; left:52px; border-top:2.5px solid ${C.accent}; border-left:2.5px solid ${C.accent}; opacity:0.4; }
     .tr { top:44px; right:52px; border-top:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:0.4; }
     .bl { bottom:44px; left:52px; border-bottom:2.5px solid ${C.accent}; border-left:2.5px solid ${C.accent}; opacity:0.4; }
     .br { bottom:44px; right:52px; border-bottom:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:0.4; }
-    .fade-b { position:absolute; bottom:0; left:0; right:0; height:40%; z-index:3; pointer-events:none;
-      background:linear-gradient(to bottom, transparent, rgba(0,0,0,0.55)); }
-    .badge {
-      position:absolute; top:64px; left:64px; z-index:10;
+    .fade { position:absolute; bottom:0; left:0; right:0; height:42%; z-index:3; pointer-events:none;
+      background:linear-gradient(to bottom,transparent,rgba(0,0,0,0.58)); }
+    .badge { position:absolute; top:64px; left:64px; z-index:10;
       display:flex; align-items:center; gap:14px;
-      background:${C.dark?"rgba(0,0,0,0.58)":"rgba(255,255,255,0.82)"};
-      padding:12px 22px 12px 12px; border-radius:60px;
-    }
-    .av { width:60px; height:60px; border-radius:50%; border:3px solid ${C.accent};
+      background:${C.dark?"rgba(0,0,0,0.6)":"rgba(255,255,255,0.85)"};
+      padding:12px 22px 12px 12px; border-radius:60px; }
+    .av { width:64px; height:64px; border-radius:50%; border:3px solid ${C.accent};
       overflow:hidden; flex-shrink:0; background:${C.dark?"#1a1a1a":"#ddd"};
-      display:flex; align-items:center; justify-content:center; }
-    .av img { width:100%; height:100%; object-fit:cover; }
-    .av-init { font-size:24px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; }
-    .bn { font-size:19px; font-weight:800; color:${C.dark?"#fff":"#111"}; line-height:1.2; font-family:'${font}',sans-serif; }
-    .bh { font-size:14px; color:${C.dark?"rgba(255,255,255,0.5)":"rgba(0,0,0,0.45)"}; font-family:'${font}',sans-serif; }
+      display:flex; align-items:center; justify-content:center; position:relative; }
+    .av img { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      width:100%; height:100%; object-fit:cover; }
+    .av-i { font-size:26px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; }
+    .bn { font-size:20px; font-weight:800; color:${C.dark?"#fff":"#111"}; line-height:1.2; font-family:'${font}',sans-serif; }
+    .bh { font-size:14px; color:${C.dark?"rgba(255,255,255,0.52)":"rgba(0,0,0,0.45)"}; font-family:'${font}',sans-serif; }
     .tick { display:inline-flex; align-items:center; justify-content:center;
       width:18px; height:18px; background:#1D9BF0; border-radius:50%;
-      font-size:10px; color:#fff; margin-left:5px; }
+      font-size:10px; color:#fff; margin-left:5px; vertical-align:middle; }
     .wm { position:absolute; bottom:28px; right:38px; z-index:3;
       font-size:${Math.floor(H*0.2)}px; font-weight:900; line-height:1;
       color:${C.dark?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.035)"};
-      font-family:'${font}',sans-serif; pointer-events:none; }
-    .counter { position:absolute; top:52px; right:60px; z-index:10;
+      font-family:'${font}',sans-serif; pointer-events:none; user-select:none; }
+    .cnt { position:absolute; top:52px; right:60px; z-index:10;
       font-size:14px; font-weight:700; color:${C.accent}88; font-family:'${font}',sans-serif; }
-    .site { position:absolute; bottom:28px; left:0; right:0; text-align:center; z-index:10;
+    .site { position:absolute; bottom:${websiteUrl?28:10}px; left:0; right:0; text-align:center; z-index:10;
       font-size:17px; color:${C.dark?"rgba(255,255,255,0.28)":"rgba(0,0,0,0.25)"}; font-family:'${font}',sans-serif; }
     .brand { position:absolute; bottom:10px; left:0; right:0; text-align:center; z-index:10;
       font-size:12px; font-weight:700; letter-spacing:3px;
       color:${C.dark?"rgba(255,255,255,0.14)":"rgba(0,0,0,0.14)"}; font-family:'${font}',sans-serif; }
-    .tag-pill {
-      display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"};
+    .tag { display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"};
       font-size:14px; font-weight:800; letter-spacing:2px;
-      padding:8px 24px; border-radius:60px; font-family:'${font}',sans-serif;
-    }
-    .divider {
-      width:80px; height:1.5px; background:${C.accent}; opacity:0.5; margin:0 auto;
-      position:relative;
-    }
-    .divider::after {
-      content:''; position:absolute; top:-4px; left:50%;
+      padding:8px 24px; border-radius:60px; font-family:'${font}',sans-serif; }
+    .div { width:80px; height:1.5px; background:${C.accent}; opacity:0.5; margin:0 auto; position:relative; }
+    .div::after { content:''; position:absolute; top:-4px; left:50%;
       transform:translateX(-50%) rotate(45deg);
-      width:10px; height:10px; background:${C.accent}; opacity:0.9;
-    }
+      width:10px; height:10px; background:${C.accent}; opacity:0.9; }
   `;
 
-  // Layout-specific CSS
-  const layoutCSS = {
+  const layouts = {
     standard: `
-      .content { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:200px 80px 120px; gap:0; text-align:center; }
-      .headline { font-size:88px; font-weight:900; line-height:1.08; color:${C.text}; font-family:'${font}',sans-serif; text-shadow:${C.dark?"0 2px 24px rgba(0,0,0,0.9)":"none"}; margin-bottom:32px; }
-      .body { font-size:30px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:32px; text-shadow:${C.dark?"0 1px 16px rgba(0,0,0,0.8)":"none"}; font-family:'${font}',sans-serif; }
-      .cta-box { margin-top:44px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:24px 60px; border-radius:8px; font-size:28px; font-weight:800; color:${C.accent}; font-family:'${font}',sans-serif; text-align:center; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:200px 90px 120px; text-align:center; gap:0; }
+      .hl { font-size:88px; font-weight:900; line-height:1.08; ${ts} margin-bottom:32px; font-family:'${font}',sans-serif; }
+      .body { font-size:30px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:32px; ${ts2} font-family:'${font}',sans-serif; }
+      .cta { margin-top:44px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:24px 60px; border-radius:8px; font-size:28px; font-weight:800; color:${C.accent}; font-family:'${font}',sans-serif; width:100%; max-width:860px; text-align:center; }
     `,
     statement: `
-      .content { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:180px 60px 120px; gap:0; text-align:center; }
-      .headline { font-size:108px; font-weight:900; line-height:1.0; color:${C.text}; font-family:'${font}',sans-serif; text-shadow:${C.dark?"0 2px 30px rgba(0,0,0,0.95)":"none"}; letter-spacing:-2px; margin-bottom:36px; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:180px 70px 120px; text-align:center; gap:0; }
+      .hl { font-size:112px; font-weight:900; line-height:1.0; ${ts} letter-spacing:-2px; margin-bottom:36px; font-family:'${font}',sans-serif; }
       .body { font-size:30px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:32px; font-family:'${font}',sans-serif; }
-      .cta-box { margin-top:44px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:24px 60px; border-radius:8px; font-size:28px; font-weight:800; color:${C.accent}; font-family:'${font}',sans-serif; }
+      .cta { margin-top:44px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:24px 60px; border-radius:8px; font-size:28px; font-weight:800; color:${C.accent}; font-family:'${font}',sans-serif; }
     `,
     split: `
-      .content { position:absolute; inset:0; z-index:5; display:grid; grid-template-rows:1fr auto; padding:160px 0 120px; }
-      .split-panels { display:grid; grid-template-columns:1fr 1fr; height:100%; }
-      .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 60px; text-align:center; gap:20px; }
-      .panel:first-child { background:${C.accent}12; border-right:1px solid ${C.accent}30; }
-      .panel-label { font-size:42px; font-weight:900; font-family:'${font}',sans-serif; line-height:1.1; }
-      .panel-sub { font-size:26px; color:${C.sub}; font-family:'${font}',sans-serif; line-height:1.5; }
-      .vs-circle { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:6;
-        width:96px; height:96px; border-radius:50%; background:${C.bg};
-        border:2px solid ${C.accent}55; display:flex; align-items:center; justify-content:center; }
-      .vs-text { font-size:28px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; }
-      .split-bottom { padding:36px 80px 0; text-align:center; }
-      .headline { font-size:72px; font-weight:900; line-height:1.08; color:${C.text}; font-family:'${font}',sans-serif; text-shadow:${C.dark?"0 2px 24px rgba(0,0,0,0.9)":"none"}; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; padding:160px 0 100px; }
+      .panels { display:grid; grid-template-columns:1fr 1fr; flex:1; position:relative; }
+      .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 64px; text-align:center; gap:16px; }
+      .panel:first-child { background:${C.accent}10; border-right:1px solid ${C.accent}28; }
+      .pl { font-size:44px; font-weight:900; font-family:'${font}',sans-serif; line-height:1.1; }
+      .ps { font-size:26px; color:${C.sub}; font-family:'${font}',sans-serif; line-height:1.5; }
+      .vs { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:6;
+        width:100px; height:100px; border-radius:50%; background:${C.bg};
+        border:1.5px solid ${C.accent}44; display:flex; align-items:center; justify-content:center; }
+      .vt { font-size:30px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; }
+      .sb { padding:36px 90px 0; text-align:center; }
+      .hl { font-size:72px; font-weight:900; line-height:1.08; ${ts} font-family:'${font}',sans-serif; }
       .body { font-size:28px; line-height:1.6; color:${C.sub}; margin-top:20px; font-family:'${font}',sans-serif; }
     `,
     cards: `
-      .content { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:200px 80px 120px; gap:0; }
-      .headline { font-size:80px; font-weight:900; line-height:1.1; color:${C.text}; font-family:'${font}',sans-serif; text-shadow:${C.dark?"0 2px 24px rgba(0,0,0,0.9)":"none"}; text-align:center; margin-bottom:20px; }
-      .cards-grid { width:100%; display:flex; flex-direction:column; gap:16px; margin-top:32px; }
-      .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}30; border-radius:12px; padding:24px 32px; display:flex; align-items:flex-start; gap:20px; }
-      .card-num { font-size:32px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; flex-shrink:0; width:44px; line-height:1; }
-      .card-text { font-size:26px; color:${C.text}; font-family:'${font}',sans-serif; line-height:1.45; }
-      .card-sub { font-size:22px; color:${C.sub}; margin-top:4px; font-family:'${font}',sans-serif; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:200px 80px 100px; }
+      .hl { font-size:80px; font-weight:900; line-height:1.1; ${ts} text-align:center; margin-bottom:12px; font-family:'${font}',sans-serif; }
+      .cg { width:100%; display:flex; flex-direction:column; gap:16px; margin-top:32px; }
+      .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:14px; padding:26px 34px; display:flex; align-items:flex-start; gap:22px; }
+      .cn { font-size:32px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; flex-shrink:0; width:46px; line-height:1; }
+      .ct { font-size:27px; color:${C.text}; font-family:'${font}',sans-serif; line-height:1.45; font-weight:600; }
+      .cs { font-size:22px; color:${C.sub}; margin-top:4px; font-family:'${font}',sans-serif; }
     `,
     quote: `
-      .content { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:200px 100px 160px; gap:0; text-align:center; }
-      .quote-mark { font-size:280px; font-weight:900; color:${C.accent}22; line-height:0.7; font-family:'${font}',sans-serif; margin-bottom:-40px; }
-      .headline { font-size:96px; font-weight:900; line-height:1.06; color:${C.text}; font-family:'${font}',sans-serif; text-shadow:${C.dark?"0 2px 28px rgba(0,0,0,0.95)":"none"}; font-style:italic; letter-spacing:-1px; margin-bottom:36px; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:200px 110px 160px; text-align:center; gap:0; }
+      .qm { font-size:300px; font-weight:900; color:${C.accent}20; line-height:0.65; font-family:'${font}',sans-serif; margin-bottom:-20px; }
+      .hl { font-size:96px; font-weight:900; line-height:1.06; ${ts} font-style:italic; letter-spacing:-1px; margin-bottom:36px; font-family:'${font}',sans-serif; }
       .body { font-size:30px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:32px; font-family:'${font}',sans-serif; }
     `,
     hero: `
-      .content { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:200px 80px 160px; gap:32px; text-align:center; }
-      .hero-icon { font-size:140px; line-height:1; margin-bottom:8px; }
-      .hero-circle { width:220px; height:220px; border-radius:50%; border:1.5px solid ${C.accent}44;
-        background:${C.accent}12; display:flex; align-items:center; justify-content:center; margin-bottom:16px; }
-      .headline { font-size:92px; font-weight:900; line-height:1.06; color:${C.text}; font-family:'${font}',sans-serif; text-shadow:${C.dark?"0 2px 28px rgba(0,0,0,0.95)":"none"}; margin-bottom:0; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:200px 90px 160px; gap:30px; text-align:center; }
+      .hi { width:220px; height:220px; border-radius:50%; border:1.5px solid ${C.accent}40; background:${C.accent}12; display:flex; align-items:center; justify-content:center; margin-bottom:8px; }
+      .hs { font-size:130px; line-height:1; }
+      .hl { font-size:92px; font-weight:900; line-height:1.06; ${ts} font-family:'${font}',sans-serif; }
       .body { font-size:30px; line-height:1.65; color:${C.sub}; max-width:820px; font-family:'${font}',sans-serif; }
-      .cta-stack { width:100%; max-width:860px; display:flex; flex-direction:column; gap:14px; margin-top:16px; }
-      .cta-btn { padding:28px 50px; border-radius:12px; font-size:28px; font-weight:800; font-family:'${font}',sans-serif; text-align:center; }
-      .cta-primary { background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
-      .cta-secondary { border:1.5px solid ${C.accent}55; color:${C.accent}; background:${C.accent}14; }
+      .cs { width:100%; max-width:860px; display:flex; flex-direction:column; gap:14px; margin-top:8px; }
+      .cb { padding:28px 50px; border-radius:12px; font-size:28px; font-weight:800; font-family:'${font}',sans-serif; text-align:center; }
+      .cp { background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
+      .cx { border:1.5px solid ${C.accent}50; color:${C.accent}; background:${C.accent}14; }
     `,
   };
 
-  // Build layout HTML
   function layoutHTML() {
-    const hl = accentHL(slide.headline || "");
-    const tag = slide.tag ? `<div style="margin-bottom:28px"><span class="tag-pill">${escHtml(slide.tag.toUpperCase())}</span></div>` : "";
-    const div = `<div class="divider" style="margin:28px auto"></div>`;
+    const hl = accentHL(slide.headline||"");
+    const tag = slide.tag ? `<div style="margin-bottom:28px"><span class="tag">${escHtml(slide.tag.toUpperCase())}</span></div>` : "";
+    const divider = `<div class="div" style="margin:28px auto"></div>`;
     const body = slide.body ? `<div class="body">${escHtml(slide.body)}</div>` : "";
 
-    if (layout === "split" && slide.items && slide.items.length >= 2) {
-      const [a, b] = slide.items;
-      return `
-        <div class="content">
-          <div class="split-panels" style="position:relative">
-            <div class="panel" style="color:${C.accent}">
-              <div class="panel-label" style="color:${C.accent}">${escHtml(a.label||"")}</div>
-              ${a.sub?`<div class="panel-sub">${escHtml(a.sub)}</div>`:""}
-            </div>
-            <div class="vs-circle"><div class="vs-text">${escHtml(slide.vs_label||"VS")}</div></div>
-            <div class="panel">
-              <div class="panel-label" style="color:${C.text}88">${escHtml(b.label||"")}</div>
-              ${b.sub?`<div class="panel-sub">${escHtml(b.sub)}</div>`:""}
-            </div>
-          </div>
-          <div class="split-bottom">
-            ${tag}
-            <div class="headline">${hl}</div>
-            ${slide.body?div+body:""}
-          </div>
-        </div>`;
-    }
-
-    if (layout === "cards" && slide.items && slide.items.length) {
-      const cardsHtml = slide.items.map((item,i) => `
-        <div class="card">
-          <div class="card-num">${String(i+1).padStart(2,"0")}</div>
-          <div>
-            <div class="card-text">${escHtml(item.label||item.text||"")}</div>
-            ${item.sub?`<div class="card-sub">${escHtml(item.sub)}</div>`:""}
-          </div>
-        </div>`).join("");
-      return `
-        <div class="content">
-          ${tag}
-          <div class="headline">${hl}</div>
-          <div class="cards-grid">${cardsHtml}</div>
-        </div>`;
-    }
-
-    if (layout === "hero") {
-      const ctaItems = slide.cta_items || (slide.cta ? [slide.cta] : []);
-      return `
-        <div class="content">
-          ${slide.icon_symbol ? `<div class="hero-circle"><span class="hero-icon">${slide.icon_symbol}</span></div>` : ""}
-          ${tag}
-          <div class="headline">${hl}</div>
-          ${slide.body?div+body:""}
-          ${ctaItems.length ? `<div class="cta-stack">${ctaItems.map((c,i)=>`<div class="cta-btn ${i===0?"cta-primary":"cta-secondary"}">${escHtml(c)}</div>`).join("")}</div>` : ""}
-        </div>`;
-    }
-
-    if (layout === "quote") {
-      return `
-        <div class="content">
-          <div class="quote-mark">"</div>
-          ${tag}
-          <div class="headline">${hl}</div>
-          ${slide.body?div+body:""}
-          ${slide.cta?`<div class="cta-box" style="margin-top:44px;border:1px solid ${C.accent}44;background:${C.accent}16;padding:24px 60px;border-radius:8px;font-size:28px;font-weight:800;color:${C.accent};font-family:'${font}',sans-serif">${escHtml(slide.cta)}</div>`:""}
-        </div>`;
-    }
-
-    if (layout === "statement") {
-      return `
-        <div class="content">
-          ${tag}
-          <div class="headline">${hl}</div>
-          ${slide.body?div+body:""}
-          ${slide.cta?`<div class="cta-box">${escHtml(slide.cta)}</div>`:""}
-        </div>`;
-    }
-
-    // standard (default)
-    return `
-      <div class="content">
-        ${tag}
-        <div class="headline">${hl}</div>
-        ${slide.body?div+body:""}
-        ${slide.cta?`<div class="cta-box">${escHtml(slide.cta)}</div>`:""}
+    if (layout==="split" && slide.items?.length >= 2) {
+      const [a,b] = slide.items;
+      return `<div class="c">
+        <div class="panels" style="position:relative">
+          <div class="panel"><div class="pl" style="color:${C.accent}">${escHtml(a.label||"")}</div>${a.sub?`<div class="ps">${escHtml(a.sub)}</div>`:""}</div>
+          <div class="vs"><div class="vt">${escHtml(slide.vs_label||"VS")}</div></div>
+          <div class="panel"><div class="pl" style="opacity:0.75">${escHtml(b.label||"")}</div>${b.sub?`<div class="ps">${escHtml(b.sub)}</div>`:""}</div>
+        </div>
+        <div class="sb">${tag}<div class="hl">${hl}</div>${slide.body?divider+body:""}</div>
       </div>`;
+    }
+
+    if (layout==="cards" && slide.items?.length) {
+      return `<div class="c">
+        ${tag}<div class="hl">${hl}</div>
+        <div class="cg">${slide.items.map((it,i)=>`
+          <div class="card">
+            <div class="cn">${String(i+1).padStart(2,"0")}</div>
+            <div><div class="ct">${escHtml(it.label||it.text||"")}</div>${it.sub?`<div class="cs">${escHtml(it.sub)}</div>`:""}</div>
+          </div>`).join("")}
+        </div>
+      </div>`;
+    }
+
+    if (layout==="hero") {
+      const ctaItems = slide.cta_items?.length ? slide.cta_items : slide.cta ? [slide.cta] : [];
+      return `<div class="c">
+        ${slide.icon_symbol?`<div class="hi"><span class="hs">${slide.icon_symbol}</span></div>`:""}
+        ${tag}<div class="hl">${hl}</div>
+        ${slide.body?divider+body:""}
+        ${ctaItems.length?`<div class="cs">${ctaItems.map((c,i)=>`<div class="cb ${i===0?"cp":"cx"}">${escHtml(c)}</div>`).join("")}</div>`:""}
+      </div>`;
+    }
+
+    if (layout==="quote") {
+      return `<div class="c">
+        <div class="qm">"</div>
+        ${tag}<div class="hl">${hl}</div>
+        ${slide.body?divider+body:""}
+      </div>`;
+    }
+
+    // standard + statement
+    const cta = slide.cta ? `<div class="cta">${escHtml(slide.cta)}</div>` : "";
+    return `<div class="c">${tag}<div class="hl">${hl}</div>${slide.body?divider+body:""}${cta}</div>`;
   }
 
   const bgHtml = bgImageUrl ? `
-    <img class="bg-img" src="${bgImageUrl}" crossorigin="anonymous" />
-    <div class="bg-overlay" style="background:linear-gradient(to bottom,rgba(0,0,0,${Math.min((overlayDark||65)/100*0.92,0.88)}) 0%,rgba(0,0,0,${Math.min((overlayDark||65)/100*0.42,0.5)}) 40%,rgba(0,0,0,${Math.min((overlayDark||65)/100*0.95,0.92)}) 100%)"></div>` : "";
+    <img class="bg-img" src="${bgImageUrl}" crossorigin="anonymous"/>
+    <div class="bg-ov" style="background:linear-gradient(to bottom,rgba(0,0,0,${Math.min((overlayDark||65)/100*0.92,0.88)}) 0%,rgba(0,0,0,${Math.min((overlayDark||65)/100*0.42,0.5)}) 40%,rgba(0,0,0,${Math.min((overlayDark||65)/100*0.95,0.92)}) 100%)"></div>` : "";
 
-  const profileHtml = profileUrl
-    ? `<img src="${profileUrl}" crossorigin="anonymous" />`
-    : `<div class="av-init">${escHtml((name||"?")[0].toUpperCase())}</div>`;
+  const avHtml = profileUrl
+    ? `<img src="${profileUrl}" crossorigin="anonymous"/>`
+    : `<div class="av-i">${escHtml((name||"?")[0].toUpperCase())}</div>`;
 
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-${base}
-${layoutCSS[layout] || layoutCSS.standard}
-</style>
-</head>
-<body>
+  return `<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>${base}${layouts[layout]||layouts.standard}</style>
+</head><body>
 <div class="slide">
   ${bgHtml}
-  ${C.dark ? '<div class="noise-layer"></div>' : ""}
-  <div class="bracket tl"></div><div class="bracket tr"></div>
-  <div class="bracket bl"></div><div class="bracket br"></div>
-  ${C.dark ? '<div class="fade-b"></div>' : ""}
-
+  ${C.dark?'<div class="noise"></div>':""}
+  <div class="bk tl"></div><div class="bk tr"></div>
+  <div class="bk bl"></div><div class="bk br"></div>
+  ${C.dark?'<div class="fade"></div>':""}
   <div class="badge">
-    <div class="av">${profileHtml}</div>
+    <div class="av">${avHtml}</div>
     <div>
       <div class="bn">${escHtml(name||"Your Brand")}${blueTick?` <span class="tick">✓</span>`:""}</div>
       <div class="bh">${escHtml(handle||"@yourhandle")}</div>
     </div>
   </div>
-
-  ${showNums ? `<div class="wm">${String(idx+1).padStart(2,"0")}</div><div class="counter">${idx+1} / ${total}</div>` : ""}
-
+  ${showNums?`<div class="wm">${String(idx+1).padStart(2,"0")}</div><div class="cnt">${idx+1} / ${total}</div>`:""}
   ${layoutHTML()}
-
-  ${websiteUrl ? `<div class="site">${escHtml(websiteUrl)}</div>` : ""}
+  ${websiteUrl?`<div class="site">${escHtml(websiteUrl)}</div>`:""}
   <div class="brand">BUILD WITH TAV</div>
 </div>
-</body>
-</html>`;
+</body></html>`;
 }
 
-// ─── PREVIEW & DOWNLOAD ───────────────────────────────────
+// ─── PREVIEW ─────────────────────────────────────────────
 
 function SlidePreview({ slide, idx, total, opts, onClick, isActive }) {
   const ref = useRef(null);
   const isPortrait = opts.ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1080;
-  // Container preview width ~320px — scale iframe down
-  const previewW = 320;
-  const scale = previewW / W;
-  const previewH = H * scale;
+  const scale = 320 / W;
+  const ph = H * scale;
 
   useEffect(() => {
     const iframe = ref.current; if (!iframe) return;
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
     if (!doc) return;
-    doc.open(); doc.write(buildSlideHTML(slide, idx, total, opts)); doc.close();
-  }, [JSON.stringify({slide, opts, idx, total})]);
+    doc.open(); doc.write(buildSlideHTML(slide,idx,total,opts)); doc.close();
+  }, [JSON.stringify({slide,opts,idx,total})]);
 
   return (
-    <div onClick={onClick} style={{
-      cursor:"pointer", borderRadius:8, overflow:"hidden",
-      border:`2px solid ${isActive?"#0A0A0A":"transparent"}`,
-      transition:"border-color 0.15s", position:"relative",
-      width: previewW, height: previewH, flexShrink:0,
-    }}>
-      <iframe ref={ref}
-        style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }}
-        sandbox="allow-same-origin" title={`slide-${idx+1}`}
-      />
+    <div onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#0A0A0A":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:320, height:ph, flexShrink:0 }}>
+      <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin" title={`slide-${idx+1}`}/>
       <div style={{ position:"absolute", bottom:4, right:4, fontSize:10, color:"rgba(255,255,255,0.85)", background:"rgba(0,0,0,0.6)", padding:"2px 6px", borderRadius:4, fontWeight:700 }}>{idx+1}</div>
     </div>
   );
 }
 
+// ─── DOWNLOAD ────────────────────────────────────────────
+
 async function downloadSlideAsPNG(slide, idx, total, opts, filename) {
   const isPortrait = opts.ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1080;
   const html = buildSlideHTML(slide, idx, total, opts);
-
   const res = await fetch("/api/screenshot", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ html, width: W, height: H }),
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ html, width:W, height:H }),
   });
-
   if (!res.ok) throw new Error(`Screenshot failed: ${res.status}`);
-
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.download = filename;
-  a.href = url;
-  a.click();
+  a.download = filename; a.href = url; a.click();
   URL.revokeObjectURL(url);
 }
 
 // ─── STORAGE / HELPERS ────────────────────────────────────
+
 function loadS() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||"null"); } catch { return null; } }
-function saveS(d) { try { localStorage.setItem(STORAGE_KEY,JSON.stringify(d)); } catch {} }
+function saveS(d) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} }
 function Spin({c="#fff"}) { return <div style={{width:14,height:14,borderRadius:"50%",border:`2px solid rgba(255,255,255,0.15)`,borderTop:`2px solid ${c}`,animation:"spin 0.7s linear infinite",flexShrink:0}}/>; }
 
 // ─── APP ─────────────────────────────────────────────────
+
 export default function App() {
   const S = loadS();
   const [tab, setTab] = useState("generate");
@@ -420,6 +348,7 @@ export default function App() {
   const [rewriting, setRewriting] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadingAll, setDownloadingAll] = useState(false);
+  const [downloadDone, setDownloadDone] = useState(false);
   const [lastTopic, setLastTopic] = useState("");
   const [lastTone, setLastTone] = useState("ai");
 
@@ -449,8 +378,8 @@ export default function App() {
     layout: s.layout||"standard",
     items: Array.isArray(s.items)?s.items:[],
     vs_label: s.vs_label||"VS",
-    icon_symbol: s.icon_symbol||"",
-    cta_items: Array.isArray(s.cta_items)?s.cta_items:[],
+    icon_symbol: s.icon_symbol||"◆",
+    cta_items: Array.isArray(s.cta_items)?s.cta_items.map(c=>String(c)):[],
   });
 
   const buildPrompt = (topicStr, toneStr) => {
@@ -458,9 +387,8 @@ export default function App() {
     const toneDesc = TONES.find(t=>t.id===toneStr)?.desc||"";
     const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"";
     const voice = voiceProfile||(btLabel?`Write for a ${btLabel}. Direct, specific, speak to real problems. No hype.`:"Direct and honest. Short punchy sentences. Real problems. No hype, no fluff.");
-
     return `You are creating an Instagram carousel${btLabel?` for a ${btLabel}`:""}.
-You are BOTH the copywriter AND the visual creative director. Every slide must have a distinct design and purpose.
+You are BOTH the copywriter AND the visual creative director. Make every slide earn its place.
 
 VOICE: ${voice}
 TOPIC: "${topicStr}"${keywords?`\nKEY THEMES: ${keywords}`:""}
@@ -469,43 +397,31 @@ SLIDES: ${slideCount}
 
 NARRATIVE ARC: hook → reality → insight → shift → advice → CTA
 
-LAYOUT SYSTEM — pick the best layout for each slide's content:
-- "standard" — headline centred, body below. Good for most slides.
-- "statement" — massive headline, minimal body. Use for big bold claims. VERY large type.
-- "split" — two panels side by side with VS in the middle. Use when comparing two things. Requires "items" array with 2 objects each having "label" and "sub". Add "vs_label" field.
-- "cards" — numbered card rows. Use for listing 3-5 distinct points. Requires "items" array, each with "label" and optional "sub".
-- "quote" — giant quote mark, italic headline. Use for a powerful insight or truth.
-- "hero" — icon in circle + big headline + CTA buttons. Use for the FINAL slide. Add "icon_symbol" (single unicode like ✦ ◆ ★) and "cta_items" array of 2 strings.
+LAYOUT SYSTEM — pick the right layout for each slide:
+- "statement" — MASSIVE headline, almost no body. For bold provocative claims. Very large type. Use for SLIDE 1 (the hook) — make it feel almost wrong to scroll past.
+- "standard" — headline + body. Good for most slides.
+- "split" — two panels side by side with VS. ONLY when comparing two distinct things. Requires "items" array: [{label,sub},{label,sub}]. Add "vs_label".
+- "cards" — numbered rows. For listing 3-5 specific points. Requires "items" array: [{label,text or sub}].
+- "quote" — giant quote mark, italic. For a single powerful human truth. No more than one per carousel.
+- "hero" — icon + big headline + CTA buttons. ALWAYS use for the final slide. Add "icon_symbol" (one unicode char: ✦ ◆ ★ ✺ ⬡) and "cta_items" array of 1-2 strings.
 
-DESIGN RULES:
-- NO two consecutive slides use the same layout
-- Hook slide: use "statement" for maximum impact
-- Any comparison: use "split"
-- Lists of points: use "cards"
-- Emotional truth: use "quote"
-- Final slide: always "hero"
-- Pick ONE accent word from each headline — put it in "accent_word" exactly as in headline
-- Slide titles (tag): editorial, interesting — NOT "HOOK", "SLIDE 1", "CTA"
-- Headlines: max 8 words, punchy and specific
-- Body: 1-2 sentences max
+RULES:
+- No two consecutive slides use the same layout
+- Slide 1 is ALWAYS "statement" — provocative, specific, makes them stop
+- Final slide is ALWAYS "hero"
+- Pick ONE word from each headline for "accent_word" — must appear exactly in the headline
+- Slide titles: editorial, specific — NOT "HOOK", "SLIDE 1", "CTA", "INTRO"
+- Headlines: max 8 words, punchy
+- Body: 1-2 sentences, every word earns its place
+- Only final slide gets cta. All others cta is null.
+- No HTML, no cite tags, plain text only
 
-Return ONLY a valid JSON array, nothing else:
-[{
-  "tag": "LABEL",
-  "headline": "headline",
-  "body": "body text",
-  "accent_word": "word",
-  "layout": "standard|statement|split|cards|quote|hero",
-  "items": [],
-  "vs_label": "VS",
-  "icon_symbol": "",
-  "cta_items": [],
-  "cta": null
-}]`;
+Return ONLY valid JSON array:
+[{"tag":"LABEL","headline":"text","body":"text","accent_word":"word","layout":"type","items":[],"vs_label":"VS","icon_symbol":"◆","cta_items":[],"cta":null}]`;
   };
 
   const generate = async (topicOverride, toneOverride) => {
-    const t = topicOverride||topic; const tn = toneOverride||tone;
+    const t=topicOverride||topic, tn=toneOverride||tone;
     if(!t.trim()){setErr("Please add a topic first.");return;}
     setErr(""); setView("generating"); setLastTopic(t); setLastTone(tn);
     try {
@@ -523,15 +439,15 @@ Return ONLY a valid JSON array, nothing else:
   const rewrite = async () => {
     if(!rewritePrompt.trim())return; setRewriting(true);
     try {
-      const d = await fetchWithRetry({model:"claude-opus-4-7",max_tokens:600,messages:[{role:"user",content:`Rewrite this carousel slide: "${rewritePrompt}"\n\nCurrent:\n${JSON.stringify(slides[active],null,2)}\n\nVoice: ${voiceProfile||"Direct, honest, specific."}\n\nReturn ONLY a JSON object with the same structure. No markdown, no HTML.`}]});
-      const raw = (d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
-      const m = raw.match(/\{[\s\S]*\}/);
+      const d = await fetchWithRetry({model:"claude-opus-4-7",max_tokens:600,messages:[{role:"user",content:`Rewrite this carousel slide: "${rewritePrompt}"\n\nCurrent:\n${JSON.stringify(slides[active],null,2)}\n\nVoice: ${voiceProfile||"Direct, honest, specific."}\n\nReturn ONLY a JSON object with same structure. No markdown, no HTML.`}]});
+      const raw=(d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
+      const m=raw.match(/\{[\s\S]*\}/);
       if(m){const next=[...slides];next[active]=sanitize(JSON.parse(m[0]));setSlides(next);setRewritePrompt("");}
     } catch {}
     setRewriting(false);
   };
 
-  const updateSlide = (k,v) => {const next=[...slides];next[active]={...next[active],[k]:v};setSlides(next);};
+  const updateSlide = (k,v) => { const next=[...slides]; next[active]={...next[active],[k]:v}; setSlides(next); };
 
   const slideOpts = useCallback(i => ({
     theme, fontId, showNums, name, handle, blueTick,
@@ -542,31 +458,31 @@ Return ONLY a valid JSON array, nothing else:
   const downloadOne = async i => {
     setDownloading(true);
     try {
-      await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`);
-    } catch(e) {
-      console.error(e);
-      alert("Download failed. Please try again.");
-    }
+      await downloadSlideAsPNG(slides[i],i,slides.length,slideOpts(i),`slide-${i+1}.png`);
+      setDownloadDone(true); setTimeout(()=>setDownloadDone(false),2000);
+    } catch(e) { console.error(e); alert("Download failed. Please try again."); }
     setDownloading(false);
   };
 
   const downloadAll = async () => {
     setDownloadingAll(true);
-    for (let i = 0; i < slides.length; i++) {
-      try {
-        await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`);
-        await new Promise(r => setTimeout(r, 500));
-      } catch(e) {
-        console.error(`Slide ${i+1} failed:`, e);
-      }
+    for(let i=0;i<slides.length;i++) {
+      try { await downloadSlideAsPNG(slides[i],i,slides.length,slideOpts(i),`slide-${i+1}.png`); await new Promise(r=>setTimeout(r,600)); }
+      catch(e) { console.error(e); }
     }
     setDownloadingAll(false);
+    setDownloadDone(true); setTimeout(()=>setDownloadDone(false),2500);
   };
 
+  // ── UI ──
   const A = {bg:"#F5F3EF",surface:"#FFF",border:"#E8E5E0",text:"#0A0A0A",muted:"#8A8780",accentText:"#FFF",input:"#FFF"};
   const inp = {width:"100%",background:A.input,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"11px 14px",color:A.text,fontSize:14,fontFamily:"inherit"};
   const lbl = {display:"block",fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:7};
-  const tog = (on,set) => <div onClick={()=>set(!on)} style={{width:44,height:24,borderRadius:12,background:on?A.text:A.border,position:"relative",cursor:"pointer",flexShrink:0,transition:"background 0.2s"}}><div style={{position:"absolute",top:3,left:on?23:3,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/></div>;
+  const tog = (on,set) => (
+    <div onClick={()=>set(!on)} style={{width:44,height:24,borderRadius:12,background:on?A.text:A.border,position:"relative",cursor:"pointer",flexShrink:0,transition:"background 0.2s"}}>
+      <div style={{position:"absolute",top:3,left:on?23:3,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
+    </div>
+  );
 
   return (
     <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
@@ -574,7 +490,8 @@ Return ONLY a valid JSON array, nothing else:
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        *{box-sizing:border-box}input,textarea{outline:none!important;font-family:inherit}
+        @keyframes pop{0%{transform:scale(0.8);opacity:0}50%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+        *{box-sizing:border-box}input,textarea,select{outline:none!important;font-family:inherit}
         button{cursor:pointer;font-family:inherit;border:none;transition:all 0.15s}
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:${A.border};border-radius:2px}
         input[type=range]{-webkit-appearance:none;height:3px;border-radius:2px;background:${A.border};width:100%}
@@ -585,18 +502,18 @@ Return ONLY a valid JSON array, nothing else:
       {/* NAV */}
       <nav style={{borderBottom:`1px solid ${A.border}`,padding:"0 32px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56,position:"sticky",top:0,background:`${A.bg}EE`,backdropFilter:"blur(20px)",zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:26,height:26,borderRadius:6,background:A.text,display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <span style={{color:"#fff",fontSize:11,fontWeight:800}}>C</span>
+          <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,#1a1a1a 0%,#2a2a2a 100%)`,border:`1.5px solid ${GOLD}44`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <span style={{color:GOLD,fontSize:12,fontWeight:900}}>C</span>
           </div>
-          <span style={{fontSize:13,fontWeight:800}}>Carousel Studio</span>
-          <span style={{fontSize:11,color:A.muted}}>by Build with Tav</span>
+          <span style={{fontSize:13,fontWeight:800,color:A.text,letterSpacing:-0.3}}>Carousel Studio</span>
+          <span style={{fontSize:11,color:A.muted,fontWeight:500}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           {view==="preview"&&<>
-            <button onClick={regenerate} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>↺ Regenerate</button>
-            <button onClick={()=>{setView("setup");setSlides([]);}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
+            <button onClick={regenerate} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 14px",borderRadius:7,fontSize:12,fontWeight:600}}>↺ Regenerate</button>
+            <button onClick={()=>{setView("setup");setSlides([]);}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 14px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
           </>}
-          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12}}>Reset</button>
+          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 14px",borderRadius:7,fontSize:12}}>Reset</button>
         </div>
       </nav>
 
@@ -614,22 +531,29 @@ Return ONLY a valid JSON array, nothing else:
               {/* Tabs */}
               <div style={{display:"flex",borderBottom:`1px solid ${A.border}`,background:A.bg}}>
                 {[["generate","Generate"],["brand","Brand"],["visual","Visual"]].map(([id,label])=>(
-                  <button key={id} onClick={()=>setTab(id)} style={{background:"none",border:"none",borderBottom:tab===id?`2px solid ${A.text}`:"2px solid transparent",color:tab===id?A.text:A.muted,padding:"12px 20px",fontSize:12,fontWeight:tab===id?700:500,marginBottom:-1,letterSpacing:0.3,textTransform:"uppercase"}}>{label}</button>
+                  <button key={id} onClick={()=>setTab(id)} style={{background:"none",border:"none",borderBottom:tab===id?`2px solid ${GOLD}`:"2px solid transparent",color:tab===id?A.text:A.muted,padding:"12px 20px",fontSize:12,fontWeight:tab===id?700:500,marginBottom:-1,letterSpacing:0.3,textTransform:"uppercase"}}>
+                    {label}
+                  </button>
                 ))}
               </div>
 
               <div style={{padding:26}}>
+
+                {/* GENERATE TAB */}
                 {tab==="generate"&&(
                   <div style={{display:"flex",flexDirection:"column",gap:20}}>
                     <div>
                       <label style={lbl}>I am a...</label>
                       <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                         {BUSINESS_TYPES.map(bt=>(
-                          <button key={bt.id} onClick={()=>setBusinessType(bt.id)} style={{background:businessType===bt.id?A.text:A.bg,border:`1.5px solid ${businessType===bt.id?A.text:A.border}`,borderRadius:20,padding:"5px 14px",fontSize:12,color:businessType===bt.id?A.accentText:A.muted,fontWeight:businessType===bt.id?700:500}}>{bt.label}</button>
+                          <button key={bt.id} onClick={()=>setBusinessType(bt.id)} style={{background:businessType===bt.id?A.text:A.bg,border:`1.5px solid ${businessType===bt.id?A.text:A.border}`,borderRadius:20,padding:"5px 14px",fontSize:12,color:businessType===bt.id?A.accentText:A.muted,fontWeight:businessType===bt.id?700:500}}>
+                            {bt.label}
+                          </button>
                         ))}
                       </div>
                       {businessType==="other"&&<input value={otherType} onChange={e=>setOtherType(e.target.value)} placeholder="e.g. Tattoo artist, PT, wedding photographer..." style={{...inp,marginTop:10,fontSize:13}}/>}
                     </div>
+
                     <div>
                       <label style={lbl}>What's this carousel about? *</label>
                       <input value={topic} onChange={e=>{setTopic(e.target.value);if(err)setErr("");}}
@@ -638,10 +562,12 @@ Return ONLY a valid JSON array, nothing else:
                         onKeyDown={e=>{if(e.key==="Enter"&&e.metaKey)generate();}}/>
                       {err&&<p style={{color:"#c0392b",fontSize:12,margin:"6px 0 0",fontWeight:600}}>⚠ {err}</p>}
                     </div>
+
                     <div>
                       <label style={lbl}>Themes / keywords <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(optional)</span></label>
                       <input value={keywords} onChange={e=>setKeywords(e.target.value)} placeholder="e.g. key themes, angles, or words you want included" style={inp}/>
                     </div>
+
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
                       <div>
                         <label style={lbl}>Tone</label>
@@ -654,6 +580,7 @@ Return ONLY a valid JSON array, nothing else:
                           ))}
                         </div>
                       </div>
+
                       <div style={{display:"flex",flexDirection:"column",gap:18}}>
                         <div>
                           <label style={lbl}>Slides</label>
@@ -688,11 +615,15 @@ Return ONLY a valid JSON array, nothing else:
                         </div>
                       </div>
                     </div>
-                    <button onClick={()=>generate()} style={{width:"100%",padding:"14px",background:A.text,color:A.accentText,borderRadius:10,fontSize:15,fontWeight:800,border:"none",marginTop:4}}>Generate Carousel →</button>
+
+                    <button onClick={()=>generate()} style={{width:"100%",padding:"14px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:15,fontWeight:800,border:`1px solid ${GOLD}33`,marginTop:4,boxShadow:`0 0 0 1px ${GOLD}22`}}>
+                      Generate Carousel →
+                    </button>
                     <p style={{textAlign:"center",color:A.muted,fontSize:11,margin:"-8px 0 0"}}>⌘ + Enter · ~15–25 seconds</p>
                   </div>
                 )}
 
+                {/* BRAND TAB */}
                 {tab==="brand"&&(
                   <div style={{display:"flex",flexDirection:"column",gap:20}}>
                     <div>
@@ -702,7 +633,7 @@ Return ONLY a valid JSON array, nothing else:
                           {profileUrl?<img src={profileUrl} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:A.muted,fontSize:20}}>+</span>}
                         </div>
                         <div onClick={()=>profileRef.current?.click()} style={{flex:1,background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:12,cursor:"pointer",textAlign:"center"}}>
-                          <span style={{color:A.muted,fontSize:13}}>{profileUrl?"Click to change":"Upload square photo"}</span>
+                          <span style={{color:A.muted,fontSize:13}}>{profileUrl?"Click to change photo":"Upload square photo for best results"}</span>
                         </div>
                         <input ref={profileRef} type="file" accept="image/*" onChange={e=>readFile(e,setProfileUrl)} style={{display:"none"}}/>
                       </div>
@@ -724,19 +655,20 @@ Return ONLY a valid JSON array, nothing else:
                     </div>
                     <div>
                       <label style={lbl}>Voice profile <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(sent with every prompt)</span></label>
-                      <p style={{color:A.muted,fontSize:13,margin:"0 0 10px",lineHeight:1.6}}>Describe tone, audience, what to avoid, CTA style. More specific = better output.</p>
+                      <p style={{color:A.muted,fontSize:13,margin:"0 0 10px",lineHeight:1.6}}>Describe your tone, audience, what to avoid, and CTA style. More specific = better output.</p>
                       <textarea value={voiceProfile} onChange={e=>setVoiceProfile(e.target.value)} placeholder="e.g. Write in a direct, honest tone. Speak to people tired of the hype. Short punchy sentences. Never overpromise. CTA is always soft — 'free preview in bio'." rows={5} style={{...inp,resize:"vertical",lineHeight:1.7}}/>
                     </div>
                   </div>
                 )}
 
+                {/* VISUAL TAB */}
                 {tab==="visual"&&(
                   <div style={{display:"flex",flexDirection:"column",gap:20}}>
                     <div>
                       <label style={lbl}>Colour theme</label>
                       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:7}}>
                         {THEMES.map(t=>(
-                          <button key={t.id} onClick={()=>setTheme(t.id)} style={{background:theme===t.id?A.text:A.bg,border:`1.5px solid ${theme===t.id?A.text:A.border}`,borderRadius:10,padding:"10px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+                          <button key={t.id} onClick={()=>setTheme(t.id)} style={{background:theme===t.id?A.text:A.bg,border:`1.5px solid ${theme===t.id?GOLD:A.border}`,borderRadius:10,padding:"10px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
                             <div style={{display:"flex",gap:3}}>
                               <div style={{width:16,height:16,borderRadius:4,background:t.id==="custom"?customBg:t.bg,border:"1px solid rgba(0,0,0,0.1)"}}/>
                               <div style={{width:16,height:16,borderRadius:4,background:t.id==="custom"?customAccent:t.accent}}/>
@@ -756,7 +688,7 @@ Return ONLY a valid JSON array, nothing else:
                       <label style={lbl}>Font</label>
                       <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
                         {FONTS.map(f=>(
-                          <button key={f.id} onClick={()=>setFontId(f.id)} style={{background:fontId===f.id?A.text:A.bg,border:`1.5px solid ${fontId===f.id?A.text:A.border}`,borderRadius:8,padding:"7px 14px"}}>
+                          <button key={f.id} onClick={()=>setFontId(f.id)} style={{background:fontId===f.id?A.text:A.bg,border:`1.5px solid ${fontId===f.id?GOLD:A.border}`,borderRadius:8,padding:"7px 14px"}}>
                             <span style={{fontFamily:`"${f.css}",serif`,fontSize:14,fontWeight:700,color:fontId===f.id?A.accentText:A.text}}>{f.label}</span>
                           </button>
                         ))}
@@ -776,10 +708,10 @@ Return ONLY a valid JSON array, nothing else:
         {/* GENERATING */}
         {view==="generating"&&(
           <div style={{textAlign:"center",padding:"100px 0",animation:"fadeUp 0.3s ease"}}>
-            <div style={{width:44,height:44,borderRadius:"50%",border:`3px solid ${A.border}`,borderTop:`3px solid ${A.text}`,animation:"spin 0.8s linear infinite",margin:"0 auto 22px"}}/>
-            <div style={{fontSize:11,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:8}}>Creating</div>
+            <div style={{width:44,height:44,borderRadius:"50%",border:`3px solid ${A.border}`,borderTop:`3px solid ${GOLD}`,animation:"spin 0.8s linear infinite",margin:"0 auto 22px"}}/>
+            <div style={{fontSize:11,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:GOLD,marginBottom:8}}>Creating</div>
             <div style={{fontSize:22,fontWeight:800,marginBottom:6}}>Writing and designing {slideCount} slides</div>
-            <div style={{color:A.muted,fontSize:14}}>Making layout decisions, writing copy, picking designs…</div>
+            <div style={{color:A.muted,fontSize:14}}>"{lastTopic}" · Making layout decisions, writing copy…</div>
           </div>
         )}
 
@@ -787,23 +719,18 @@ Return ONLY a valid JSON array, nothing else:
         {view==="preview"&&slides.length>0&&(
           <div style={{animation:"fadeUp 0.3s ease"}}>
             <div style={{display:"grid",gridTemplateColumns:"1fr 360px",gap:28,alignItems:"start"}}>
-              {/* Slides */}
               <div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
                   {slides.map((slide,i)=>(
-                    <SlidePreview
-                      key={`${i}-${theme}-${fontId}-${JSON.stringify(slide)}`}
-                      slide={slide} idx={i} total={slides.length}
-                      opts={slideOpts(i)} onClick={()=>setActive(i)} isActive={active===i}
-                    />
+                    <SlidePreview key={`${i}-${theme}-${fontId}-${JSON.stringify(slide)}`} slide={slide} idx={i} total={slides.length} opts={slideOpts(i)} onClick={()=>setActive(i)} isActive={active===i}/>
                   ))}
                 </div>
                 <div style={{display:"flex",gap:8}}>
                   <button onClick={()=>downloadOne(active)} disabled={downloading} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                    {downloading?<><Spin c={A.text}/>Processing...</>:`↓ Slide ${active+1}`}
+                    {downloading?<><Spin c={A.text}/>Processing...</>:downloadDone?`✓ Downloaded`:`↓ Slide ${active+1}`}
                   </button>
-                  <button onClick={downloadAll} disabled={downloadingAll} style={{flex:2,background:A.text,color:A.accentText,padding:"10px",borderRadius:9,fontSize:13,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                    {downloadingAll?<><Spin/>Downloading...</>:`↓ Download All ${slides.length}`}
+                  <button onClick={downloadAll} disabled={downloadingAll} style={{flex:2,background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,padding:"10px",borderRadius:9,fontSize:13,fontWeight:800,border:`1px solid ${GOLD}33`,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                    {downloadingAll?<><Spin/>Downloading...</>:downloadDone?`✓ All Downloaded`:`↓ Download All ${slides.length}`}
                   </button>
                 </div>
               </div>
@@ -812,8 +739,8 @@ Return ONLY a valid JSON array, nothing else:
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
                 <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted}}>Edit Slide {active+1}</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                  {slides.map((_,i)=>(
-                    <button key={i} onClick={()=>setActive(i)} style={{width:27,height:27,borderRadius:6,background:active===i?A.text:A.surface,border:`1.5px solid ${active===i?A.text:A.border}`,color:active===i?A.accentText:A.muted,fontSize:12,fontWeight:700}}>{i+1}</button>
+                  {slides.map((s,i)=>(
+                    <button key={i} onClick={()=>setActive(i)} title={s.tag||`Slide ${i+1}`} style={{width:27,height:27,borderRadius:6,background:active===i?A.text:A.surface,border:`1.5px solid ${active===i?GOLD:A.border}`,color:active===i?A.accentText:A.muted,fontSize:12,fontWeight:700}}>{i+1}</button>
                   ))}
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18,display:"flex",flexDirection:"column",gap:13}}>
@@ -821,8 +748,21 @@ Return ONLY a valid JSON array, nothing else:
                   <div><label style={lbl}>Headline</label><textarea value={slides[active]?.headline||""} onChange={e=>updateSlide("headline",e.target.value)} rows={2} style={{...inp,resize:"vertical",lineHeight:1.5}}/></div>
                   <div><label style={lbl}>Accent word <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(renders in colour)</span></label><input value={slides[active]?.accent_word||""} onChange={e=>updateSlide("accent_word",e.target.value)} placeholder="exact word from headline" style={inp}/></div>
                   <div><label style={lbl}>Body</label><textarea value={slides[active]?.body||""} onChange={e=>updateSlide("body",e.target.value)} rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}/></div>
-                  <div><label style={lbl}>CTA <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(leave blank to hide)</span></label><input value={slides[active]?.cta||""} onChange={e=>updateSlide("cta",e.target.value||null)} placeholder="e.g. Free preview → bio" style={inp}/></div>
-                  <div><label style={lbl}>Layout <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(auto-set by AI)</span></label>
+                  <div>
+                    <label style={lbl}>CTA <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(leave blank to hide)</span></label>
+                    <input
+                      value={slides[active]?.layout==="hero"?(slides[active]?.cta_items?.[0]||""):(slides[active]?.cta||"")}
+                      onChange={e=>{
+                        const v=e.target.value||null;
+                        if(slides[active]?.layout==="hero") updateSlide("cta_items",v?[v]:[]);
+                        else updateSlide("cta",v);
+                      }}
+                      placeholder="e.g. Free preview → bio"
+                      style={inp}
+                    />
+                  </div>
+                  <div>
+                    <label style={lbl}>Layout <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(auto-set by AI)</span></label>
                     <select value={slides[active]?.layout||"standard"} onChange={e=>updateSlide("layout",e.target.value)} style={{...inp,height:42}}>
                       {["standard","statement","split","cards","quote","hero"].map(l=><option key={l} value={l}>{l}</option>)}
                     </select>
@@ -830,7 +770,7 @@ Return ONLY a valid JSON array, nothing else:
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18}}>
                   <label style={lbl}>AI Rewrite</label>
-                  <textarea value={rewritePrompt} onChange={e=>setRewritePrompt(e.target.value)} placeholder={`"Make this punchier"\n"Add a specific stat"\n"Change to a split layout comparing X vs Y"`} rows={3} style={{...inp,resize:"vertical",lineHeight:1.5,marginBottom:10}}/>
+                  <textarea value={rewritePrompt} onChange={e=>setRewritePrompt(e.target.value)} placeholder={`"Make this punchier"\n"Add a specific stat"\n"Change to a split comparing X vs Y"`} rows={3} style={{...inp,resize:"vertical",lineHeight:1.5,marginBottom:10}}/>
                   <button onClick={rewrite} disabled={rewriting||!rewritePrompt.trim()} style={{width:"100%",background:rewritePrompt.trim()?A.text:A.border,color:rewritePrompt.trim()?A.accentText:A.muted,padding:"9px",borderRadius:8,fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
                     {rewriting?<><Spin/>Rewriting...</>:"Rewrite This Slide →"}
                   </button>
@@ -843,7 +783,7 @@ Return ONLY a valid JSON array, nothing else:
 
       <footer style={{borderTop:`1px solid ${A.border}`,padding:"14px 32px",textAlign:"center",marginTop:60}}>
         <span style={{color:A.muted,fontSize:12}}>
-          <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:A.text,fontWeight:700,textDecoration:"none"}}>Build with Tav</a>
+          <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,fontWeight:700,textDecoration:"none"}}>Build with Tav</a>
           {" · "}
           <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:A.muted,textDecoration:"none"}}>buildwithtav.co</a>
         </span>
