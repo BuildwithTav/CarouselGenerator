@@ -10,18 +10,16 @@ const FONTS = [
   { id:"dm",          label:"DM Serif",    headline:"DM Serif Display",   body:"DM Serif Display" },
   { id:"bebas",       label:"Bebas",       headline:"Bebas Neue",         body:"Plus Jakarta Sans" },
   { id:"inter",       label:"Inter",       headline:"Inter",              body:"Inter" },
-  { id:"lato",        label:"Lato",        headline:"Lato",               body:"Lato" },
-  { id:"oswald",      label:"Oswald",      headline:"Oswald",             body:"Lato" },
-  { id:"baskerville", label:"Baskerville", headline:"Libre Baskerville",  body:"Libre Baskerville" },
   { id:"poppins",     label:"Poppins",     headline:"Poppins",            body:"Poppins" },
+  { id:"oswald",      label:"Oswald",      headline:"Oswald",             body:"Lato" },
 ];
 
 async function loadFonts() {
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Montserrat:wght@700;900&family=Cormorant+Garamond:wght@700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=DM+Serif+Display&family=Bebas+Neue&family=Inter:wght@700;800;900&family=Lato:wght@700;900&family=Oswald:wght@600;700&family=Libre+Baskerville:wght@700&family=Poppins:wght@700;800;900&display=swap";
+  link.href = "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Montserrat:wght@700;900&family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=DM+Serif+Display:ital@0;1&family=Bebas+Neue&family=Inter:wght@700;800;900&family=Poppins:wght@700;800;900&family=Oswald:wght@600;700&family=Lato:wght@400;700&display=swap";
   document.head.appendChild(link);
-  await new Promise(r => setTimeout(r, 1400));
+  await new Promise(r => setTimeout(r, 1500));
   await document.fonts.ready;
 }
 
@@ -32,48 +30,41 @@ const APP_THEMES = {
   dark:  { bg:"#080808",surface:"#111",surface2:"#181818",border:"#222",text:"#F0EDE6",muted:"#555",accent:"#C9A84C",accentText:"#000",inputBg:"#111" },
 };
 
-// ─── SLIDE THEMES ────────────────────────────────────────
+// ─── SLIDE COLOUR THEMES ─────────────────────────────────
 
 const SLIDE_THEMES = [
-  { id:"dark-gold", label:"Dark Gold",    preview:["#0A0A0A","#C9A84C"], desc:"Dark with gold accents" },
-  { id:"midnight",  label:"Midnight",     preview:["#0D1117","#7C9EFF"], desc:"Deep blue, cool accents" },
-  { id:"editorial", label:"Editorial",    preview:["#F8F6F2","#1A1A1A"], desc:"High contrast white" },
-  { id:"warm",      label:"Warm Cream",   preview:["#F2EDE4","#8B4513"], desc:"Warm, organic feel" },
-  { id:"slate",     label:"Slate",        preview:["#1C2333","#D4B896"], desc:"Cool dark, warm type" },
-  { id:"noir",      label:"Noir",         preview:["#050505","#FFFFFF"], desc:"Pure black and white" },
-  { id:"forest",    label:"Forest",       preview:["#1A2E1A","#7DBE7D"], desc:"Deep green" },
-  { id:"rose",      label:"Rose",         preview:["#FDF4F4","#C0636A"], desc:"Soft pink lifestyle" },
-  { id:"navy",      label:"Navy",         preview:["#0A1628","#E8C97A"], desc:"Deep navy, gold" },
-  { id:"custom",    label:"Custom",       preview:["#333","#C9A84C"],    desc:"Pick your colours" },
+  { id:"dark-gold", label:"Dark Gold",   preview:["#0A0A0A","#C9A84C"] },
+  { id:"midnight",  label:"Midnight",    preview:["#0D1117","#7C9EFF"] },
+  { id:"editorial", label:"Editorial",   preview:["#F8F6F2","#1A1A1A"] },
+  { id:"warm",      label:"Warm Cream",  preview:["#F2EDE4","#8B4513"] },
+  { id:"noir",      label:"Noir",        preview:["#050505","#FFFFFF"] },
+  { id:"forest",    label:"Forest",      preview:["#1A2E1A","#7DBE7D"] },
+  { id:"navy",      label:"Navy Gold",   preview:["#0A1628","#E8C97A"] },
+  { id:"custom",    label:"Custom",      preview:["#333","#C9A84C"] },
 ];
 
-const FONT_OPTIONS = [
-  { id:"playfair",    sample:"Elegant Serif" },
-  { id:"cormorant",   sample:"Luxury Serif" },
-  { id:"dm",          sample:"Editorial" },
-  { id:"baskerville", sample:"Classic Serif" },
-  { id:"montserrat",  sample:"Clean Sans" },
-  { id:"poppins",     sample:"Social Media" },
-  { id:"jakarta",     sample:"Modern Sans" },
-  { id:"inter",       sample:"Plain & Neutral" },
-  { id:"lato",        sample:"Friendly" },
-  { id:"oswald",      sample:"Condensed" },
-  { id:"bebas",       sample:"Impact" },
-];
+function getColors(theme, customBg, customAccent) {
+  const map = {
+    "dark-gold": { bg:"#0A0A0A", text:"#FFFFFF", accent:"#C9A84C", sub:"rgba(255,255,255,0.72)", dark:true },
+    "midnight":  { bg:"#0D1117", text:"#E8EAF2", accent:"#7C9EFF", sub:"rgba(232,234,242,0.72)", dark:true },
+    "editorial": { bg:"#F8F6F2", text:"#0A0A0A", accent:"#0A0A0A", sub:"rgba(10,10,10,0.62)", dark:false },
+    "warm":      { bg:"#F2EDE4", text:"#2A1F14", accent:"#8B4513", sub:"rgba(42,31,20,0.65)", dark:false },
+    "noir":      { bg:"#050505", text:"#FFFFFF", accent:"#FFFFFF", sub:"rgba(255,255,255,0.68)", dark:true },
+    "forest":    { bg:"#1A2E1A", text:"#E8F5E8", accent:"#7DBE7D", sub:"rgba(232,245,232,0.72)", dark:true },
+    "navy":      { bg:"#0A1628", text:"#F0EAD6", accent:"#E8C97A", sub:"rgba(240,234,214,0.72)", dark:true },
+    "custom":    { bg:customBg||"#0A0A0A", text:"#FFFFFF", accent:customAccent||"#C9A84C", sub:"rgba(255,255,255,0.72)", dark:true },
+  };
+  return map[theme] || map["dark-gold"];
+}
 
-const IMAGE_TREATMENTS = [
-  { id:"gradient", label:"Gradient",  desc:"Full image, dark fade" },
-  { id:"dim",      label:"Dimmed",    desc:"Subtle background" },
-  { id:"split",    label:"Split",     desc:"Image left, text right" },
-  { id:"none",     label:"Text Only", desc:"No image" },
-];
+// ─── BUSINESS TYPES ──────────────────────────────────────
 
 const BUSINESS_TYPES = [
   { id:"creator",    label:"Creator / Influencer" },
   { id:"marketer",   label:"Digital Marketer" },
   { id:"coach",      label:"Coach / Consultant" },
   { id:"restaurant", label:"Restaurant / Café" },
-  { id:"gym",        label:"Gym / Fitness Studio" },
+  { id:"gym",        label:"Gym / Fitness" },
   { id:"retail",     label:"Retail / Shop" },
   { id:"ecommerce",  label:"E-Commerce" },
   { id:"salon",      label:"Salon / Beauty" },
@@ -82,565 +73,539 @@ const BUSINESS_TYPES = [
 ];
 
 const BRAND_QUESTIONS = {
-  creator:    [{key:"what",label:"What do you create content about?",ph:"e.g. Personal finance tips for people in their 30s"},{key:"who",label:"Who is your audience?",ph:"e.g. Young professionals feeling stuck in the rat race"},{key:"unique",label:"What makes your perspective unique?",ph:"e.g. I went from £0 to financial freedom by 35 — I share everything"},{key:"avoid",label:"What do you never want to sound like?",ph:"e.g. Fake guru, overpromising, generic motivation"},{key:"cta",label:"What do you want people to do?",ph:"e.g. Follow me, click my bio link, DM me"}],
+  creator:    [{key:"what",label:"What do you create content about?",ph:"e.g. Personal finance for people in their 30s"},{key:"who",label:"Who is your audience?",ph:"e.g. Young professionals feeling stuck in the rat race"},{key:"unique",label:"What makes you different?",ph:"e.g. I went from £0 to financial freedom by 35 — I share everything"},{key:"avoid",label:"What do you never want to sound like?",ph:"e.g. Fake guru, overpromising, generic motivation"},{key:"cta",label:"What do you want people to do?",ph:"e.g. Follow me, click my bio link"}],
   marketer:   [{key:"what",label:"What service do you offer?",ph:"e.g. I help small businesses get more clients through organic social"},{key:"who",label:"Who do you work with?",ph:"e.g. Small business owners overwhelmed by marketing"},{key:"unique",label:"What makes your approach different?",ph:"e.g. No paid ads — only organic strategies that work"},{key:"avoid",label:"What do you never want to sound like?",ph:"e.g. Salesy, corporate, full of jargon"},{key:"cta",label:"What do you want people to do?",ph:"e.g. Book a free discovery call"}],
-  coach:      [{key:"what",label:"What do you coach or consult on?",ph:"e.g. I help burnt-out professionals find a career they love"},{key:"who",label:"Who are your clients?",ph:"e.g. High-achievers in their 30s-40s who feel unfulfilled"},{key:"unique",label:"What's your method or story?",ph:"e.g. I left a six-figure job at 38 — I know what it takes"},{key:"avoid",label:"What tone do you want to avoid?",ph:"e.g. Preachy, overly spiritual, or overly corporate"},{key:"cta",label:"What's your call to action?",ph:"e.g. Book a free clarity call"}],
-  restaurant: [{key:"what",label:"What's your restaurant called and what do you serve?",ph:"e.g. Tavolino — authentic Italian in central Manchester"},{key:"who",label:"Who are your typical customers?",ph:"e.g. Date night couples, local families, Friday lunch crowd"},{key:"unique",label:"What makes dining with you special?",ph:"e.g. Everything made fresh daily, pasta imported from Naples"},{key:"avoid",label:"What tone doesn't suit your brand?",ph:"e.g. Overly formal, or too casual and cheap-feeling"},{key:"cta",label:"What do you want people to do?",ph:"e.g. Book a table, visit us this weekend"}],
-  gym:        [{key:"what",label:"What's your gym called and what do you offer?",ph:"e.g. Iron House — strength and conditioning in Leeds"},{key:"who",label:"Who are your members?",ph:"e.g. Working adults who want real results without fads"},{key:"unique",label:"What makes your gym different?",ph:"e.g. No mirrors, no egos — hard work and real community"},{key:"avoid",label:"What do you never want to sound like?",ph:"e.g. Bootcamp bro culture, or corporate gym chain"},{key:"cta",label:"What do you want people to do?",ph:"e.g. Book a free trial class"}],
-  retail:     [{key:"what",label:"What do you sell and where?",ph:"e.g. Independent bookshop in Bristol — new and secondhand"},{key:"who",label:"Who are your customers?",ph:"e.g. Local book lovers, students, gift buyers"},{key:"unique",label:"What makes your shop special?",ph:"e.g. Handpicked recommendations, community events"},{key:"avoid",label:"What tone doesn't fit?",ph:"e.g. Overly corporate, or too quirky and niche"},{key:"cta",label:"What do you want people to do?",ph:"e.g. Visit us in store, shop online"}],
-  ecommerce:  [{key:"what",label:"What do you sell?",ph:"e.g. Sustainable activewear made from recycled materials"},{key:"who",label:"Who buys from you?",ph:"e.g. Women 25-40 who care about performance and ethics"},{key:"unique",label:"What makes your products different?",ph:"e.g. Carbon neutral, lasts 3x longer than fast fashion"},{key:"avoid",label:"What do you never want to sound like?",ph:"e.g. Preachy, greenwashing, or overly salesy"},{key:"cta",label:"What do you want people to do?",ph:"e.g. Shop the new collection"}],
-  salon:      [{key:"what",label:"What's your salon and what do you specialise in?",ph:"e.g. Lumière — colour specialists in West London"},{key:"who",label:"Who are your clients?",ph:"e.g. Professional women who want quality and a relaxed experience"},{key:"unique",label:"What makes your salon stand out?",ph:"e.g. Low-damage techniques — healthy hair is our priority"},{key:"avoid",label:"What tone doesn't suit your brand?",ph:"e.g. Too girly and pink, or cold and clinical"},{key:"cta",label:"What do you want people to do?",ph:"e.g. Book online, DM us"}],
-  corporate:  [{key:"what",label:"What does your company do?",ph:"e.g. We help mid-size businesses reduce costs through AI"},{key:"who",label:"Who are your clients?",ph:"e.g. Operations directors at companies with 50-500 employees"},{key:"unique",label:"What's your competitive edge?",ph:"e.g. We implement in 30 days, not 6 months"},{key:"avoid",label:"What tone do you want to avoid?",ph:"e.g. Overly technical, startup-buzzword heavy"},{key:"cta",label:"What do you want prospects to do?",ph:"e.g. Book a discovery call"}],
-  personal:   [{key:"what",label:"What is your page about?",ph:"e.g. Documenting my journey moving from London to rural France"},{key:"who",label:"Who do you want to connect with?",ph:"e.g. People who dream of a slower, simpler life"},{key:"unique",label:"What's your story or angle?",ph:"e.g. I swapped a City salary for a farmhouse renovation"},{key:"avoid",label:"What do you never want to sound like?",ph:"e.g. Showing off, or too perfectly curated"},{key:"cta",label:"What do you want people to do?",ph:"e.g. Follow along, save this"}],
+  coach:      [{key:"what",label:"What do you coach on?",ph:"e.g. I help burnt-out professionals find a career they love"},{key:"who",label:"Who are your clients?",ph:"e.g. High-achievers in their 30s-40s who feel unfulfilled"},{key:"unique",label:"What's your method or story?",ph:"e.g. I left a six-figure job at 38 — I know what it takes"},{key:"avoid",label:"What tone do you want to avoid?",ph:"e.g. Preachy, overly spiritual"},{key:"cta",label:"What's your call to action?",ph:"e.g. Book a free clarity call"}],
+  restaurant: [{key:"what",label:"What's your restaurant and what do you serve?",ph:"e.g. Tavolino — authentic Italian in central Manchester"},{key:"who",label:"Who are your typical customers?",ph:"e.g. Date night couples, local families"},{key:"unique",label:"What makes dining with you special?",ph:"e.g. Everything made fresh daily, pasta imported from Naples"},{key:"avoid",label:"What tone doesn't suit your brand?",ph:"e.g. Overly formal"},{key:"cta",label:"What do you want people to do?",ph:"e.g. Book a table"}],
+  gym:        [{key:"what",label:"What's your gym and what do you offer?",ph:"e.g. Iron House — strength and conditioning in Leeds"},{key:"who",label:"Who are your members?",ph:"e.g. Working adults who want real results"},{key:"unique",label:"What makes your gym different?",ph:"e.g. No mirrors, no egos — hard work and real community"},{key:"avoid",label:"What do you never want to sound like?",ph:"e.g. Bootcamp bro culture"},{key:"cta",label:"What do you want people to do?",ph:"e.g. Book a free trial"}],
+  retail:     [{key:"what",label:"What do you sell?",ph:"e.g. Independent bookshop in Bristol"},{key:"who",label:"Who are your customers?",ph:"e.g. Local book lovers, students"},{key:"unique",label:"What makes your shop special?",ph:"e.g. Handpicked recommendations, community events"},{key:"avoid",label:"What tone doesn't fit?",ph:"e.g. Overly corporate"},{key:"cta",label:"What do you want people to do?",ph:"e.g. Visit us in store"}],
+  ecommerce:  [{key:"what",label:"What do you sell?",ph:"e.g. Sustainable activewear from recycled materials"},{key:"who",label:"Who buys from you?",ph:"e.g. Women 25-40 who care about performance and ethics"},{key:"unique",label:"What makes your products different?",ph:"e.g. Carbon neutral, lasts 3x longer"},{key:"avoid",label:"What do you never want to sound like?",ph:"e.g. Greenwashing, overly salesy"},{key:"cta",label:"What do you want people to do?",ph:"e.g. Shop the new collection"}],
+  salon:      [{key:"what",label:"What's your salon and what do you specialise in?",ph:"e.g. Lumière — colour specialists in West London"},{key:"who",label:"Who are your clients?",ph:"e.g. Professional women who want quality"},{key:"unique",label:"What makes your salon stand out?",ph:"e.g. Low-damage techniques — healthy hair first"},{key:"avoid",label:"What tone doesn't suit?",ph:"e.g. Too girly and pink"},{key:"cta",label:"What do you want people to do?",ph:"e.g. Book online"}],
+  corporate:  [{key:"what",label:"What does your company do?",ph:"e.g. We help businesses reduce costs through AI"},{key:"who",label:"Who are your clients?",ph:"e.g. Operations directors at companies with 50-500 employees"},{key:"unique",label:"What's your edge?",ph:"e.g. We implement in 30 days, not 6 months"},{key:"avoid",label:"What tone to avoid?",ph:"e.g. Overly technical, buzzword heavy"},{key:"cta",label:"What do you want prospects to do?",ph:"e.g. Book a discovery call"}],
+  personal:   [{key:"what",label:"What is your page about?",ph:"e.g. Documenting my move from London to rural France"},{key:"who",label:"Who do you want to connect with?",ph:"e.g. People who dream of a slower life"},{key:"unique",label:"What's your story?",ph:"e.g. I swapped a City salary for a farmhouse renovation"},{key:"avoid",label:"What do you never want to sound like?",ph:"e.g. Showing off"},{key:"cta",label:"What do you want people to do?",ph:"e.g. Follow along"}],
 };
 
-const TONE_OPTIONS = [
-  { id:"ai",            label:"Tav Decides",   desc:"Best tone for your topic" },
-  { id:"real",          label:"Calm & Real",   desc:"Honest, grounded" },
-  { id:"bold",          label:"Bold & Direct", desc:"Punchy, confident" },
-  { id:"educational",   label:"Educational",   desc:"Clear, informative" },
-  { id:"inspirational", label:"Inspirational", desc:"Motivating" },
-  { id:"provocative",   label:"Provocative",   desc:"Pattern-interrupt" },
-];
+const STORAGE_KEY = "bwt_cg_v3";
 
-const HOOK_STYLES = [
-  { id:"ai",        label:"Tav Decides",   desc:"Best hook for your topic" },
-  { id:"stat",      label:"Data-Led",      desc:"Shocking stat or number" },
-  { id:"question",  label:"Question",      desc:"Challenges assumptions" },
-  { id:"statement", label:"Bold Statement",desc:"Strong position" },
-  { id:"story",     label:"Story",         desc:"Opens mid-scene" },
-];
+// ─── CANVAS DRAWING ──────────────────────────────────────
+// Flexible renderer — executes layout decisions made by the AI
 
-const GOALS = [
-  { id:"ai",         label:"Tav Decides" },
-  { id:"grow",       label:"Grow Audience" },
-  { id:"sell",       label:"Drive Sales" },
-  { id:"trust",      label:"Build Trust" },
-  { id:"educate",    label:"Educate" },
-  { id:"engagement", label:"Engagement" },
-];
-
-const STORAGE_KEY = "bwt_cg_v2";
-
-// ─── CANVAS: COLOUR SYSTEM ───────────────────────────────
-
-function getColors(theme, customBg, customAccent) {
-  const map = {
-    "dark-gold": { bg:"#0A0A0A", text:"#F0EDE6", accent:"#C9A84C", sub:"rgba(240,237,230,0.78)", dark:true },
-    "midnight":  { bg:"#0D1117", text:"#E8EAF2", accent:"#7C9EFF", sub:"rgba(232,234,242,0.75)", dark:true },
-    "editorial": { bg:"#F8F6F2", text:"#0A0A0A", accent:"#0A0A0A", sub:"rgba(10,10,10,0.65)", dark:false },
-    "warm":      { bg:"#F2EDE4", text:"#2A1F14", accent:"#8B4513", sub:"rgba(42,31,20,0.68)", dark:false },
-    "slate":     { bg:"#1C2333", text:"#E8D5B0", accent:"#D4B896", sub:"rgba(232,213,176,0.72)", dark:true },
-    "noir":      { bg:"#050505", text:"#FFFFFF", accent:"#FFFFFF", sub:"rgba(255,255,255,0.72)", dark:true },
-    "forest":    { bg:"#1A2E1A", text:"#E8F5E8", accent:"#7DBE7D", sub:"rgba(232,245,232,0.75)", dark:true },
-    "rose":      { bg:"#FDF4F4", text:"#2D1A1A", accent:"#C0636A", sub:"rgba(45,26,26,0.65)", dark:false },
-    "navy":      { bg:"#0A1628", text:"#F0EAD6", accent:"#E8C97A", sub:"rgba(240,234,214,0.75)", dark:true },
-    "custom":    { bg:customBg||"#0A0A0A", text:"#FFFFFF", accent:customAccent||"#C9A84C", sub:"rgba(255,255,255,0.75)", dark:true },
-  };
-  return map[theme] || map["dark-gold"];
-}
-
-// ─── CANVAS: UTILITIES ───────────────────────────────────
-
-function noise(ctx, W, H, a=0.025) {
-  ctx.save(); ctx.globalAlpha=a;
-  for (let i=0;i<9000;i++) {
-    const v=Math.random()>0.5?255:0;
-    ctx.fillStyle=`rgb(${v},${v},${v})`;
-    ctx.fillRect(Math.random()*W,Math.random()*H,1,1);
-  }
-  ctx.restore();
+function getFont(fontId) {
+  return FONTS.find(f=>f.id===fontId)||FONTS[0];
 }
 
 function wrapLines(ctx, text, maxW) {
-  const words=text.split(" "); const lines=[]; let line="";
+  if (!text) return [];
+  const words = text.split(" "); const lines = []; let line = "";
   for (const w of words) {
-    const t=line?line+" "+w:w;
-    if (ctx.measureText(t).width>maxW&&line){lines.push(line);line=w;}else line=t;
+    const t = line ? line+" "+w : w;
+    if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; }
+    else line = t;
   }
-  if(line)lines.push(line); return lines;
+  if (line) lines.push(line);
+  return lines;
 }
 
-function textWithShadow(ctx, text, x, y, color, shadowColor, blur=14, offsetY=2) {
-  ctx.save();
-  ctx.shadowColor=shadowColor; ctx.shadowBlur=blur; ctx.shadowOffsetY=offsetY;
-  ctx.fillStyle=color; ctx.fillText(text,x,y);
-  // Double-draw for stronger shadow
-  ctx.fillText(text,x,y);
+function drawText(ctx, text, x, y, color, shadowDark=true) {
+  if (!text) return;
+  // Manual shadow — works regardless of clip state
+  ctx.fillStyle = shadowDark ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.08)";
+  ctx.fillText(text, x+2, y+2);
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+}
+
+function drawNoise(ctx, W, H, alpha=0.025) {
+  ctx.save(); ctx.globalAlpha = alpha;
+  for (let i=0; i<8000; i++) {
+    const v = Math.random() > 0.5 ? 255 : 0;
+    ctx.fillStyle = `rgb(${v},${v},${v})`;
+    ctx.fillRect(Math.random()*W, Math.random()*H, 1, 1);
+  }
   ctx.restore();
 }
 
-// ─── CANVAS: DESIGN VARIATION SYSTEM ────────────────────
-// Each theme has multiple layout variations — randomised per-generation seed
-
-function getDesignVariant(seed, theme) {
-  const v = seed % 3; // 3 variants per theme
-  return v;
+function drawBrackets(ctx, W, H, color, opacity=0.5) {
+  ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.globalAlpha=opacity;
+  const b=52;
+  [[b,44,44,44,44,b],[W-b,44,W-44,44,W-44,b],[b,H-44,44,H-44,44,H-b],[W-b,H-44,W-44,H-44,W-44,H-b]]
+    .forEach(([x1,y1,x2,y2,x3,y3])=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineTo(x3,y3);ctx.stroke();});
+  ctx.restore();
 }
 
-function drawThemeElements(ctx, W, H, C, theme, variant) {
-  const acc = C.accent;
+function drawProfileBadge(ctx, W, profileImg, name, handle, blueTick, C, HF, BF, badgeY=72) {
+  const avR = 44, avX = 96;
+  const avCY = badgeY + avR;
 
-  if (theme==="dark-gold") {
-    // Always: vignette + noise
-    const vig=ctx.createRadialGradient(W/2,H/2,W*0.2,W/2,H/2,W*0.82);
-    vig.addColorStop(0,"rgba(0,0,0,0)"); vig.addColorStop(1,"rgba(0,0,0,0.55)");
-    ctx.fillStyle=vig; ctx.fillRect(0,0,W,H);
-    noise(ctx,W,H,0.025);
-    if (variant===0) {
-      // Corner brackets — all 4
-      const b=58; ctx.strokeStyle=acc; ctx.lineWidth=2.5;
-      [[b,46,46,46,46,b],[W-b,46,W-46,46,W-46,b],[b,H-46,46,H-46,46,H-b],[W-b,H-46,W-46,H-46,W-46,H-b]]
-        .forEach(([x1,y1,x2,y2,x3,y3])=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineTo(x3,y3);ctx.stroke();});
-    } else if (variant===1) {
-      // Side accent lines
-      ctx.strokeStyle=acc; ctx.lineWidth=1.5; ctx.globalAlpha=0.35;
-      ctx.beginPath(); ctx.moveTo(48,100); ctx.lineTo(48,H-100); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(W-48,100); ctx.lineTo(W-48,H-100); ctx.stroke();
-      ctx.globalAlpha=1;
-      // Top + bottom rules
-      ctx.lineWidth=1; ctx.globalAlpha=0.25;
-      ctx.beginPath(); ctx.moveTo(80,48); ctx.lineTo(W-80,48); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(80,H-48); ctx.lineTo(W-80,H-48); ctx.stroke();
-      ctx.globalAlpha=1;
-    } else {
-      // Diagonal accent line top-right
-      ctx.strokeStyle=acc; ctx.lineWidth=1; ctx.globalAlpha=0.2;
-      ctx.beginPath(); ctx.moveTo(W-200,0); ctx.lineTo(W,200); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(W-300,0); ctx.lineTo(W,300); ctx.stroke();
-      ctx.globalAlpha=1;
-      // Bottom rule
-      ctx.lineWidth=2; ctx.globalAlpha=0.4;
-      ctx.beginPath(); ctx.moveTo(60,H-56); ctx.lineTo(W-60,H-56); ctx.stroke();
-      ctx.globalAlpha=1;
-    }
-    // Always: gold top wash
-    const tg=ctx.createLinearGradient(0,0,0,H*0.35);
-    tg.addColorStop(0,"rgba(201,168,76,0.07)"); tg.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=tg; ctx.fillRect(0,0,W,H*0.35);
-  }
-
-  if (theme==="midnight") {
-    noise(ctx,W,H,0.018);
-    // Blue glow
-    const gl=ctx.createRadialGradient(W*0.72,H*0.15,0,W*0.72,H*0.15,W*0.65);
-    gl.addColorStop(0,"rgba(124,158,255,0.15)"); gl.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=gl; ctx.fillRect(0,0,W,H);
-    // Stars
-    ctx.save(); ctx.globalAlpha=0.6;
-    for(let i=0;i<60;i++){const sx=Math.random()*W,sy=Math.random()*H*0.5,sr=Math.random()*1.5+0.2;ctx.beginPath();ctx.arc(sx,sy,sr,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${Math.random()*0.5+0.2})`;ctx.fill();}
-    ctx.restore();
-    if (variant===1) {
-      // Horizontal lines
-      ctx.strokeStyle=acc; ctx.lineWidth=0.5; ctx.globalAlpha=0.15;
-      for(let y=200;y<H-100;y+=60){ctx.beginPath();ctx.moveTo(60,y);ctx.lineTo(W-60,y);ctx.stroke();}
-      ctx.globalAlpha=1;
-    }
-    const bg2=ctx.createLinearGradient(0,H*0.6,0,H);
-    bg2.addColorStop(0,"rgba(13,17,23,0)"); bg2.addColorStop(1,"rgba(13,17,23,0.7)");
-    ctx.fillStyle=bg2; ctx.fillRect(0,H*0.6,W,H*0.4);
-  }
-
-  if (theme==="editorial") {
-    if (variant===0) {
-      ctx.fillStyle=acc; ctx.fillRect(60,54,120,3);
-      ctx.globalAlpha=0.15; ctx.fillStyle=acc; ctx.fillRect(60,H-54,W-120,1); ctx.globalAlpha=1;
-    } else if (variant===1) {
-      // Full width top bar
-      ctx.fillStyle=acc; ctx.fillRect(0,0,W,8);
-      ctx.globalAlpha=0.12; ctx.fillStyle=acc; ctx.fillRect(0,H-8,W,8); ctx.globalAlpha=1;
-    } else {
-      // Left accent bar
-      ctx.fillStyle=acc; ctx.fillRect(0,0,8,H);
-      ctx.globalAlpha=0.15; ctx.fillRect(W-8,0,8,H); ctx.globalAlpha=1;
-    }
-    // Dot grid — always subtle
-    ctx.save(); ctx.globalAlpha=0.035;
-    for(let x=80;x<W-80;x+=44)for(let y=220;y<H-100;y+=44){ctx.fillStyle="#000";ctx.beginPath();ctx.arc(x,y,1.3,0,Math.PI*2);ctx.fill();}
-    ctx.restore();
-  }
-
-  if (theme==="warm") {
-    noise(ctx,W,H,0.014);
-    const wg=ctx.createLinearGradient(0,0,W,H);
-    wg.addColorStop(0,"rgba(210,160,100,0.08)"); wg.addColorStop(1,"rgba(139,69,19,0.03)");
-    ctx.fillStyle=wg; ctx.fillRect(0,0,W,H);
-    if (variant!==2) {
-      ctx.globalAlpha=0.18; ctx.fillStyle=acc; ctx.fillRect(54,140,2.5,H-280); ctx.globalAlpha=1;
-    }
-    if (variant===2) {
-      ctx.strokeStyle=acc; ctx.lineWidth=1; ctx.globalAlpha=0.2;
-      ctx.beginPath(); ctx.moveTo(60,60); ctx.lineTo(W-60,60); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(60,H-60); ctx.lineTo(W-60,H-60); ctx.stroke();
-      ctx.globalAlpha=1;
-    }
-  }
-
-  if (theme==="slate") {
-    noise(ctx,W,H,0.018);
-    const sg=ctx.createRadialGradient(W*0.15,H*0.1,0,W*0.15,H*0.1,W*0.85);
-    sg.addColorStop(0,"rgba(212,184,150,0.12)"); sg.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=sg; ctx.fillRect(0,0,W,H);
-    const sbg=ctx.createLinearGradient(0,H*0.62,0,H);
-    sbg.addColorStop(0,"rgba(28,35,51,0)"); sbg.addColorStop(1,"rgba(28,35,51,0.65)");
-    ctx.fillStyle=sbg; ctx.fillRect(0,H*0.62,W,H*0.38);
-    if (variant===0) {
-      ctx.strokeStyle=acc; ctx.lineWidth=1.5; ctx.globalAlpha=0.2;
-      ctx.beginPath(); ctx.moveTo(54,100); ctx.lineTo(54,H-100); ctx.stroke();
-      ctx.globalAlpha=1;
-    }
-  }
-
-  if (theme==="noir") {
-    noise(ctx,W,H,0.04);
-    if (variant===0) {
-      ctx.strokeStyle="rgba(255,255,255,0.08)"; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(60,H-88); ctx.lineTo(W-60,H-88); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(60,88); ctx.lineTo(W-60,88); ctx.stroke();
-    } else if (variant===1) {
-      // Grid lines
-      ctx.strokeStyle="rgba(255,255,255,0.04)"; ctx.lineWidth=1;
-      for(let x=150;x<W;x+=150){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-      for(let y=150;y<H;y+=150){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-    } else {
-      // Large circle
-      ctx.strokeStyle="rgba(255,255,255,0.05)"; ctx.lineWidth=2;
-      ctx.beginPath(); ctx.arc(W/2,H/2,W*0.42,0,Math.PI*2); ctx.stroke();
-    }
-  }
-
-  if (theme==="forest") {
-    noise(ctx,W,H,0.02);
-    const fg=ctx.createRadialGradient(W*0.8,H*0.12,0,W*0.8,H*0.12,W*0.72);
-    fg.addColorStop(0,"rgba(125,190,125,0.14)"); fg.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=fg; ctx.fillRect(0,0,W,H);
-    const fbg=ctx.createLinearGradient(0,H*0.58,0,H);
-    fbg.addColorStop(0,"rgba(26,46,26,0)"); fbg.addColorStop(1,"rgba(26,46,26,0.72)");
-    ctx.fillStyle=fbg; ctx.fillRect(0,H*0.58,W,H*0.42);
-    ctx.globalAlpha=0.15; ctx.fillStyle=acc; ctx.fillRect(54,140,2,H-280); ctx.globalAlpha=1;
-  }
-
-  if (theme==="rose") {
-    noise(ctx,W,H,0.01);
-    const rg=ctx.createLinearGradient(0,0,W,H);
-    rg.addColorStop(0,"rgba(220,140,145,0.1)"); rg.addColorStop(1,"rgba(192,99,106,0.04)");
-    ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
-    if (variant===0) {
-      ctx.fillStyle=acc; ctx.globalAlpha=0.35; ctx.fillRect(60,56,100,2.5); ctx.globalAlpha=1;
-    } else if (variant===1) {
-      ctx.fillStyle=acc; ctx.globalAlpha=0.35; ctx.fillRect(0,0,W,6); ctx.globalAlpha=1;
-    }
-    const rbg=ctx.createLinearGradient(0,H*0.72,0,H);
-    rbg.addColorStop(0,"rgba(242,228,228,0)"); rbg.addColorStop(1,"rgba(242,228,228,0.3)");
-    ctx.fillStyle=rbg; ctx.fillRect(0,H*0.72,W,H*0.28);
-  }
-
-  if (theme==="navy") {
-    noise(ctx,W,H,0.022);
-    const ng=ctx.createRadialGradient(W*0.18,H*0.08,0,W*0.18,H*0.08,W*0.8);
-    ng.addColorStop(0,"rgba(232,201,122,0.12)"); ng.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=ng; ctx.fillRect(0,0,W,H);
-    if (variant===0) {
-      const b=56; ctx.strokeStyle=acc; ctx.lineWidth=2; ctx.globalAlpha=0.35;
-      [[b,44,44,44,44,b],[W-b,44,W-44,44,W-44,b],[b,H-44,44,H-44,44,H-b],[W-b,H-44,W-44,H-44,W-44,H-b]]
-        .forEach(([x1,y1,x2,y2,x3,y3])=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineTo(x3,y3);ctx.stroke();});
-      ctx.globalAlpha=1;
-    }
-    const nbg=ctx.createLinearGradient(0,H*0.62,0,H);
-    nbg.addColorStop(0,"rgba(10,22,40,0)"); nbg.addColorStop(1,"rgba(10,22,40,0.65)");
-    ctx.fillStyle=nbg; ctx.fillRect(0,H*0.62,W,H*0.38);
-  }
-
-  if (theme==="custom") {
-    noise(ctx,W,H,0.02);
-    const cvg=ctx.createRadialGradient(W/2,H/2,W*0.25,W/2,H/2,W*0.78);
-    cvg.addColorStop(0,"rgba(0,0,0,0)"); cvg.addColorStop(1,"rgba(0,0,0,0.42)");
-    ctx.fillStyle=cvg; ctx.fillRect(0,0,W,H);
-  }
-}
-
-// ─── MAIN DRAW FUNCTION ───────────────────────────────────
-
-function drawSlide(ctx, W, H, slide, idx, total, opts) {
-  const {theme,fontId,bgImg,treatment,imgOpacity,overlayDark,showNums,
-         profileImg,name,handle,blueTick,websiteUrl,customBg,customAccent,designSeed} = opts;
-  const C = getColors(theme,customBg,customAccent);
-  const F = FONTS.find(f=>f.id===fontId)||FONTS[0];
-  const HF = `"${F.headline}"`;
-  const BF = `"${F.body}"`;
-  const variant = getDesignVariant((designSeed||0)+idx, theme);
-  const SHADOW = C.dark ? "rgba(0,0,0,0.9)" : "rgba(0,0,0,0.18)";
-
-  // ── BASE ──
-  ctx.fillStyle=C.bg; ctx.fillRect(0,0,W,H);
-
-  // ── IMAGE ──
-  if (bgImg && treatment!=="none") {
-    if (treatment==="split") {
-      const iw=Math.floor(W*0.42);
-      ctx.save(); ctx.beginPath(); ctx.rect(0,0,iw,H); ctx.clip();
-      const sc=Math.max(iw/bgImg.width,H/bgImg.height);
-      ctx.drawImage(bgImg,(iw-bgImg.width*sc)/2,(H-bgImg.height*sc)/2,bgImg.width*sc,bgImg.height*sc);
-      ctx.restore(); ctx.save();
-      const eg=ctx.createLinearGradient(iw-180,0,iw,0);
-      eg.addColorStop(0,"rgba(0,0,0,0)"); eg.addColorStop(1,C.bg);
-      ctx.fillStyle=eg; ctx.fillRect(iw-180,0,180,H); ctx.restore();
-    } else {
-      ctx.save();
-      ctx.globalAlpha = treatment==="dim" ? imgOpacity/100 : 1;
-      const sc=Math.max(W/bgImg.width,H/bgImg.height);
-      ctx.drawImage(bgImg,(W-bgImg.width*sc)/2,(H-bgImg.height*sc)/2,bgImg.width*sc,bgImg.height*sc);
-      ctx.restore();
-      if (treatment==="gradient") {
-        // Smart gradient — readable text guaranteed
-        const d = Math.min(overlayDark/100, 0.82);
-        const g = ctx.createLinearGradient(0,0,0,H);
-        g.addColorStop(0,`rgba(0,0,0,${d*0.88})`);
-        g.addColorStop(0.35,`rgba(0,0,0,${d*0.38})`);
-        g.addColorStop(0.65,`rgba(0,0,0,${d*0.38})`);
-        g.addColorStop(1,`rgba(0,0,0,${d*0.92})`);
-        ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-      }
-    }
-  }
-
-  // ── THEME DESIGN ELEMENTS ──
-  drawThemeElements(ctx,W,H,C,theme,variant);
-
-  // ── PROFILE BADGE — moved down and right, layered shadow ──
-  const avR=50, avX=104, avY=132;
-
-  // Layer 1: Multiple concentric circles for visible shadow on any bg
-  const shadowLayers=[[avR+22,"rgba(0,0,0,0.18)"],[avR+16,"rgba(0,0,0,0.22)"],[avR+10,"rgba(0,0,0,0.28)"],[avR+5,"rgba(0,0,0,0.35)"]];
-  shadowLayers.forEach(([r,col])=>{
-    ctx.beginPath(); ctx.arc(avX,avY+5,r,0,Math.PI*2);
-    ctx.fillStyle=col; ctx.fill();
-  });
-
-  // Layer 2: Solid backdrop pill for text area readability
-  const bpY=avY-avR-14, bpH=avR*2+28;
-  ctx.save();
-  ctx.fillStyle=C.dark?"rgba(0,0,0,0.6)":"rgba(255,255,255,0.75)";
+  // Solid pill backdrop — no shadow needed
+  const bpX = avX - avR - 12;
+  const bpW = avR*2 + 260;
+  const bpH = avR*2 + 24;
+  ctx.fillStyle = C.dark ? "rgba(0,0,0,0.65)" : "rgba(255,255,255,0.8)";
   ctx.beginPath();
-  if(ctx.roundRect)ctx.roundRect(avX-avR-14,bpY,avR*2+260,bpH,avR+14);
-  else ctx.rect(avX-avR-14,bpY,avR*2+260,bpH);
+  if(ctx.roundRect) ctx.roundRect(bpX, avCY-avR-12, bpW, bpH, avR+12);
+  else ctx.rect(bpX, avCY-avR-12, bpW, bpH);
   ctx.fill();
-  ctx.restore();
 
-  // Layer 3: Accent ring
-  ctx.beginPath(); ctx.arc(avX,avY,avR+5,0,Math.PI*2);
-  ctx.fillStyle=C.accent; ctx.fill();
+  // Accent ring behind avatar
+  ctx.fillStyle = C.accent;
+  ctx.beginPath(); ctx.arc(avX, avCY, avR+4, 0, Math.PI*2); ctx.fill();
 
-  // Layer 4: Clip and draw avatar
+  // Avatar
   ctx.save();
-  ctx.beginPath(); ctx.arc(avX,avY,avR,0,Math.PI*2); ctx.clip();
+  ctx.beginPath(); ctx.arc(avX, avCY, avR, 0, Math.PI*2); ctx.clip();
   if (profileImg) {
-    const sc=Math.max(avR*2/profileImg.width,avR*2/profileImg.height);
-    ctx.drawImage(profileImg,avX-avR-(profileImg.width*sc-avR*2)/2,avY-avR-(profileImg.height*sc-avR*2)/2,profileImg.width*sc,profileImg.height*sc);
+    const sc = Math.max(avR*2/profileImg.width, avR*2/profileImg.height);
+    ctx.drawImage(profileImg, avX-avR-(profileImg.width*sc-avR*2)/2, avCY-avR-(profileImg.height*sc-avR*2)/2, profileImg.width*sc, profileImg.height*sc);
   } else {
-    ctx.fillStyle=C.dark?"#1c1c1c":"#ebe8e3"; ctx.fillRect(avX-avR,avY-avR,avR*2,avR*2);
-    ctx.fillStyle=C.accent; ctx.font=`bold ${Math.floor(avR*0.7)}px ${HF}`;
-    ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillText((name||"?")[0].toUpperCase(),avX,avY);
-    ctx.textBaseline="alphabetic";
+    ctx.fillStyle = C.dark ? "#1c1c1c" : "#ddd";
+    ctx.fillRect(avX-avR, avCY-avR, avR*2, avR*2);
+    ctx.fillStyle = C.accent;
+    ctx.font = `bold ${Math.floor(avR*0.7)}px ${HF}`;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText((name||"?")[0].toUpperCase(), avX, avCY);
+    ctx.textBaseline = "alphabetic";
   }
   ctx.restore();
 
-  // Avatar ring
-  ctx.strokeStyle=C.accent; ctx.lineWidth=3.5;
-  ctx.beginPath(); ctx.arc(avX,avY,avR+3,0,Math.PI*2); ctx.stroke();
+  // Text
+  const nx = avX + avR + 14;
+  const nameColor = C.dark ? "#FFFFFF" : "#111111";
 
-  // Name text
-  const nx=avX+avR+16;
-  const nameColor=C.dark?"#FFFFFF":"#111111";
-  const handleColor=C.dark?"rgba(255,255,255,0.6)":"rgba(0,0,0,0.5)";
-  ctx.save();
-  ctx.shadowColor=C.dark?"rgba(0,0,0,0.9)":"rgba(0,0,0,0.2)"; ctx.shadowBlur=16; ctx.shadowOffsetY=1;
-  ctx.fillStyle=nameColor; ctx.font=`bold 29px ${HF}`; ctx.textAlign="left"; ctx.textBaseline="alphabetic";
-  ctx.fillText(name||"Your Brand",nx,avY-4);
-  ctx.restore();
+  ctx.font = `bold 28px ${HF}`; ctx.textAlign = "left";
+  ctx.fillStyle = nameColor;
+  ctx.fillText(name||"Your Brand", nx, avCY-4);
 
-  // Blue tick
   if (blueTick) {
-    ctx.save(); ctx.font=`bold 29px ${HF}`;
-    const nw=ctx.measureText(name||"Your Brand").width;
-    ctx.restore();
-    const tx=nx+nw+10, ty=avY-28;
-    ctx.save();
-    ctx.shadowColor="rgba(0,0,0,0.4)"; ctx.shadowBlur=6;
-    ctx.fillStyle="#1D9BF0"; ctx.beginPath(); ctx.arc(tx+13,ty+13,13,0,Math.PI*2); ctx.fill();
-    ctx.restore();
+    const nw = ctx.measureText(name||"Your Brand").width;
+    const tx = nx+nw+8, ty = avCY-26;
+    ctx.fillStyle = "#1D9BF0";
+    ctx.beginPath(); ctx.arc(tx+13,ty+13,13,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle="#fff"; ctx.lineWidth=2.2; ctx.lineCap="round"; ctx.lineJoin="round";
     ctx.beginPath(); ctx.moveTo(tx+5,ty+13); ctx.lineTo(tx+11,ty+19); ctx.lineTo(tx+21,ty+7); ctx.stroke();
   }
 
-  // Handle
-  ctx.save();
-  ctx.shadowColor=C.dark?"rgba(0,0,0,0.8)":"rgba(0,0,0,0.15)"; ctx.shadowBlur=10;
-  ctx.fillStyle=handleColor; ctx.font=`22px ${BF}`; ctx.textAlign="left";
-  ctx.fillText(handle||"@yourhandle",nx,avY+20);
-  ctx.restore();
+  ctx.font = `21px ${BF}`; ctx.textAlign = "left";
+  ctx.fillStyle = C.dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)";
+  ctx.fillText(handle||"@yourhandle", nx, avCY+20);
+}
 
-  // ── SLIDE NUMBER — editorial watermark ──
-  if (showNums) {
-    ctx.save();
-    const numStr=String(idx+1).padStart(2,"0");
-    // Large ghosted watermark
-    ctx.font=`bold ${Math.floor(H*0.26)}px ${HF}`;
-    ctx.fillStyle=C.dark?"rgba(255,255,255,0.035)":"rgba(0,0,0,0.035)";
-    ctx.textAlign="right"; ctx.textBaseline="bottom";
-    ctx.fillText(numStr,W-44,H-36);
-    ctx.textBaseline="alphabetic";
-    // Small readable counter
-    ctx.font=`600 17px ${BF}`;
-    ctx.fillStyle=`${C.accent}AA`;
-    ctx.textAlign="right";
-    ctx.fillText(`${idx+1} / ${total}`,W-64,68);
-    ctx.restore();
-  }
+// ─── LAYOUT RENDERERS ────────────────────────────────────
 
-  // ── CONTENT — smart vertical centering ──
+function renderStandard(ctx, W, H, slide, C, F) {
+  const HF=`"${F.headline}"`, BF=`"${F.body}"`;
   const cx=W/2;
-  const hasWebsite=!!(websiteUrl&&websiteUrl.trim());
-  const hasCTA=!!(slide.cta&&slide.cta.trim());
-  const hasTitle=!!(slide.tag&&slide.tag.trim());
+  const contentTop = 240;
+  const contentBot = slide.cta ? H-160 : H-80;
+  const zone = contentBot - contentTop;
 
-  // Calculate total content block height
-  const titleH = hasTitle ? 52 : 0;
-  const hl=slide.headline||"";
-  const hSize=hl.length>55?52:hl.length>42?62:hl.length>30?72:hl.length>18?84:94;
-  ctx.font=`bold ${hSize}px ${HF}`;
-  const hlLines=wrapLines(ctx,hl,W-160);
-  const hlBlockH=hlLines.length*hSize*1.25;
-  const divH=70;
-  const bodyLineH=52;
-  ctx.font=`31px ${BF}`;
-  const bLines=slide.body?wrapLines(ctx,slide.body,W-210):[];
-  const bodyBlockH=bLines.length*bodyLineH;
-  const totalH=titleH+hlBlockH+divH+bodyBlockH;
-
-  // Zone: below badge, above CTA/footer
-  const topZ=avY+avR+60;
-  const botZ=H-(hasCTA?160:0)-(hasWebsite?60:0)-60;
-  const zoneH=botZ-topZ;
-  const blockTop=topZ+Math.max(0,(zoneH-totalH)/2);
-
-  let curY=blockTop;
-
-  // ── SLIDE TITLE — prominent, designed ──
-  if (hasTitle) {
-    ctx.save();
-    ctx.font=`700 24px ${BF}`;
-    const tw=ctx.measureText(slide.tag.toUpperCase()).width+48;
-    const tpX=cx-tw/2, tpY=curY, tpH=38;
-    // Solid filled pill — accent coloured
-    ctx.fillStyle=C.accent;
+  // Tag
+  let y = contentTop;
+  if (slide.tag) {
+    ctx.font = `700 22px ${BF}`;
+    const tw = ctx.measureText(slide.tag.toUpperCase()).width + 44;
+    ctx.fillStyle = C.accent;
     ctx.beginPath();
-    if(ctx.roundRect)ctx.roundRect(tpX,tpY,tw,tpH,19);
-    else ctx.rect(tpX,tpY,tw,tpH);
+    if(ctx.roundRect) ctx.roundRect(cx-tw/2, y, tw, 36, 18);
+    else ctx.rect(cx-tw/2, y, tw, 36);
     ctx.fill();
-    // Text in contrasting colour
-    ctx.fillStyle=C.dark?"#000000":"#FFFFFF";
-    ctx.textAlign="center"; ctx.textBaseline="alphabetic";
-    ctx.fillText(slide.tag.toUpperCase(),cx,tpY+27);
-    ctx.restore();
-    curY+=titleH+8;
+    ctx.fillStyle = C.dark ? "#000" : "#fff";
+    ctx.textAlign = "center"; ctx.fillText(slide.tag.toUpperCase(), cx, y+25);
+    y += 54;
   }
 
-  // ── HEADLINE ──
-  ctx.font=`bold ${hSize}px ${HF}`;
-  ctx.textAlign="center";
-  let hlY=curY+hSize;
-  for(const line of hlLines) {
-    // Draw shadow manually — 3 offset passes then bright fill
-    ctx.fillStyle=C.dark?"rgba(0,0,0,0.9)":"rgba(0,0,0,0.08)";
-    ctx.fillText(line,cx+2,hlY+3);
-    ctx.fillText(line,cx+2,hlY+3);
-    ctx.fillStyle=C.text;
-    ctx.fillText(line,cx,hlY);
-    ctx.fillText(line,cx,hlY);
-    hlY+=hSize*1.25;
+  // Headline
+  const hl = slide.headline||"";
+  const hSize = hl.length>50?56:hl.length>35?66:hl.length>22?78:90;
+  ctx.font = `bold ${hSize}px ${HF}`;
+  const hlLines = wrapLines(ctx, hl, W-160);
+  let hlY = y + hSize;
+
+  // If accent_word provided, split headline rendering
+  for (const line of hlLines) {
+    if (slide.accent_word && line.includes(slide.accent_word)) {
+      const parts = line.split(slide.accent_word);
+      const p1w = ctx.measureText(parts[0]).width;
+      const acw = ctx.measureText(slide.accent_word).width;
+      const totalW = ctx.measureText(line).width;
+      const startX = cx - totalW/2;
+      drawText(ctx, parts[0], startX, hlY, C.text, C.dark);
+      ctx.fillStyle = C.accent; ctx.fillText(slide.accent_word, startX+p1w, hlY);
+      if(parts[1]) drawText(ctx, parts[1], startX+p1w+acw, hlY, C.text, C.dark);
+    } else {
+      drawText(ctx, line, cx, hlY, C.text, C.dark);
+    }
+    hlY += hSize*1.25;
   }
-  curY=hlY-hSize*1.25+hSize*0.15;
+  y = hlY - hSize*0.1;
 
   // Divider
-  const divY=curY+28;
-  ctx.save();
-  if (theme==="editorial"||theme==="rose") {
-    ctx.strokeStyle=C.accent; ctx.lineWidth=1; ctx.globalAlpha=0.5;
-    ctx.beginPath(); ctx.moveTo(cx-95,divY); ctx.lineTo(cx-8,divY); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx+8,divY); ctx.lineTo(cx+95,divY); ctx.stroke();
-    ctx.globalAlpha=1; ctx.fillStyle=C.accent;
-    ctx.fillRect(cx-7,divY-7,14,14);
-  } else if (theme==="noir") {
-    ctx.strokeStyle=C.accent; ctx.lineWidth=1.5; ctx.globalAlpha=0.4;
-    ctx.beginPath(); ctx.moveTo(cx-82,divY); ctx.lineTo(cx+82,divY); ctx.stroke();
-    ctx.globalAlpha=1; ctx.fillStyle=C.accent;
-    ctx.beginPath(); ctx.arc(cx,divY,5.5,0,Math.PI*2); ctx.fill();
-  } else {
-    ctx.strokeStyle=C.accent; ctx.lineWidth=1.5; ctx.globalAlpha=0.38;
-    ctx.beginPath(); ctx.moveTo(cx-70,divY); ctx.lineTo(cx+70,divY); ctx.stroke();
-    ctx.globalAlpha=0.8; ctx.fillStyle=C.accent;
-    ctx.beginPath(); ctx.arc(cx-78,divY,3.5,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(cx+78,divY,3.5,0,Math.PI*2); ctx.fill();
-    ctx.globalAlpha=1;
-  }
-  ctx.restore();
-  curY=divY+42;
+  ctx.strokeStyle=C.accent; ctx.lineWidth=1.5; ctx.globalAlpha=0.4;
+  ctx.beginPath(); ctx.moveTo(cx-60,y+20); ctx.lineTo(cx+60,y+20); ctx.stroke();
+  // Diamond
+  ctx.globalAlpha=0.8; ctx.fillStyle=C.accent;
+  ctx.save(); ctx.translate(cx,y+20); ctx.rotate(Math.PI/4);
+  ctx.fillRect(-5,-5,10,10); ctx.restore();
+  ctx.globalAlpha=1;
+  y += 52;
 
-  // Body text
-  if (bLines.length>0) {
-    ctx.font=`31px ${BF}`; ctx.textAlign="center";
-    for(const line of bLines) {
-      // Manual shadow
-      ctx.fillStyle=C.dark?"rgba(0,0,0,0.85)":"rgba(0,0,0,0.06)";
-      ctx.fillText(line,cx+1,curY+2);
-      ctx.fillStyle=C.sub;
-      ctx.fillText(line,cx,curY);
-      ctx.fillText(line,cx,curY);
-      curY+=bodyLineH;
+  // Body
+  if (slide.body) {
+    ctx.font = `30px ${BF}`; ctx.textAlign="center";
+    const bLines = wrapLines(ctx, slide.body, W-200);
+    for (const line of bLines) {
+      ctx.fillStyle = C.dark?"rgba(0,0,0,0.7)":"rgba(0,0,0,0.06)";
+      ctx.fillText(line, cx+1, y+2);
+      ctx.fillStyle = C.sub; ctx.fillText(line, cx, y);
+      y += 48;
     }
   }
 
-  // CTA — if this is a CTA slide, make it a full designed CTA treatment
-  if (hasCTA) {
-    const ctaY=H-(hasWebsite?155:105);
-    ctx.save();
-    // Full-width accent bar behind CTA
+  // CTA
+  if (slide.cta) {
+    const ctaY = H-110;
+    ctx.font = `bold 30px ${HF}`; ctx.textAlign="center";
+    const ctaLines = wrapLines(ctx, slide.cta, W-120);
+    const lineH = 44;
+    const totalCtaH = ctaLines.length * lineH;
+    // Background bar
     ctx.fillStyle=C.accent; ctx.globalAlpha=0.12;
-    ctx.fillRect(60,ctaY-48,W-120,64);
+    ctx.fillRect(60, ctaY-50, W-120, totalCtaH+30);
     ctx.globalAlpha=1;
-    // CTA text
-    ctx.font=`bold 33px ${HF}`;
-    // Shadow pass
-    ctx.fillStyle=C.dark?"rgba(0,0,0,0.7)":"rgba(0,0,0,0.12)";
-    ctx.textAlign="center"; ctx.fillText(slide.cta,cx+2,ctaY+2);
-    ctx.fillStyle=C.accent;
-    ctx.fillText(slide.cta,cx,ctaY);
-    ctx.fillText(slide.cta,cx,ctaY);
-    // Arrow indicator line beneath
-    ctx.strokeStyle=C.accent; ctx.lineWidth=1.5; ctx.globalAlpha=0.4;
-    const cw=ctx.measureText(slide.cta).width;
-    ctx.beginPath(); ctx.moveTo(cx-cw/2,ctaY+12); ctx.lineTo(cx+cw/2,ctaY+12); ctx.stroke();
-    ctx.restore();
-  }
-
-  // Website footer
-  if (hasWebsite) {
-    ctx.save();
-    ctx.shadowColor=C.dark?"rgba(0,0,0,0.7)":"rgba(0,0,0,0.12)"; ctx.shadowBlur=8;
-    ctx.fillStyle=C.dark?"rgba(255,255,255,0.32)":"rgba(0,0,0,0.28)";
-    ctx.font=`20px ${BF}`; ctx.textAlign="center";
-    ctx.fillText(websiteUrl.trim(),cx,H-34);
-    ctx.restore();
+    // Border
+    ctx.strokeStyle=C.accent; ctx.lineWidth=1; ctx.globalAlpha=0.3;
+    ctx.strokeRect(60, ctaY-50, W-120, totalCtaH+30);
+    ctx.globalAlpha=1;
+    let cy2 = ctaY - totalCtaH/2 + lineH/2;
+    for (const line of ctaLines) {
+      ctx.fillStyle=C.accent; ctx.fillText(line, cx, cy2);
+      cy2 += lineH;
+    }
   }
 }
 
-// ─── SLIDE CANVAS COMPONENT ───────────────────────────────
+function renderCards(ctx, W, H, slide, C, F) {
+  const HF=`"${F.headline}"`, BF=`"${F.body}"`;
+  const cx=W/2;
+
+  // Tag
+  if (slide.tag) {
+    ctx.font=`700 22px ${BF}`; ctx.textAlign="center";
+    const tw=ctx.measureText(slide.tag.toUpperCase()).width+44;
+    ctx.fillStyle=C.accent;
+    ctx.beginPath(); if(ctx.roundRect)ctx.roundRect(cx-tw/2,80,tw,36,18); else ctx.rect(cx-tw/2,80,tw,36); ctx.fill();
+    ctx.fillStyle=C.dark?"#000":"#fff"; ctx.fillText(slide.tag.toUpperCase(),cx,105);
+  }
+
+  // Headline
+  const hl=slide.headline||"";
+  const hSize=hl.length>40?60:hl.length>25?72:84;
+  ctx.font=`bold ${hSize}px ${HF}`; ctx.textAlign="center";
+  const hlLines=wrapLines(ctx,hl,W-140);
+  let hlY=160+hSize;
+  for(const line of hlLines){
+    if(slide.accent_word&&line.includes(slide.accent_word)){
+      const parts=line.split(slide.accent_word);
+      const tw2=ctx.measureText(line).width;
+      const sx=cx-tw2/2;
+      const p1w=ctx.measureText(parts[0]).width;
+      ctx.fillStyle=C.text; ctx.fillText(parts[0],sx,hlY);
+      ctx.fillStyle=C.accent; ctx.fillText(slide.accent_word,sx+p1w,hlY);
+      if(parts[1]){ctx.fillStyle=C.text;ctx.fillText(parts[1],sx+p1w+ctx.measureText(slide.accent_word).width,hlY);}
+    } else {
+      drawText(ctx,line,cx,hlY,C.text,C.dark);
+    }
+    hlY+=hSize*1.2;
+  }
+
+  // Divider
+  ctx.strokeStyle=C.accent; ctx.lineWidth=1.5; ctx.globalAlpha=0.4;
+  ctx.beginPath(); ctx.moveTo(cx-50,hlY); ctx.lineTo(cx+50,hlY); ctx.stroke();
+  ctx.globalAlpha=1;
+
+  // Cards from items array
+  const items = slide.items || [];
+  const cardPad=20, cardX=70, cardW=W-140;
+  const startY = hlY+36;
+  const cardH = Math.min(100, Math.floor((H-startY-140)/Math.max(items.length,1)));
+
+  items.forEach((item, i) => {
+    const cy=startY+i*(cardH+12);
+    // Card bg
+    ctx.fillStyle=C.dark?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.05)";
+    ctx.beginPath(); if(ctx.roundRect)ctx.roundRect(cardX,cy,cardW,cardH,12); else ctx.rect(cardX,cy,cardW,cardH); ctx.fill();
+    ctx.strokeStyle=C.accent; ctx.lineWidth=0.5; ctx.globalAlpha=0.2;
+    ctx.beginPath(); if(ctx.roundRect)ctx.roundRect(cardX,cy,cardW,cardH,12); else ctx.rect(cardX,cy,cardW,cardH); ctx.stroke();
+    ctx.globalAlpha=1;
+    // Label
+    if(item.label){
+      ctx.font=`bold 24px ${BF}`; ctx.textAlign="left";
+      ctx.fillStyle=C.accent; ctx.fillText(item.label,cardX+cardPad,cy+32);
+    }
+    // Text
+    if(item.text){
+      ctx.font=`22px ${BF}`; ctx.textAlign="left";
+      ctx.fillStyle=C.sub; ctx.fillText(item.text,cardX+cardPad,cy+(item.label?58:40));
+    }
+  });
+}
+
+function renderSplit(ctx, W, H, slide, C, F) {
+  const HF=`"${F.headline}"`, BF=`"${F.body}"`;
+  const items=slide.items||[];
+  const half=W/2;
+
+  if(items.length>=2){
+    // Left panel
+    ctx.fillStyle=C.dark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.04)";
+    ctx.fillRect(0,0,half,H);
+
+    [0,1].forEach(side=>{
+      const item=items[side];
+      const panelX=side===0?0:half;
+      const panelCX=panelX+half/2;
+
+      // Item header
+      if(item.label){
+        ctx.font=`bold 38px ${HF}`; ctx.textAlign="center";
+        ctx.fillStyle=side===0?C.accent:"rgba(255,255,255,0.85)";
+        const llines=wrapLines(ctx,item.label,half-60);
+        let ly=180;
+        llines.forEach(l=>{ctx.fillText(l,panelCX,ly);ly+=48;});
+      }
+      if(item.sub){
+        ctx.font=`26px ${BF}`; ctx.textAlign="center";
+        ctx.fillStyle=C.sub;
+        const slines=wrapLines(ctx,item.sub,half-80);
+        let sy=item.label?260:200;
+        slines.forEach(l=>{ctx.fillText(l,panelCX,sy);sy+=36;});
+      }
+    });
+
+    // VS / divider in center
+    ctx.fillStyle=C.bg;
+    ctx.beginPath(); ctx.arc(half,H/2,48,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle=C.accent; ctx.lineWidth=1.5; ctx.globalAlpha=0.4;
+    ctx.beginPath(); ctx.arc(half,H/2,48,0,Math.PI*2); ctx.stroke();
+    ctx.globalAlpha=1;
+    ctx.font=`bold 32px ${HF}`; ctx.textAlign="center"; ctx.fillStyle=C.accent;
+    ctx.fillText(slide.vs_label||"VS", half, H/2+12);
+  }
+
+  // Headline at bottom
+  const hl=slide.headline||"";
+  ctx.font=`bold 68px ${HF}`; ctx.textAlign="center";
+  const hlLines=wrapLines(ctx,hl,W-120);
+  let hlY=H*0.7;
+  hlLines.forEach(l=>{
+    drawText(ctx,l,W/2,hlY,C.text,C.dark);
+    hlY+=82;
+  });
+
+  if(slide.body){
+    ctx.font=`28px ${BF}`; ctx.textAlign="center"; ctx.fillStyle=C.sub;
+    const bLines=wrapLines(ctx,slide.body,W-160);
+    bLines.forEach(l=>{ctx.fillText(l,W/2,hlY);hlY+=40;});
+  }
+}
+
+function renderIconHero(ctx, W, H, slide, C, F) {
+  const HF=`"${F.headline}"`, BF=`"${F.body}"`;
+  const cx=W/2;
+
+  // Large circle icon area
+  const circleR=130, circleY=260;
+  ctx.strokeStyle=C.accent; ctx.lineWidth=1.5; ctx.globalAlpha=0.3;
+  ctx.beginPath(); ctx.arc(cx,circleY,circleR,0,Math.PI*2); ctx.stroke();
+  ctx.globalAlpha=1;
+  // Glow
+  const glow=ctx.createRadialGradient(cx,circleY,0,cx,circleY,circleR);
+  glow.addColorStop(0,`${C.accent}22`); glow.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(cx,circleY,circleR,0,Math.PI*2); ctx.fill();
+
+  // Icon / symbol
+  if(slide.icon_symbol) {
+    ctx.font=`bold 96px ${HF}`; ctx.textAlign="center"; ctx.fillStyle=C.accent;
+    ctx.fillText(slide.icon_symbol,cx,circleY+32);
+  }
+
+  // Headline
+  const hl=slide.headline||"";
+  const hSize=hl.length>30?68:82;
+  ctx.font=`bold ${hSize}px ${HF}`; ctx.textAlign="center";
+  const hlLines=wrapLines(ctx,hl,W-120);
+  let hlY=circleY+circleR+60;
+  hlLines.forEach(l=>{
+    drawText(ctx,l,cx,hlY,C.text,C.dark);
+    hlY+=hSize*1.22;
+  });
+
+  // Divider
+  ctx.strokeStyle=C.accent; ctx.lineWidth=1.5; ctx.globalAlpha=0.4;
+  ctx.beginPath(); ctx.moveTo(cx-50,hlY+10); ctx.lineTo(cx+50,hlY+10); ctx.stroke();
+  ctx.globalAlpha=1; hlY+=38;
+
+  // Body
+  if(slide.body){
+    ctx.font=`30px ${BF}`; ctx.textAlign="center"; ctx.fillStyle=C.sub;
+    wrapLines(ctx,slide.body,W-180).forEach(l=>{ctx.fillText(l,cx,hlY);hlY+=46;});
+  }
+
+  // CTA boxes
+  if(slide.cta_items&&slide.cta_items.length) {
+    const startY=H-300;
+    slide.cta_items.forEach((item,i)=>{
+      const bx=70, bw=W-140, bh=68, by=startY+i*(bh+14);
+      ctx.fillStyle=i===0?C.accent:`${C.accent}18`;
+      ctx.beginPath(); if(ctx.roundRect)ctx.roundRect(bx,by,bw,bh,34); else ctx.rect(bx,by,bw,bh); ctx.fill();
+      ctx.strokeStyle=C.accent; ctx.lineWidth=1; ctx.globalAlpha=0.3;
+      ctx.beginPath(); if(ctx.roundRect)ctx.roundRect(bx,by,bw,bh,34); else ctx.rect(bx,by,bw,bh); ctx.stroke();
+      ctx.globalAlpha=1;
+      ctx.font=`bold 26px ${HF}`; ctx.textAlign="center";
+      ctx.fillStyle=i===0?(C.dark?"#000":"#fff"):C.accent;
+      ctx.fillText(item,W/2,by+42);
+    });
+  } else if(slide.cta) {
+    const ctaY=H-100;
+    ctx.font=`bold 30px ${HF}`; ctx.textAlign="center";
+    ctx.fillStyle=C.accent; ctx.fillText(slide.cta,cx,ctaY);
+  }
+}
+
+function renderQuote(ctx, W, H, slide, C, F) {
+  const HF=`"${F.headline}"`, BF=`"${F.body}"`;
+  const cx=W/2;
+
+  // Large quote mark
+  ctx.font=`bold 200px ${HF}`; ctx.textAlign="center";
+  ctx.fillStyle=`${C.accent}20`; ctx.fillText('"',cx,H*0.45);
+
+  // Tag
+  if(slide.tag){
+    ctx.font=`700 22px ${BF}`; ctx.textAlign="center";
+    const tw=ctx.measureText(slide.tag.toUpperCase()).width+44;
+    ctx.fillStyle=C.accent;
+    ctx.beginPath(); if(ctx.roundRect)ctx.roundRect(cx-tw/2,100,tw,36,18); else ctx.rect(cx-tw/2,100,tw,36); ctx.fill();
+    ctx.fillStyle=C.dark?"#000":"#fff"; ctx.fillText(slide.tag.toUpperCase(),cx,125);
+  }
+
+  // Headline — bigger, italic optional
+  const hl=slide.headline||"";
+  const hSize=hl.length>40?64:hl.length>25?76:90;
+  ctx.font=`bold ${hSize}px ${HF}`; ctx.textAlign="center";
+  const hlLines=wrapLines(ctx,hl,W-180);
+  let hlY=H*0.38;
+  hlLines.forEach(l=>{drawText(ctx,l,cx,hlY,C.text,C.dark);hlY+=hSize*1.25;});
+
+  // Thin rule
+  ctx.strokeStyle=C.accent; ctx.lineWidth=1; ctx.globalAlpha=0.35;
+  ctx.beginPath(); ctx.moveTo(cx-80,hlY+10); ctx.lineTo(cx+80,hlY+10); ctx.stroke();
+  ctx.globalAlpha=1;
+
+  if(slide.body){
+    ctx.font=`28px ${BF}`; ctx.textAlign="center"; ctx.fillStyle=C.sub;
+    wrapLines(ctx,slide.body,W-200).forEach(l=>{ctx.fillText(l,cx,hlY+52+28);hlY+=36;});
+  }
+  if(slide.cta){
+    ctx.font=`bold 28px ${HF}`; ctx.textAlign="center"; ctx.fillStyle=C.accent;
+    ctx.fillText(slide.cta,cx,H-90);
+  }
+}
+
+// ─── MAIN DRAW ────────────────────────────────────────────
+
+function drawSlide(ctx, W, H, slide, idx, total, opts) {
+  const {theme,fontId,bgImg,treatment,imgOpacity,overlayDark,showNums,
+         profileImg,name,handle,blueTick,websiteUrl,customBg,customAccent} = opts;
+  const C = getColors(theme,customBg,customAccent);
+  const F = getFont(fontId);
+  const HF=`"${F.headline}"`, BF=`"${F.body}"`;
+  const layout = slide.layout || "standard";
+
+  // Base
+  ctx.fillStyle=C.bg; ctx.fillRect(0,0,W,H);
+
+  // Background image
+  if (bgImg && treatment!=="none") {
+    ctx.save();
+    ctx.globalAlpha = treatment==="dim" ? imgOpacity/100 : 1;
+    const sc=Math.max(W/bgImg.width,H/bgImg.height);
+    ctx.drawImage(bgImg,(W-bgImg.width*sc)/2,(H-bgImg.height*sc)/2,bgImg.width*sc,bgImg.height*sc);
+    ctx.restore();
+    if (treatment==="gradient") {
+      const d=Math.min(overlayDark/100,0.8);
+      const g=ctx.createLinearGradient(0,0,0,H);
+      g.addColorStop(0,`rgba(0,0,0,${d*0.9})`); g.addColorStop(0.35,`rgba(0,0,0,${d*0.4})`);
+      g.addColorStop(0.65,`rgba(0,0,0,${d*0.4})`); g.addColorStop(1,`rgba(0,0,0,${d*0.92})`);
+      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    }
+  }
+
+  // Theme elements — noise + brackets always on dark
+  if (C.dark) {
+    drawNoise(ctx,W,H,0.022);
+    drawBrackets(ctx,W,H,C.accent,0.35);
+    // Gold top wash for dark-gold
+    if (theme==="dark-gold"||theme==="navy") {
+      const tg=ctx.createLinearGradient(0,0,0,H*0.35);
+      tg.addColorStop(0,`${C.accent}12`); tg.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.fillStyle=tg; ctx.fillRect(0,0,W,H*0.35);
+    }
+    if (theme==="midnight") {
+      const gl=ctx.createRadialGradient(W*0.75,H*0.15,0,W*0.75,H*0.15,W*0.6);
+      gl.addColorStop(0,"rgba(124,158,255,0.14)"); gl.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.fillStyle=gl; ctx.fillRect(0,0,W,H);
+    }
+    // Bottom fade
+    const bf=ctx.createLinearGradient(0,H*0.65,0,H);
+    bf.addColorStop(0,"rgba(0,0,0,0)"); bf.addColorStop(1,"rgba(0,0,0,0.55)");
+    ctx.fillStyle=bf; ctx.fillRect(0,H*0.65,W,H*0.35);
+  } else {
+    // Light themes — subtle rule + dot grid
+    ctx.fillStyle=C.accent; ctx.fillRect(60,54,100,2.5); ctx.globalAlpha=0.12; ctx.fillStyle=C.accent; ctx.fillRect(60,H-54,W-120,1); ctx.globalAlpha=1;
+    ctx.save(); ctx.globalAlpha=0.03;
+    for(let x=80;x<W-80;x+=44)for(let y=220;y<H-100;y+=44){ctx.fillStyle="#000";ctx.beginPath();ctx.arc(x,y,1.3,0,Math.PI*2);ctx.fill();}
+    ctx.restore();
+  }
+
+  // Profile badge
+  drawProfileBadge(ctx,W,profileImg,name,handle,blueTick,C,HF,BF,72);
+
+  // Slide number watermark
+  if (showNums) {
+    ctx.save();
+    const numStr=String(idx+1).padStart(2,"0");
+    ctx.font=`bold ${Math.floor(H*0.25)}px ${HF}`;
+    ctx.fillStyle=C.dark?"rgba(255,255,255,0.032)":"rgba(0,0,0,0.032)";
+    ctx.textAlign="right"; ctx.textBaseline="bottom";
+    ctx.fillText(numStr,W-40,H-32);
+    ctx.textBaseline="alphabetic"; ctx.textAlign="left";
+    ctx.font=`600 16px ${BF}`; ctx.fillStyle=`${C.accent}99`;
+    ctx.textAlign="right"; ctx.fillText(`${idx+1} / ${total}`,W-62,62);
+    ctx.restore();
+  }
+
+  // Layout render
+  switch(layout) {
+    case "cards": renderCards(ctx,W,H,slide,C,F); break;
+    case "split": renderSplit(ctx,W,H,slide,C,F); break;
+    case "icon-hero": renderIconHero(ctx,W,H,slide,C,F); break;
+    case "quote": renderQuote(ctx,W,H,slide,C,F); break;
+    default: renderStandard(ctx,W,H,slide,C,F);
+  }
+
+  // Brand footer
+  const footerY=H-30;
+  ctx.font=`600 18px ${BF}`; ctx.textAlign="center";
+  ctx.fillStyle=C.dark?"rgba(255,255,255,0.22)":"rgba(0,0,0,0.22)";
+  if(websiteUrl&&websiteUrl.trim()) ctx.fillText(websiteUrl.trim(),W/2,footerY);
+}
+
+// ─── SLIDE CANVAS ─────────────────────────────────────────
 
 function SlideCanvas({slide,idx,total,opts}) {
   const ref=useRef(null);
-  const optsKey=JSON.stringify({...opts,bgImageUrl:opts.bgImageUrl?"[img]":null,profileDataUrl:opts.profileDataUrl?"[img]":null});
+  const key=JSON.stringify({slide,theme:opts.theme,fontId:opts.fontId,showNums:opts.showNums,name:opts.name,handle:opts.handle,blueTick:opts.blueTick,websiteUrl:opts.websiteUrl,ratio:opts.ratio,bgImageUrl:opts.bgImageUrl?"y":"n",profileDataUrl:opts.profileDataUrl?"y":"n",imgOpacity:opts.imgOpacity,overlayDark:opts.overlayDark,customBg:opts.customBg,customAccent:opts.customAccent});
   useEffect(()=>{
     const canvas=ref.current; if(!canvas||!slide)return;
     const isP=opts.ratio==="portrait"; const W=1080,H=isP?1920:1080;
@@ -650,23 +615,20 @@ function SlideCanvas({slide,idx,total,opts}) {
     Promise.all([load(opts.bgImageUrl),load(opts.profileDataUrl)]).then(([bgImg,profileImg])=>{
       drawSlide(ctx,W,H,slide,idx,total,{...opts,bgImg,profileImg});
     });
-  },[slide,idx,total,optsKey]);
+  },[key]);
   const isP=opts.ratio==="portrait";
   return <canvas ref={ref} style={{width:"100%",aspectRatio:isP?"9/16":"1/1",display:"block",borderRadius:6}} />;
 }
 
 // ─── STORAGE ─────────────────────────────────────────────
-
 function loadData(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");}catch{return null;}}
 function saveData(d){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d));}catch{}}
 
 // ─── UI HELPERS ──────────────────────────────────────────
-
 function Spin({c="#1A1A1A"}){return <div style={{width:16,height:16,borderRadius:"50%",border:"2px solid rgba(0,0,0,0.1)",borderTop:`2px solid ${c}`,animation:"spin 0.7s linear infinite",display:"inline-block",flexShrink:0}} />;}
 function Toggle({on,set,T}){return <div onClick={()=>set(!on)} style={{width:42,height:22,borderRadius:11,background:on?T.accent:T.border,position:"relative",cursor:"pointer",flexShrink:0,transition:"background 0.2s"}}><div style={{position:"absolute",top:2,left:on?22:2,width:18,height:18,borderRadius:"50%",background:on?T.accentText:"#999",transition:"left 0.2s"}} /></div>;}
 
 // ─── MAIN APP ─────────────────────────────────────────────
-
 export default function App() {
   const S=loadData();
   const [appTheme,setAppTheme]=useState(S?.appTheme||"light");
@@ -685,25 +647,20 @@ export default function App() {
   const [showWebsite,setShowWebsite]=useState(S?.showWebsite??false);
 
   const [slideTheme,setSlideTheme]=useState(S?.slideTheme||"dark-gold");
-  const [fontId,setFontId]=useState(S?.fontId||"playfair");
+  const [fontId,setFontId]=useState(S?.fontId||"montserrat");
   const [showNums,setShowNums]=useState(S?.showNums??true);
   const [treatment,setTreatment]=useState(S?.treatment||"gradient");
   const [imgOpacity,setImgOpacity]=useState(S?.imgOpacity||30);
-  const [overlayDark,setOverlayDark]=useState(S?.overlayDark||65);
+  const [overlayDark,setOverlayDark]=useState(S?.overlayDark||60);
   const [customBg,setCustomBg]=useState(S?.customBg||"#0A0A0A");
   const [customAccent,setCustomAccent]=useState(S?.customAccent||"#C9A84C");
 
   const [topic,setTopic]=useState("");
   const [keyThemes,setKeyThemes]=useState("");
   const [angle,setAngle]=useState("");
-  const [goal,setGoal]=useState("ai");
-  const [tone,setTone]=useState("ai");
-  const [hookStyle,setHookStyle]=useState("ai");
   const [slideCount,setSlideCount]=useState(7);
-
   const [coverImage,setCoverImage]=useState(null);
   const [imageForAll,setImageForAll]=useState(false);
-  const [designSeed,setDesignSeed]=useState(Math.floor(Math.random()*100));
 
   const [step,setStep]=useState("setup");
   const [tab,setTab]=useState("content");
@@ -715,6 +672,7 @@ export default function App() {
   const [dlAll,setDlAll]=useState(false);
   const [err,setErr]=useState("");
   const [fontsLoaded,setFontsLoaded]=useState(false);
+  const [lastTopic,setLastTopic]=useState("");
 
   const profileRef=useRef(null);
   const coverRef=useRef(null);
@@ -724,17 +682,13 @@ export default function App() {
 
   const handleImg=(e,set)=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>set(ev.target.result);r.readAsDataURL(f);};
 
-  // Retry wrapper — handles cold starts on first generation
   const fetchWithRetry=async(body,retries=2)=>{
     for(let i=0;i<=retries;i++){
-      try {
+      try{
         const res=await fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
         if(!res.ok)throw new Error(`HTTP ${res.status}`);
         return await res.json();
-      } catch(e) {
-        if(i===retries)throw e;
-        await new Promise(r=>setTimeout(r,1200));
-      }
+      }catch(e){if(i===retries)throw e;await new Promise(r=>setTimeout(r,1200));}
     }
   };
 
@@ -743,88 +697,102 @@ export default function App() {
     const bType=BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"brand";
     const questions=BRAND_QUESTIONS[businessType]||BRAND_QUESTIONS.creator;
     const qa=questions.map(q=>`${q.label}\n${brandAnswers[q.key]||"Not provided"}`).join("\n\n");
-    try {
-      const d=await fetchWithRetry({model:"claude-opus-4-7",max_tokens:600,
-        messages:[{role:"user",content:`Write a concise AI voice profile (under 180 words) for a ${bType} carousel generator. Based on:\n\n${qa}\n\nStart "Write in a tone that..." Be specific and practical.`}]});
+    try{
+      const d=await fetchWithRetry({model:"claude-opus-4-7",max_tokens:600,messages:[{role:"user",content:`Write a concise voice profile (under 180 words) for a ${bType} Instagram carousel generator. Based on:\n\n${qa}\n\nStart "Write in a tone that..." Be specific, not generic. Cover tone, audience, what to avoid, CTA style.`}]});
       setVoiceProfile(d.content?.find(b=>b.type==="text")?.text||"");
-    } catch {setVoiceProfile("Write directly and honestly. Short punchy sentences. Speak to real problems. Never overpromise.");}
+    }catch{setVoiceProfile("Write directly and honestly. Short punchy sentences. Speak to real problems. Never overpromise.");}
     setGenVoice(false);
   };
 
-  const generate=async()=>{
-    if(!topic.trim()){setErr("Add a topic first.");return;}
-    setErr(""); setStep("generating");
-    const newSeed=Math.floor(Math.random()*1000);
-    setDesignSeed(newSeed);
+  const buildPrompt=(topicStr)=>{
     const bType=BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"";
-    const isAI=tone==="ai"&&hookStyle==="ai"&&goal==="ai";
-    const tL=tone==="ai"?"choose the single best tone for this specific topic and audience":TONE_OPTIONS.find(t=>t.id===tone)?.label;
-    const hL=hookStyle==="ai"?"choose the single most scroll-stopping hook style for this topic":HOOK_STYLES.find(h=>h.id===hookStyle)?.label;
-    const gL=goal==="ai"?"infer the best goal from the topic and business type":GOALS.find(g=>g.id===goal)?.label;
-    const extras=[bType&&`Business type: ${bType}`,keyThemes&&`Include these themes/words: ${keyThemes}`,angle&&`Angle: ${angle}`].filter(Boolean).join("\n");
+    const extras=[bType&&`Business type: ${bType}`,keyThemes&&`Key themes/words to include: ${keyThemes}`,angle&&`Specific angle: ${angle}`].filter(Boolean).join("\n");
 
-    const prompt=`You are a world-class social media carousel copywriter. You write like a smart friend who knows their subject — not a stats machine, not a motivational poster. Your carousels have an emotional arc, move through ideas, and leave people feeling something.
+    return `You are creating an Instagram carousel — both the content AND the visual design decisions.
+
+Think of yourself as a creative director AND copywriter working together. Each slide should be visually distinct and designed to suit its content.
 
 BRAND VOICE:
-${voiceProfile||"Direct, honest, no filler. Short punchy sentences. Real specific insights. Speak to real problems people feel every day."}
+${voiceProfile||"Direct, honest, real. Short punchy sentences. Speak to genuine problems. No hype, no fluff."}
 
-TOPIC: "${topic}"
+BRIEF:
+Topic: "${topicStr}"
 ${extras}
-GOAL: ${gL}
-TONE: ${tL}
-HOOK APPROACH: ${hL}
+Slides: ${slideCount}
 
-NARRATIVE STRUCTURE — follow this arc across ${slideCount} slides:
-- Slide 1: HOOK — stop the scroll. One specific, provocative opening. Can be a stat, a bold claim, or a scenario that makes them say "that's me".
-- Slides 2-3: REALITY — what's actually happening. Can include 1 verified stat but mix it with human truth. Show you understand their world.
-- Slides 4 to ${slideCount-2}: SHIFT + INSIGHT — where the thinking changes. Mix of: specific advice, a reframe, a perspective shift, a practical tip. NOT more stats. These are the most valuable slides.
-- Slide ${slideCount-1}: BUILD — emotional or logical bridge to the CTA. Make them feel something.
-- Slide ${slideCount}: CTA — soft, specific, non-pushy.
+YOUR JOB:
+1. Write a carousel with a clear narrative arc — hook, reality, insight/shift, advice, CTA
+2. For each slide, decide the best LAYOUT based on the content:
+   - "standard" — headline + body text, works for most slides
+   - "cards" — when you have 3-5 distinct points to list (add "items" array with label+text per item)
+   - "split" — when comparing two things side by side (add "items" array with 2 items, each with label+sub, and add "vs_label")
+   - "icon-hero" — for CTA slides or emotional beats — use a simple symbol in "icon_symbol" field (use a single unicode char like ✦ ◆ ⟡ ★)
+   - "quote" — for a powerful single statement slide
+3. For one or two key words in headlines, add "accent_word" field with that exact word — it will render in gold
+4. Mix layouts — no two consecutive slides should use the same layout
+5. Slide titles (tag): short, editorial, interesting — like a magazine section header. NOT "HOOK" or "CTA".
+6. Headlines: max 8 words, punchy and specific
+7. Body: 1-2 sentences max. Every word earns its place.
+8. Last slide: use icon-hero layout with cta_items array (2 items max — primary and secondary action)
+9. Use web search only if you need to verify a specific stat — max 1-2 stats in the whole carousel
+10. Match language and energy to the business type and voice
 
-ABSOLUTE RULES:
-1. No HTML tags, no <cite> tags, no markdown — clean plain text only
-2. Do not write structural labels like HOOK, CTA, INTRO in visible content
-3. Max 1-2 stats in the whole carousel — not every slide. Balance with insight and advice.
-4. Headlines: max 8 words. Punchy, specific, no vague phrases
-5. Body: 1-2 sentences max. Every word earns its place. No "many people" — be specific.
-6. Slide titles (tag): short editorial label, 1-3 words, like a magazine section header. Make them interesting — not generic.
-7. Use web search to verify any stats before including them
+Return ONLY a valid JSON array. No markdown. No HTML. No cite tags:
+[{
+  "tag": "EDITORIAL LABEL",
+  "headline": "punchy headline",
+  "body": "1-2 sentences",
+  "layout": "standard|cards|split|icon-hero|quote",
+  "accent_word": "optional single word from headline",
+  "items": [],
+  "vs_label": "VS",
+  "icon_symbol": "✦",
+  "cta_items": [],
+  "cta": null
+}]
 
-Return ONLY a valid JSON array. No preamble. No markdown:
-[{"tag":"EDITORIAL LABEL","headline":"punchy specific headline","body":"1-2 tight sentences","cta":null}]
+Only the last slide needs cta or cta_items. All others have cta as null.`;
+  };
 
-Only the last slide should have a cta string. All others must have cta as null.`;
+  const sanitize=s=>({
+    ...s,
+    tag:(s.tag||"").replace(/<[^>]+>/g,"").trim(),
+    headline:(s.headline||"").replace(/<[^>]+>/g,"").trim(),
+    body:(s.body||"").replace(/<[^>]+>/g,"").trim(),
+    cta:(s.cta||"").replace(/<[^>]+>/g,"").trim()||null,
+  });
 
-    try {
-      const d=await fetchWithRetry({model:"claude-opus-4-7",max_tokens:2000,
+  const generate=async(topicOverride)=>{
+    const t=topicOverride||topic;
+    if(!t.trim()){setErr("Add a topic first.");return;}
+    setErr(""); setStep("generating"); setLastTopic(t);
+    try{
+      const d=await fetchWithRetry({model:"claude-opus-4-7",max_tokens:3000,
         tools:[{type:"web_search_20250305",name:"web_search"}],
-        messages:[{role:"user",content:prompt}]});
+        messages:[{role:"user",content:buildPrompt(t)}]});
       const raw=d.content?.find(b=>b.type==="text")?.text||"";
       const clean=raw.replace(/<cite[^>]*>/g,"").replace(/<\/cite>/g,"").replace(/<[^>]+>/g,"");
       const m=clean.match(/\[[\s\S]*\]/);
       if(!m)throw new Error("no json");
       const parsed=JSON.parse(m[0]);
-      const sanitize=s=>({
-        ...s,
-        tag:(s.tag||"").replace(/<[^>]+>/g,"").trim(),
-        headline:(s.headline||"").replace(/<[^>]+>/g,"").trim(),
-        body:(s.body||"").replace(/<[^>]+>/g,"").trim(),
-        cta:(s.cta||"").replace(/<[^>]+>/g,"").trim()||null,
-      });
       setEditing(parsed.map(sanitize)); setActive(0); setStep("preview");
-    } catch {setErr("Generation failed. Please try again.");setStep("setup");}
+    }catch{setErr("Generation failed. Please try again.");setStep("setup");}
+  };
+
+  const regenerate=async()=>{
+    await generate(lastTopic||topic);
   };
 
   const regenSlide=async()=>{
     if(!slidePrompt.trim())return; setRegenLoading(true);
     const cur=editing[active];
-    try {
-      const d=await fetchWithRetry({model:"claude-opus-4-7",max_tokens:500,
-        messages:[{role:"user",content:`Rewrite this carousel slide: "${slidePrompt}"\n\nCurrent:\n${JSON.stringify(cur)}\n\nVoice: ${voiceProfile||"Direct, honest, specific."}\n\nReturn ONLY JSON {tag,headline,body,cta?}. No HTML, no cite tags, no markdown.`}]});
+    try{
+      const d=await fetchWithRetry({model:"claude-opus-4-7",max_tokens:600,
+        messages:[{role:"user",content:`Rewrite this carousel slide following this instruction: "${slidePrompt}"\n\nCurrent slide:\n${JSON.stringify(cur,null,2)}\n\nBrand voice: ${voiceProfile||"Direct, honest, specific."}\n\nReturn ONLY a JSON object with the same structure. No HTML, no cite tags, no markdown.`}]});
       const raw=(d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
       const m=raw.match(/\{[\s\S]*\}/);
-      if(m){const u=JSON.parse(m[0]);const n=[...editing];n[active]={...n[active],...u,cta:u.cta||null};setEditing(n);setSlidePrompt("");}
-    } catch {}
+      if(m){const u=JSON.parse(m[0]);const n=[...editing];n[active]={...sanitize(u)};setEditing(n);setSlidePrompt("");}
+    }catch{}
     setRegenLoading(false);
   };
 
@@ -837,13 +805,12 @@ Only the last slide should have a cta string. All others must have cta as null.`
     bgImageUrl:imageForAll?coverImage:(i===0?coverImage:null),
     treatment,imgOpacity,overlayDark,showNums,
     profileDataUrl,name:displayName,handle,blueTick,
-    websiteUrl:showWebsite?websiteUrl:"",ratio,customBg,customAccent,designSeed,
-  }),[slideTheme,fontId,coverImage,imageForAll,treatment,imgOpacity,overlayDark,showNums,profileDataUrl,displayName,handle,blueTick,websiteUrl,showWebsite,ratio,customBg,customAccent,designSeed]);
+    websiteUrl:showWebsite?websiteUrl:"",ratio,customBg,customAccent,
+  }),[slideTheme,fontId,coverImage,imageForAll,treatment,imgOpacity,overlayDark,showNums,profileDataUrl,displayName,handle,blueTick,websiteUrl,showWebsite,ratio,customBg,customAccent]);
 
-  // Styles
   const inp={width:"100%",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:8,padding:"11px 14px",color:T.text,fontSize:14,fontFamily:"inherit"};
   const lbl={display:"block",color:T.muted,fontSize:10,letterSpacing:2.5,marginBottom:6,textTransform:"uppercase",fontWeight:700};
-  const chip=(on,sm)=>({background:on?`${T.accent}14`:T.surface2,border:`1px solid ${on?T.accent:T.border}`,borderRadius:7,padding:sm?"7px 11px":"10px 12px",cursor:"pointer",textAlign:"left",color:T.text,fontFamily:"inherit",transition:"all 0.14s"});
+  const chip=(on)=>({background:on?`${T.accent}14`:T.surface2,border:`1px solid ${on?T.accent:T.border}`,borderRadius:7,padding:"9px 12px",cursor:"pointer",textAlign:"left",color:T.text,fontFamily:"inherit",transition:"all 0.14s"});
   const questions=BRAND_QUESTIONS[businessType]||null;
 
   return (
@@ -863,12 +830,17 @@ Only the last slide should have a cta string. All others must have cta as null.`
       {/* HEADER */}
       <div style={{borderBottom:`1px solid ${T.border}`,padding:"14px 28px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,background:`${T.bg}F4`,backdropFilter:"blur(16px)",zIndex:100}}>
         <div style={{display:"flex",alignItems:"baseline",gap:10}}>
-          <span style={{fontSize:14,fontWeight:800,color:T.accent,letterSpacing:-0.3}}>Build with Tav</span>
+          <span style={{fontSize:14,fontWeight:800,color:T.accent}}>Build with Tav</span>
           <span style={{color:T.border}}>|</span>
           <span style={{fontSize:13,fontWeight:600,color:T.muted}}>Carousel Generator</span>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          {step==="preview"&&<button onClick={()=>{setStep("setup");setEditing([]);}} style={{background:"transparent",border:`1px solid ${T.border}`,color:T.muted,padding:"6px 13px",borderRadius:6,fontSize:12,fontWeight:600}}>← New</button>}
+          {step==="preview"&&(
+            <>
+              <button onClick={regenerate} style={{background:"transparent",border:`1px solid ${T.border}`,color:T.muted,padding:"6px 13px",borderRadius:6,fontSize:12,fontWeight:600}}>↺ Regenerate</button>
+              <button onClick={()=>{setStep("setup");setEditing([]);}} style={{background:"transparent",border:`1px solid ${T.border}`,color:T.muted,padding:"6px 13px",borderRadius:6,fontSize:12,fontWeight:600}}>← New</button>
+            </>
+          )}
           <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);window.location.reload();}} style={{background:"transparent",border:`1px solid ${T.border}`,color:T.muted,padding:"6px 13px",borderRadius:6,fontSize:12,fontWeight:600}}>Switch Brand</button>
           <div style={{display:"flex",alignItems:"center",gap:6,paddingLeft:10,borderLeft:`1px solid ${T.border}`}}>
             <span style={{fontSize:13,color:T.muted}}>☀</span>
@@ -891,7 +863,6 @@ Only the last slide should have a cta string. All others must have cta as null.`
               ))}
             </div>
 
-            {/* CONTENT TAB */}
             {tab==="content"&&(
               <div style={{display:"flex",flexDirection:"column",gap:20}}>
                 <div>
@@ -904,97 +875,29 @@ Only the last slide should have a cta string. All others must have cta as null.`
                     ))}
                   </div>
                 </div>
-
                 <div>
                   <label style={lbl}>Topic *</label>
-                  <input value={topic} onChange={e=>setTopic(e.target.value)} placeholder={
-                    businessType==="restaurant"?"e.g. 5 reasons our Sunday roast sells out every week":
-                    businessType==="gym"?"e.g. Why most people quit the gym within 6 weeks":
-                    businessType==="coach"?"e.g. The real reason high achievers still feel empty":
-                    businessType==="marketer"?"e.g. Why most brands waste 80% of their content budget":
-                    businessType==="creator"?"e.g. Why most creators never make money from their content":
-                    businessType==="retail"?"e.g. 5 things our best-selling product does differently":
-                    businessType==="ecommerce"?"e.g. Why customers keep coming back (it's not price)":
-                    businessType==="salon"?"e.g. The biggest hair mistakes we see every single week":
-                    businessType==="corporate"?"e.g. Why most digital transformations fail in year one":
-                    businessType==="personal"?"e.g. What I gave up to finally start living on my terms":
-                    "e.g. Why most businesses fail on social media in year one"
-                  } style={{...inp,fontSize:15,padding:"13px 15px"}} />
+                  <input value={topic} onChange={e=>setTopic(e.target.value)}
+                    placeholder={businessType==="restaurant"?"e.g. 5 reasons our Sunday roast sells out every week":businessType==="gym"?"e.g. Why most people quit the gym within 6 weeks":businessType==="coach"?"e.g. The real reason high achievers still feel empty":businessType==="creator"?"e.g. Why most creators never make money from their content":"e.g. Why most businesses fail on social media in year one"}
+                    style={{...inp,fontSize:15,padding:"13px 15px"}} />
                 </div>
-
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                   <div>
                     <label style={lbl}>Key themes / words <span style={{letterSpacing:0,fontSize:9,fontWeight:500}}>(optional)</span></label>
-                    <input value={keyThemes} onChange={e=>setKeyThemes(e.target.value)} placeholder={
-                      businessType==="restaurant"?"e.g. seasonal, locally sourced, Sunday roast":
-                      businessType==="gym"?"e.g. strength, real results, community":
-                      businessType==="coach"?"e.g. burnout, career change, high performance":
-                      businessType==="marketer"?"e.g. organic growth, ROI, content strategy":
-                      businessType==="creator"?"e.g. monetisation, audience growth, niche":
-                      businessType==="retail"?"e.g. new arrivals, handmade, local":
-                      businessType==="ecommerce"?"e.g. new collection, sustainability, delivery":
-                      businessType==="salon"?"e.g. balayage, colour correction, healthy hair":
-                      businessType==="corporate"?"e.g. efficiency, AI, cost reduction":
-                      businessType==="personal"?"e.g. lifestyle, mindset, slow living":
-                      "e.g. 2026 stats, UK market, cost of living"
-                    } style={inp} />
+                    <input value={keyThemes} onChange={e=>setKeyThemes(e.target.value)} placeholder={businessType==="restaurant"?"e.g. seasonal, locally sourced":businessType==="gym"?"e.g. strength, community, results":businessType==="coach"?"e.g. burnout, career change":"e.g. 2026, UK market, real examples"} style={inp} />
                   </div>
                   <div>
                     <label style={lbl}>Specific angle <span style={{letterSpacing:0,fontSize:9,fontWeight:500}}>(optional)</span></label>
-                    <input value={angle} onChange={e=>setAngle(e.target.value)} placeholder={
-                      businessType==="restaurant"?"e.g. focus on the story behind the dish":
-                      businessType==="gym"?"e.g. keep it real — no transformation promises":
-                      businessType==="coach"?"e.g. lean into the emotional side, not strategy":
-                      businessType==="marketer"?"e.g. make it data-led, back every claim with a number":
-                      businessType==="creator"?"e.g. talk from personal experience, not theory":
-                      businessType==="retail"?"e.g. focus on the people behind the product":
-                      businessType==="ecommerce"?"e.g. lead with the problem the product solves":
-                      businessType==="salon"?"e.g. position as expert advice, not a sales pitch":
-                      businessType==="corporate"?"e.g. jargon-free, speak to the decision maker":
-                      businessType==="personal"?"e.g. be vulnerable — share the hard parts":
-                      "e.g. focus on the emotional side, not just tactics"
-                    } style={inp} />
+                    <input value={angle} onChange={e=>setAngle(e.target.value)} placeholder={businessType==="restaurant"?"e.g. focus on the story, not just the food":businessType==="coach"?"e.g. lean into the emotional side":"e.g. focus on the human side, not just tactics"} style={inp} />
                   </div>
                 </div>
-
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}>
-                  <div>
-                    <label style={lbl}>Goal</label>
-                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                      {GOALS.map(g=><button key={g.id} onClick={()=>setGoal(g.id)} style={{...chip(goal===g.id,true),fontSize:12,fontWeight:goal===g.id?700:500,color:goal===g.id?T.accent:T.muted}}>{g.label}</button>)}
-                    </div>
-                  </div>
-                  <div>
-                    <label style={lbl}>Tone</label>
-                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                      {TONE_OPTIONS.map(t=>(
-                        <button key={t.id} onClick={()=>setTone(t.id)} style={{...chip(tone===t.id,true),textAlign:"left"}}>
-                          <div style={{fontSize:12,fontWeight:700,color:tone===t.id?T.accent:T.text}}>{t.label}</div>
-                          <div style={{fontSize:10,color:T.muted,marginTop:1}}>{t.desc}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label style={lbl}>Hook Style</label>
-                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                      {HOOK_STYLES.map(h=>(
-                        <button key={h.id} onClick={()=>setHookStyle(h.id)} style={{...chip(hookStyle===h.id,true),textAlign:"left"}}>
-                          <div style={{fontSize:12,fontWeight:700,color:hookStyle===h.id?T.accent:T.text}}>{h.label}</div>
-                          <div style={{fontSize:10,color:T.muted,marginTop:1}}>{h.desc}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
                 <div style={{display:"flex",alignItems:"flex-start",gap:20}}>
                   <div>
                     <label style={lbl}>Slides</label>
                     <div style={{display:"flex",alignItems:"center",gap:10}}>
                       <button onClick={()=>setSlideCount(Math.max(3,slideCount-1))} style={{width:32,height:32,borderRadius:6,background:T.surface2,border:`1px solid ${T.border}`,color:T.text,fontSize:18,fontWeight:700}}>−</button>
                       <span style={{fontSize:24,fontWeight:800,color:T.accent,minWidth:24,textAlign:"center"}}>{slideCount}</span>
-                      <button onClick={()=>setSlideCount(Math.min(15,slideCount+1))} style={{width:32,height:32,borderRadius:6,background:T.surface2,border:`1px solid ${T.border}`,color:T.text,fontSize:18,fontWeight:700}}>+</button>
+                      <button onClick={()=>setSlideCount(Math.min(12,slideCount+1))} style={{width:32,height:32,borderRadius:6,background:T.surface2,border:`1px solid ${T.border}`,color:T.text,fontSize:18,fontWeight:700}}>+</button>
                     </div>
                   </div>
                   <div style={{flex:1}}>
@@ -1011,28 +914,25 @@ Only the last slide should have a cta string. All others must have cta as null.`
                     )}
                   </div>
                 </div>
-
                 {err&&<div style={{color:"#D94F4F",fontSize:13,padding:"10px 14px",background:"rgba(217,79,79,0.08)",borderRadius:8,border:"1px solid rgba(217,79,79,0.2)",fontWeight:500}}>{err}</div>}
-
-                <button onClick={generate} disabled={!topic.trim()} style={{background:topic.trim()?T.accent:T.surface2,color:topic.trim()?T.accentText:T.muted,border:"none",borderRadius:10,padding:"14px 40px",fontSize:15,fontWeight:800,width:"100%",letterSpacing:0.3}}>
+                <button onClick={()=>generate()} disabled={!topic.trim()} style={{background:topic.trim()?T.accent:T.surface2,color:topic.trim()?T.accentText:T.muted,border:"none",borderRadius:10,padding:"14px 40px",fontSize:15,fontWeight:800,width:"100%"}}>
                   Generate Carousel →
                 </button>
               </div>
             )}
 
-            {/* VISUAL TAB */}
             {tab==="visual"&&(
               <div style={{display:"flex",flexDirection:"column",gap:22}}>
                 <div>
-                  <label style={lbl}>Slide Theme</label>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:7}}>
+                  <label style={lbl}>Colour Theme</label>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
                     {SLIDE_THEMES.map(st=>(
-                      <button key={st.id} onClick={()=>setSlideTheme(st.id)} style={{...chip(slideTheme===st.id),display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:"10px 8px",textAlign:"center"}}>
-                        <div style={{display:"flex",gap:3}}>
+                      <button key={st.id} onClick={()=>setSlideTheme(st.id)} style={{...chip(slideTheme===st.id),display:"flex",alignItems:"center",gap:8,padding:"10px 12px"}}>
+                        <div style={{display:"flex",gap:3,flexShrink:0}}>
                           <div style={{width:14,height:14,borderRadius:3,background:st.id==="custom"?customBg:st.preview[0],border:"1px solid rgba(0,0,0,0.15)"}} />
                           <div style={{width:14,height:14,borderRadius:3,background:st.id==="custom"?customAccent:st.preview[1]}} />
                         </div>
-                        <div style={{fontSize:11,fontWeight:700,color:slideTheme===st.id?T.accent:T.text,lineHeight:1.2}}>{st.label}</div>
+                        <span style={{fontSize:11,fontWeight:700,color:slideTheme===st.id?T.accent:T.text}}>{st.label}</span>
                       </button>
                     ))}
                   </div>
@@ -1055,52 +955,45 @@ Only the last slide should have a cta string. All others must have cta as null.`
                     </div>
                   )}
                 </div>
-
                 <div>
                   <label style={lbl}>Font</label>
                   <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                    {FONT_OPTIONS.map(f=>(
-                      <button key={f.id} onClick={()=>setFontId(f.id)} style={{background:fontId===f.id?`${T.accent}14`:T.surface2,border:`1px solid ${fontId===f.id?T.accent:T.border}`,borderRadius:6,padding:"6px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:7,transition:"all 0.14s"}}>
-                        <span style={{fontFamily:`"${FONTS.find(x=>x.id===f.id)?.headline}",serif`,fontSize:13,fontWeight:700,color:fontId===f.id?T.accent:T.text}}>{f.id==="playfair"?"Playfair":f.id==="cormorant"?"Cormorant":f.id==="dm"?"DM Serif":f.id==="baskerville"?"Baskerville":f.id==="montserrat"?"Montserrat":f.id==="poppins"?"Poppins":f.id==="jakarta"?"Jakarta":f.id==="inter"?"Inter":f.id==="lato"?"Lato":f.id==="oswald"?"Oswald":"Bebas"}</span>
-                        <span style={{fontSize:10,color:T.muted}}>{f.sample}</span>
+                    {FONTS.map(f=>(
+                      <button key={f.id} onClick={()=>setFontId(f.id)} style={{background:fontId===f.id?`${T.accent}14`:T.surface2,border:`1px solid ${fontId===f.id?T.accent:T.border}`,borderRadius:6,padding:"6px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+                        <span style={{fontFamily:`"${f.headline}",serif`,fontSize:13,fontWeight:700,color:fontId===f.id?T.accent:T.text}}>{f.label}</span>
                       </button>
                     ))}
                   </div>
                 </div>
-
                 <div>
                   <label style={lbl}>Image Treatment</label>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-                    {IMAGE_TREATMENTS.map(it=>(
-                      <button key={it.id} onClick={()=>setTreatment(it.id)} style={{...chip(treatment===it.id),textAlign:"center",padding:"10px 8px"}}>
-                        <div style={{fontSize:12,fontWeight:700,color:treatment===it.id?T.accent:T.text,marginBottom:2}}>{it.label}</div>
-                        <div style={{fontSize:10,color:T.muted,lineHeight:1.3}}>{it.desc}</div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+                    {[["gradient","Gradient Overlay"],["dim","Dimmed"],["none","Text Only"]].map(([id,label])=>(
+                      <button key={id} onClick={()=>setTreatment(id)} style={{...chip(treatment===id),textAlign:"center",padding:"10px"}}>
+                        <div style={{fontSize:12,fontWeight:700,color:treatment===id?T.accent:T.text}}>{label}</div>
                       </button>
                     ))}
                   </div>
                 </div>
-
-                {treatment==="dim"&&<div><label style={lbl}>Image opacity — {imgOpacity}%</label><input type="range" min={5} max={55} value={imgOpacity} onChange={e=>setImgOpacity(+e.target.value)} /></div>}
-                {treatment==="gradient"&&<div><label style={lbl}>Overlay darkness — {overlayDark}%</label><input type="range" min={20} max={80} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} /></div>}
-
+                {treatment==="dim"&&<div><label style={lbl}>Opacity — {imgOpacity}%</label><input type="range" min={5} max={55} value={imgOpacity} onChange={e=>setImgOpacity(+e.target.value)} /></div>}
+                {treatment==="gradient"&&<div><label style={lbl}>Overlay — {overlayDark}%</label><input type="range" min={20} max={80} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} /></div>}
                 <div onClick={()=>setShowNums(!showNums)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:T.surface2,border:`1px solid ${T.border}`,borderRadius:8,padding:"11px 14px",cursor:"pointer"}}>
-                  <div><div style={{fontWeight:700,fontSize:13}}>Slide Numbers</div><div style={{color:T.muted,fontSize:11,marginTop:2}}>Show editorial watermark numbers on each slide</div></div>
+                  <div><div style={{fontWeight:700,fontSize:13}}>Slide Numbers</div><div style={{color:T.muted,fontSize:11,marginTop:2}}>Editorial watermark numbers on each slide</div></div>
                   <Toggle on={showNums} set={setShowNums} T={T} />
                 </div>
               </div>
             )}
 
-            {/* IDENTITY TAB */}
             {tab==="identity"&&(
               <div style={{display:"flex",flexDirection:"column",gap:18}}>
                 {!businessType?(
                   <div style={{textAlign:"center",padding:"40px 0",color:T.muted}}>
                     <div style={{fontSize:15,fontWeight:600,marginBottom:8}}>Select your business type first</div>
-                    <div style={{fontSize:13}}>Go to Content tab → choose what you are</div>
+                    <div style={{fontSize:13}}>Go to Content tab and choose what you are</div>
                   </div>
                 ):(
                   <>
-                    <div style={{color:T.muted,fontSize:13,lineHeight:1.7}}>Answer these and we'll build your AI voice profile — what the AI reads before writing every slide.</div>
+                    <div style={{color:T.muted,fontSize:13,lineHeight:1.7}}>Answer these questions and we'll build your AI voice profile — what gets sent with every carousel prompt.</div>
                     {questions&&questions.map(q=>(
                       <div key={q.key}>
                         <label style={{...lbl,color:T.muted,letterSpacing:0.5,fontSize:11,textTransform:"none",fontWeight:600}}>{q.label}</label>
@@ -1113,7 +1006,7 @@ Only the last slide should have a cta string. All others must have cta as null.`
                     {voiceProfile&&(
                       <div>
                         <label style={lbl}>Your voice profile</label>
-                        <textarea value={voiceProfile} onChange={e=>setVoiceProfile(e.target.value)} rows={7} style={{...inp,resize:"vertical",lineHeight:1.7}} />
+                        <textarea value={voiceProfile} onChange={e=>setVoiceProfile(e.target.value)} rows={6} style={{...inp,resize:"vertical",lineHeight:1.7}} />
                       </div>
                     )}
                   </>
@@ -1121,7 +1014,6 @@ Only the last slide should have a cta string. All others must have cta as null.`
               </div>
             )}
 
-            {/* PROFILE TAB */}
             {tab==="profile"&&(
               <div style={{display:"flex",flexDirection:"column",gap:16}}>
                 <div style={{display:"flex",alignItems:"center",gap:14}}>
@@ -1142,15 +1034,12 @@ Only the last slide should have a cta string. All others must have cta as null.`
                   <Toggle on={blueTick} set={setBlueTick} T={T} />
                 </div>
                 <div>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:showWebsite?10:0}}>
-                    <div onClick={()=>setShowWebsite(!showWebsite)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",flex:1,cursor:"pointer"}}>
-                      <div><div style={{fontWeight:700,fontSize:13}}>Website on Slides</div><div style={{color:T.muted,fontSize:11,marginTop:2}}>Show your URL at bottom of every slide</div></div>
-                      <Toggle on={showWebsite} set={setShowWebsite} T={T} />
-                    </div>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}} onClick={()=>setShowWebsite(!showWebsite)}>
+                    <div><div style={{fontWeight:700,fontSize:13}}>Website Footer</div><div style={{color:T.muted,fontSize:11,marginTop:2}}>Show URL at bottom of every slide</div></div>
+                    <Toggle on={showWebsite} set={setShowWebsite} T={T} />
                   </div>
-                  {showWebsite&&<input value={websiteUrl} onChange={e=>setWebsiteUrl(e.target.value)} placeholder="e.g. www.buildwithtav.co" style={inp} />}
+                  {showWebsite&&<input value={websiteUrl} onChange={e=>setWebsiteUrl(e.target.value)} placeholder="e.g. www.buildwithtav.co" style={{...inp,marginTop:10}} />}
                 </div>
-                {/* Preview */}
                 <div style={{background:"#0a0a0a",borderRadius:10,border:`1px solid ${T.border}`,padding:"14px 18px",display:"flex",alignItems:"center",gap:13,marginTop:4}}>
                   <div style={{width:44,height:44,borderRadius:"50%",border:"2px solid #C9A84C",overflow:"hidden",background:"#1a1a1a",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
                     {profileDataUrl?<img src={profileDataUrl} style={{width:"100%",height:"100%",objectFit:"cover"}} />:<span style={{color:"#C9A84C",fontSize:16,fontWeight:700}}>?</span>}
@@ -1172,9 +1061,9 @@ Only the last slide should have a cta string. All others must have cta as null.`
         {step==="generating"&&(
           <div style={{textAlign:"center",padding:"90px 0",animation:"fi 0.35s ease"}}>
             <div style={{marginBottom:18}}><Spin c={T.accent} /></div>
-            <div style={{color:T.accent,fontSize:9,letterSpacing:4,marginBottom:8,textTransform:"uppercase",fontWeight:700}}>Researching & Writing</div>
-            <div style={{fontSize:19,fontWeight:800,marginBottom:6}}>Building your carousel</div>
-            <div style={{color:T.muted,fontSize:13}}>Pulling real data, crafting {slideCount} slides in your voice...</div>
+            <div style={{color:T.accent,fontSize:9,letterSpacing:4,marginBottom:8,textTransform:"uppercase",fontWeight:700}}>Creating</div>
+            <div style={{fontSize:19,fontWeight:800,marginBottom:6}}>Designing your carousel</div>
+            <div style={{color:T.muted,fontSize:13}}>Writing content and deciding layouts for {slideCount} slides...</div>
           </div>
         )}
 
@@ -1187,9 +1076,7 @@ Only the last slide should have a cta string. All others must have cta as null.`
                 <button key={id} onClick={()=>setRatio(id)} style={{background:ratio===id?T.accent:T.surface2,border:`1px solid ${ratio===id?T.accent:T.border}`,color:ratio===id?T.accentText:T.muted,padding:"5px 13px",borderRadius:6,fontSize:12,fontWeight:700}}>{label}</button>
               ))}
             </div>
-
             <div style={{display:"grid",gridTemplateColumns:"1fr 340px",gap:24}}>
-              {/* Slide grid */}
               <div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
                   {editing.map((slide,i)=>(
@@ -1206,8 +1093,6 @@ Only the last slide should have a cta string. All others must have cta as null.`
                   </button>
                 </div>
               </div>
-
-              {/* Editor */}
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
                 <div style={{color:T.muted,fontSize:9,letterSpacing:2.5,textTransform:"uppercase",fontWeight:700}}>Edit Slide {active+1}</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
@@ -1215,18 +1100,15 @@ Only the last slide should have a cta string. All others must have cta as null.`
                     <button key={i} onClick={()=>setActive(i)} style={{width:26,height:26,borderRadius:5,background:active===i?T.accent:T.surface2,border:`1px solid ${active===i?T.accent:T.border}`,color:active===i?T.accentText:T.muted,fontSize:11,fontWeight:700}}>{i+1}</button>
                   ))}
                 </div>
-
                 <div><label style={lbl}>Slide Title</label><input value={editing[active]?.tag||""} onChange={e=>updateSlide(active,"tag",e.target.value)} style={inp} /></div>
                 <div><label style={lbl}>Headline</label><textarea value={editing[active]?.headline||""} onChange={e=>updateSlide(active,"headline",e.target.value)} rows={3} style={{...inp,resize:"vertical",lineHeight:1.5}} /></div>
                 <div><label style={lbl}>Body</label><textarea value={editing[active]?.body||""} onChange={e=>updateSlide(active,"body",e.target.value)} rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}} /></div>
-                <div><label style={lbl}>CTA <span style={{color:T.muted,letterSpacing:0,fontSize:9,fontWeight:500}}>(any slide — leave blank to hide)</span></label><input value={editing[active]?.cta||""} onChange={e=>updateSlide(active,"cta",e.target.value||null)} placeholder="e.g. Free preview → bio" style={inp} /></div>
-
+                <div><label style={lbl}>CTA <span style={{color:T.muted,letterSpacing:0,fontSize:9,fontWeight:500}}>(leave blank to hide)</span></label><input value={editing[active]?.cta||""} onChange={e=>updateSlide(active,"cta",e.target.value||null)} placeholder="e.g. Free preview → bio" style={inp} /></div>
                 {treatment==="dim"&&<div><label style={lbl}>Opacity — {imgOpacity}%</label><input type="range" min={5} max={55} value={imgOpacity} onChange={e=>setImgOpacity(+e.target.value)} /></div>}
                 {treatment==="gradient"&&<div><label style={lbl}>Overlay — {overlayDark}%</label><input type="range" min={20} max={80} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} /></div>}
-
                 <div style={{borderTop:`1px solid ${T.border}`,paddingTop:12}}>
                   <label style={lbl}>AI Rewrite</label>
-                  <textarea value={slidePrompt} onChange={e=>setSlidePrompt(e.target.value)} placeholder={`"More aggressive"\n"Add a UK housing stat"\n"Warmer and more personal"`} rows={3} style={{...inp,resize:"vertical",lineHeight:1.5,marginBottom:8}} />
+                  <textarea value={slidePrompt} onChange={e=>setSlidePrompt(e.target.value)} placeholder={`"Make this more punchy"\n"Add a specific stat"\n"Rewrite as a quote"`} rows={3} style={{...inp,resize:"vertical",lineHeight:1.5,marginBottom:8}} />
                   <button onClick={regenSlide} disabled={regenLoading||!slidePrompt.trim()} style={{background:slidePrompt.trim()?T.accent:T.surface2,border:"none",color:slidePrompt.trim()?T.accentText:T.muted,padding:"9px",borderRadius:7,fontWeight:700,fontSize:13,width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
                     {regenLoading?<><Spin c={T.accentText}/>Rewriting...</>:"Rewrite This Slide →"}
                   </button>
@@ -1237,7 +1119,6 @@ Only the last slide should have a cta string. All others must have cta as null.`
         )}
       </div>
 
-      {/* FOOTER */}
       <div style={{borderTop:`1px solid ${T.border}`,padding:"14px 28px",textAlign:"center",marginTop:40}}>
         <span style={{color:T.muted,fontSize:12}}>
           Created by <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:T.accent,fontWeight:700}}>Build with Tav</a> · <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:T.muted}}>buildwithtav.co</a>
