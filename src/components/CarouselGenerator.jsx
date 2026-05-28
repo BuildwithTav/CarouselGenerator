@@ -407,52 +407,48 @@ function drawSlide(ctx, W, H, slide, idx, total, opts) {
   // ── THEME DESIGN ELEMENTS ──
   drawThemeElements(ctx,W,H,C,theme,variant);
 
-  // ── PROFILE BADGE — top left, properly inset ──
-  const avR=48, avX=86, avY=100;
+  // ── PROFILE BADGE — moved down and right, layered shadow ──
+  const avR=50, avX=104, avY=132;
 
-  // Backdrop pill behind entire badge for guaranteed readability
-  const badgePadH=24, badgePadV=20;
-  const badgeX=avX-avR-badgePadH;
-  const badgeY=avY-avR-badgePadV;
-  const badgeW=avR*2+200+badgePadH*2; // estimate — wider than needed
-  const badgeH2=avR*2+badgePadV*2;
+  // Layer 1: Multiple concentric circles for visible shadow on any bg
+  const shadowLayers=[[avR+22,"rgba(0,0,0,0.18)"],[avR+16,"rgba(0,0,0,0.22)"],[avR+10,"rgba(0,0,0,0.28)"],[avR+5,"rgba(0,0,0,0.35)"]];
+  shadowLayers.forEach(([r,col])=>{
+    ctx.beginPath(); ctx.arc(avX,avY+5,r,0,Math.PI*2);
+    ctx.fillStyle=col; ctx.fill();
+  });
+
+  // Layer 2: Solid backdrop pill for text area readability
+  const bpY=avY-avR-14, bpH=avR*2+28;
   ctx.save();
-  ctx.fillStyle=C.dark?"rgba(0,0,0,0.52)":"rgba(255,255,255,0.62)";
-  ctx.filter="blur(18px)";
-  ctx.fillRect(badgeX,badgeY,badgeW,badgeH2);
-  ctx.filter="none";
+  ctx.fillStyle=C.dark?"rgba(0,0,0,0.6)":"rgba(255,255,255,0.75)";
+  ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(avX-avR-14,bpY,avR*2+260,bpH,avR+14);
+  else ctx.rect(avX-avR-14,bpY,avR*2+260,bpH);
+  ctx.fill();
   ctx.restore();
 
-  // Avatar circle
-  ctx.save();
-  // Drop shadow on avatar
-  ctx.shadowColor="rgba(0,0,0,0.65)"; ctx.shadowBlur=20; ctx.shadowOffsetY=3;
-  // Draw shadow circle first
-  ctx.beginPath(); ctx.arc(avX,avY,avR+4,0,Math.PI*2);
+  // Layer 3: Accent ring
+  ctx.beginPath(); ctx.arc(avX,avY,avR+5,0,Math.PI*2);
   ctx.fillStyle=C.accent; ctx.fill();
-  ctx.restore();
 
-  // Clip and draw avatar image
+  // Layer 4: Clip and draw avatar
   ctx.save();
   ctx.beginPath(); ctx.arc(avX,avY,avR,0,Math.PI*2); ctx.clip();
   if (profileImg) {
     const sc=Math.max(avR*2/profileImg.width,avR*2/profileImg.height);
     ctx.drawImage(profileImg,avX-avR-(profileImg.width*sc-avR*2)/2,avY-avR-(profileImg.height*sc-avR*2)/2,profileImg.width*sc,profileImg.height*sc);
   } else {
-    ctx.fillStyle=C.accent; ctx.fillRect(avX-avR,avY-avR,avR*2,avR*2);
-    ctx.fillStyle=C.dark?"rgba(0,0,0,0.7)":"rgba(255,255,255,0.9)";
-    ctx.font=`bold ${avR*0.8}px ${HF}`; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillStyle=C.dark?"#1c1c1c":"#ebe8e3"; ctx.fillRect(avX-avR,avY-avR,avR*2,avR*2);
+    ctx.fillStyle=C.accent; ctx.font=`bold ${Math.floor(avR*0.7)}px ${HF}`;
+    ctx.textAlign="center"; ctx.textBaseline="middle";
     ctx.fillText((name||"?")[0].toUpperCase(),avX,avY);
     ctx.textBaseline="alphabetic";
   }
   ctx.restore();
 
   // Avatar ring
-  ctx.save();
-  ctx.shadowColor="rgba(0,0,0,0.4)"; ctx.shadowBlur=8;
-  ctx.strokeStyle=C.accent; ctx.lineWidth=3;
+  ctx.strokeStyle=C.accent; ctx.lineWidth=3.5;
   ctx.beginPath(); ctx.arc(avX,avY,avR+3,0,Math.PI*2); ctx.stroke();
-  ctx.restore();
 
   // Name text
   const nx=avX+avR+16;
@@ -531,37 +527,38 @@ function drawSlide(ctx, W, H, slide, idx, total, opts) {
 
   let curY=blockTop;
 
-  // Slide title pill
+  // ── SLIDE TITLE — prominent, designed ──
   if (hasTitle) {
     ctx.save();
-    ctx.font=`700 20px ${BF}`;
-    const tw=ctx.measureText(slide.tag.toUpperCase()).width+40;
-    // Pill
-    ctx.fillStyle=C.dark?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.07)";
-    ctx.beginPath();
-    if(ctx.roundRect)ctx.roundRect(cx-tw/2,curY,tw,32,16);
-    else ctx.rect(cx-tw/2,curY,tw,32);
-    ctx.fill();
+    ctx.font=`700 24px ${BF}`;
+    const tw=ctx.measureText(slide.tag.toUpperCase()).width+48;
+    const tpX=cx-tw/2, tpY=curY, tpH=38;
+    // Solid filled pill — accent coloured
     ctx.fillStyle=C.accent;
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(tpX,tpY,tw,tpH,19);
+    else ctx.rect(tpX,tpY,tw,tpH);
+    ctx.fill();
+    // Text in contrasting colour
+    ctx.fillStyle=C.dark?"#000000":"#FFFFFF";
     ctx.textAlign="center"; ctx.textBaseline="alphabetic";
-    ctx.fillText(slide.tag.toUpperCase(),cx,curY+22);
+    ctx.fillText(slide.tag.toUpperCase(),cx,tpY+27);
     ctx.restore();
-    curY+=titleH;
+    curY+=titleH+8;
   }
 
-  // Headline — with strong text shadow for readability on any background
+  // ── HEADLINE ──
   ctx.font=`bold ${hSize}px ${HF}`;
   ctx.textAlign="center";
-  const hlShadow=C.dark?"rgba(0,0,0,0.95)":"rgba(0,0,0,0.12)";
   let hlY=curY+hSize;
   for(const line of hlLines) {
-    ctx.save();
-    ctx.shadowColor=hlShadow; ctx.shadowBlur=C.dark?20:10; ctx.shadowOffsetY=2;
-    // Draw 3 times for maximum legibility
-    ctx.fillStyle=C.text; ctx.fillText(line,cx,hlY);
+    // Draw shadow manually — 3 offset passes then bright fill
+    ctx.fillStyle=C.dark?"rgba(0,0,0,0.9)":"rgba(0,0,0,0.08)";
+    ctx.fillText(line,cx+2,hlY+3);
+    ctx.fillText(line,cx+2,hlY+3);
+    ctx.fillStyle=C.text;
     ctx.fillText(line,cx,hlY);
     ctx.fillText(line,cx,hlY);
-    ctx.restore();
     hlY+=hSize*1.25;
   }
   curY=hlY-hSize*1.25+hSize*0.15;
@@ -591,36 +588,40 @@ function drawSlide(ctx, W, H, slide, idx, total, opts) {
   ctx.restore();
   curY=divY+42;
 
-  // Body text — with shadow
+  // Body text
   if (bLines.length>0) {
     ctx.font=`31px ${BF}`; ctx.textAlign="center";
     for(const line of bLines) {
-      ctx.save();
-      ctx.shadowColor=C.dark?"rgba(0,0,0,0.85)":"rgba(0,0,0,0.1)"; ctx.shadowBlur=12; ctx.shadowOffsetY=1;
-      ctx.fillStyle=C.sub; ctx.fillText(line,cx,curY);
-      ctx.fillText(line,cx,curY); // double for strength
-      ctx.restore();
+      // Manual shadow
+      ctx.fillStyle=C.dark?"rgba(0,0,0,0.85)":"rgba(0,0,0,0.06)";
+      ctx.fillText(line,cx+1,curY+2);
+      ctx.fillStyle=C.sub;
+      ctx.fillText(line,cx,curY);
+      ctx.fillText(line,cx,curY);
       curY+=bodyLineH;
     }
   }
 
-  // CTA — pinned near bottom
+  // CTA — if this is a CTA slide, make it a full designed CTA treatment
   if (hasCTA) {
-    const ctaY=H-(hasWebsite?148:98);
+    const ctaY=H-(hasWebsite?155:105);
     ctx.save();
-    ctx.font=`bold 31px ${HF}`;
-    const ctaW=ctx.measureText(slide.cta).width;
-    // Pill bg
-    ctx.globalAlpha=0.14; ctx.fillStyle=C.accent;
-    ctx.beginPath();
-    if(ctx.roundRect)ctx.roundRect(cx-ctaW/2-30,ctaY-38,ctaW+60,54,27);
-    else ctx.rect(cx-ctaW/2-30,ctaY-38,ctaW+60,54);
-    ctx.fill();
-    ctx.restore();
-    ctx.save();
-    ctx.shadowColor=C.dark?"rgba(0,0,0,0.8)":"rgba(0,0,0,0.2)"; ctx.shadowBlur=12;
-    ctx.fillStyle=C.accent; ctx.textAlign="center"; ctx.fillText(slide.cta,cx,ctaY);
+    // Full-width accent bar behind CTA
+    ctx.fillStyle=C.accent; ctx.globalAlpha=0.12;
+    ctx.fillRect(60,ctaY-48,W-120,64);
+    ctx.globalAlpha=1;
+    // CTA text
+    ctx.font=`bold 33px ${HF}`;
+    // Shadow pass
+    ctx.fillStyle=C.dark?"rgba(0,0,0,0.7)":"rgba(0,0,0,0.12)";
+    ctx.textAlign="center"; ctx.fillText(slide.cta,cx+2,ctaY+2);
+    ctx.fillStyle=C.accent;
     ctx.fillText(slide.cta,cx,ctaY);
+    ctx.fillText(slide.cta,cx,ctaY);
+    // Arrow indicator line beneath
+    ctx.strokeStyle=C.accent; ctx.lineWidth=1.5; ctx.globalAlpha=0.4;
+    const cw=ctx.measureText(slide.cta).width;
+    ctx.beginPath(); ctx.moveTo(cx-cw/2,ctaY+12); ctx.lineTo(cx+cw/2,ctaY+12); ctx.stroke();
     ctx.restore();
   }
 
@@ -723,16 +724,28 @@ export default function App() {
 
   const handleImg=(e,set)=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>set(ev.target.result);r.readAsDataURL(f);};
 
+  // Retry wrapper — handles cold starts on first generation
+  const fetchWithRetry=async(body,retries=2)=>{
+    for(let i=0;i<=retries;i++){
+      try {
+        const res=await fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+        if(!res.ok)throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } catch(e) {
+        if(i===retries)throw e;
+        await new Promise(r=>setTimeout(r,1200));
+      }
+    }
+  };
+
   const buildVoice=async()=>{
     setGenVoice(true);
     const bType=BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"brand";
     const questions=BRAND_QUESTIONS[businessType]||BRAND_QUESTIONS.creator;
     const qa=questions.map(q=>`${q.label}\n${brandAnswers[q.key]||"Not provided"}`).join("\n\n");
     try {
-      const res=await fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-opus-4-7",max_tokens:600,
-          messages:[{role:"user",content:`Write a concise AI voice profile (under 180 words) for a ${bType} carousel generator. Based on:\n\n${qa}\n\nStart "Write in a tone that..." Be specific and practical.`}]})});
-      const d=await res.json();
+      const d=await fetchWithRetry({model:"claude-opus-4-7",max_tokens:600,
+        messages:[{role:"user",content:`Write a concise AI voice profile (under 180 words) for a ${bType} carousel generator. Based on:\n\n${qa}\n\nStart "Write in a tone that..." Be specific and practical.`}]});
       setVoiceProfile(d.content?.find(b=>b.type==="text")?.text||"");
     } catch {setVoiceProfile("Write directly and honestly. Short punchy sentences. Speak to real problems. Never overpromise.");}
     setGenVoice(false);
@@ -750,10 +763,10 @@ export default function App() {
     const gL=goal==="ai"?"infer the best goal from the topic and business type":GOALS.find(g=>g.id===goal)?.label;
     const extras=[bType&&`Business type: ${bType}`,keyThemes&&`Include these themes/words: ${keyThemes}`,angle&&`Angle: ${angle}`].filter(Boolean).join("\n");
 
-    const prompt=`You are a world-class social media carousel copywriter. Your slides are known for being specific, readable, and genuinely stopping people mid-scroll.
+    const prompt=`You are a world-class social media carousel copywriter. You write like a smart friend who knows their subject — not a stats machine, not a motivational poster. Your carousels have an emotional arc, move through ideas, and leave people feeling something.
 
 BRAND VOICE:
-${voiceProfile||"Direct, honest, no filler. Short punchy sentences. Real specific insights. No generic statements."}
+${voiceProfile||"Direct, honest, no filler. Short punchy sentences. Real specific insights. Speak to real problems people feel every day."}
 
 TOPIC: "${topic}"
 ${extras}
@@ -761,29 +774,31 @@ GOAL: ${gL}
 TONE: ${tL}
 HOOK APPROACH: ${hL}
 
-Generate exactly ${slideCount} carousel slides. Absolute rules:
-1. NEVER include <cite>, HTML tags, or any markup in your output — clean text only
-2. NEVER write structural words like HOOK, CTA, INTRO in visible content
-3. First slide MUST be hyper-specific — real stats, real numbers, real scenarios that feel personal
-4. Every slide must have genuine insight — no vague advice, no "many people struggle with..."
-5. Headlines: max 8 words, punchy and specific. Think front page of a newspaper.
-6. Body: 1-2 sentences MAX. Tight. Every word earns its place.
-7. Last slide only: include a soft, non-pushy CTA
-8. Use web search to verify any stats before including them
-9. Match language and examples to the business type — a restaurant post sounds nothing like a B2B post
-10. Slide titles (tag field): short, editorial label — max 3 words, no generic words like "SLIDE" or "INFO"
+NARRATIVE STRUCTURE — follow this arc across ${slideCount} slides:
+- Slide 1: HOOK — stop the scroll. One specific, provocative opening. Can be a stat, a bold claim, or a scenario that makes them say "that's me".
+- Slides 2-3: REALITY — what's actually happening. Can include 1 verified stat but mix it with human truth. Show you understand their world.
+- Slides 4 to ${slideCount-2}: SHIFT + INSIGHT — where the thinking changes. Mix of: specific advice, a reframe, a perspective shift, a practical tip. NOT more stats. These are the most valuable slides.
+- Slide ${slideCount-1}: BUILD — emotional or logical bridge to the CTA. Make them feel something.
+- Slide ${slideCount}: CTA — soft, specific, non-pushy.
 
-Return ONLY a valid JSON array. No markdown. No explanation. No preamble:
+ABSOLUTE RULES:
+1. No HTML tags, no <cite> tags, no markdown — clean plain text only
+2. Do not write structural labels like HOOK, CTA, INTRO in visible content
+3. Max 1-2 stats in the whole carousel — not every slide. Balance with insight and advice.
+4. Headlines: max 8 words. Punchy, specific, no vague phrases
+5. Body: 1-2 sentences max. Every word earns its place. No "many people" — be specific.
+6. Slide titles (tag): short editorial label, 1-3 words, like a magazine section header. Make them interesting — not generic.
+7. Use web search to verify any stats before including them
+
+Return ONLY a valid JSON array. No preamble. No markdown:
 [{"tag":"EDITORIAL LABEL","headline":"punchy specific headline","body":"1-2 tight sentences","cta":null}]
 
-Last slide cta should be a string, all others must be null.`;
+Only the last slide should have a cta string. All others must have cta as null.`;
 
     try {
-      const res=await fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-opus-4-7",max_tokens:2000,
-          tools:[{type:"web_search_20250305",name:"web_search"}],
-          messages:[{role:"user",content:prompt}]})});
-      const d=await res.json();
+      const d=await fetchWithRetry({model:"claude-opus-4-7",max_tokens:2000,
+        tools:[{type:"web_search_20250305",name:"web_search"}],
+        messages:[{role:"user",content:prompt}]});
       const raw=d.content?.find(b=>b.type==="text")?.text||"";
       const clean=raw.replace(/<cite[^>]*>/g,"").replace(/<\/cite>/g,"").replace(/<[^>]+>/g,"");
       const m=clean.match(/\[[\s\S]*\]/);
@@ -804,10 +819,8 @@ Last slide cta should be a string, all others must be null.`;
     if(!slidePrompt.trim())return; setRegenLoading(true);
     const cur=editing[active];
     try {
-      const res=await fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-opus-4-7",max_tokens:500,
-          messages:[{role:"user",content:`Rewrite this carousel slide: "${slidePrompt}"\n\nCurrent:\n${JSON.stringify(cur)}\n\nVoice: ${voiceProfile||"Direct, honest, specific."}\n\nReturn ONLY JSON {tag,headline,body,cta?}. No HTML, no cite tags, no markdown.`}]})});
-      const d=await res.json();
+      const d=await fetchWithRetry({model:"claude-opus-4-7",max_tokens:500,
+        messages:[{role:"user",content:`Rewrite this carousel slide: "${slidePrompt}"\n\nCurrent:\n${JSON.stringify(cur)}\n\nVoice: ${voiceProfile||"Direct, honest, specific."}\n\nReturn ONLY JSON {tag,headline,body,cta?}. No HTML, no cite tags, no markdown.`}]});
       const raw=(d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
       const m=raw.match(/\{[\s\S]*\}/);
       if(m){const u=JSON.parse(m[0]);const n=[...editing];n[active]={...n[active],...u,cta:u.cta||null};setEditing(n);setSlidePrompt("");}
@@ -1206,7 +1219,7 @@ Last slide cta should be a string, all others must be null.`;
                 <div><label style={lbl}>Slide Title</label><input value={editing[active]?.tag||""} onChange={e=>updateSlide(active,"tag",e.target.value)} style={inp} /></div>
                 <div><label style={lbl}>Headline</label><textarea value={editing[active]?.headline||""} onChange={e=>updateSlide(active,"headline",e.target.value)} rows={3} style={{...inp,resize:"vertical",lineHeight:1.5}} /></div>
                 <div><label style={lbl}>Body</label><textarea value={editing[active]?.body||""} onChange={e=>updateSlide(active,"body",e.target.value)} rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}} /></div>
-                <div><label style={lbl}>CTA <span style={{color:T.muted,letterSpacing:0,fontSize:9,fontWeight:500}}>(last slide)</span></label><input value={editing[active]?.cta||""} onChange={e=>updateSlide(active,"cta",e.target.value||null)} placeholder="e.g. Free preview → bio" style={inp} /></div>
+                <div><label style={lbl}>CTA <span style={{color:T.muted,letterSpacing:0,fontSize:9,fontWeight:500}}>(any slide — leave blank to hide)</span></label><input value={editing[active]?.cta||""} onChange={e=>updateSlide(active,"cta",e.target.value||null)} placeholder="e.g. Free preview → bio" style={inp} /></div>
 
                 {treatment==="dim"&&<div><label style={lbl}>Opacity — {imgOpacity}%</label><input type="range" min={5} max={55} value={imgOpacity} onChange={e=>setImgOpacity(+e.target.value)} /></div>}
                 {treatment==="gradient"&&<div><label style={lbl}>Overlay — {overlayDark}%</label><input type="range" min={20} max={80} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} /></div>}
