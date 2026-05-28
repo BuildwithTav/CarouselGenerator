@@ -14,10 +14,13 @@ export async function POST(request) {
       body: JSON.stringify(body),
     });
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    const text = await response.text();
+    console.log('Anthropic response status:', response.status);
+    console.log('Anthropic response body:', text);
+    
+    return NextResponse.json({ status: response.status, body: text });
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
