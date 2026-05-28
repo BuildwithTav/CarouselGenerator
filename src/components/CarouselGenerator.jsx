@@ -181,57 +181,55 @@ function buildSlideHTML(slide, idx, total, opts) {
 
   const layouts = {
     standard: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; gap:0; }
-      .hl { font-size:${isPortrait?100:88}px; font-weight:900; line-height:1.08; ${ts} margin-bottom:32px; font-family:'${font}',sans-serif; }
-      .body { font-size:${isPortrait?34:30}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:32px; ${ts2} font-family:'${font}',sans-serif; }
-      .cta { margin-top:44px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:24px 60px; border-radius:8px; font-size:${isPortrait?32:28}px; font-weight:800; color:${C.accent}; font-family:'${font}',sans-serif; width:100%; max-width:860px; text-align:center; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; gap:0; overflow:hidden; }
+      .hl { font-size:${isPortrait?100:84}px; font-weight:900; line-height:1.08; ${ts} margin-bottom:0; font-family:'${font}',sans-serif; flex-shrink:0; }
+      .body { font-size:${isPortrait?34:29}px; line-height:1.6; color:${C.sub}; max-width:860px; margin-top:28px; ${ts2} font-family:'${font}',sans-serif; }
+      .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?30:26}px; font-weight:800; color:${C.accent}; font-family:'${font}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; }
     `,
     statement: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 70px ${botPad}px; text-align:center; gap:0; }
-      .hl { font-size:${isPortrait?128:112}px; font-weight:900; line-height:1.0; ${ts} letter-spacing:-2px; margin-bottom:36px; font-family:'${font}',sans-serif; }
-      .body { font-size:${isPortrait?34:30}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:32px; font-family:'${font}',sans-serif; }
-      .cta { margin-top:44px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:24px 60px; border-radius:8px; font-size:28px; font-weight:800; color:${C.accent}; font-family:'${font}',sans-serif; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 70px ${botPad}px; text-align:center; gap:0; overflow:hidden; }
+      .hl { font-size:${isPortrait?120:104}px; font-weight:900; line-height:1.0; ${ts} letter-spacing:-2px; margin-bottom:0; font-family:'${font}',sans-serif; flex-shrink:0; }
+      .body { font-size:${isPortrait?34:29}px; line-height:1.6; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${font}',sans-serif; }
+      .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:26px; font-weight:800; color:${C.accent}; font-family:'${font}',sans-serif; flex-shrink:0; }
     `,
     split: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; padding:${topPad}px 0 100px; }
-      .panels { display:grid; grid-template-columns:1fr 1fr; flex:1; position:relative; }
-      .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 64px; text-align:center; gap:16px; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:${topPad}px 0 ${botPad}px; overflow:hidden; gap:0; }
+      .tag { margin-bottom:20px; flex-shrink:0; }
+      .panels { display:grid; grid-template-columns:1fr 1fr; flex:1; position:relative; width:100%; min-height:0; }
+      .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px 50px; text-align:center; gap:12px; overflow:hidden; }
       .panel:first-child { background:${C.accent}10; border-right:1px solid ${C.accent}28; }
-      .pl { font-size:${isPortrait?52:44}px; font-weight:900; font-family:'${font}',sans-serif; line-height:1.1; }
-      .ps { font-size:${isPortrait?30:26}px; color:${C.sub}; font-family:'${font}',sans-serif; line-height:1.5; }
+      .pl { font-size:${isPortrait?48:40}px; font-weight:900; font-family:'${font}',sans-serif; line-height:1.1; }
+      .ps { font-size:${isPortrait?27:23}px; color:${C.sub}; font-family:'${font}',sans-serif; line-height:1.45; }
       .vs { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:6;
-        width:100px; height:100px; border-radius:50%; background:${C.bg};
+        width:90px; height:90px; border-radius:50%; background:${C.bg};
         border:1.5px solid ${C.accent}44; display:flex; align-items:center; justify-content:center; }
-      .vt { font-size:30px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; }
-      .sb { padding:36px 90px 0; text-align:center; }
-      .hl { font-size:${isPortrait?84:72}px; font-weight:900; line-height:1.08; ${ts} font-family:'${font}',sans-serif; }
-      .body { font-size:${isPortrait?32:28}px; line-height:1.6; color:${C.sub}; margin-top:20px; font-family:'${font}',sans-serif; }
+      .vt { font-size:28px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; }
+      .sb { padding:24px 80px 0; text-align:center; flex-shrink:0; width:100%; }
+      .hl { font-size:${isPortrait?78:66}px; font-weight:900; line-height:1.08; ${ts} font-family:'${font}',sans-serif; }
+      .body { font-size:${isPortrait?30:26}px; line-height:1.55; color:${C.sub}; margin-top:16px; font-family:'${font}',sans-serif; }
     `,
     cards: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:${topPad}px 80px 100px; }
-      .hl { font-size:${isPortrait?92:80}px; font-weight:900; line-height:1.1; ${ts} text-align:center; margin-bottom:12px; font-family:'${font}',sans-serif; }
-      .cg { width:100%; display:flex; flex-direction:column; gap:${isPortrait?20:16}px; margin-top:32px; }
-      .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:14px; padding:${isPortrait?30:26}px 34px; display:flex; align-items:flex-start; gap:22px; }
-      .cn { font-size:${isPortrait?36:32}px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; flex-shrink:0; width:46px; line-height:1; }
-      .ct { font-size:${isPortrait?30:27}px; color:${C.text}; font-family:'${font}',sans-serif; line-height:1.45; font-weight:600; }
-      .cs { font-size:${isPortrait?24:22}px; color:${C.sub}; margin-top:4px; font-family:'${font}',sans-serif; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:${topPad}px 80px ${botPad}px; overflow:hidden; }
+      .hl { font-size:${isPortrait?88:74}px; font-weight:900; line-height:1.1; ${ts} text-align:center; margin-bottom:8px; font-family:'${font}',sans-serif; flex-shrink:0; }
+      .cg { width:100%; display:flex; flex-direction:column; gap:${isPortrait?16:12}px; margin-top:24px; overflow:hidden; }
+      .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:12px; padding:${isPortrait?26:20}px 28px; display:flex; align-items:flex-start; gap:18px; flex-shrink:0; }
+      .cn { font-size:${isPortrait?32:26}px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; flex-shrink:0; width:40px; line-height:1; }
+      .ct { font-size:${isPortrait?27:23}px; color:${C.text}; font-family:'${font}',sans-serif; line-height:1.4; font-weight:600; }
+      .cs { font-size:${isPortrait?22:19}px; color:${C.sub}; margin-top:3px; font-family:'${font}',sans-serif; }
     `,
     quote: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 110px ${botPad+40}px; text-align:center; gap:0; }
-      .qm { font-size:300px; font-weight:900; color:${C.accent}20; line-height:0.65; font-family:'${font}',sans-serif; margin-bottom:-20px; }
-      .hl { font-size:${isPortrait?108:96}px; font-weight:900; line-height:1.06; ${ts} font-style:italic; letter-spacing:-1px; margin-bottom:36px; font-family:'${font}',sans-serif; }
-      .body { font-size:${isPortrait?34:30}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:32px; font-family:'${font}',sans-serif; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 110px ${botPad+40}px; text-align:center; gap:0; overflow:hidden; }
+      .qm { font-size:280px; font-weight:900; color:${C.accent}20; line-height:0.65; font-family:'${font}',sans-serif; margin-bottom:-20px; flex-shrink:0; }
+      .hl { font-size:${isPortrait?100:88}px; font-weight:900; line-height:1.06; ${ts} font-style:italic; letter-spacing:-1px; margin-bottom:0; font-family:'${font}',sans-serif; }
+      .body { font-size:${isPortrait?32:28}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${font}',sans-serif; }
     `,
     hero: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad+40}px; gap:30px; text-align:center; }
-      .hi { width:220px; height:220px; border-radius:50%; border:1.5px solid ${C.accent}40; background:${C.accent}12; display:flex; align-items:center; justify-content:center; margin-bottom:8px; }
-      .hs { font-size:130px; line-height:1; }
-      .hl { font-size:${isPortrait?104:92}px; font-weight:900; line-height:1.06; ${ts} font-family:'${font}',sans-serif; }
-      .body { font-size:${isPortrait?34:30}px; line-height:1.65; color:${C.sub}; max-width:820px; font-family:'${font}',sans-serif; }
-      .cs { width:100%; max-width:860px; display:flex; flex-direction:column; gap:14px; margin-top:8px; }
-      .cb { padding:${isPortrait?34:28}px 50px; border-radius:12px; font-size:${isPortrait?32:28}px; font-weight:800; font-family:'${font}',sans-serif; text-align:center; }
-      .cp { background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
-      .cx { border:1.5px solid ${C.accent}50; color:${C.accent}; background:${C.accent}14; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad+20}px 90px ${botPad+20}px; gap:24px; text-align:center; overflow:hidden; }
+      .hi { width:${isPortrait?200:180}px; height:${isPortrait?200:180}px; border-radius:50%; border:1.5px solid ${C.accent}40; background:${C.accent}12; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+      .hs { font-size:${isPortrait?120:110}px; line-height:1; }
+      .hl { font-size:${isPortrait?96:84}px; font-weight:900; line-height:1.06; ${ts} font-family:'${font}',sans-serif; }
+      .body { font-size:${isPortrait?32:28}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${font}',sans-serif; }
+      .cb { width:100%; max-width:860px; padding:${isPortrait?32:26}px 50px; border-radius:12px; font-size:${isPortrait?30:26}px; font-weight:800; font-family:'${font}',sans-serif; text-align:center; background:${C.accent}; color:${C.dark?"#000":"#fff"}; margin-top:8px; }
     `,
   };
 
@@ -244,12 +242,13 @@ function buildSlideHTML(slide, idx, total, opts) {
     if (layout==="split" && slide.items?.length >= 2) {
       const [a,b] = slide.items;
       return `<div class="c">
-        <div class="panels" style="position:relative">
+        ${tag}
+        <div class="panels" style="position:relative;width:100%;flex:1;min-height:0">
           <div class="panel"><div class="pl" style="color:${C.accent}">${escHtml(a.label||"")}</div>${a.sub?`<div class="ps">${escHtml(a.sub)}</div>`:""}</div>
           <div class="vs"><div class="vt">${escHtml(slide.vs_label||"VS")}</div></div>
           <div class="panel"><div class="pl" style="opacity:0.75">${escHtml(b.label||"")}</div>${b.sub?`<div class="ps">${escHtml(b.sub)}</div>`:""}</div>
         </div>
-        <div class="sb">${tag}<div class="hl">${hl}</div>${slide.body?divider+body:""}</div>
+        <div class="sb"><div class="hl">${hl}</div>${slide.body?divider+body:""}</div>
       </div>`;
     }
 
@@ -266,12 +265,13 @@ function buildSlideHTML(slide, idx, total, opts) {
     }
 
     if (layout==="hero") {
-      const ctaItems = slide.cta_items?.length ? slide.cta_items : slide.cta ? [slide.cta] : [];
+      // Single CTA only — take first item from cta_items, or fall back to cta field
+      const ctaText = slide.cta_items?.[0] || slide.cta || "";
       return `<div class="c">
         ${slide.icon_symbol?`<div class="hi"><span class="hs">${slide.icon_symbol}</span></div>`:""}
         ${tag}<div class="hl">${hl}</div>
         ${slide.body?divider+body:""}
-        ${ctaItems.length?`<div class="cs">${ctaItems.map((c,i)=>`<div class="cb ${i===0?"cp":"cx"}">${escHtml(c)}</div>`).join("")}</div>`:""}
+        ${ctaText?`<div class="cb">${escHtml(ctaText)}</div>`:""}
       </div>`;
     }
 
@@ -353,16 +353,54 @@ async function downloadSlideAsPNG(slide, idx, total, opts, filename) {
   const isPortrait = opts.ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1080;
   const html = buildSlideHTML(slide, idx, total, opts);
-  const res = await fetch("/api/screenshot", {
-    method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ html, width:W, height:H }),
+
+  const iframe = document.createElement("iframe");
+  iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
+  document.body.appendChild(iframe);
+
+  return new Promise((resolve, reject) => {
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    doc.open(); doc.write(html); doc.close();
+
+    setTimeout(async () => {
+      try {
+        const win = iframe.contentWindow;
+        // Inject html2canvas
+        await new Promise(r => {
+          const s = doc.createElement("script");
+          s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+          s.onload = r; s.onerror = r;
+          doc.head.appendChild(s);
+          setTimeout(r, 4000);
+        });
+
+        if (!win.html2canvas) throw new Error("html2canvas not loaded");
+
+        const el = doc.querySelector(".slide") || doc.body;
+        const canvas = await win.html2canvas(el, {
+          useCORS: true, allowTaint: true, scale: 1,
+          width: W, height: H, windowWidth: W, windowHeight: H,
+          backgroundColor: null, logging: false,
+        });
+
+        canvas.toBlob(blob => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url; a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          document.body.removeChild(iframe);
+          resolve();
+        }, "image/png", 1.0);
+
+      } catch(e) {
+        document.body.removeChild(iframe);
+        reject(e);
+      }
+    }, 2500);
   });
-  if (!res.ok) throw new Error(`Screenshot failed: ${res.status}`);
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.download = filename; a.href = url; a.click();
-  URL.revokeObjectURL(url);
 }
 
 // ─── STORAGE / HELPERS ────────────────────────────────────
@@ -471,7 +509,7 @@ LAYOUT SYSTEM — pick the right layout for each slide:
 - "split" — two panels side by side with VS. ONLY when comparing two distinct things. Requires "items" array with exactly 2 objects, each MUST have a "label" field: [{"label":"THEN","sub":"detail"},{"label":"NOW","sub":"detail"}]. Add "vs_label".
 - "cards" — numbered rows. For listing 3-5 specific points. Requires "items" array where each item MUST have a "label" field with the point text, and optionally a "sub" field: [{"label":"The main point","sub":"Optional detail"}].
 - "quote" — giant quote mark, italic. For a single powerful human truth. No more than one per carousel.
-- "hero" — icon + big headline + CTA buttons. ALWAYS use for the final slide. Add "icon_symbol" (one unicode char: ✦ ◆ ★ ✺ ⬡) and "cta_items" array of 1-2 strings.
+- "hero" — icon + big headline + single CTA button. ALWAYS use for the final slide. Add "icon_symbol" (one unicode char: ✦ ◆ ★ ✺) and exactly ONE string in "cta_items" array — e.g. ["Save this post"]. Never more than one.
 
 RULES:
 - No two consecutive slides use the same layout
