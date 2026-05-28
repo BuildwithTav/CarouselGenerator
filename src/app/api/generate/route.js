@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
-  console.log('KEY EXISTS:', !!process.env.ANTHROPIC_API_KEY);
   try {
     const body = await request.json();
     
@@ -15,13 +14,9 @@ export async function POST(request) {
       body: JSON.stringify(body),
     });
 
-    const text = await response.text();
-    console.log('Anthropic response status:', response.status);
-    console.log('Anthropic response body:', text);
-    
-    return NextResponse.json({ status: response.status, body: text });
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
