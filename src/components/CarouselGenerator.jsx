@@ -372,8 +372,8 @@ function drawSlide(ctx, W, H, slide, idx, total, opts) {
     ctx.fillStyle=cvg; ctx.fillRect(0,0,W,H);
   }
 
-  // ── PROFILE BADGE — top left with shadow ──
-  const avR=46, avPad=62, avY=avPad+avR, avX=avPad+avR;
+  // ── PROFILE BADGE — inset from edges with shadow ──
+  const avR=46, avPad=80, avY=avPad+avR+20, avX=avPad+avR;
 
   // Shadow behind entire badge area — adapts to light/dark theme
   ctx.save();
@@ -435,12 +435,22 @@ function drawSlide(ctx, W, H, slide, idx, total, opts) {
   ctx.fillText(handle||"@yourhandle",nx,avY+22);
   ctx.restore();
 
-  // Slide number — top right
+  // Slide number — large editorial watermark in bottom right corner
   if (showNums) {
     ctx.save();
-    ctx.shadowColor="rgba(0,0,0,0.4)"; ctx.shadowBlur=8;
-    ctx.fillStyle=`${C.accent}CC`; ctx.font=`bold 20px ${BF}`;
-    ctx.textAlign="right"; ctx.fillText(`${idx+1} / ${total}`,W-54,50);
+    const numStr = String(idx+1).padStart(2,"0");
+    const numSize = Math.floor(H * 0.28);
+    ctx.font=`bold ${numSize}px ${HF}`;
+    ctx.fillStyle=C.dark?`rgba(255,255,255,0.04)`:`rgba(0,0,0,0.04)`;
+    ctx.textAlign="right";
+    ctx.textBaseline="bottom";
+    ctx.fillText(numStr, W-50, H-40);
+    ctx.textBaseline="alphabetic";
+    // Small clean counter top right
+    ctx.font=`500 18px ${BF}`;
+    ctx.fillStyle=`${C.accent}99`;
+    ctx.textAlign="right";
+    ctx.fillText(`${idx+1} / ${total}`, W-68, 72);
     ctx.restore();
   }
 
@@ -479,6 +489,24 @@ function drawSlide(ctx, W, H, slide, idx, total, opts) {
   let hlY = safeStart + hSize;
   ctx.fillStyle=C.text; ctx.textAlign="center";
   ctx.font=`bold ${hSize}px ${HF}`;
+
+  // Slide title — small label above headline
+  if (slide.tag&&slide.tag.trim()) {
+    const titleY = hlY - hSize - 28;
+    ctx.save();
+    ctx.font=`600 22px ${BF}`;
+    const titleW=ctx.measureText(slide.tag.toUpperCase()).width+36;
+    // Pill background
+    ctx.fillStyle=C.dark?`rgba(255,255,255,0.09)`:`rgba(0,0,0,0.07)`;
+    if(ctx.roundRect){ctx.roundRect(cx-titleW/2,titleY-20,titleW,34,17);}
+    else{ctx.rect(cx-titleW/2,titleY-20,titleW,34);}
+    ctx.fill();
+    ctx.fillStyle=C.accent;
+    ctx.textAlign="center";
+    ctx.fillText(slide.tag.toUpperCase(),cx,titleY+4);
+    ctx.restore();
+    hlY = hlY - 10;
+  }
   for(const line of hlLines){ctx.fillText(line,cx,hlY);hlY+=hSize*1.22;}
   const afterHL = hlY - hSize*1.22 + hSize*0.2;
 
@@ -688,8 +716,18 @@ Return ONLY valid JSON array. No markdown. No explanation:
       const raw=d.content?.find(b=>b.type==="text")?.text||"";
       const m=raw.match(/\[[\s\S]*\]/);
       if(!m)throw new Error("no json");
-      const parsed=JSON.parse(m[0]);
-      setEditing(JSON.parse(JSON.stringify(parsed))); setActive(0); setStep("preview");
+      // Strip any <cite> tags that leaked in from web search
+      const clean=m[0].replace(/<cite[^>]*>|<\/cite>/g,"").replace(/<[^>]+>/g,"");
+      const parsed=JSON.parse(clean);
+      // Clean each slide's text fields
+      const sanitize=s=>({
+        ...s,
+        headline:(s.headline||"").replace(/<[^>]+>/g,"").trim(),
+        body:(s.body||"").replace(/<[^>]+>/g,"").trim(),
+        tag:(s.tag||"").replace(/<[^>]+>/g,"").trim(),
+        cta:(s.cta||"").replace(/<[^>]+>/g,"").trim()||null,
+      });
+      setEditing(parsed.map(sanitize)); setActive(0); setStep("preview");
     } catch {setErr("Generation failed. Please try again.");setStep("setup");}
   };
 
@@ -1100,16 +1138,26 @@ Return ONLY valid JSON array. No markdown. No explanation:
                   ))}
                 </div>
 
-                <div><label style={lbl}>Tag</label><input value={editing[active]?.tag||""} onChange={e=>updateSlide(active,"tag",e.target.value)} style={inp} /></div>
+                <div><label style={lbl}>Slide Title</label><input value={editing[active]?.tag||""} onChange={e=>updateSlide(active,"tag",e.target.value)} style={inp} /></div>
                 <div><label style={lbl}>Headline</label><textarea value={editing[active]?.headline||""} onChange={e=>updateSlide(active,"headline",e.target.value)} rows={3} style={{...inp,resize:"vertical",lineHeight:1.5}} /></div>
                 <div><label style={lbl}>Body</label><textarea value={editing[active]?.body||""} onChange={e=>updateSlide(active,"body",e.target.value)} rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}} /></div>
                 {active===editing.length-1&&<div><label style={lbl}>CTA</label><input value={editing[active]?.cta||""} onChange={e=>updateSlide(active,"cta",e.target.value)} placeholder="e.g. Free preview → bio" style={inp} /></div>}
 
                 <div>
-                  <label style={lbl}>Slide image</label>
-                  <div onClick={()=>{const i2=document.createElement("input");i2.type="file";i2.accept="image/*";i2.onchange=e=>handleSlideImg(active,e);i2.click();}} style={{background:T.surface2,border:`1px dashed ${slideImages[active]?T.accent:T.border}`,borderRadius:8,padding:"9px",cursor:"pointer",textAlign:"center"}}>
-                    <span style={{color:slideImages[active]?T.accent:T.muted,fontSize:12,fontWeight:600}}>{slideImages[active]?"✓ Image set — click to change":"Upload image for this slide"}</span>
+                  <label style={lbl}>Image</label>
+                  <div onClick={()=>{const i2=document.createElement("input");i2.type="file";i2.accept="image/*";i2.onchange=e=>handleSlideImg(0,e);i2.click();}} style={{background:T.surface2,border:`1px dashed ${slideImages[0]?T.accent:T.border}`,borderRadius:8,padding:"9px",cursor:"pointer",textAlign:"center",marginBottom:8}}>
+                    <span style={{color:slideImages[0]?T.accent:T.muted,fontSize:12,fontWeight:600}}>{slideImages[0]?"✓ Image loaded — click to change":"Upload image"}</span>
                   </div>
+                  {slideImages[0]&&(
+                    <div style={{display:"flex",gap:6}}>
+                      {[["cover","Cover only"],["all","All slides"]].map(([id,label])=>(
+                        <button key={id} onClick={()=>{
+                          if(id==="all"){const imgs={};editing.forEach((_,i)=>imgs[i]=slideImages[0]);setSlideImages(imgs);}
+                          else{setSlideImages({0:slideImages[0]});}
+                        }} style={{flex:1,background:T.surface2,border:`1px solid ${T.border}`,color:T.muted,padding:"6px",borderRadius:6,fontSize:11,fontWeight:600}}>{label}</button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {treatment==="dim"&&<div><label style={lbl}>Opacity — {imgOpacity}%</label><input type="range" min={5} max={55} value={imgOpacity} onChange={e=>setImgOpacity(+e.target.value)} /></div>}
