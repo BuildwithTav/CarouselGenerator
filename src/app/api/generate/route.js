@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
+  console.log('KEY EXISTS:', !!process.env.ANTHROPIC_API_KEY);
   try {
     const body = await request.json();
     
