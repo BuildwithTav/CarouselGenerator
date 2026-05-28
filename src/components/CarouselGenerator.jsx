@@ -194,7 +194,7 @@ function buildSlideHTML(slide, idx, total, opts) {
     `,
     split: `
       .c { position:absolute; inset:0; z-index:5; overflow:hidden; }
-      .st { position:absolute; top:255px; left:60px; right:60px; text-align:center; }
+      .st { position:absolute; top:${isPortrait?320:255}px; left:60px; right:60px; text-align:center; }
       .tag { display:inline-block; margin-bottom:16px; }
       .hl { font-size:${isPortrait?72:54}px; font-weight:900; line-height:1.06; ${ts} font-family:'${font}',sans-serif; }
       .panels { position:absolute; top:${isPortrait?600:490}px; left:0; right:0; bottom:60px; display:grid; grid-template-columns:1fr 1fr; }
