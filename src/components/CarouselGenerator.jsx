@@ -89,18 +89,19 @@ function buildSlideHTML(slide, idx, total, opts) {
     .br { bottom:44px; right:52px; border-bottom:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:0.4; }
     .fade { position:absolute; bottom:0; left:0; right:0; height:42%; z-index:3; pointer-events:none;
       background:linear-gradient(to bottom,transparent,rgba(0,0,0,0.58)); }
-    .badge { position:absolute; top:64px; left:64px; z-index:10;
-      display:flex; align-items:center; gap:14px;
-      background:${C.dark?"rgba(0,0,0,0.6)":"rgba(255,255,255,0.85)"};
-      padding:12px 22px 12px 12px; border-radius:60px; }
+    .badge { position:absolute; top:88px; left:88px; z-index:10;
+      display:inline-flex; align-items:center; gap:14px;
+      background:${bgImageUrl ? "rgba(0,0,0,0.65)" : C.dark ? "rgba(0,0,0,0.62)" : "rgba(255,255,255,0.88)"};
+      padding:10px 20px 10px 10px; border-radius:60px;
+      max-width:520px; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
     .av { width:64px; height:64px; border-radius:50%; border:3px solid ${C.accent};
       overflow:hidden; flex-shrink:0; background:${C.dark?"#1a1a1a":"#ddd"};
       display:flex; align-items:center; justify-content:center; position:relative; }
     .av img { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
       width:100%; height:100%; object-fit:cover; }
     .av-i { font-size:26px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; }
-    .bn { font-size:20px; font-weight:800; color:${C.dark?"#fff":"#111"}; line-height:1.2; font-family:'${font}',sans-serif; }
-    .bh { font-size:14px; color:${C.dark?"rgba(255,255,255,0.52)":"rgba(0,0,0,0.45)"}; font-family:'${font}',sans-serif; }
+    .bn { font-size:20px; font-weight:800; color:${bgImageUrl ? "#fff" : C.dark?"#fff":"#111"}; line-height:1.2; font-family:'${font}',sans-serif; }
+    .bh { font-size:14px; color:${bgImageUrl ? "rgba(255,255,255,0.55)" : C.dark?"rgba(255,255,255,0.52)":"rgba(0,0,0,0.45)"}; font-family:'${font}',sans-serif; }
     .tick { display:inline-flex; align-items:center; justify-content:center;
       width:18px; height:18px; background:#1D9BF0; border-radius:50%;
       font-size:10px; color:#fff; margin-left:5px; vertical-align:middle; }
@@ -204,7 +205,7 @@ function buildSlideHTML(slide, idx, total, opts) {
         <div class="cg">${slide.items.map((it,i)=>`
           <div class="card">
             <div class="cn">${String(i+1).padStart(2,"0")}</div>
-            <div><div class="ct">${escHtml(it.label||it.text||"")}</div>${it.sub?`<div class="cs">${escHtml(it.sub)}</div>`:""}</div>
+            <div><div class="ct">${escHtml(it.label||it.text||it.title||it.point||it.content||Object.values(it).find(v=>typeof v==="string"&&v.length>2)||"")}</div>${(it.sub||it.description||it.body)?`<div class="cs">${escHtml(it.sub||it.description||it.body)}</div>`:""}</div>
           </div>`).join("")}
         </div>
       </div>`;
@@ -273,13 +274,14 @@ function SlidePreview({ slide, idx, total, opts, onClick, isActive }) {
   const W = 1080, H = isPortrait ? 1920 : 1080;
   const scale = 320 / W;
   const ph = H * scale;
+  const html = buildSlideHTML(slide, idx, total, opts);
 
   useEffect(() => {
     const iframe = ref.current; if (!iframe) return;
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
     if (!doc) return;
-    doc.open(); doc.write(buildSlideHTML(slide,idx,total,opts)); doc.close();
-  }, [JSON.stringify({slide,opts,idx,total})]);
+    doc.open(); doc.write(html); doc.close();
+  }, [html]);
 
   return (
     <div onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#0A0A0A":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:320, height:ph, flexShrink:0 }}>
@@ -400,8 +402,8 @@ NARRATIVE ARC: hook → reality → insight → shift → advice → CTA
 LAYOUT SYSTEM — pick the right layout for each slide:
 - "statement" — MASSIVE headline, almost no body. For bold provocative claims. Very large type. Use for SLIDE 1 (the hook) — make it feel almost wrong to scroll past.
 - "standard" — headline + body. Good for most slides.
-- "split" — two panels side by side with VS. ONLY when comparing two distinct things. Requires "items" array: [{label,sub},{label,sub}]. Add "vs_label".
-- "cards" — numbered rows. For listing 3-5 specific points. Requires "items" array: [{label,text or sub}].
+- "split" — two panels side by side with VS. ONLY when comparing two distinct things. Requires "items" array with exactly 2 objects, each MUST have a "label" field: [{"label":"THEN","sub":"detail"},{"label":"NOW","sub":"detail"}]. Add "vs_label".
+- "cards" — numbered rows. For listing 3-5 specific points. Requires "items" array where each item MUST have a "label" field with the point text, and optionally a "sub" field: [{"label":"The main point","sub":"Optional detail"}].
 - "quote" — giant quote mark, italic. For a single powerful human truth. No more than one per carousel.
 - "hero" — icon + big headline + CTA buttons. ALWAYS use for the final slide. Add "icon_symbol" (one unicode char: ✦ ◆ ★ ✺ ⬡) and "cta_items" array of 1-2 strings.
 
@@ -722,7 +724,7 @@ Return ONLY valid JSON array:
               <div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
                   {slides.map((slide,i)=>(
-                    <SlidePreview key={`${i}-${theme}-${fontId}-${JSON.stringify(slide)}`} slide={slide} idx={i} total={slides.length} opts={slideOpts(i)} onClick={()=>setActive(i)} isActive={active===i}/>
+                    <SlidePreview key={i} slide={slide} idx={i} total={slides.length} opts={slideOpts(i)} onClick={()=>setActive(i)} isActive={active===i}/>
                   ))}
                 </div>
                 <div style={{display:"flex",gap:8}}>
