@@ -2,30 +2,33 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
 const GOLD = "#C9A84C";
+const STORAGE_KEY = "bwt_v9";
 
-const THEMES = [
-  { id:"dark-gold", label:"Dark Gold",  bg:"#0A0A0A", accent:"#C9A84C", text:"#FFFFFF", sub:"rgba(255,255,255,0.72)", dark:true },
-  { id:"midnight",  label:"Midnight",   bg:"#0D1117", accent:"#7C9EFF", text:"#E8EAF2", sub:"rgba(232,234,242,0.72)", dark:true },
-  { id:"noir",      label:"Noir",       bg:"#050505", accent:"#FFFFFF", text:"#FFFFFF", sub:"rgba(255,255,255,0.65)", dark:true },
-  { id:"editorial", label:"Editorial",  bg:"#F8F6F2", accent:"#1A1A1A", text:"#0A0A0A", sub:"rgba(10,10,10,0.62)", dark:false },
-  { id:"forest",    label:"Forest",     bg:"#111E11", accent:"#7DBE7D", text:"#E8F5E8", sub:"rgba(232,245,232,0.7)", dark:true },
-  { id:"navy",      label:"Navy",       bg:"#0A1628", accent:"#E8C97A", text:"#F0EAD6", sub:"rgba(240,234,214,0.7)", dark:true },
-  { id:"custom",    label:"Custom",     bg:"#0A0A0A", accent:"#C9A84C", text:"#FFFFFF", sub:"rgba(255,255,255,0.7)", dark:true },
+const ACCENT_SWATCHES = [
+  { id:"gold",    label:"Gold",    hex:"#C9A84C" },
+  { id:"blue",    label:"Blue",    hex:"#4A9EFF" },
+  { id:"green",   label:"Green",   hex:"#4CAF82" },
+  { id:"purple",  label:"Purple",  hex:"#9B59B6" },
+  { id:"red",     label:"Red",     hex:"#E74C3C" },
+  { id:"coral",   label:"Coral",   hex:"#FF6B6B" },
+  { id:"white",   label:"White",   hex:"#FFFFFF" },
+  { id:"custom",  label:"Custom",  hex:null },
 ];
 
 const FONTS = [
-  { id:"montserrat", label:"Montserrat", css:"Montserrat" },
-  { id:"playfair",   label:"Playfair",   css:"Playfair Display" },
-  { id:"poppins",    label:"Poppins",    css:"Poppins" },
-  { id:"inter",      label:"Inter",      css:"Inter" },
-  { id:"oswald",     label:"Oswald",     css:"Oswald" },
+  { id:"montserrat", label:"Montserrat",    css:"Montserrat" },
+  { id:"playfair",   label:"Playfair",      css:"Playfair Display" },
+  { id:"poppins",    label:"Poppins",       css:"Poppins" },
+  { id:"inter",      label:"Inter",         css:"Inter" },
+  { id:"oswald",     label:"Oswald",        css:"Oswald" },
+  { id:"dancing",    label:"Dancing Script", css:"Dancing Script" },
 ];
 
-const TONES = [
-  { id:"ai",          label:"Tav Decides",   desc:"Full creative control" },
-  { id:"bold",        label:"Bold & Direct",  desc:"Punchy, confident" },
-  { id:"calm",        label:"Calm & Real",    desc:"Honest, grounded" },
-  { id:"educational", label:"Educational",    desc:"Clear, expert" },
+const HEADLINE_STYLES = [
+  { id:"bold",      label:"Bold",      desc:"Mixed case, max impact",   transform:"none",       letterSpacing:"-1px" },
+  { id:"upper",     label:"Uppercase", desc:"All caps, high energy",    transform:"uppercase",  letterSpacing:"1px"  },
+  { id:"serif",     label:"Serif",     desc:"Elegant, authoritative",   transform:"none",       letterSpacing:"-0.5px", forceFont:"Playfair Display" },
+  { id:"minimal",   label:"Minimal",   desc:"Clean, understated",       transform:"none",       letterSpacing:"0px"  },
 ];
 
 const BUSINESS_TYPES = [
@@ -38,11 +41,25 @@ const BUSINESS_TYPES = [
   { id:"other",      label:"Other" },
 ];
 
-const STORAGE_KEY = "bwt_v8";
+const BG_MODES = [
+  { id:"dark",   label:"Dark",   desc:"Dark with subtle texture" },
+  { id:"light",  label:"Light",  desc:"Clean light background" },
+  { id:"custom", label:"Custom", desc:"Upload your own image" },
+];
 
-// ─── IMAGE BRIGHTNESS SAMPLER ────────────────────────────
-// Samples the top-left area of an image where the badge sits
-// Returns true if that area is dark (badge should be light)
+const COVER_POSITIONS = [
+  { id:"top",    label:"Top",    desc:"Hook in upper third" },
+  { id:"centre", label:"Centre", desc:"Hook centred" },
+  { id:"bottom", label:"Bottom", desc:"Hook in lower third" },
+];
+
+// ─── HELPERS ─────────────────────────────────────────────
+
+function loadS() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||"null"); } catch { return null; } }
+function saveS(d) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} }
+function loadHistory() { try { return JSON.parse(localStorage.getItem("bwt_history")||"[]"); } catch { return []; } }
+function saveHistory(h) { try { localStorage.setItem("bwt_history", JSON.stringify(h.slice(0,10))); } catch {} }
+function Spin({c="#fff"}) { return <div style={{width:14,height:14,borderRadius:"50%",border:`2px solid rgba(255,255,255,0.15)`,borderTop:`2px solid ${c}`,animation:"spin 0.7s linear infinite",flexShrink:0}}/>; }
 
 async function sampleImageBrightness(imageUrl) {
   if (!imageUrl) return null;
@@ -54,16 +71,14 @@ async function sampleImageBrightness(imageUrl) {
         const canvas = document.createElement("canvas");
         canvas.width = 300; canvas.height = 200;
         const ctx = canvas.getContext("2d");
-        // Draw just the top-left portion where badge sits
         ctx.drawImage(img, 0, 0, img.width * 0.35, img.height * 0.25, 0, 0, 300, 200);
         const data = ctx.getImageData(0, 0, 300, 200).data;
         let total = 0, count = 0;
-        for (let i = 0; i < data.length; i += 16) { // sample every 4th pixel
+        for (let i = 0; i < data.length; i += 16) {
           total += (data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114);
           count++;
         }
-        const brightness = total / count; // 0-255
-        resolve(brightness < 128 ? "dark" : "light"); // dark area = need light pill
+        resolve((total / count) < 128 ? "dark" : "light");
       } catch { resolve(null); }
     };
     img.onerror = () => resolve(null);
@@ -71,65 +86,84 @@ async function sampleImageBrightness(imageUrl) {
   });
 }
 
-// ─── HTML SLIDE BUILDER ───────────────────────────────────
+// ─── SLIDE HTML BUILDER ───────────────────────────────────
 
-function buildSlideHTML(slide, idx, total, opts) {
-  const { theme, fontId, bgImageUrl, overlayDark, profileUrl,
-          name, handle, blueTick, websiteUrl, showNums, customBg, customAccent, ratio,
-          badgeArea } = opts;
+function buildSlideHTML(slide, idx, total, opts, isCover = false) {
+  const {
+    fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
+    coverImageUrl, coverPosition, badgeArea,
+    profileUrl, name, handle, blueTick, websiteUrl, showNums,
+    accentColor, ratio
+  } = opts;
 
-  const themeObj = THEMES.find(t => t.id === theme) || THEMES[0];
-  const C = theme === "custom"
-    ? { ...themeObj, bg: customBg||"#0A0A0A", accent: customAccent||"#C9A84C" }
-    : themeObj;
+  const accent = accentColor || GOLD;
+  const isDark = bgMode !== "light";
+  const slideBg = bgMode === "light" ? "#F5F3EF" : "#0A0A0A";
+  const C = {
+    bg: slideBg,
+    accent,
+    text: isDark ? "#FFFFFF" : "#0A0A0A",
+    sub: isDark ? "rgba(255,255,255,0.72)" : "rgba(10,10,10,0.62)",
+    dark: isDark,
+  };
 
-  // Badge pill colour — smart based on what's actually behind it
-  // If image sampled: use result. If no image: use theme. If unknown: safe dark.
-  const badgeOnDark = bgImageUrl
-    ? (badgeArea === "light" ? false : true)  // light image area = dark pill needed? No — light area = use light pill
-    : C.dark;
+  const hs = HEADLINE_STYLES.find(h => h.id === headlineStyle) || HEADLINE_STYLES[0];
+  const baseFontObj = FONTS.find(f => f.id === fontId) || FONTS[0];
+  const hlFont = hs.forceFont || baseFontObj.css;
+  const bodyFont = baseFontObj.css;
 
-  // Correct logic: light image area behind badge = badge needs dark pill to stand out
-  // dark image area = badge needs light pill... wait, with overlay it's always darkened
-  // With overlay applied, top-left is always quite dark. So always use semi-dark pill on images.
-  const pillBg = bgImageUrl
-    ? badgeArea === "light"
-      ? "rgba(0,0,0,0.72)"   // light image area — strong dark pill
-      : "rgba(0,0,0,0.58)"   // dark image area — moderate dark pill
-    : C.dark ? "rgba(0,0,0,0.62)" : "rgba(255,255,255,0.88)";
-
-  const pillTextColor = bgImageUrl ? "#fff" : C.dark ? "#fff" : "#111";
-  const pillSubColor = bgImageUrl ? "rgba(255,255,255,0.55)" : C.dark ? "rgba(255,255,255,0.52)" : "rgba(0,0,0,0.45)";
-
-  const font = (FONTS.find(f => f.id === fontId) || FONTS[0]).css;
   const isPortrait = ratio === "portrait";
-  const W = 1080, H = isPortrait ? 1920 : 1080;
+  const W = 1080, H = isPortrait ? 1920 : 1350; // 4:5 default, 9:16 portrait
   const layout = slide.layout || "standard";
 
-  function escHtml(s) {
-    return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-  }
+  // Background for this slide
+  const bgImageUrl = isCover ? coverImageUrl : (bgMode === "custom" ? templateBgUrl : null);
+  const slideBg = isCover
+    ? (coverImageUrl ? C.bg : C.bg)
+    : bgMode === "light"
+      ? "#F5F3EF"
+      : bgMode === "dark"
+        ? C.bg
+        : C.bg;
+
+  const pillBg = bgImageUrl
+    ? badgeArea === "light" ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.58)"
+    : C.dark ? "rgba(0,0,0,0.62)" : "rgba(255,255,255,0.88)";
+  const pillText = bgImageUrl || C.dark ? "#fff" : "#111";
+  const pillSub = bgImageUrl || C.dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)";
+
+  function esc(s) { return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
   function accentHL(text) {
     const aw = (slide.accent_word||"").trim();
-    if (!aw || !text.includes(aw)) return escHtml(text);
+    if (!aw || !text.includes(aw)) {
+      const t = hs.transform === "uppercase" ? (text||"").toUpperCase() : (text||"");
+      return esc(t);
+    }
     const i = text.indexOf(aw);
-    return escHtml(text.slice(0,i)) + `<span style="color:${C.accent}">${escHtml(aw)}</span>` + escHtml(text.slice(i+aw.length));
+    const before = hs.transform === "uppercase" ? text.slice(0,i).toUpperCase() : text.slice(0,i);
+    const accent = hs.transform === "uppercase" ? aw.toUpperCase() : aw;
+    const after = hs.transform === "uppercase" ? text.slice(i+aw.length).toUpperCase() : text.slice(i+aw.length);
+    return `${esc(before)}<span style="color:${C.accent}">${esc(accent)}</span>${esc(after)}`;
   }
 
-  const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:wght@700;900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&display=swap`;
+  const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&family=Dancing+Script:wght@600;700&display=swap`;
+  const ts = C.dark || bgImageUrl ? "text-shadow:0 2px 28px rgba(0,0,0,0.95);" : "";
+  const ts2 = C.dark || bgImageUrl ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : "";
 
-  const ts = C.dark ? "text-shadow:0 2px 24px rgba(0,0,0,0.95);" : "";
-  const ts2 = C.dark ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : "";
+  // Badge bottom = top(88) + avatar(110) + padding(20) = ~218px. Content starts at 250px min.
+  const BADGE_BOTTOM = 230;
+  const topPad = isPortrait ? 400 : BADGE_BOTTOM + 40;
+  const botPad = isPortrait ? 220 : 120;
 
   const base = `
     @import url('${gFonts}');
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-    html, body { width:${W}px; height:${H}px; overflow:hidden; background:${C.bg}; }
-    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${C.bg}; font-family:'${font}',sans-serif; position:relative; color:${C.text}; }
+    html, body { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; }
+    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; }
     .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; }
     .bg-ov { position:absolute; inset:0; z-index:1; pointer-events:none; }
-    .noise { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0.35;
+    .noise { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0.3;
       background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
       background-repeat:repeat; }
     .bk { position:absolute; width:52px; height:52px; z-index:3; }
@@ -137,118 +171,128 @@ function buildSlideHTML(slide, idx, total, opts) {
     .tr { top:44px; right:52px; border-top:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:0.4; }
     .bl { bottom:44px; left:52px; border-bottom:2.5px solid ${C.accent}; border-left:2.5px solid ${C.accent}; opacity:0.4; }
     .br { bottom:44px; right:52px; border-bottom:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:0.4; }
-    .fade { position:absolute; bottom:0; left:0; right:0; height:42%; z-index:3; pointer-events:none;
-      background:linear-gradient(to bottom,transparent,rgba(0,0,0,0.58)); }
-    .badge { position:absolute; top:88px; left:88px; z-index:10;
+    .fade { position:absolute; bottom:0; left:0; right:0; height:45%; z-index:3; pointer-events:none;
+      background:linear-gradient(to bottom,transparent,rgba(0,0,0,0.65)); }
+    .badge { position:absolute; top:80px; left:80px; z-index:10;
       display:inline-flex; align-items:center; gap:14px;
-      background:${pillBg};
-      padding:10px 20px 10px 10px; border-radius:60px;
-      max-width:520px; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+      background:${pillBg}; padding:10px 22px 10px 10px; border-radius:60px;
+      backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
     .av { width:110px; height:110px; border-radius:50%; border:3px solid ${C.accent};
       overflow:hidden; flex-shrink:0; background:${C.dark?"#1a1a1a":"#ddd"};
       display:flex; align-items:center; justify-content:center; position:relative; }
-    .av img { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-      width:100%; height:100%; object-fit:cover; }
-    .av-i { font-size:44px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; }
-    .bn { font-size:22px; font-weight:800; color:${pillTextColor}; line-height:1.2; font-family:'${font}',sans-serif; }
-    .bh { font-size:16px; color:${pillSubColor}; font-family:'${font}',sans-serif; }
-    .tick { display:inline-flex; align-items:center; justify-content:center;
-      width:18px; height:18px; background:#1D9BF0; border-radius:50%;
-      font-size:10px; color:#fff; margin-left:5px; vertical-align:middle; }
+    .av img { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:100%; height:100%; object-fit:cover; }
+    .av-i { font-size:44px; font-weight:900; color:${C.accent}; font-family:'${hlFont}',sans-serif; }
+    .bn { font-size:22px; font-weight:800; color:${pillText}; line-height:1.2; font-family:'${bodyFont}',sans-serif; }
+    .bh { font-size:15px; color:${pillSub}; font-family:'${bodyFont}',sans-serif; }
+    .tick { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; background:#1D9BF0; border-radius:50%; font-size:10px; color:#fff; margin-left:5px; vertical-align:middle; }
     .wm { position:absolute; bottom:28px; right:38px; z-index:3;
-      font-size:${Math.floor(H*0.2)}px; font-weight:900; line-height:1;
+      font-size:${Math.floor(H*0.18)}px; font-weight:900; line-height:1;
       color:${C.dark?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.035)"};
-      font-family:'${font}',sans-serif; pointer-events:none; user-select:none; }
+      font-family:'${hlFont}',sans-serif; pointer-events:none; user-select:none; }
     .cnt { position:absolute; top:52px; right:60px; z-index:10;
-      font-size:14px; font-weight:700; color:${C.accent}88; font-family:'${font}',sans-serif; }
-    .site { position:absolute; bottom:${websiteUrl?28:10}px; left:0; right:0; text-align:center; z-index:10;
-      font-size:17px; color:${C.dark?"rgba(255,255,255,0.28)":"rgba(0,0,0,0.25)"}; font-family:'${font}',sans-serif; }
-    .brand { position:absolute; bottom:10px; left:0; right:0; text-align:center; z-index:10;
-      font-size:12px; font-weight:700; letter-spacing:3px;
-      color:${C.dark?"rgba(255,255,255,0.14)":"rgba(0,0,0,0.14)"}; font-family:'${font}',sans-serif; }
+      font-size:14px; font-weight:700; color:${C.accent}88; font-family:'${bodyFont}',sans-serif; }
+    .site { position:absolute; bottom:28px; left:0; right:0; text-align:center; z-index:10;
+      font-size:17px; color:${C.dark?"rgba(255,255,255,0.28)":"rgba(0,0,0,0.25)"}; font-family:'${bodyFont}',sans-serif; }
     .tag { display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"};
       font-size:14px; font-weight:800; letter-spacing:2px;
-      padding:8px 24px; border-radius:60px; font-family:'${font}',sans-serif; }
+      padding:8px 24px; border-radius:60px; font-family:'${bodyFont}',sans-serif; }
     .div { width:80px; height:1.5px; background:${C.accent}; opacity:0.5; margin:0 auto; position:relative; }
     .div::after { content:''; position:absolute; top:-4px; left:50%;
-      transform:translateX(-50%) rotate(45deg);
-      width:10px; height:10px; background:${C.accent}; opacity:0.9; }
+      transform:translateX(-50%) rotate(45deg); width:10px; height:10px; background:${C.accent}; opacity:0.9; }
   `;
-
-  // Badge is at top:88px, height ~134px — content must start below 240px
-  const topPad = isPortrait ? 380 : 260;
-  const botPad = isPortrait ? 200 : 140;
 
   const layouts = {
     standard: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; gap:0; overflow:hidden; }
-      .hl { font-size:${isPortrait?100:84}px; font-weight:900; line-height:1.08; ${ts} margin-bottom:0; font-family:'${font}',sans-serif; flex-shrink:0; }
-      .body { font-size:${isPortrait?34:29}px; line-height:1.6; color:${C.sub}; max-width:860px; margin-top:28px; ${ts2} font-family:'${font}',sans-serif; }
-      .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?30:26}px; font-weight:800; color:${C.accent}; font-family:'${font}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
+      .hl { font-size:${isPortrait?96:80}px; font-weight:900; line-height:1.08; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; }
+      .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; ${ts2} font-family:'${bodyFont}',sans-serif; }
+      .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?28:24}px; font-weight:800; color:${C.accent}; font-family:'${bodyFont}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; }
     `,
     statement: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 70px ${botPad}px; text-align:center; gap:0; overflow:hidden; }
-      .hl { font-size:${isPortrait?120:104}px; font-weight:900; line-height:1.0; ${ts} letter-spacing:-2px; margin-bottom:0; font-family:'${font}',sans-serif; flex-shrink:0; }
-      .body { font-size:${isPortrait?34:29}px; line-height:1.6; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${font}',sans-serif; }
-      .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:26px; font-weight:800; color:${C.accent}; font-family:'${font}',sans-serif; flex-shrink:0; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 70px ${botPad}px; text-align:center; overflow:hidden; }
+      .hl { font-size:${isPortrait?116:98}px; font-weight:900; line-height:1.0; letter-spacing:${hs.id==="upper"?"2px":"-2px"}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; }
+      .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
     `,
     split: `
       .c { position:absolute; inset:0; z-index:5; overflow:hidden; }
-      .st { position:absolute; top:${isPortrait?320:255}px; left:60px; right:60px; text-align:center; }
-      .tag { display:inline-block; margin-bottom:16px; }
-      .hl { font-size:${isPortrait?72:54}px; font-weight:900; line-height:1.06; ${ts} font-family:'${font}',sans-serif; }
-      .panels { position:absolute; top:${isPortrait?600:490}px; left:0; right:0; bottom:60px; display:grid; grid-template-columns:1fr 1fr; }
-      .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 40px; text-align:center; gap:10px; overflow:hidden; }
+      .split-top { position:absolute; top:${isPortrait?400:260}px; left:60px; right:60px; text-align:center; z-index:4; }
+      .split-tag { display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"}; font-size:14px; font-weight:800; letter-spacing:2px; padding:8px 24px; border-radius:60px; font-family:'${bodyFont}',sans-serif; margin-bottom:16px; }
+      .split-hl { font-size:${isPortrait?68:52}px; font-weight:900; line-height:1.06; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; color:${C.text}; }
+      .split-panels { position:absolute; top:${isPortrait?660:490}px; left:0; right:0; bottom:60px; display:grid; grid-template-columns:1fr 1fr; z-index:3; }
+      .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 44px; text-align:center; gap:12px; overflow:hidden; }
       .panel:first-child { background:${C.accent}10; border-right:1px solid ${C.accent}28; }
-      .pl { font-size:${isPortrait?44:34}px; font-weight:900; font-family:'${font}',sans-serif; line-height:1.1; }
-      .ps { font-size:${isPortrait?23:19}px; color:${C.sub}; font-family:'${font}',sans-serif; line-height:1.35; }
-      .vs { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:6;
-        width:76px; height:76px; border-radius:50%; background:${C.bg};
-        border:1.5px solid ${C.accent}44; display:flex; align-items:center; justify-content:center; }
-      .vt { font-size:24px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; }
+      .pl { font-size:${isPortrait?44:36}px; font-weight:900; font-family:'${hlFont}',sans-serif; line-height:1.1; color:${C.text}; }
+      .pa { color:${C.accent}; }
+      .ps { font-size:${isPortrait?24:20}px; color:${C.sub}; font-family:'${bodyFont}',sans-serif; line-height:1.4; }
+      .vs { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:6; width:80px; height:80px; border-radius:50%; background:${C.bg}; border:1.5px solid ${C.accent}44; display:flex; align-items:center; justify-content:center; }
+      .vt { font-size:26px; font-weight:900; color:${C.accent}; font-family:'${bodyFont}',sans-serif; }
     `,
     cards: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:${topPad}px 72px ${botPad}px; overflow:hidden; }
-      .hl { font-size:${isPortrait?84:66}px; font-weight:900; line-height:1.08; ${ts} text-align:center; margin-bottom:4px; font-family:'${font}',sans-serif; flex-shrink:0; }
+      .hl { font-size:${isPortrait?82:64}px; font-weight:900; line-height:1.08; letter-spacing:${hs.letterSpacing}; ${ts} text-align:center; margin-bottom:4px; font-family:'${hlFont}',sans-serif; flex-shrink:0; }
       .cg { width:100%; display:flex; flex-direction:column; gap:${isPortrait?14:9}px; margin-top:20px; overflow:hidden; }
       .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:10px; padding:${isPortrait?22:14}px 24px; display:flex; align-items:flex-start; gap:16px; flex-shrink:0; }
-      .cn { font-size:${isPortrait?28:20}px; font-weight:900; color:${C.accent}; font-family:'${font}',sans-serif; flex-shrink:0; width:36px; line-height:1; }
-      .ct { font-size:${isPortrait?25:19}px; color:${C.text}; font-family:'${font}',sans-serif; line-height:1.35; font-weight:600; }
-      .cs { font-size:${isPortrait?20:16}px; color:${C.sub}; margin-top:2px; font-family:'${font}',sans-serif; }
+      .cn { font-size:${isPortrait?28:20}px; font-weight:900; color:${C.accent}; font-family:'${bodyFont}',sans-serif; flex-shrink:0; width:36px; line-height:1; }
+      .ct { font-size:${isPortrait?25:19}px; color:${C.text}; font-family:'${bodyFont}',sans-serif; line-height:1.35; font-weight:600; }
+      .cs { font-size:${isPortrait?20:16}px; color:${C.sub}; margin-top:2px; font-family:'${bodyFont}',sans-serif; }
     `,
     quote: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 110px ${botPad+40}px; text-align:center; gap:0; overflow:hidden; }
-      .qm { font-size:280px; font-weight:900; color:${C.accent}20; line-height:0.65; font-family:'${font}',sans-serif; margin-bottom:-20px; flex-shrink:0; }
-      .hl { font-size:${isPortrait?100:88}px; font-weight:900; line-height:1.06; ${ts} font-style:italic; letter-spacing:-1px; margin-bottom:0; font-family:'${font}',sans-serif; }
-      .body { font-size:${isPortrait?32:28}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${font}',sans-serif; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 110px ${botPad+40}px; text-align:center; overflow:hidden; }
+      .qm { font-size:260px; font-weight:900; color:${C.accent}20; line-height:0.65; font-family:'${hlFont}',sans-serif; margin-bottom:-20px; flex-shrink:0; }
+      .hl { font-size:${isPortrait?96:84}px; font-weight:900; line-height:1.06; letter-spacing:${hs.letterSpacing}; ${ts} font-style:${hs.id==="serif"?"italic":"normal"}; font-family:'${hlFont}',sans-serif; }
+      .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
     `,
     hero: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad+20}px 90px ${botPad+20}px; gap:24px; text-align:center; overflow:hidden; }
-      .hi { width:${isPortrait?200:180}px; height:${isPortrait?200:180}px; border-radius:50%; border:1.5px solid ${C.accent}40; background:${C.accent}12; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-      .hs { font-size:${isPortrait?120:110}px; line-height:1; }
-      .hl { font-size:${isPortrait?96:84}px; font-weight:900; line-height:1.06; ${ts} font-family:'${font}',sans-serif; }
-      .body { font-size:${isPortrait?32:28}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${font}',sans-serif; }
-      .cb { width:100%; max-width:860px; padding:${isPortrait?32:26}px 50px; border-radius:12px; font-size:${isPortrait?30:26}px; font-weight:800; font-family:'${font}',sans-serif; text-align:center; background:${C.accent}; color:${C.dark?"#000":"#fff"}; margin-top:8px; }
+      .hi { width:${isPortrait?190:170}px; height:${isPortrait?190:170}px; border-radius:50%; border:1.5px solid ${C.accent}40; background:${C.accent}12; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+      .hs { font-size:${isPortrait?110:100}px; line-height:1; }
+      .hl { font-size:${isPortrait?90:78}px; font-weight:900; line-height:1.06; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; }
+      .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; }
+      .cb { width:100%; max-width:860px; padding:${isPortrait?30:24}px 50px; border-radius:12px; font-size:${isPortrait?28:24}px; font-weight:800; font-family:'${bodyFont}',sans-serif; text-align:center; background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
+    `,
+  };
+
+  // Cover slide layout
+  const coverPos = coverPosition || "centre";
+  const coverLayouts = {
+    top: `
+      .cover-content { position:absolute; top:${isPortrait?300:220}px; left:70px; right:70px; z-index:5; }
+    `,
+    centre: `
+      .cover-content { position:absolute; top:50%; left:70px; right:70px; transform:translateY(-50%); z-index:5; }
+    `,
+    bottom: `
+      .cover-content { position:absolute; bottom:${isPortrait?280:200}px; left:70px; right:70px; z-index:5; }
     `,
   };
 
   function layoutHTML() {
+    if (isCover) {
+      const hl = accentHL(slide.headline||"");
+      return `
+        <div class="cover-content">
+          ${slide.tag ? `<div style="margin-bottom:20px"><span class="tag">${esc(slide.tag.toUpperCase())}</span></div>` : ""}
+          <div style="font-size:${isPortrait?110:90}px;font-weight:900;line-height:1.05;letter-spacing:${hs.letterSpacing};${ts}font-family:'${hlFont}',sans-serif;color:${C.text}">${hl}</div>
+          ${slide.body ? `<div style="font-size:${isPortrait?32:26}px;line-height:1.6;color:${C.sub};margin-top:24px;font-family:'${bodyFont}',sans-serif;${ts2}">${esc(slide.body)}</div>` : ""}
+        </div>`;
+    }
+
     const hl = accentHL(slide.headline||"");
-    const tag = slide.tag ? `<div style="margin-bottom:28px"><span class="tag">${escHtml(slide.tag.toUpperCase())}</span></div>` : "";
+    const tag = slide.tag ? `<div style="margin-bottom:28px"><span class="tag">${esc(slide.tag.toUpperCase())}</span></div>` : "";
     const divider = `<div class="div" style="margin:28px auto"></div>`;
-    const body = slide.body ? `<div class="body">${escHtml(slide.body)}</div>` : "";
+    const body = slide.body ? `<div class="body">${esc(slide.body)}</div>` : "";
 
     if (layout==="split" && slide.items?.length >= 2) {
       const [a,b] = slide.items;
       return `<div class="c">
-        <div class="st">
-          ${tag}
-          <div class="hl">${hl}</div>
+        <div class="split-top">
+          ${slide.tag ? `<div style="margin-bottom:16px"><span class="split-tag">${esc(slide.tag.toUpperCase())}</span></div>` : ""}
+          <div class="split-hl">${hl}</div>
         </div>
-        <div class="panels" style="position:relative">
-          <div class="panel"><div class="pl" style="color:${C.accent}">${escHtml(a.label||"")}</div>${a.sub?`<div class="ps">${escHtml(a.sub)}</div>`:""}</div>
-          <div class="vs"><div class="vt">${escHtml(slide.vs_label||"VS")}</div></div>
-          <div class="panel"><div class="pl" style="opacity:0.75">${escHtml(b.label||"")}</div>${b.sub?`<div class="ps">${escHtml(b.sub)}</div>`:""}</div>
+        <div class="split-panels" style="position:relative">
+          <div class="panel"><div class="pl pa">${esc(a.label||"")}</div>${a.sub?`<div class="ps">${esc(a.sub)}</div>`:""}</div>
+          <div class="vs"><div class="vt">${esc(slide.vs_label||"VS")}</div></div>
+          <div class="panel"><div class="pl" style="opacity:0.75">${esc(b.label||"")}</div>${b.sub?`<div class="ps">${esc(b.sub)}</div>`:""}</div>
         </div>
       </div>`;
     }
@@ -259,20 +303,19 @@ function buildSlideHTML(slide, idx, total, opts) {
         <div class="cg">${slide.items.map((it,i)=>`
           <div class="card">
             <div class="cn">${String(i+1).padStart(2,"0")}</div>
-            <div><div class="ct">${escHtml(it.label||it.text||it.title||it.point||it.content||Object.values(it).find(v=>typeof v==="string"&&v.length>2)||"")}</div>${(it.sub||it.description||it.body)?`<div class="cs">${escHtml(it.sub||it.description||it.body)}</div>`:""}</div>
+            <div><div class="ct">${esc(it.label||it.text||it.title||it.point||it.content||Object.values(it).find(v=>typeof v==="string"&&v.length>2)||"")}</div>${(it.sub||it.description||it.body)?`<div class="cs">${esc(it.sub||it.description||it.body)}</div>`:""}</div>
           </div>`).join("")}
         </div>
       </div>`;
     }
 
     if (layout==="hero") {
-      // Single CTA only — take first item from cta_items, or fall back to cta field
       const ctaText = slide.cta_items?.[0] || slide.cta || "";
       return `<div class="c">
         ${slide.icon_symbol?`<div class="hi"><span class="hs">${slide.icon_symbol}</span></div>`:""}
         ${tag}<div class="hl">${hl}</div>
         ${slide.body?divider+body:""}
-        ${ctaText?`<div class="cb">${escHtml(ctaText)}</div>`:""}
+        ${ctaText?`<div class="cb">${esc(ctaText)}</div>`:""}
       </div>`;
     }
 
@@ -284,54 +327,55 @@ function buildSlideHTML(slide, idx, total, opts) {
       </div>`;
     }
 
-    // standard + statement
-    const cta = slide.cta ? `<div class="cta">${escHtml(slide.cta)}</div>` : "";
+    const cta = slide.cta ? `<div class="cta">${esc(slide.cta)}</div>` : "";
     return `<div class="c">${tag}<div class="hl">${hl}</div>${slide.body?divider+body:""}${cta}</div>`;
   }
 
-  const bgHtml = bgImageUrl ? `
+  const hasBg = !!bgImageUrl;
+  const overlayAlpha = (overlayDark||65)/100;
+  const bgHtml = hasBg ? `
     <img class="bg-img" src="${bgImageUrl}" crossorigin="anonymous"/>
-    <div class="bg-ov" style="background:linear-gradient(to bottom,rgba(0,0,0,${Math.min((overlayDark||65)/100*0.92,0.88)}) 0%,rgba(0,0,0,${Math.min((overlayDark||65)/100*0.42,0.5)}) 40%,rgba(0,0,0,${Math.min((overlayDark||65)/100*0.95,0.92)}) 100%)"></div>` : "";
+    <div class="bg-ov" style="background:linear-gradient(to bottom,rgba(0,0,0,${Math.min(overlayAlpha*0.92,0.88)}) 0%,rgba(0,0,0,${Math.min(overlayAlpha*0.42,0.5)}) 40%,rgba(0,0,0,${Math.min(overlayAlpha*0.95,0.92)}) 100%)"></div>` : "";
 
   const avHtml = profileUrl
     ? `<img src="${profileUrl}" crossorigin="anonymous"/>`
-    : `<div class="av-i">${escHtml((name||"?")[0].toUpperCase())}</div>`;
+    : `<div class="av-i">${esc((name||"?")[0].toUpperCase())}</div>`;
+
+  const coverStyle = isCover ? coverLayouts[coverPos] || coverLayouts.centre : "";
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
-<style>${base}${layouts[layout]||layouts.standard}</style>
+<style>${base}${isCover ? coverStyle : (layouts[layout]||layouts.standard)}</style>
 </head><body>
 <div class="slide">
   ${bgHtml}
-  ${C.dark?'<div class="noise"></div>':""}
+  ${C.dark||hasBg?'<div class="noise"></div>':""}
   <div class="bk tl"></div><div class="bk tr"></div>
   <div class="bk bl"></div><div class="bk br"></div>
-  ${C.dark?'<div class="fade"></div>':""}
+  ${C.dark||hasBg?'<div class="fade"></div>':""}
   <div class="badge">
     <div class="av">${avHtml}</div>
     <div>
-      <div class="bn">${escHtml(name||"Your Brand")}${blueTick?` <span class="tick">✓</span>`:""}</div>
-      <div class="bh">${escHtml(handle||"@yourhandle")}</div>
+      <div class="bn">${esc(name||"Your Brand")}${blueTick?` <span class="tick">✓</span>`:""}</div>
+      <div class="bh">${esc(handle||"@yourhandle")}</div>
     </div>
   </div>
   ${showNums?`<div class="wm">${String(idx+1).padStart(2,"0")}</div><div class="cnt">${idx+1} / ${total}</div>`:""}
   ${layoutHTML()}
-  ${websiteUrl?`<div class="site">${escHtml(websiteUrl)}</div>`:""}
-  <div class="brand">BUILD WITH TAV</div>
+  ${websiteUrl?`<div class="site">${esc(websiteUrl)}</div>`:""}
 </div>
 </body></html>`;
 }
 
 // ─── PREVIEW ─────────────────────────────────────────────
 
-function SlidePreview({ slide, idx, total, opts, onClick, isActive }) {
+function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover }) {
   const ref = useRef(null);
   const isPortrait = opts.ratio === "portrait";
-  const W = 1080, H = isPortrait ? 1920 : 1080;
-  // For portrait, use narrower preview so they fit in the grid
-  const previewW = isPortrait ? 200 : 320;
+  const W = 1080, H = isPortrait ? 1920 : 1350;
+  const previewW = isPortrait ? 180 : 280;
   const scale = previewW / W;
   const previewH = H * scale;
-  const html = buildSlideHTML(slide, idx, total, opts);
+  const html = buildSlideHTML(slide, idx, total, opts, isCover);
 
   useEffect(() => {
     const iframe = ref.current; if (!iframe) return;
@@ -350,71 +394,60 @@ function SlidePreview({ slide, idx, total, opts, onClick, isActive }) {
 
 // ─── DOWNLOAD ────────────────────────────────────────────
 
-async function downloadSlideAsPNG(slide, idx, total, opts, filename) {
+async function downloadSlideAsPNG(slide, idx, total, opts, filename, isCover) {
   const isPortrait = opts.ratio === "portrait";
-  const W = 1080, H = isPortrait ? 1920 : 1080;
-  const html = buildSlideHTML(slide, idx, total, opts);
-
+  const W = 1080, H = isPortrait ? 1920 : 1350;
+  const html = buildSlideHTML(slide, idx, total, opts, isCover);
   const iframe = document.createElement("iframe");
   iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
   document.body.appendChild(iframe);
-
   return new Promise((resolve, reject) => {
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
     doc.open(); doc.write(html); doc.close();
-
     setTimeout(async () => {
       try {
         const win = iframe.contentWindow;
-        // Inject html2canvas
         await new Promise(r => {
           const s = doc.createElement("script");
           s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-          s.onload = r; s.onerror = r;
-          doc.head.appendChild(s);
-          setTimeout(r, 4000);
+          s.onload = r; s.onerror = r; doc.head.appendChild(s); setTimeout(r, 4000);
         });
-
         if (!win.html2canvas) throw new Error("html2canvas not loaded");
-
         const el = doc.querySelector(".slide") || doc.body;
-        const canvas = await win.html2canvas(el, {
-          useCORS: true, allowTaint: true, scale: 1,
-          width: W, height: H, windowWidth: W, windowHeight: H,
-          backgroundColor: null, logging: false,
-        });
-
+        const canvas = await win.html2canvas(el, { useCORS:true, allowTaint:true, scale:1, width:W, height:H, windowWidth:W, windowHeight:H, backgroundColor:null, logging:false });
         canvas.toBlob(blob => {
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url; a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
           setTimeout(() => URL.revokeObjectURL(url), 1000);
-          document.body.removeChild(iframe);
-          resolve();
+          document.body.removeChild(iframe); resolve();
         }, "image/png", 1.0);
-
-      } catch(e) {
-        document.body.removeChild(iframe);
-        reject(e);
-      }
+      } catch(e) { document.body.removeChild(iframe); reject(e); }
     }, 2500);
   });
 }
 
-// ─── STORAGE / HELPERS ────────────────────────────────────
-
-function loadS() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||"null"); } catch { return null; } }
-function saveS(d) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} }
-function Spin({c="#fff"}) { return <div style={{width:14,height:14,borderRadius:"50%",border:`2px solid rgba(255,255,255,0.15)`,borderTop:`2px solid ${c}`,animation:"spin 0.7s linear infinite",flexShrink:0}}/>; }
+function QuotePreview({ html, W, H, scale }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const iframe = ref.current; if (!iframe) return;
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) return;
+    doc.open(); doc.write(html); doc.close();
+  }, [html]);
+  return <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin"/>;
+}
 
 // ─── APP ─────────────────────────────────────────────────
 
 export default function App() {
   const S = loadS();
-  const [tab, setTab] = useState("generate");
+
+  // Nav
+  const [nav, setNav] = useState("generate"); // generate | history | brand | visual
+
+  // Brand (saved)
   const [profileUrl, setProfileUrl] = useState(S?.profileUrl||null);
   const [name, setName] = useState(S?.name||"");
   const [handle, setHandle] = useState(S?.handle||"");
@@ -422,23 +455,32 @@ export default function App() {
   const [website, setWebsite] = useState(S?.website||"");
   const [showWebsite, setShowWebsite] = useState(S?.showWebsite??false);
   const [voiceProfile, setVoiceProfile] = useState(S?.voiceProfile||"");
-  const [businessType, setBusinessType] = useState(S?.businessType||"");
+  const [businessType, setBusinessType] = useState(S?.businessType||"marketer");
   const [otherType, setOtherType] = useState(S?.otherType||"");
-  const [theme, setTheme] = useState(S?.theme||"dark-gold");
+  const [coverPhotos, setCoverPhotos] = useState(S?.coverPhotos||[]); // photo library
+  const [activeCoverPhoto, setActiveCoverPhoto] = useState(S?.activeCoverPhoto||null);
+  const [coverPosition, setCoverPosition] = useState(S?.coverPosition||"bottom");
+  const [badgeArea, setBadgeArea] = useState(null);
+
+  // Visual (saved)
+  const [accentSwatch, setAccentSwatch] = useState(S?.accentSwatch||"gold");
+  const [accentColor, setAccentColor] = useState(S?.accentColor||GOLD);
   const [fontId, setFontId] = useState(S?.fontId||"montserrat");
+  const [headlineStyle, setHeadlineStyle] = useState(S?.headlineStyle||"bold");
   const [showNums, setShowNums] = useState(S?.showNums??true);
-  const [customBg, setCustomBg] = useState(S?.customBg||"#0A0A0A");
-  const [customAccent, setCustomAccent] = useState(S?.customAccent||"#C9A84C");
+  const [bgMode, setBgMode] = useState(S?.bgMode||"dark");
+  const [templateBgUrl, setTemplateBgUrl] = useState(S?.templateBgUrl||null);
+  const [overlayDark, setOverlayDark] = useState(S?.overlayDark||65);
+
+  // Generate
   const [topic, setTopic] = useState("");
-  const [keywords, setKeywords] = useState("");
-  const [tone, setTone] = useState("ai");
+  const [inspirationImg, setInspirationImg] = useState(null);
+  const [ratio, setRatio] = useState(S?.ratio||"instagram"); // instagram (4:5) | portrait (9:16)
   const [slideCount, setSlideCount] = useState(6);
-  const [coverImage, setCoverImage] = useState(null);
-  const [imageMode, setImageMode] = useState("cover");
-  const [overlayDark, setOverlayDark] = useState(65);
-  const [badgeArea, setBadgeArea] = useState(null); // "dark" | "light" | null
-  const [ratio, setRatio] = useState("square");
   const [err, setErr] = useState("");
+  const [randomising, setRandomising] = useState(false);
+
+  // App state
   const [view, setView] = useState("setup");
   const [slides, setSlides] = useState([]);
   const [active, setActive] = useState(0);
@@ -448,31 +490,48 @@ export default function App() {
   const [downloadingAll, setDownloadingAll] = useState(false);
   const [downloadDone, setDownloadDone] = useState(false);
   const [lastTopic, setLastTopic] = useState("");
-  const [lastTone, setLastTone] = useState("ai");
+  const [history, setHistory] = useState(loadHistory());
 
+  const [quoteInputs, setQuoteInputs] = useState(["","","","",""]);
+  const [quoteSignature, setQuoteSignature] = useState("");
+  const [quoteFont, setQuoteFont] = useState("playfair");
+  const [generatingQuotes, setGeneratingQuotes] = useState(false);
+  const [quoteSlides, setQuoteSlides] = useState([]);
+  const [downloadingQuotes, setDownloadingQuotes] = useState(false);
   const profileRef = useRef(null);
-  const coverRef = useRef(null);
+  const coverPhotoRef = useRef(null);
+  const templateBgRef = useRef(null);
+  const inspirationRef = useRef(null);
 
-  useEffect(() => { saveS({profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,theme,fontId,showNums,customBg,customAccent}); }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,theme,fontId,showNums,customBg,customAccent]);
+  useEffect(() => {
+    saveS({profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
+           coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,fontId,headlineStyle,showNums,
+           bgMode,templateBgUrl,overlayDark,ratio});
+  }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
+      coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,fontId,headlineStyle,showNums,
+      bgMode,templateBgUrl,overlayDark,ratio]);
 
-  const readFile = (e,cb) => {
-    const f=e.target.files[0]; if(!f)return;
-    const r=new FileReader();
-    r.onload=ev=>{
-      cb(ev.target.result);
-      // Sample badge area brightness
-      sampleImageBrightness(ev.target.result).then(setBadgeArea);
-    };
+  const readFile = (e, cb) => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => cb(ev.target.result);
     r.readAsDataURL(f);
   };
 
+  const addCoverPhoto = (url) => {
+    const next = [url, ...coverPhotos].slice(0, 8);
+    setCoverPhotos(next);
+    setActiveCoverPhoto(url);
+    sampleImageBrightness(url).then(setBadgeArea);
+  };
+
   const fetchWithRetry = async (body, tries=4) => {
-    for (let i=0;i<=tries;i++) {
+    for (let i=0; i<=tries; i++) {
       try {
-        const res = await fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-        if(!res.ok) throw new Error(`${res.status}`);
+        const res = await fetch("/api/generate", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
+        if (!res.ok) throw new Error(`${res.status}`);
         return await res.json();
-      } catch(e) { if(i===tries)throw e; await new Promise(r=>setTimeout(r,2000+i*1000)); }
+      } catch(e) { if(i===tries) throw e; await new Promise(r=>setTimeout(r, 2000+i*1000)); }
     }
   };
 
@@ -489,37 +548,35 @@ export default function App() {
     cta_items: Array.isArray(s.cta_items)?s.cta_items.map(c=>String(c)):[],
   });
 
-  const buildPrompt = (topicStr, toneStr) => {
-    const toneLabel = TONES.find(t=>t.id===toneStr)?.label||"Tav Decides";
-    const toneDesc = TONES.find(t=>t.id===toneStr)?.desc||"";
-    const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"";
-    const voice = voiceProfile||(btLabel?`Write for a ${btLabel}. Direct, specific, speak to real problems. No hype.`:"Direct and honest. Short punchy sentences. Real problems. No hype, no fluff.");
-    return `You are creating an Instagram carousel${btLabel?` for a ${btLabel}`:""}.
-You are BOTH the copywriter AND the visual creative director. Make every slide earn its place.
+  const buildPrompt = (topicStr, imgBase64) => {
+    const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
+    const voice = voiceProfile || `Write for a ${btLabel}. Direct, specific, speak to real problems. No hype.`;
+    const inspiration = imgBase64 ? `\nINSPIRATION IMAGE: I've attached a screenshot of a carousel I like. Analyse the topic, hook angle and energy — then recreate it in my voice with fresh content. Don't copy, just match the quality and angle.` : "";
+    return `You are creating an Instagram carousel for a ${btLabel}.
+You are the copywriter AND creative director. Every slide must earn its place.
 
 VOICE: ${voice}
-TOPIC: "${topicStr}"${keywords?`\nKEY THEMES: ${keywords}`:""}
-TONE: ${toneLabel}${toneDesc?` — ${toneDesc}`:""}
+TOPIC: "${topicStr}"${inspiration}
 SLIDES: ${slideCount}
 
 NARRATIVE ARC: hook → reality → insight → shift → advice → CTA
 
-LAYOUT SYSTEM — pick the right layout for each slide:
-- "statement" — MASSIVE headline, almost no body. For bold provocative claims. Very large type. Use for SLIDE 1 (the hook) — make it feel almost wrong to scroll past.
+LAYOUT SYSTEM:
+- "statement" — MASSIVE headline, almost no body. ALWAYS use for slide 1. Make it provocative. Must stop the scroll.
 - "standard" — headline + body. Good for most slides.
-- "split" — two panels side by side with VS. ONLY when comparing two distinct things. Requires "items" array with exactly 2 objects, each MUST have a "label" field: [{"label":"THEN","sub":"detail"},{"label":"NOW","sub":"detail"}]. Add "vs_label".
-- "cards" — numbered rows. For listing 3-5 specific points. Requires "items" array where each item MUST have a "label" field with the point text, and optionally a "sub" field: [{"label":"The main point","sub":"Optional detail"}].
-- "quote" — giant quote mark, italic. For a single powerful human truth. No more than one per carousel.
-- "hero" — icon + big headline + single CTA button. ALWAYS use for the final slide. Add "icon_symbol" (one unicode char: ✦ ◆ ★ ✺) and exactly ONE string in "cta_items" array — e.g. ["Save this post"]. Never more than one.
+- "split" — two panels with VS. ONLY for comparisons. Requires "items":[{"label":"...","sub":"..."},{"label":"...","sub":"..."}] and "vs_label".
+- "cards" — numbered rows. For lists. Requires "items":[{"label":"...","sub":"..."}] — MUST include "label" field.
+- "quote" — italic headline, big quote mark. For one powerful human truth. Max one per carousel.
+- "hero" — icon + headline + single CTA. ALWAYS final slide. Add "icon_symbol" and "cta_items":["one CTA only"].
 
 RULES:
-- No two consecutive slides use the same layout
-- Slide 1 is ALWAYS "statement" — provocative, specific, makes them stop
-- Final slide is ALWAYS "hero"
-- Pick ONE word from each headline for "accent_word" — must appear exactly in the headline
-- Slide titles: editorial, specific — NOT "HOOK", "SLIDE 1", "CTA", "INTRO"
+- No two consecutive slides same layout
+- Slide 1 always "statement"
+- Final slide always "hero" with exactly one cta_items string
+- Pick ONE accent word per headline — exact match — put in "accent_word"
+- Tags: editorial and specific. NOT "HOOK", "SLIDE 1", "CTA"
 - Headlines: max 8 words, punchy
-- Body: 1-2 sentences, every word earns its place
+- Body: 1-2 sentences max
 - Only final slide gets cta. All others cta is null.
 - No HTML, no cite tags, plain text only
 
@@ -527,78 +584,197 @@ Return ONLY valid JSON array:
 [{"tag":"LABEL","headline":"text","body":"text","accent_word":"word","layout":"type","items":[],"vs_label":"VS","icon_symbol":"◆","cta_items":[],"cta":null}]`;
   };
 
-  const generate = async (topicOverride, toneOverride) => {
-    const t=topicOverride||topic, tn=toneOverride||tone;
-    if(!t.trim()){setErr("Please add a topic first.");return;}
-    setErr(""); setView("generating"); setLastTopic(t); setLastTone(tn);
+  const generate = async (topicOverride) => {
+    const t = topicOverride || topic;
+    if (!t.trim()) { setErr("Add a topic first."); return; }
+    setErr(""); setView("generating"); setLastTopic(t);
+
     try {
-      const d = await fetchWithRetry({model:"claude-opus-4-7",max_tokens:3000,tools:[{type:"web_search_20250305",name:"web_search"}],messages:[{role:"user",content:buildPrompt(t,tn)}]});
+      const messages = [{
+        role: "user",
+        content: inspirationImg
+          ? [
+              { type:"image", source:{ type:"base64", media_type:"image/jpeg", data: inspirationImg.split(",")[1] }},
+              { type:"text", text: buildPrompt(t, inspirationImg) }
+            ]
+          : buildPrompt(t, null)
+      }];
+
+      const d = await fetchWithRetry({ model:"claude-opus-4-7", max_tokens:3000, tools:[{type:"web_search_20250305",name:"web_search"}], messages });
       const raw = d.content?.find(b=>b.type==="text")?.text||"";
       const clean = raw.replace(/<cite[^>]*>/g,"").replace(/<\/cite>/g,"").replace(/<[^>]+>/g,"");
       const m = clean.match(/\[[\s\S]*\]/);
-      if(!m) throw new Error("no json");
-      setSlides(JSON.parse(m[0]).map(sanitize)); setActive(0); setView("preview");
+      if (!m) throw new Error("no json");
+      const newSlides = JSON.parse(m[0]).map(sanitize);
+      setSlides(newSlides); setActive(0); setView("preview");
+
+      // Save to history
+      const entry = { id: Date.now(), topic: t, slides: newSlides, date: new Date().toLocaleDateString() };
+      const newHistory = [entry, ...history].slice(0, 10);
+      setHistory(newHistory); saveHistory(newHistory);
+
     } catch { setErr("Generation failed — please try again."); setView("setup"); }
   };
 
-  const regenerate = () => generate(lastTopic, lastTone);
+  const randomiseTopic = async () => {
+    setRandomising(true);
+    const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
+    try {
+      const d = await fetchWithRetry({ model:"claude-opus-4-7", max_tokens:80, messages:[{ role:"user", content:`Give me ONE punchy Instagram carousel topic idea for a ${btLabel}. Voice profile: ${voiceProfile||"direct, honest, no hype"}. Return ONLY the topic, no explanation, no quotes, max 12 words.` }] });
+      const idea = d.content?.find(b=>b.type==="text")?.text?.trim()||"";
+      if (idea) setTopic(idea);
+    } catch {}
+    setRandomising(false);
+  };
 
   const rewrite = async () => {
-    if(!rewritePrompt.trim())return; setRewriting(true);
+    if (!rewritePrompt.trim()) return; setRewriting(true);
     try {
-      const d = await fetchWithRetry({model:"claude-opus-4-7",max_tokens:600,messages:[{role:"user",content:`Rewrite this carousel slide: "${rewritePrompt}"\n\nCurrent:\n${JSON.stringify(slides[active],null,2)}\n\nVoice: ${voiceProfile||"Direct, honest, specific."}\n\nReturn ONLY a JSON object with same structure. No markdown, no HTML.`}]});
-      const raw=(d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
-      const m=raw.match(/\{[\s\S]*\}/);
-      if(m){const next=[...slides];next[active]=sanitize(JSON.parse(m[0]));setSlides(next);setRewritePrompt("");}
+      const d = await fetchWithRetry({ model:"claude-opus-4-7", max_tokens:600, messages:[{ role:"user", content:`Rewrite this carousel slide: "${rewritePrompt}"\n\nCurrent:\n${JSON.stringify(slides[active],null,2)}\n\nVoice: ${voiceProfile||"Direct, honest, specific."}\n\nReturn ONLY a JSON object with same structure. No markdown, no HTML.` }] });
+      const raw = (d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (m) { const next=[...slides]; next[active]=sanitize(JSON.parse(m[0])); setSlides(next); setRewritePrompt(""); }
     } catch {}
     setRewriting(false);
   };
 
   const updateSlide = (k,v) => { const next=[...slides]; next[active]={...next[active],[k]:v}; setSlides(next); };
 
-  const slideOpts = useCallback(i => ({
-    theme, fontId, showNums, name, handle, blueTick,
-    websiteUrl: showWebsite?website:"", ratio, overlayDark, customBg, customAccent, profileUrl,
-    badgeArea,
-    bgImageUrl: coverImage?(imageMode==="all"?coverImage:(i===0?coverImage:null)):null,
-  }), [theme,fontId,showNums,name,handle,blueTick,website,showWebsite,ratio,overlayDark,customBg,customAccent,profileUrl,badgeArea,coverImage,imageMode]);
+  const slideOpts = useCallback(() => ({
+    fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
+    coverImageUrl: activeCoverPhoto, coverPosition, badgeArea,
+    profileUrl, name, handle, blueTick,
+    websiteUrl: showWebsite?website:"",
+    showNums, ratio, accentColor,
+  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor]);
 
-  const downloadOne = async i => {
+  const downloadOne = async (i) => {
     setDownloading(true);
     try {
-      await downloadSlideAsPNG(slides[i],i,slides.length,slideOpts(i),`slide-${i+1}.png`);
-      setDownloadDone(true); setTimeout(()=>setDownloadDone(false),2000);
-    } catch(e) { console.error(e); alert("Download failed. Please try again."); }
+      await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(), `slide-${i+1}.png`, i===0);
+      setDownloadDone(true); setTimeout(()=>setDownloadDone(false), 2000);
+    } catch(e) { console.error(e); alert("Download failed — try again."); }
     setDownloading(false);
   };
 
   const downloadAll = async () => {
     setDownloadingAll(true);
-    for(let i=0;i<slides.length;i++) {
-      try { await downloadSlideAsPNG(slides[i],i,slides.length,slideOpts(i),`slide-${i+1}.png`); await new Promise(r=>setTimeout(r,600)); }
+    for (let i=0; i<slides.length; i++) {
+      try { await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(), `slide-${i+1}.png`, i===0); await new Promise(r=>setTimeout(r,600)); }
       catch(e) { console.error(e); }
     }
-    setDownloadingAll(false);
-    setDownloadDone(true); setTimeout(()=>setDownloadDone(false),2500);
+    setDownloadingAll(false); setDownloadDone(true); setTimeout(()=>setDownloadDone(false), 2500);
   };
 
-  // ── UI ──
-  const A = {bg:"#F5F3EF",surface:"#FFF",border:"#E8E5E0",text:"#0A0A0A",muted:"#8A8780",accentText:"#FFF",input:"#FFF"};
-  const inp = {width:"100%",background:A.input,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"11px 14px",color:A.text,fontSize:14,fontFamily:"inherit"};
-  const lbl = {display:"block",fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:7};
-  const tog = (on,set) => (
+  const generateQuotes = async () => {
+    setGeneratingQuotes(true);
+    const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
+    try {
+      const d = await fetchWithRetry({ model:"claude-opus-4-7", max_tokens:400, messages:[{ role:"user", content:`Generate 5 short, powerful quotes for a ${btLabel}. Voice: ${voiceProfile||"direct, honest, real"}. Return ONLY a JSON array of 5 strings: ["quote1","quote2","quote3","quote4","quote5"]. No attribution, no author names, max 15 words each.` }] });
+      const raw = (d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
+      const m = raw.match(/\[[\s\S]*\]/);
+      if (m) {
+        const quotes = JSON.parse(m[0]);
+        setQuoteInputs(quotes.slice(0,5).concat(Array(5).fill("")).slice(0,5));
+      }
+    } catch {}
+    setGeneratingQuotes(false);
+  };
+
+  const buildQuoteHTML = (quoteText, sig) => {
+    const accent = accentColor || GOLD;
+    const isDark = bgMode !== "light";
+    const bg = bgMode === "light" ? "#F5F3EF" : "#0A0A0A";
+    const textColor = isDark ? "#FFFFFF" : "#0A0A0A";
+    const subColor = isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)";
+    const fontObj = FONTS.find(f => f.id === quoteFont) || FONTS[1];
+    const font = fontObj.css;
+    const W = 1080, H = 1350;
+    const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&family=Dancing+Script:wght@600;700&display=swap`;
+    const avHtml = profileUrl ? `<img src="${profileUrl}" crossorigin="anonymous" style="width:100%;height:100%;object-fit:cover;"/>` : `<span style="font-size:32px;font-weight:900;color:${accent};font-family:'${font}',sans-serif;">${(name||"?")[0].toUpperCase()}</span>`;
+    const signature = sig || quoteSignature || name || "";
+    return `<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>
+@import url('${gFonts}');
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
+.slide{width:${W}px;height:${H}px;background:${bg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:120px 100px;position:relative;font-family:'${font}',sans-serif;}
+.bk{position:absolute;width:52px;height:52px;}
+.tl{top:44px;left:52px;border-top:2.5px solid ${accent};border-left:2.5px solid ${accent};opacity:0.4;}
+.tr{top:44px;right:52px;border-top:2.5px solid ${accent};border-right:2.5px solid ${accent};opacity:0.4;}
+.bl{bottom:44px;left:52px;border-bottom:2.5px solid ${accent};border-left:2.5px solid ${accent};opacity:0.4;}
+.br{bottom:44px;right:52px;border-bottom:2.5px solid ${accent};border-right:2.5px solid ${accent};opacity:0.4;}
+.qm{font-size:200px;font-weight:900;color:${accent}22;line-height:0.7;font-family:'${font}',sans-serif;text-align:left;width:100%;margin-bottom:-30px;}
+.quote{font-size:72px;font-weight:700;line-height:1.2;color:${textColor};font-style:italic;font-family:'${font}',sans-serif;text-align:center;margin-bottom:60px;}
+.div{width:60px;height:1.5px;background:${accent};opacity:0.6;margin:0 auto 40px;}
+.sig-wrap{display:flex;align-items:center;gap:16px;}
+.av{width:70px;height:70px;border-radius:50%;border:2.5px solid ${accent};overflow:hidden;display:flex;align-items:center;justify-content:center;background:${isDark?"#1a1a1a":"#ddd"};flex-shrink:0;}
+.sig{font-size:28px;font-weight:700;color:${subColor};font-family:'${font}',sans-serif;}
+</style>
+</head><body>
+<div class="slide">
+  <div class="bk tl"></div><div class="bk tr"></div>
+  <div class="bk bl"></div><div class="bk br"></div>
+  <div class="qm">"</div>
+  <div class="quote">${(quoteText||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</div>
+  <div class="div"></div>
+  <div class="sig-wrap">
+    <div class="av">${avHtml}</div>
+    ${signature?`<div class="sig">— ${signature.replace(/&/g,"&amp;")}</div>`:""}
+  </div>
+</div>
+</body></html>`;
+  };
+
+  const downloadQuote = async (quoteText, i) => {
+    const W = 1080, H = 1350;
+    const html = buildQuoteHTML(quoteText);
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
+    document.body.appendChild(iframe);
+    return new Promise((resolve, reject) => {
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      doc.open(); doc.write(html); doc.close();
+      setTimeout(async () => {
+        try {
+          const win = iframe.contentWindow;
+          await new Promise(r => { const s=doc.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"; s.onload=r; s.onerror=r; doc.head.appendChild(s); setTimeout(r,4000); });
+          if (!win.html2canvas) throw new Error("no h2c");
+          const canvas = await win.html2canvas(doc.querySelector(".slide")||doc.body, {useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+          canvas.toBlob(blob => { const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`quote-${i+1}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),1000); document.body.removeChild(iframe); resolve(); }, "image/png", 1.0);
+        } catch(e) { document.body.removeChild(iframe); reject(e); }
+      }, 2000);
+    });
+  };
+
+  const downloadAllQuotes = async () => {
+    setDownloadingQuotes(true);
+    const filled = quoteInputs.filter(q => q.trim());
+    for (let i=0; i<filled.length; i++) {
+      try { await downloadQuote(filled[i], i); await new Promise(r=>setTimeout(r,600)); }
+      catch(e) { console.error(e); }
+    }
+    setDownloadingQuotes(false);
+  };
+
+  // UI constants
+  const A = { bg:"#F5F3EF", surface:"#FFF", border:"#E8E5E0", text:"#0A0A0A", muted:"#8A8780", accentText:"#FFF", input:"#FFF" };
+  const inp = { width:"100%", background:A.input, border:`1.5px solid ${A.border}`, borderRadius:10, padding:"11px 14px", color:A.text, fontSize:14, fontFamily:"inherit" };
+  const lbl = { display:"block", fontSize:10, fontWeight:700, letterSpacing:3, textTransform:"uppercase", color:A.muted, marginBottom:7 };
+  const tog = (on, set) => (
     <div onClick={()=>set(!on)} style={{width:44,height:24,borderRadius:12,background:on?A.text:A.border,position:"relative",cursor:"pointer",flexShrink:0,transition:"background 0.2s"}}>
       <div style={{position:"absolute",top:3,left:on?23:3,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
     </div>
   );
 
+  const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],["history","History"],["brand","Brand"],["visual","Visual"]];
+
   return (
     <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes pop{0%{transform:scale(0.8);opacity:0}50%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
         *{box-sizing:border-box}input,textarea,select{outline:none!important;font-family:inherit}
         button{cursor:pointer;font-family:inherit;border:none;transition:all 0.15s}
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:${A.border};border-radius:2px}
@@ -610,226 +786,401 @@ Return ONLY valid JSON array:
       {/* NAV */}
       <nav style={{borderBottom:`1px solid ${A.border}`,padding:"0 32px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56,position:"sticky",top:0,background:`${A.bg}EE`,backdropFilter:"blur(20px)",zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,#1a1a1a 0%,#2a2a2a 100%)`,border:`1.5px solid ${GOLD}44`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,#1a1a1a,#2a2a2a)`,border:`1.5px solid ${GOLD}44`,display:"flex",alignItems:"center",justifyContent:"center"}}>
             <span style={{color:GOLD,fontSize:12,fontWeight:900}}>C</span>
           </div>
-          <span style={{fontSize:13,fontWeight:800,color:A.text,letterSpacing:-0.3}}>Carousel Studio</span>
-          <span style={{fontSize:11,color:A.muted,fontWeight:500}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
+          <span style={{fontSize:13,fontWeight:800,letterSpacing:-0.3}}>Carousel Studio</span>
+          <span style={{fontSize:11,color:A.muted}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
         </div>
-        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+        <div style={{display:"flex",alignItems:"center",gap:2}}>
+          {NAV_ITEMS.map(([id,label])=>(
+            <button key={id} onClick={()=>{setNav(id);if(view==="preview"&&id!=="generate"){}}} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"8px 16px",fontSize:13,fontWeight:nav===id?700:500,marginBottom:-1}}>
+              {label}
+            </button>
+          ))}
           {view==="preview"&&<>
-            <button onClick={regenerate} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 14px",borderRadius:7,fontSize:12,fontWeight:600}}>↺ Regenerate</button>
-            <button onClick={()=>{setView("setup");setSlides([]);}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 14px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
+            <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:8}}>↺ Regenerate</button>
+            <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
           </>}
-          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 14px",borderRadius:7,fontSize:12}}>Reset</button>
+          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4}}>Reset</button>
         </div>
       </nav>
 
       <div style={{maxWidth:1200,margin:"0 auto",padding:"28px 24px"}}>
 
-        {/* SETUP */}
-        {view==="setup"&&(
-          <div style={{animation:"fadeUp 0.3s ease"}}>
-            <div style={{marginBottom:20,maxWidth:560}}>
-              <h1 style={{fontSize:28,fontWeight:800,lineHeight:1.2,margin:"0 0 8px",letterSpacing:-0.8}}>Turn a topic into a carousel that converts.</h1>
-              <p style={{color:A.muted,fontSize:14,lineHeight:1.6,margin:0}}>Write your topic. Claude handles strategy, copy, and design — in your voice.</p>
+        {/* ── QUOTES ── */}
+        {nav==="quotes"&&(
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:640,margin:"0 auto"}}>
+            <div style={{marginBottom:24}}>
+              <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px"}}>Quote Pack</h2>
+              <p style={{color:A.muted,fontSize:14,margin:0}}>Create up to 5 branded quote cards. Download individually or all at once.</p>
             </div>
 
-            <div style={{background:A.surface,borderRadius:16,border:`1.5px solid ${A.border}`,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.04)"}}>
-              {/* Tabs */}
-              <div style={{display:"flex",borderBottom:`1px solid ${A.border}`,background:A.bg}}>
-                {[["generate","Generate"],["brand","Brand"],["visual","Visual"]].map(([id,label])=>(
-                  <button key={id} onClick={()=>setTab(id)} style={{background:"none",border:"none",borderBottom:tab===id?`2px solid ${GOLD}`:"2px solid transparent",color:tab===id?A.text:A.muted,padding:"12px 20px",fontSize:12,fontWeight:tab===id?700:500,marginBottom:-1,letterSpacing:0.3,textTransform:"uppercase"}}>
-                    {label}
+            {/* Quote font */}
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16}}>
+              <label style={lbl}>Quote font</label>
+              <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+                {FONTS.map(f=>(
+                  <button key={f.id} onClick={()=>setQuoteFont(f.id)} style={{background:quoteFont===f.id?A.text:A.bg,border:`1.5px solid ${quoteFont===f.id?GOLD:A.border}`,borderRadius:8,padding:"7px 14px"}}>
+                    <span style={{fontFamily:`"${f.css}",serif`,fontSize:f.id==="dancing"?16:14,fontWeight:700,fontStyle:f.id==="dancing"?"italic":"normal",color:quoteFont===f.id?A.accentText:A.text}}>{f.label}</span>
                   </button>
                 ))}
               </div>
+            </div>
 
-              <div style={{padding:26}}>
+            {/* Signature */}
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16}}>
+              <label style={lbl}>Signature <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(leave blank to use your brand name)</span></label>
+              <input value={quoteSignature} onChange={e=>setQuoteSignature(e.target.value)} placeholder={name||"Your name"} style={inp}/>
+            </div>
 
-                {/* GENERATE TAB */}
-                {tab==="generate"&&(
-                  <div style={{display:"flex",flexDirection:"column",gap:20}}>
-                    <div>
-                      <label style={lbl}>I am a...</label>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                        {BUSINESS_TYPES.map(bt=>(
-                          <button key={bt.id} onClick={()=>setBusinessType(bt.id)} style={{background:businessType===bt.id?A.text:A.bg,border:`1.5px solid ${businessType===bt.id?A.text:A.border}`,borderRadius:20,padding:"5px 14px",fontSize:12,color:businessType===bt.id?A.accentText:A.muted,fontWeight:businessType===bt.id?700:500}}>
-                            {bt.label}
-                          </button>
-                        ))}
+            {/* Quote inputs */}
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+                <label style={{...lbl,marginBottom:0}}>Your quotes</label>
+                <button onClick={generateQuotes} disabled={generatingQuotes} style={{background:A.text,color:A.accentText,padding:"6px 14px",borderRadius:7,fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:6}}>
+                  {generatingQuotes?<><Spin/>Generating...</>:"✦ Generate quotes"}
+                </button>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {quoteInputs.map((q,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"flex-start",gap:10}}>
+                    <span style={{fontSize:12,fontWeight:700,color:A.muted,paddingTop:12,width:20,flexShrink:0}}>{i+1}</span>
+                    <textarea value={q} onChange={e=>{const next=[...quoteInputs];next[i]=e.target.value;setQuoteInputs(next);}} placeholder={`Quote ${i+1}...`} rows={2} style={{...inp,resize:"vertical",lineHeight:1.5,flex:1}}/>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Preview + download */}
+            {quoteInputs.some(q=>q.trim())&&(
+              <div style={{marginBottom:20}}>
+                <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
+                  {quoteInputs.filter(q=>q.trim()).map((q,i)=>{
+                    const W=1080,H=1350,scale=180/W;
+                    const html=buildQuoteHTML(q);
+                    return (
+                      <div key={i} style={{position:"relative",width:180,height:H*scale,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,flexShrink:0}}>
+                        <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
+                        <button onClick={()=>downloadQuote(q,i)} style={{position:"absolute",bottom:4,right:4,background:"rgba(0,0,0,0.7)",color:"#fff",fontSize:10,fontWeight:700,padding:"3px 7px",borderRadius:4,border:"none"}}>↓</button>
                       </div>
-                      {businessType==="other"&&<input value={otherType} onChange={e=>setOtherType(e.target.value)} placeholder="e.g. Tattoo artist, PT, wedding photographer..." style={{...inp,marginTop:10,fontSize:13}}/>}
-                    </div>
+                    );
+                  })}
+                </div>
+                <button onClick={downloadAllQuotes} disabled={downloadingQuotes} style={{width:"100%",padding:"13px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:14,fontWeight:800,border:`1px solid ${GOLD}33`,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                  {downloadingQuotes?<><Spin/>Downloading...</>:`↓ Download All ${quoteInputs.filter(q=>q.trim()).length} Quote Cards`}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
-                    <div>
-                      <label style={lbl}>What's this carousel about? *</label>
-                      <input value={topic} onChange={e=>{setTopic(e.target.value);if(err)setErr("");}}
-                        placeholder={businessType==="marketer"?"e.g. Why your content gets views but zero clients":businessType==="creator"?"e.g. Why most creators burn out before they make money":businessType==="coach"?"e.g. The real reason high achievers still feel stuck":businessType==="restaurant"?"e.g. Why our Sunday roast sells out every week":"e.g. Why most businesses fail on social media in year one"}
-                        style={{...inp,fontSize:15,fontWeight:500,borderColor:err?"#c0392b":A.border}}
-                        onKeyDown={e=>{if(e.key==="Enter"&&e.metaKey)generate();}}/>
-                      {err&&<p style={{color:"#c0392b",fontSize:12,margin:"6px 0 0",fontWeight:600}}>⚠ {err}</p>}
-                    </div>
 
-                    <div>
-                      <label style={lbl}>Themes / keywords <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(optional)</span></label>
-                      <input value={keywords} onChange={e=>setKeywords(e.target.value)} placeholder="e.g. key themes, angles, or words you want included" style={inp}/>
-                    </div>
+        {nav==="generate"&&view==="setup"&&(
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:640,margin:"0 auto"}}>
+            <div style={{marginBottom:24}}>
+              <h1 style={{fontSize:28,fontWeight:800,lineHeight:1.2,margin:"0 0 8px",letterSpacing:-0.8}}>What's today's carousel about?</h1>
+              <p style={{color:A.muted,fontSize:14,margin:0}}>One topic. I handle the strategy, layouts, and copy.</p>
+            </div>
 
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+            {/* Topic */}
+            <div style={{marginBottom:16}}>
+              <div style={{display:"flex",gap:8,marginBottom:8}}>
+                <input value={topic} onChange={e=>{setTopic(e.target.value);if(err)setErr("");}}
+                  placeholder="e.g. Why your content gets views but zero clients"
+                  style={{...inp,fontSize:15,fontWeight:500,flex:1,borderColor:err?"#c0392b":A.border}}
+                  onKeyDown={e=>{if(e.key==="Enter"&&e.metaKey)generate();}}/>
+                <button onClick={randomiseTopic} disabled={randomising} title="Randomise topic" style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"0 16px",fontSize:18,color:A.muted,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:48}}>
+                  {randomising?<Spin c={A.muted}/>:"🎲"}
+                </button>
+              </div>
+              {err&&<p style={{color:"#c0392b",fontSize:12,margin:"4px 0 0",fontWeight:600}}>⚠ {err}</p>}
+            </div>
+
+            {/* Inspiration — secondary, tucked away */}
+            <div style={{marginBottom:16}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,cursor:"pointer"}} onClick={()=>inspirationImg?setInspirationImg(null):inspirationRef.current?.click()}>
+                <span style={{fontSize:16}}>📸</span>
+                <div style={{flex:1}}>
+                  <span style={{fontSize:13,color:A.muted}}>Seen a carousel you like? </span>
+                  <span style={{fontSize:12,color:A.muted,fontWeight:500}}>{inspirationImg?"Screenshot uploaded — click to remove":"Upload a screenshot to recreate it in your voice (optional)"}</span>
+                </div>
+                {inspirationImg&&<img src={inspirationImg} style={{width:36,height:36,objectFit:"cover",borderRadius:4,border:`1px solid ${A.border}`}}/>}
+              </div>
+              <input ref={inspirationRef} type="file" accept="image/*" onChange={e=>readFile(e,setInspirationImg)} style={{display:"none"}}/>
+            </div>
+
+            {/* Cover photo + format + slides */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
+              <div>
+                <label style={lbl}>Cover photo <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional)</span></label>
+                {coverPhotos.length > 0
+                  ? <div>
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
+                        {coverPhotos.map((p,i)=>(
+                          <div key={i} onClick={()=>{setActiveCoverPhoto(p);sampleImageBrightness(p).then(setBadgeArea);}} style={{width:48,height:48,borderRadius:6,overflow:"hidden",border:`2px solid ${activeCoverPhoto===p?A.text:A.border}`,cursor:"pointer",flexShrink:0}}>
+                            <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                          </div>
+                        ))}
+                        <div onClick={()=>coverPhotoRef.current?.click()} style={{width:48,height:48,borderRadius:6,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:20,flexShrink:0}}>+</div>
+                      </div>
+                      {activeCoverPhoto&&<div style={{fontSize:11,color:A.muted}}>✓ Cover photo selected</div>}
+                    </div>
+                  : <div onClick={()=>coverPhotoRef.current?.click()} style={{border:`1.5px dashed ${A.border}`,borderRadius:9,padding:"12px",cursor:"pointer",textAlign:"center"}}>
+                      <span style={{fontSize:12,color:A.muted}}>Upload cover photo</span>
+                    </div>
+                }
+                <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                <div>
+                  <label style={lbl}>Format</label>
+                  <div style={{display:"flex",gap:6}}>
+                    {[["instagram","Instagram 4:5"],["portrait","Stories 9:16"]].map(([id,label])=>(
+                      <button key={id} onClick={()=>setRatio(id)} style={{flex:1,background:ratio===id?A.text:A.bg,border:`1.5px solid ${ratio===id?A.text:A.border}`,color:ratio===id?A.accentText:A.muted,padding:"7px 4px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label style={lbl}>Slides</label>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <button onClick={()=>setSlideCount(Math.max(3,slideCount-1))} style={{width:32,height:32,borderRadius:7,background:A.bg,border:`1.5px solid ${A.border}`,color:A.text,fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                    <span style={{fontSize:22,fontWeight:800,minWidth:24,textAlign:"center"}}>{slideCount}</span>
+                    <button onClick={()=>setSlideCount(Math.min(12,slideCount+1))} style={{width:32,height:32,borderRadius:7,background:A.bg,border:`1.5px solid ${A.border}`,color:A.text,fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button onClick={()=>generate()} style={{width:"100%",padding:"15px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:15,fontWeight:800,border:`1px solid ${GOLD}33`,boxShadow:`0 0 0 1px ${GOLD}22`}}>
+              Generate Carousel →
+            </button>
+            <p style={{textAlign:"center",color:A.muted,fontSize:11,marginTop:10}}>⌘ + Enter · ~15–25 seconds</p>
+          </div>
+        )}
+
+        {/* ── HISTORY ── */}
+        {nav==="history"&&(
+          <div style={{animation:"fadeUp 0.3s ease"}}>
+            <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>History</h2>
+            {history.length===0
+              ? <div style={{textAlign:"center",padding:"60px 0",color:A.muted}}>No carousels yet. Generate your first one.</div>
+              : <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  {history.map(entry=>(
+                    <div key={entry.id} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:"18px 22px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16}}>
                       <div>
-                        <label style={lbl}>Tone</label>
-                        <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                          {TONES.map(t=>(
-                            <button key={t.id} onClick={()=>setTone(t.id)} style={{background:tone===t.id?A.text:A.bg,border:`1.5px solid ${tone===t.id?A.text:A.border}`,borderRadius:8,padding:"8px 13px",textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                              <span style={{fontSize:12,fontWeight:700,color:tone===t.id?A.accentText:A.text}}>{t.label}</span>
-                              <span style={{fontSize:11,color:tone===t.id?"rgba(255,255,255,0.5)":A.muted}}>{t.desc}</span>
-                            </button>
-                          ))}
-                        </div>
+                        <div style={{fontWeight:700,fontSize:15,marginBottom:4}}>{entry.topic}</div>
+                        <div style={{color:A.muted,fontSize:12}}>{entry.slides.length} slides · {entry.date}</div>
                       </div>
-
-                      <div style={{display:"flex",flexDirection:"column",gap:18}}>
-                        <div>
-                          <label style={lbl}>Slides</label>
-                          <div style={{display:"flex",alignItems:"center",gap:12}}>
-                            <button onClick={()=>setSlideCount(Math.max(3,slideCount-1))} style={{width:34,height:34,borderRadius:8,background:A.bg,border:`1.5px solid ${A.border}`,color:A.text,fontSize:18,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
-                            <span style={{fontSize:26,fontWeight:800,minWidth:28,textAlign:"center"}}>{slideCount}</span>
-                            <button onClick={()=>setSlideCount(Math.min(12,slideCount+1))} style={{width:34,height:34,borderRadius:8,background:A.bg,border:`1.5px solid ${A.border}`,color:A.text,fontSize:18,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-                          </div>
-                        </div>
-                        <div>
-                          <label style={lbl}>Format</label>
-                          <div style={{display:"flex",gap:5}}>
-                            {[["square","Square 1:1"],["portrait","Stories 9:16"]].map(([id,label])=>(
-                              <button key={id} onClick={()=>setRatio(id)} style={{flex:1,background:ratio===id?A.text:A.bg,border:`1.5px solid ${ratio===id?A.text:A.border}`,color:ratio===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <label style={lbl}>Image <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(optional)</span></label>
-                          <div onClick={()=>coverRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${coverImage?A.text:A.border}`,borderRadius:9,padding:"10px",cursor:"pointer",textAlign:"center"}}>
-                            <span style={{fontSize:12,fontWeight:600,color:coverImage?A.text:A.muted}}>{coverImage?"✓ Image ready":"Upload image"}</span>
-                          </div>
-                          <input ref={coverRef} type="file" accept="image/*" onChange={e=>readFile(e,setCoverImage)} style={{display:"none"}}/>
-                          {coverImage&&<>
-                            <div style={{display:"flex",gap:5,marginTop:7}}>
-                              {[["cover","Cover only"],["all","All slides"]].map(([id,label])=>(
-                                <button key={id} onClick={()=>setImageMode(id)} style={{flex:1,background:imageMode===id?A.text:A.bg,border:`1.5px solid ${imageMode===id?A.text:A.border}`,color:imageMode===id?A.accentText:A.muted,padding:"6px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
-                              ))}
-                            </div>
-                            <div style={{marginTop:8}}><label style={lbl}>Overlay — {overlayDark}%</label><input type="range" min={20} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)}/></div>
-                          </>}
-                        </div>
-                      </div>
+                      <button onClick={()=>{setSlides(entry.slides);setActive(0);setView("preview");setLastTopic(entry.topic);setNav("generate");}} style={{background:A.text,color:A.accentText,padding:"8px 18px",borderRadius:8,fontSize:13,fontWeight:700,flexShrink:0}}>
+                        Load →
+                      </button>
                     </div>
+                  ))}
+                </div>
+            }
+          </div>
+        )}
 
-                    <button onClick={()=>generate()} style={{width:"100%",padding:"14px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:15,fontWeight:800,border:`1px solid ${GOLD}33`,marginTop:4,boxShadow:`0 0 0 1px ${GOLD}22`}}>
-                      Generate Carousel →
+        {/* ── BRAND ── */}
+        {nav==="brand"&&(
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:640}}>
+            <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Brand</h2>
+            <div style={{display:"flex",flexDirection:"column",gap:20}}>
+
+              {/* Profile photo */}
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={lbl}>Profile photo</label>
+                <div style={{display:"flex",alignItems:"center",gap:14}}>
+                  <div onClick={()=>profileRef.current?.click()} style={{width:64,height:64,borderRadius:"50%",border:`2px solid ${A.border}`,overflow:"hidden",background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                    {profileUrl?<img src={profileUrl} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:A.muted,fontSize:20}}>+</span>}
+                  </div>
+                  <div onClick={()=>profileRef.current?.click()} style={{flex:1,background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:12,cursor:"pointer",textAlign:"center"}}>
+                    <span style={{color:A.muted,fontSize:13}}>{profileUrl?"Click to change":"Upload square photo"}</span>
+                  </div>
+                  <input ref={profileRef} type="file" accept="image/*" onChange={e=>readFile(e,setProfileUrl)} style={{display:"none"}}/>
+                </div>
+              </div>
+
+              {/* Name/handle/tick/website */}
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",flexDirection:"column",gap:14}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                  <div><label style={lbl}>Display name</label><input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name or brand" style={inp}/></div>
+                  <div><label style={lbl}>Handle</label><input value={handle} onChange={e=>setHandle(e.target.value)} placeholder="@yourhandle" style={inp}/></div>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <div><div style={{fontWeight:600,fontSize:13}}>Blue tick</div><div style={{color:A.muted,fontSize:12}}>Verified badge on slides</div></div>
+                    {tog(blueTick,setBlueTick)}
+                  </div>
+                  <div style={{borderTop:`1px solid ${A.border}`,paddingTop:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <div><div style={{fontWeight:600,fontSize:13}}>Website on slides</div><div style={{color:A.muted,fontSize:12}}>Show URL at bottom</div></div>
+                    {tog(showWebsite,setShowWebsite)}
+                  </div>
+                  {showWebsite&&<input value={website} onChange={e=>setWebsite(e.target.value)} placeholder="www.yoursite.co" style={inp}/>}
+                </div>
+              </div>
+
+              {/* Business type */}
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={lbl}>I am a...</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {BUSINESS_TYPES.map(bt=>(
+                    <button key={bt.id} onClick={()=>setBusinessType(bt.id)} style={{background:businessType===bt.id?A.text:A.bg,border:`1.5px solid ${businessType===bt.id?A.text:A.border}`,borderRadius:20,padding:"5px 14px",fontSize:12,color:businessType===bt.id?A.accentText:A.muted,fontWeight:businessType===bt.id?700:500}}>{bt.label}</button>
+                  ))}
+                </div>
+                {businessType==="other"&&<input value={otherType} onChange={e=>setOtherType(e.target.value)} placeholder="e.g. Tattoo artist, PT..." style={{...inp,marginTop:10}}/>}
+              </div>
+
+              {/* Cover photos library */}
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={lbl}>Cover photo library</label>
+                <p style={{color:A.muted,fontSize:12,margin:"0 0 12px",lineHeight:1.6}}>Save up to 8 photos. Pick one per generation. Used on cover slide only.</p>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
+                  {coverPhotos.map((p,i)=>(
+                    <div key={i} style={{position:"relative"}}>
+                      <div onClick={()=>{setActiveCoverPhoto(p);sampleImageBrightness(p).then(setBadgeArea);}} style={{width:72,height:72,borderRadius:8,overflow:"hidden",border:`2px solid ${activeCoverPhoto===p?GOLD:A.border}`,cursor:"pointer"}}>
+                        <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      </div>
+                      <button onClick={()=>{const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);if(activeCoverPhoto===p)setActiveCoverPhoto(next[0]||null);}} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>×</button>
+                    </div>
+                  ))}
+                  {coverPhotos.length < 8 && (
+                    <div onClick={()=>coverPhotoRef.current?.click()} style={{width:72,height:72,borderRadius:8,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:28}}>+</div>
+                  )}
+                </div>
+                <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
+
+                {/* Cover position */}
+                <label style={{...lbl,marginTop:14}}>Badge & hook position on cover</label>
+                <div style={{display:"flex",gap:8}}>
+                  {COVER_POSITIONS.map(p=>(
+                    <button key={p.id} onClick={()=>setCoverPosition(p.id)} style={{flex:1,background:coverPosition===p.id?A.text:A.bg,border:`1.5px solid ${coverPosition===p.id?A.text:A.border}`,borderRadius:8,padding:"8px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                      <span style={{fontSize:11,fontWeight:700,color:coverPosition===p.id?A.accentText:A.text}}>{p.label}</span>
+                      <span style={{fontSize:10,color:coverPosition===p.id?"rgba(255,255,255,0.6)":A.muted}}>{p.desc}</span>
                     </button>
-                    <p style={{textAlign:"center",color:A.muted,fontSize:11,margin:"-8px 0 0"}}>⌘ + Enter · ~15–25 seconds</p>
-                  </div>
-                )}
+                  ))}
+                </div>
+              </div>
 
-                {/* BRAND TAB */}
-                {tab==="brand"&&(
-                  <div style={{display:"flex",flexDirection:"column",gap:20}}>
-                    <div>
-                      <label style={lbl}>Profile photo</label>
-                      <div style={{display:"flex",alignItems:"center",gap:14}}>
-                        <div onClick={()=>profileRef.current?.click()} style={{width:64,height:64,borderRadius:"50%",border:`2px solid ${A.border}`,overflow:"hidden",background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
-                          {profileUrl?<img src={profileUrl} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:A.muted,fontSize:20}}>+</span>}
-                        </div>
-                        <div onClick={()=>profileRef.current?.click()} style={{flex:1,background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:12,cursor:"pointer",textAlign:"center"}}>
-                          <span style={{color:A.muted,fontSize:13}}>{profileUrl?"Click to change photo":"Upload square photo for best results"}</span>
-                        </div>
-                        <input ref={profileRef} type="file" accept="image/*" onChange={e=>readFile(e,setProfileUrl)} style={{display:"none"}}/>
-                      </div>
-                    </div>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-                      <div><label style={lbl}>Display name</label><input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name or brand" style={inp}/></div>
-                      <div><label style={lbl}>Handle</label><input value={handle} onChange={e=>setHandle(e.target.value)} placeholder="@yourhandle" style={inp}/></div>
-                    </div>
-                    <div style={{display:"flex",flexDirection:"column",gap:14,padding:16,background:A.bg,borderRadius:10}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                        <div><div style={{fontWeight:600,fontSize:13}}>Blue tick</div><div style={{color:A.muted,fontSize:12}}>Verified badge on slides</div></div>
-                        {tog(blueTick,setBlueTick)}
-                      </div>
-                      <div style={{borderTop:`1px solid ${A.border}`,paddingTop:14,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                        <div><div style={{fontWeight:600,fontSize:13}}>Website on slides</div><div style={{color:A.muted,fontSize:12}}>Show URL at bottom</div></div>
-                        {tog(showWebsite,setShowWebsite)}
-                      </div>
-                      {showWebsite&&<input value={website} onChange={e=>setWebsite(e.target.value)} placeholder="www.yoursite.co" style={inp}/>}
-                    </div>
-                    <div>
-                      <label style={lbl}>Voice profile <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(sent with every prompt)</span></label>
-                      <p style={{color:A.muted,fontSize:13,margin:"0 0 10px",lineHeight:1.6}}>Describe your tone, audience, what to avoid, and CTA style. More specific = better output.</p>
-                      <textarea value={voiceProfile} onChange={e=>setVoiceProfile(e.target.value)} placeholder="e.g. Write in a direct, honest tone. Speak to people tired of the hype. Short punchy sentences. Never overpromise. CTA is always soft — 'free preview in bio'." rows={5} style={{...inp,resize:"vertical",lineHeight:1.7}}/>
-                    </div>
-                  </div>
-                )}
-
-                {/* VISUAL TAB */}
-                {tab==="visual"&&(
-                  <div style={{display:"flex",flexDirection:"column",gap:20}}>
-                    <div>
-                      <label style={lbl}>Colour theme</label>
-                      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:7}}>
-                        {THEMES.map(t=>(
-                          <button key={t.id} onClick={()=>setTheme(t.id)} style={{background:theme===t.id?A.text:A.bg,border:`1.5px solid ${theme===t.id?GOLD:A.border}`,borderRadius:10,padding:"10px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
-                            <div style={{display:"flex",gap:3}}>
-                              <div style={{width:16,height:16,borderRadius:4,background:t.id==="custom"?customBg:t.bg,border:"1px solid rgba(0,0,0,0.1)"}}/>
-                              <div style={{width:16,height:16,borderRadius:4,background:t.id==="custom"?customAccent:t.accent}}/>
-                            </div>
-                            <span style={{fontSize:10,fontWeight:700,color:theme===t.id?A.accentText:A.text}}>{t.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                      {theme==="custom"&&(
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginTop:12,padding:14,background:A.bg,borderRadius:10}}>
-                          <div><label style={lbl}>Background</label><div style={{display:"flex",gap:8,alignItems:"center"}}><input type="color" value={customBg} onChange={e=>setCustomBg(e.target.value)} style={{width:34,height:34,borderRadius:6,border:`1px solid ${A.border}`,cursor:"pointer",padding:2}}/><input value={customBg} onChange={e=>setCustomBg(e.target.value)} style={{...inp,flex:1,fontSize:12}}/></div></div>
-                          <div><label style={lbl}>Accent</label><div style={{display:"flex",gap:8,alignItems:"center"}}><input type="color" value={customAccent} onChange={e=>setCustomAccent(e.target.value)} style={{width:34,height:34,borderRadius:6,border:`1px solid ${A.border}`,cursor:"pointer",padding:2}}/><input value={customAccent} onChange={e=>setCustomAccent(e.target.value)} style={{...inp,flex:1,fontSize:12}}/></div></div>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label style={lbl}>Font</label>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-                        {FONTS.map(f=>(
-                          <button key={f.id} onClick={()=>setFontId(f.id)} style={{background:fontId===f.id?A.text:A.bg,border:`1.5px solid ${fontId===f.id?GOLD:A.border}`,borderRadius:8,padding:"7px 14px"}}>
-                            <span style={{fontFamily:`"${f.css}",serif`,fontSize:14,fontWeight:700,color:fontId===f.id?A.accentText:A.text}}>{f.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:16,background:A.bg,borderRadius:10}}>
-                      <div><div style={{fontWeight:600,fontSize:13}}>Slide numbers</div><div style={{color:A.muted,fontSize:12}}>Watermark number on each slide</div></div>
-                      {tog(showNums,setShowNums)}
-                    </div>
-                  </div>
-                )}
+              {/* Voice profile */}
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={lbl}>Voice profile <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(sent with every prompt)</span></label>
+                <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.6}}>Describe your tone, audience, what to avoid, CTA style. More specific = better output.</p>
+                <textarea value={voiceProfile} onChange={e=>setVoiceProfile(e.target.value)} placeholder="e.g. Direct and honest. Short punchy sentences. Speak to people tired of the hype. Never overpromise. CTA is always soft — 'free preview in bio'." rows={5} style={{...inp,resize:"vertical",lineHeight:1.7}}/>
               </div>
             </div>
           </div>
         )}
 
-        {/* GENERATING */}
+        {/* ── VISUAL ── */}
+        {nav==="visual"&&(
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:640}}>
+            <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Visual</h2>
+            <div style={{display:"flex",flexDirection:"column",gap:20}}>
+
+              {/* Headline style */}
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={lbl}>Headline style</label>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  {HEADLINE_STYLES.map(hs=>(
+                    <button key={hs.id} onClick={()=>setHeadlineStyle(hs.id)} style={{background:headlineStyle===hs.id?A.text:A.bg,border:`1.5px solid ${headlineStyle===hs.id?GOLD:A.border}`,borderRadius:10,padding:"14px 12px",textAlign:"left"}}>
+                      <div style={{fontSize:18,fontWeight:900,letterSpacing:hs.letterSpacing,textTransform:hs.transform,fontFamily:hs.forceFont?`'${hs.forceFont}',serif`:"inherit",color:headlineStyle===hs.id?A.accentText:A.text,marginBottom:4}}>
+                        Headline
+                      </div>
+                      <div style={{fontSize:11,fontWeight:700,color:headlineStyle===hs.id?A.accentText:A.text,marginBottom:2}}>{hs.label}</div>
+                      <div style={{fontSize:10,color:headlineStyle===hs.id?"rgba(255,255,255,0.6)":A.muted}}>{hs.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Accent colour */}
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={lbl}>Brand accent colour</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:accentSwatch==="custom"?14:0}}>
+                  {ACCENT_SWATCHES.map(sw=>(
+                    <button key={sw.id} onClick={()=>{setAccentSwatch(sw.id);if(sw.hex)setAccentColor(sw.hex);}} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,background:"none",border:"none",padding:4}}>
+                      <div style={{width:36,height:36,borderRadius:"50%",background:sw.hex||(accentSwatch==="custom"?accentColor:"#C9A84C"),border:`3px solid ${accentSwatch===sw.id?A.text:"transparent"}`,boxShadow:accentSwatch===sw.id?`0 0 0 1px ${A.text}`:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        {sw.id==="custom"&&<span style={{fontSize:14}}>+</span>}
+                      </div>
+                      <span style={{fontSize:9,fontWeight:600,color:accentSwatch===sw.id?A.text:A.muted,textTransform:"uppercase",letterSpacing:1}}>{sw.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {accentSwatch==="custom"&&(
+                  <div style={{display:"flex",gap:10,alignItems:"center",marginTop:4}}>
+                    <input type="color" value={accentColor} onChange={e=>setAccentColor(e.target.value)} style={{width:40,height:40,borderRadius:8,border:`1px solid ${A.border}`,cursor:"pointer",padding:2}}/>
+                    <input value={accentColor} onChange={e=>setAccentColor(e.target.value)} placeholder="#C9A84C" style={{...inp,flex:1,fontSize:13}}/>
+                  </div>
+                )}
+              </div>
+
+              {/* Template background (slides 2+) */}
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={lbl}>Slide background (slides 2 onwards)</label>
+                <div style={{display:"flex",gap:8,marginBottom:bgMode==="custom"?14:0}}>
+                  {BG_MODES.map(m=>(
+                    <button key={m.id} onClick={()=>setBgMode(m.id)} style={{flex:1,background:bgMode===m.id?A.text:A.bg,border:`1.5px solid ${bgMode===m.id?A.text:A.border}`,borderRadius:8,padding:"10px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                      <span style={{fontSize:12,fontWeight:700,color:bgMode===m.id?A.accentText:A.text}}>{m.label}</span>
+                      <span style={{fontSize:10,color:bgMode===m.id?"rgba(255,255,255,0.6)":A.muted}}>{m.desc}</span>
+                    </button>
+                  ))}
+                </div>
+                {bgMode==="custom"&&(
+                  <div>
+                    <div onClick={()=>templateBgRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${templateBgUrl?A.text:A.border}`,borderRadius:9,padding:"12px",cursor:"pointer",textAlign:"center",marginBottom:8}}>
+                      <span style={{fontSize:12,fontWeight:600,color:templateBgUrl?A.text:A.muted}}>{templateBgUrl?"✓ Template image set — click to change":"Upload template background image"}</span>
+                    </div>
+                    <p style={{color:A.muted,fontSize:11,margin:0,lineHeight:1.6}}>Safe zone: keep important elements within 80px from each edge. Recommended size: 1080×1350px.</p>
+                    <input ref={templateBgRef} type="file" accept="image/*" onChange={e=>readFile(e,setTemplateBgUrl)} style={{display:"none"}}/>
+                    {templateBgUrl&&(
+                      <div style={{marginTop:12}}>
+                        <label style={lbl}>Overlay — {overlayDark}%</label>
+                        <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)}/>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Font */}
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={lbl}>Body font</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+                  {FONTS.map(f=>(
+                    <button key={f.id} onClick={()=>setFontId(f.id)} style={{background:fontId===f.id?A.text:A.bg,border:`1.5px solid ${fontId===f.id?GOLD:A.border}`,borderRadius:8,padding:"7px 14px"}}>
+                      <span style={{fontFamily:`"${f.css}",serif`,fontSize:14,fontWeight:700,color:fontId===f.id?A.accentText:A.text}}>{f.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Slide numbers */}
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div><div style={{fontWeight:600,fontSize:13}}>Slide numbers</div><div style={{color:A.muted,fontSize:12}}>Watermark number on each slide</div></div>
+                {tog(showNums,setShowNums)}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── GENERATING ── */}
         {view==="generating"&&(
           <div style={{textAlign:"center",padding:"100px 0",animation:"fadeUp 0.3s ease"}}>
             <div style={{width:44,height:44,borderRadius:"50%",border:`3px solid ${A.border}`,borderTop:`3px solid ${GOLD}`,animation:"spin 0.8s linear infinite",margin:"0 auto 22px"}}/>
             <div style={{fontSize:11,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:GOLD,marginBottom:8}}>Creating</div>
             <div style={{fontSize:22,fontWeight:800,marginBottom:6}}>Writing and designing {slideCount} slides</div>
-            <div style={{color:A.muted,fontSize:14}}>"{lastTopic}" · Making layout decisions, writing copy…</div>
+            <div style={{color:A.muted,fontSize:14}}>"{lastTopic}"</div>
           </div>
         )}
 
-        {/* PREVIEW */}
+        {/* ── PREVIEW ── */}
         {view==="preview"&&slides.length>0&&(
           <div style={{animation:"fadeUp 0.3s ease"}}>
-            {/* Format toggle in preview */}
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
               <span style={{fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:A.muted}}>Format:</span>
-              {[["square","Square 1:1"],["portrait","Stories 9:16"]].map(([id,label])=>(
+              {[["instagram","Instagram 4:5"],["portrait","Stories 9:16"]].map(([id,label])=>(
                 <button key={id} onClick={()=>setRatio(id)} style={{background:ratio===id?A.text:A.surface,border:`1.5px solid ${ratio===id?A.text:A.border}`,color:ratio===id?A.accentText:A.muted,padding:"5px 14px",borderRadius:7,fontSize:12,fontWeight:700}}>{label}</button>
               ))}
             </div>
@@ -837,15 +1188,15 @@ Return ONLY valid JSON array:
               <div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
                   {slides.map((slide,i)=>(
-                    <SlidePreview key={i} slide={slide} idx={i} total={slides.length} opts={slideOpts(i)} onClick={()=>setActive(i)} isActive={active===i}/>
+                    <SlidePreview key={i} slide={slide} idx={i} total={slides.length} opts={slideOpts()} onClick={()=>setActive(i)} isActive={active===i} isCover={i===0}/>
                   ))}
                 </div>
                 <div style={{display:"flex",gap:8}}>
                   <button onClick={()=>downloadOne(active)} disabled={downloading} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                    {downloading?<><Spin c={A.text}/>Processing...</>:downloadDone?`✓ Downloaded`:`↓ Slide ${active+1}`}
+                    {downloading?<><Spin c={A.text}/>Processing...</>:downloadDone?"✓ Downloaded":`↓ Slide ${active+1}`}
                   </button>
                   <button onClick={downloadAll} disabled={downloadingAll} style={{flex:2,background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,padding:"10px",borderRadius:9,fontSize:13,fontWeight:800,border:`1px solid ${GOLD}33`,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                    {downloadingAll?<><Spin/>Downloading...</>:downloadDone?`✓ All Downloaded`:`↓ Download All ${slides.length}`}
+                    {downloadingAll?<><Spin/>Downloading...</>:downloadDone?"✓ All Downloaded":`↓ Download All ${slides.length}`}
                   </button>
                 </div>
               </div>
@@ -890,7 +1241,7 @@ Return ONLY valid JSON array:
                   <div>
                     <label style={lbl}>Format</label>
                     <div style={{display:"flex",gap:6}}>
-                      {[["square","Square 1:1"],["portrait","Stories 9:16"]].map(([id,label])=>(
+                      {[["instagram","4:5"],["portrait","9:16"]].map(([id,label])=>(
                         <button key={id} onClick={()=>setRatio(id)} style={{flex:1,background:ratio===id?A.text:A.bg,border:`1.5px solid ${ratio===id?A.text:A.border}`,color:ratio===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                       ))}
                     </div>
@@ -910,11 +1261,8 @@ Return ONLY valid JSON array:
       </div>
 
       <footer style={{borderTop:`1px solid ${A.border}`,padding:"14px 32px",textAlign:"center",marginTop:60}}>
-        <span style={{color:A.muted,fontSize:12}}>
-          <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,fontWeight:700,textDecoration:"none"}}>Build with Tav</a>
-          {" · "}
-          <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:A.muted,textDecoration:"none"}}>buildwithtav.co</a>
-        </span>
+        <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,fontWeight:700,textDecoration:"none",fontSize:12}}>Build with Tav</a>
+        <span style={{color:A.muted,fontSize:12}}> · buildwithtav.co</span>
       </footer>
     </div>
   );
