@@ -845,8 +845,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
               </div>
             </div>
 
-            </div>
-
             {quoteInputs.some(q=>q.trim()) ? (
               <div style={{marginBottom:20}}>
                 <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:12}}>Preview</div>
@@ -932,8 +930,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
                     </div>
                   )}
                   {coverPhotos.length === 0 && (
-                    <div onClick={()=>coverPhotoRef.current?.click()} style={{border:`1.5px dashed ${A.border}`,borderRadius:9,padding:"12px",cursor:"pointer",textAlign:"center"}}>
-                      <span style={{fontSize:12,color:A.muted}}>Upload from device or save photos in Brand settings</span>
+                    <div style={{border:`1.5px dashed ${A.border}`,borderRadius:9,padding:"12px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                      <span style={{fontSize:12,color:A.muted,lineHeight:1.5}}>Save photos in <strong>Brand settings</strong> to build your library, or upload one now to use as your cover</span>
+                      <button onClick={()=>coverPhotoRef.current?.click()} style={{background:A.text,color:A.accentText,padding:"6px 12px",borderRadius:7,fontSize:11,fontWeight:700,flexShrink:0}}>Upload ↑</button>
                     </div>
                   )}
                   {activeCoverPhoto && <div style={{fontSize:11,color:A.muted,marginTop:4}}>✓ Cover selected — manage photos in Brand settings</div>}
