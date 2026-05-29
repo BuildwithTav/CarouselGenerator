@@ -522,7 +522,6 @@ export default function App() {
   const [cropDragging, setCropDragging] = useState(false);
   const [cropDragStart, setCropDragStart] = useState(null);
   const [slideOverlays, setSlideOverlays] = useState({});
-  const cropRef = useRef(null);
   const [coverImgPos, setCoverImgPos] = useState({x:50,y:50});
   const [templateImgPos, setTemplateImgPos] = useState({x:50,y:50});
   const profileRef = useRef(null);
@@ -1641,8 +1640,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </div>
           </div>
         )}
-
-      {/* ── CROP MODAL ── */}
       {cropModal&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={e=>{if(e.target===e.currentTarget)setCropModal(null);}}>
           <div style={{background:A.surface,borderRadius:16,padding:28,width:600,maxWidth:"95vw"}}>
@@ -1697,5 +1694,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         <span style={{color:A.muted,fontSize:12}}> · buildwithtav.co</span>
       </footer>
     </div>
+  </div>
   );
 }
