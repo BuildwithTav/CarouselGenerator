@@ -118,13 +118,6 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
   // Background for this slide
   const bgImageUrl = isCover ? coverImageUrl : (bgMode === "custom" ? templateBgUrl : null);
-  const slideBg = isCover
-    ? (coverImageUrl ? C.bg : C.bg)
-    : bgMode === "light"
-      ? "#F5F3EF"
-      : bgMode === "dark"
-        ? C.bg
-        : C.bg;
 
   const pillBg = bgImageUrl
     ? badgeArea === "light" ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.58)"
@@ -838,8 +831,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
                 <label style={{...lbl,marginBottom:0}}>Your quotes</label>
-                <button onClick={generateQuotes} disabled={generatingQuotes} style={{background:A.text,color:A.accentText,padding:"6px 14px",borderRadius:7,fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:6}}>
-                  {generatingQuotes?<><Spin/>Generating...</>:"✦ Generate quotes"}
+                <button onClick={generateQuotes} disabled={generatingQuotes} style={{background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"6px 14px",borderRadius:7,fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:6}}>
+                  {generatingQuotes?<><Spin c={A.text}/>Generating...</>:"✦ Generate quotes"}
                 </button>
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -852,25 +845,35 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
               </div>
             </div>
 
-            {/* Preview + download */}
-            {quoteInputs.some(q=>q.trim())&&(
-              <div style={{marginBottom:20}}>
-                <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
-                  {quoteInputs.filter(q=>q.trim()).map((q,i)=>{
-                    const W=1080,H=1350,scale=180/W;
-                    const html=buildQuoteHTML(q);
-                    return (
-                      <div key={i} style={{position:"relative",width:180,height:H*scale,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,flexShrink:0}}>
-                        <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
-                        <button onClick={()=>downloadQuote(q,i)} style={{position:"absolute",bottom:4,right:4,background:"rgba(0,0,0,0.7)",color:"#fff",fontSize:10,fontWeight:700,padding:"3px 7px",borderRadius:4,border:"none"}}>↓</button>
-                      </div>
-                    );
-                  })}
+            </div>
+
+            {/* Create button */}
+            {quoteInputs.some(q=>q.trim()) ? (
+              <>
+                {/* Preview + download */}
+                <div style={{marginBottom:20}}>
+                  <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:12}}>Preview</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
+                    {quoteInputs.filter(q=>q.trim()).map((q,i)=>{
+                      const W=1080,H=1350,scale=180/W;
+                      const html=buildQuoteHTML(q);
+                      return (
+                        <div key={i} style={{position:"relative",width:180,height:H*scale,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,flexShrink:0}}>
+                          <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
+                          <button onClick={()=>downloadQuote(q,i)} style={{position:"absolute",bottom:4,right:4,background:"rgba(0,0,0,0.7)",color:"#fff",fontSize:10,fontWeight:700,padding:"3px 7px",borderRadius:4,border:"none"}}>↓</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <button onClick={downloadAllQuotes} disabled={downloadingQuotes} style={{width:"100%",padding:"13px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:14,fontWeight:800,border:`1px solid ${GOLD}33`,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                    {downloadingQuotes?<><Spin/>Downloading...</>:`↓ Download All ${quoteInputs.filter(q=>q.trim()).length} Quote Cards`}
+                  </button>
                 </div>
-                <button onClick={downloadAllQuotes} disabled={downloadingQuotes} style={{width:"100%",padding:"13px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:14,fontWeight:800,border:`1px solid ${GOLD}33`,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                  {downloadingQuotes?<><Spin/>Downloading...</>:`↓ Download All ${quoteInputs.filter(q=>q.trim()).length} Quote Cards`}
-                </button>
-              </div>
+              </>
+            ) : (
+              <button disabled style={{width:"100%",padding:"13px",background:A.border,color:A.muted,borderRadius:10,fontSize:14,fontWeight:800,border:"none"}}>
+                Add quotes above to create cards
+              </button>
             )}
           </div>
         )}
@@ -902,10 +905,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
               <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,cursor:"pointer"}} onClick={()=>inspirationImg?setInspirationImg(null):inspirationRef.current?.click()}>
                 <span style={{fontSize:16}}>📸</span>
                 <div style={{flex:1}}>
-                  <span style={{fontSize:13,color:A.muted}}>Seen a carousel you like? </span>
-                  <span style={{fontSize:12,color:A.muted,fontWeight:500}}>{inspirationImg?"Screenshot uploaded — click to remove":"Upload a screenshot to recreate it in your voice (optional)"}</span>
+                  <span style={{fontSize:13,fontWeight:600,color:A.text}}>Seen a carousel you like? </span>
+                  <span style={{fontSize:12,color:A.muted}}>{inspirationImg?"Screenshot uploaded — click to remove":"Click here to upload a screenshot — I'll recreate it in your voice"}</span>
                 </div>
-                {inspirationImg&&<img src={inspirationImg} style={{width:36,height:36,objectFit:"cover",borderRadius:4,border:`1px solid ${A.border}`}}/>}
+                {inspirationImg
+                  ? <img src={inspirationImg} style={{width:36,height:36,objectFit:"cover",borderRadius:4,border:`1px solid ${A.border}`}}/>
+                  : <span style={{fontSize:11,fontWeight:700,color:A.muted,background:A.bg,padding:"4px 10px",borderRadius:6,flexShrink:0}}>Upload ↑</span>
+                }
               </div>
               <input ref={inspirationRef} type="file" accept="image/*" onChange={e=>readFile(e,setInspirationImg)} style={{display:"none"}}/>
             </div>
@@ -914,22 +920,28 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
               <div>
                 <label style={lbl}>Cover photo <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional)</span></label>
-                {coverPhotos.length > 0
-                  ? <div>
-                      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
-                        {coverPhotos.map((p,i)=>(
-                          <div key={i} onClick={()=>{setActiveCoverPhoto(p);sampleImageBrightness(p).then(setBadgeArea);}} style={{width:48,height:48,borderRadius:6,overflow:"hidden",border:`2px solid ${activeCoverPhoto===p?A.text:A.border}`,cursor:"pointer",flexShrink:0}}>
-                            <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                          </div>
-                        ))}
-                        <div onClick={()=>coverPhotoRef.current?.click()} style={{width:48,height:48,borderRadius:6,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:20,flexShrink:0}}>+</div>
+                <div>
+                  {coverPhotos.length > 0 && (
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
+                      {/* No cover option */}
+                      <div onClick={()=>setActiveCoverPhoto(null)} style={{width:48,height:48,borderRadius:6,border:`2px solid ${!activeCoverPhoto?A.text:A.border}`,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:A.bg}}>
+                        <span style={{fontSize:9,fontWeight:700,color:!activeCoverPhoto?A.text:A.muted,textAlign:"center",lineHeight:1.2}}>None</span>
                       </div>
-                      {activeCoverPhoto&&<div style={{fontSize:11,color:A.muted}}>✓ Cover photo selected</div>}
+                      {coverPhotos.map((p,i)=>(
+                        <div key={i} onClick={()=>{setActiveCoverPhoto(p);sampleImageBrightness(p).then(setBadgeArea);}} style={{width:48,height:48,borderRadius:6,overflow:"hidden",border:`2px solid ${activeCoverPhoto===p?A.text:A.border}`,cursor:"pointer",flexShrink:0}}>
+                          <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                        </div>
+                      ))}
+                      <div onClick={()=>coverPhotoRef.current?.click()} style={{width:48,height:48,borderRadius:6,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:20,flexShrink:0}}>+</div>
                     </div>
-                  : <div onClick={()=>coverPhotoRef.current?.click()} style={{border:`1.5px dashed ${A.border}`,borderRadius:9,padding:"12px",cursor:"pointer",textAlign:"center"}}>
-                      <span style={{fontSize:12,color:A.muted}}>Upload cover photo</span>
+                  )}
+                  {coverPhotos.length === 0 && (
+                    <div onClick={()=>coverPhotoRef.current?.click()} style={{border:`1.5px dashed ${A.border}`,borderRadius:9,padding:"12px",cursor:"pointer",textAlign:"center"}}>
+                      <span style={{fontSize:12,color:A.muted}}>Upload from device or save photos in Brand settings</span>
                     </div>
-                }
+                  )}
+                  {activeCoverPhoto && <div style={{fontSize:11,color:A.muted,marginTop:4}}>✓ Cover selected — manage photos in Brand settings</div>}
+                </div>
                 <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
