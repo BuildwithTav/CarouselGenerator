@@ -525,11 +525,7 @@ export default function App() {
   const cropRef = useRef(null);
   const [coverImgPos, setCoverImgPos] = useState({x:50,y:50});
   const [templateImgPos, setTemplateImgPos] = useState({x:50,y:50});
-  const [isDraggingCover, setIsDraggingCover] = useState(false);
-  const [isDraggingTemplate, setIsDraggingTemplate] = useState(false);
   const profileRef = useRef(null);
-  const coverDragRef = useRef(null);
-  const templateDragRef = useRef(null);
   const coverPhotoRef = useRef(null);
   const templateBgRef = useRef(null);
   const inspirationRef = useRef(null);
@@ -671,15 +667,6 @@ Return ONLY valid JSON array:
   };
 
   const updateSlide = (k,v) => { const next=[...slides]; next[active]={...next[active],[k]:v}; setSlides(next); };
-
-  const handleDrag = (e, setter, containerRef) => {
-    const el = containerRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
-    setter({x: Math.round(x), y: Math.round(y)});
-  };
 
   const slideOpts = useCallback(() => ({
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
@@ -1591,7 +1578,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <div style={{display:"flex",gap:8,marginBottom:12}}>
                   <button onClick={()=>generate(lastTopic)} style={{background:A.surface,border:`1.5px solid ${A.border}`,color:A.muted,padding:"7px 14px",borderRadius:7,fontSize:12,fontWeight:600}}>↺ Regenerate</button>
                   <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:A.surface,border:`1.5px solid ${A.border}`,color:A.muted,padding:"7px 14px",borderRadius:7,fontSize:12,fontWeight:600}}>← New carousel</button>
-                </div> style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                </div>
+                <div style={{display:"flex",gap:8}}>
+                  <button onClick={()=>downloadOne(active)} disabled={downloading} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                     {downloading?<><Spin c={A.text}/>Processing...</>:downloadDone?"✓ Downloaded":`↓ Slide ${active+1}`}
                   </button>
                   <button onClick={downloadAll} disabled={downloadingAll} style={{flex:2,background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,padding:"10px",borderRadius:9,fontSize:13,fontWeight:800,border:`1px solid ${GOLD}33`,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
