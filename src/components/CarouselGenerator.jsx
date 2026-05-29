@@ -245,28 +245,43 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     `,
   };
 
-  // Cover slide layout
+  // Cover slide layout — badge + content move together
   const coverPos = coverPosition || "centre";
+
+  // On cover slide, badge is part of the content flow, not fixed top-left
+  const coverBadgeHTML = `
+    <div style="display:inline-flex;align-items:center;gap:14px;background:${pillBg};padding:10px 22px 10px 10px;border-radius:60px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);margin-bottom:24px;">
+      <div style="width:80px;height:80px;border-radius:50%;border:3px solid ${C.accent};overflow:hidden;flex-shrink:0;background:${C.dark?"#1a1a1a":"#ddd"};display:flex;align-items:center;justify-content:center;position:relative;">
+        ${profileUrl?`<img src="${profileUrl}" crossorigin="anonymous" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;object-fit:cover;"/>`:`<span style="font-size:32px;font-weight:900;color:${C.accent};font-family:'${hlFont}',sans-serif;">${esc((name||"?")[0].toUpperCase())}</span>`}
+      </div>
+      <div>
+        <div style="font-size:20px;font-weight:800;color:${pillText};line-height:1.2;font-family:'${bodyFont}',sans-serif;">${esc(name||"Your Brand")}${blueTick?` <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:#1D9BF0;border-radius:50%;font-size:10px;color:#fff;margin-left:5px;">✓</span>`:""}</div>
+        <div style="font-size:15px;color:${pillSub};font-family:'${bodyFont}',sans-serif;">${esc(handle||"@yourhandle")}</div>
+      </div>
+    </div>`;
+
   const coverLayouts = {
     top: `
-      .cover-content { position:absolute; top:${isPortrait?300:220}px; left:70px; right:70px; z-index:5; }
+      .cover-content { position:absolute; top:${isPortrait?200:120}px; left:70px; right:70px; z-index:5; display:flex; flex-direction:column; align-items:center; text-align:center; }
     `,
     centre: `
-      .cover-content { position:absolute; top:50%; left:70px; right:70px; transform:translateY(-50%); z-index:5; }
+      .cover-content { position:absolute; top:50%; left:70px; right:70px; transform:translateY(-50%); z-index:5; display:flex; flex-direction:column; align-items:center; text-align:center; }
     `,
     bottom: `
-      .cover-content { position:absolute; bottom:${isPortrait?280:200}px; left:70px; right:70px; z-index:5; }
+      .cover-content { position:absolute; bottom:${isPortrait?200:120}px; left:70px; right:70px; z-index:5; display:flex; flex-direction:column; align-items:center; text-align:center; }
     `,
   };
 
   function layoutHTML() {
     if (isCover) {
       const hl = accentHL(slide.headline||"");
+      const isCentre = coverPos === "centre";
       return `
         <div class="cover-content">
+          ${coverBadgeHTML}
           ${slide.tag ? `<div style="margin-bottom:20px"><span class="tag">${esc(slide.tag.toUpperCase())}</span></div>` : ""}
-          <div style="font-size:${isPortrait?110:90}px;font-weight:900;line-height:1.05;letter-spacing:${hs.letterSpacing};${ts}font-family:'${hlFont}',sans-serif;color:${C.text}">${hl}</div>
-          ${slide.body ? `<div style="font-size:${isPortrait?32:26}px;line-height:1.6;color:${C.sub};margin-top:24px;font-family:'${bodyFont}',sans-serif;${ts2}">${esc(slide.body)}</div>` : ""}
+          <div style="font-size:${isPortrait?110:90}px;font-weight:900;line-height:1.05;letter-spacing:${hs.letterSpacing};${ts}font-family:'${hlFont}',sans-serif;color:${C.text};${isCentre?"text-align:center;":""}width:100%;">${hl}</div>
+          ${slide.body ? `<div style="font-size:${isPortrait?32:26}px;line-height:1.6;color:${C.sub};margin-top:24px;font-family:'${bodyFont}',sans-serif;${ts2}${isCentre?"text-align:center;":""}">${esc(slide.body)}</div>` : ""}
         </div>`;
     }
 
@@ -345,13 +360,13 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   <div class="bk tl"></div><div class="bk tr"></div>
   <div class="bk bl"></div><div class="bk br"></div>
   ${C.dark||hasBg?'<div class="fade"></div>':""}
-  <div class="badge">
+  ${isCover ? "" : `<div class="badge">
     <div class="av">${avHtml}</div>
     <div>
       <div class="bn">${esc(name||"Your Brand")}${blueTick?` <span class="tick">✓</span>`:""}</div>
       <div class="bh">${esc(handle||"@yourhandle")}</div>
     </div>
-  </div>
+  </div>`}
   ${showNums?`<div class="wm">${String(idx+1).padStart(2,"0")}</div><div class="cnt">${idx+1} / ${total}</div>`:""}
   ${layoutHTML()}
   ${websiteUrl?`<div class="site">${esc(websiteUrl)}</div>`:""}
@@ -488,6 +503,12 @@ export default function App() {
   const [quoteInputs, setQuoteInputs] = useState(["","","","",""]);
   const [quoteSignature, setQuoteSignature] = useState("");
   const [quoteFont, setQuoteFont] = useState("playfair");
+  const [quoteSigFont, setQuoteSigFont] = useState("dancing");
+  const [quoteBgMode, setQuoteBgMode] = useState("dark");
+  const [quoteBgCustomUrl, setQuoteBgCustomUrl] = useState(null);
+  const [quoteOverlay, setQuoteOverlay] = useState(0);
+  const [quoteAccent, setQuoteAccent] = useState(GOLD);
+  const [quoteFormat, setQuoteFormat] = useState("instagram");
   const [generatingQuotes, setGeneratingQuotes] = useState(false);
   const [quoteSlides, setQuoteSlides] = useState([]);
   const [downloadingQuotes, setDownloadingQuotes] = useState(false);
@@ -495,6 +516,7 @@ export default function App() {
   const coverPhotoRef = useRef(null);
   const templateBgRef = useRef(null);
   const inspirationRef = useRef(null);
+  const quoteBgRef = useRef(null);
 
   useEffect(() => {
     saveS({profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
@@ -662,13 +684,20 @@ Return ONLY valid JSON array:
   const generateQuotes = async () => {
     setGeneratingQuotes(true);
     const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
+    const emptyCount = quoteInputs.filter(q=>!q.trim()).length;
+    const needed = emptyCount || 5;
     try {
-      const d = await fetchWithRetry({ model:"claude-opus-4-7", max_tokens:400, messages:[{ role:"user", content:`Generate 5 short, powerful quotes for a ${btLabel}. Voice: ${voiceProfile||"direct, honest, real"}. Return ONLY a JSON array of 5 strings: ["quote1","quote2","quote3","quote4","quote5"]. No attribution, no author names, max 15 words each.` }] });
+      const d = await fetchWithRetry({ model:"claude-opus-4-7", max_tokens:400, messages:[{ role:"user", content:`Generate ${needed} short, powerful quotes for a ${btLabel}. Voice: ${voiceProfile||"direct, honest, real"}. Return ONLY a JSON array of ${needed} strings. No attribution, no author names, max 15 words each.` }] });
       const raw = (d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
       const m = raw.match(/\[[\s\S]*\]/);
       if (m) {
-        const quotes = JSON.parse(m[0]);
-        setQuoteInputs(quotes.slice(0,5).concat(Array(5).fill("")).slice(0,5));
+        const generated = JSON.parse(m[0]);
+        const next = [...quoteInputs];
+        let gi = 0;
+        for (let i=0; i<next.length && gi<generated.length; i++) {
+          if (!next[i].trim()) { next[i] = generated[gi++]; }
+        }
+        setQuoteInputs(next);
       }
     } catch {}
     setGeneratingQuotes(false);
@@ -676,51 +705,58 @@ Return ONLY valid JSON array:
 
   const buildQuoteHTML = (quoteText, sig) => {
     const accent = accentColor || GOLD;
-    const isDark = bgMode !== "light";
-    const bg = bgMode === "light" ? "#F5F3EF" : "#0A0A0A";
-    const textColor = isDark ? "#FFFFFF" : "#0A0A0A";
-    const subColor = isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)";
+    const isDark = quoteBgMode !== "light";
+    const hasBgImg = quoteBgMode === "custom" && quoteBgCustomUrl;
+    const bg = quoteBgMode === "light" ? "#F5F3EF" : "#0A0A0A";
+    const textColor = hasBgImg ? "#FFFFFF" : (isDark ? "#FFFFFF" : "#0A0A0A");
+    const subColor = hasBgImg ? "rgba(255,255,255,0.75)" : (isDark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)");
+    const textShadow = hasBgImg ? "text-shadow:0 2px 20px rgba(0,0,0,0.9),0 1px 8px rgba(0,0,0,0.8);" : "";
     const fontObj = FONTS.find(f => f.id === quoteFont) || FONTS[1];
+    const sigFontObj = FONTS.find(f => f.id === quoteSigFont) || FONTS[5];
     const font = fontObj.css;
-    const W = 1080, H = 1350;
+    const sigFont = sigFontObj.css;
+    const isPortrait = quoteFormat === "portrait";
+    const W = 1080, H = isPortrait ? 1920 : 1350;
     const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&family=Dancing+Script:wght@600;700&display=swap`;
-    const avHtml = profileUrl ? `<img src="${profileUrl}" crossorigin="anonymous" style="width:100%;height:100%;object-fit:cover;"/>` : `<span style="font-size:32px;font-weight:900;color:${accent};font-family:'${font}',sans-serif;">${(name||"?")[0].toUpperCase()}</span>`;
     const signature = sig || quoteSignature || name || "";
+    const escapedQuote = (quoteText||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
     return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>
 @import url('${gFonts}');
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
-.slide{width:${W}px;height:${H}px;background:${bg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:120px 100px;position:relative;font-family:'${font}',sans-serif;}
-.bk{position:absolute;width:52px;height:52px;}
+.slide{width:${W}px;height:${H}px;background:${bg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:140px 110px;position:relative;}
+.bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
+.bg-ov{position:absolute;inset:0;z-index:1;background:rgba(0,0,0,${(quoteOverlay||0)/100});}
+.bk{position:absolute;width:52px;height:52px;z-index:3;}
 .tl{top:44px;left:52px;border-top:2.5px solid ${accent};border-left:2.5px solid ${accent};opacity:0.4;}
 .tr{top:44px;right:52px;border-top:2.5px solid ${accent};border-right:2.5px solid ${accent};opacity:0.4;}
 .bl{bottom:44px;left:52px;border-bottom:2.5px solid ${accent};border-left:2.5px solid ${accent};opacity:0.4;}
 .br{bottom:44px;right:52px;border-bottom:2.5px solid ${accent};border-right:2.5px solid ${accent};opacity:0.4;}
-.qm{font-size:200px;font-weight:900;color:${accent}22;line-height:0.7;font-family:'${font}',sans-serif;text-align:left;width:100%;margin-bottom:-30px;}
-.quote{font-size:72px;font-weight:700;line-height:1.2;color:${textColor};font-style:italic;font-family:'${font}',sans-serif;text-align:center;margin-bottom:60px;}
-.div{width:60px;height:1.5px;background:${accent};opacity:0.6;margin:0 auto 40px;}
-.sig-wrap{display:flex;align-items:center;gap:16px;}
-.av{width:70px;height:70px;border-radius:50%;border:2.5px solid ${accent};overflow:hidden;display:flex;align-items:center;justify-content:center;background:${isDark?"#1a1a1a":"#ddd"};flex-shrink:0;}
-.sig{font-size:28px;font-weight:700;color:${subColor};font-family:'${font}',sans-serif;}
+.content{position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;}
+.quote{font-size:${isPortrait?80:72}px;font-weight:700;line-height:1.25;color:${textColor};font-style:italic;font-family:'${font}',serif;text-align:center;margin-bottom:60px;${textShadow}}
+.div{width:60px;height:1.5px;background:${accent};opacity:0.5;margin:0 auto 44px;}
+.sig{font-size:${isPortrait?36:30}px;font-weight:600;color:${subColor};font-family:'${sigFont}',cursive,serif;text-align:center;${textShadow}}
+.handle{font-size:${isPortrait?26:22}px;color:${accent};font-family:'${sigFont}',cursive,serif;text-align:center;margin-top:8px;opacity:0.85;${textShadow}}
 </style>
 </head><body>
 <div class="slide">
+  ${hasBgImg?`<img class="bg-img" src="${quoteBgCustomUrl}" crossorigin="anonymous"/><div class="bg-ov"></div>`:""}
   <div class="bk tl"></div><div class="bk tr"></div>
   <div class="bk bl"></div><div class="bk br"></div>
-  <div class="qm">"</div>
-  <div class="quote">${(quoteText||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</div>
-  <div class="div"></div>
-  <div class="sig-wrap">
-    <div class="av">${avHtml}</div>
+  <div class="content">
+    <div class="quote">&#8220;${escapedQuote}&#8221;</div>
+    <div class="div"></div>
     ${signature?`<div class="sig">— ${signature.replace(/&/g,"&amp;")}</div>`:""}
+    ${handle?`<div class="handle">${handle.startsWith("@")?handle:"@"+handle}</div>`:""}
   </div>
 </div>
 </body></html>`;
   };
 
   const downloadQuote = async (quoteText, i) => {
-    const W = 1080, H = 1350;
+    const isPortrait = quoteFormat === "portrait";
+    const W = 1080, H = isPortrait ? 1920 : 1350;
     const html = buildQuoteHTML(quoteText);
     const iframe = document.createElement("iframe");
     iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
@@ -760,7 +796,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
     </div>
   );
 
-  const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],["history","History"],["brand","Brand"],["visual","Visual"]];
+  const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"]];
 
   return (
     <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
@@ -787,7 +823,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
         </div>
         <div style={{display:"flex",alignItems:"center",gap:2}}>
           {NAV_ITEMS.map(([id,label])=>(
-            <button key={id} onClick={()=>{setNav(id);if(view==="preview"&&id!=="generate"){}}} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"8px 16px",fontSize:13,fontWeight:nav===id?700:500,marginBottom:-1}}>
+            <button key={id} onClick={()=>{setNav(id);if(view==="preview"&&id!=="generate"){}}} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 16px",fontSize:13,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",marginBottom:-1,cursor:"pointer"}}>
               {label}
             </button>
           ))}
@@ -805,36 +841,102 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
         {nav==="quotes"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:640,margin:"0 auto"}}>
             <div style={{marginBottom:24}}>
-              <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px"}}>Quote Pack</h2>
-              <p style={{color:A.muted,fontSize:14,margin:0}}>Create up to 5 branded quote cards. Download individually or all at once.</p>
+              <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px"}}>Quote Cards</h2>
+              <p style={{color:A.muted,fontSize:14,margin:0}}>Create up to 5 branded quote cards. Accent colour pulls from Brand settings.</p>
             </div>
 
-            {/* Quote font */}
-            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16}}>
-              <label style={lbl}>Quote font</label>
-              <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-                {FONTS.map(f=>(
-                  <button key={f.id} onClick={()=>setQuoteFont(f.id)} style={{background:quoteFont===f.id?A.text:A.bg,border:`1.5px solid ${quoteFont===f.id?GOLD:A.border}`,borderRadius:8,padding:"7px 14px"}}>
-                    <span style={{fontFamily:`"${f.css}",serif`,fontSize:f.id==="dancing"?16:14,fontWeight:700,fontStyle:f.id==="dancing"?"italic":"normal",color:quoteFont===f.id?A.accentText:A.text}}>{f.label}</span>
-                  </button>
-                ))}
+            {/* Format + Background */}
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16,display:"flex",flexDirection:"column",gap:16}}>
+              <div>
+                <label style={lbl}>Format</label>
+                <div style={{display:"flex",gap:8}}>
+                  {[["instagram","Instagram 4:5"],["portrait","Stories 9:16"]].map(([id,label])=>(
+                    <button key={id} onClick={()=>setQuoteFormat(id)} style={{flex:1,background:quoteFormat===id?A.text:A.bg,border:`1.5px solid ${quoteFormat===id?A.text:A.border}`,color:quoteFormat===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label style={lbl}>Background</label>
+                <div style={{display:"flex",gap:8,marginBottom:quoteBgMode==="custom"?14:0}}>
+                  {[["dark","Dark"],["light","Light"],["custom","Custom"]].map(([id,label])=>(
+                    <button key={id} onClick={()=>setQuoteBgMode(id)} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
+                  ))}
+                </div>
+                {quoteBgMode==="custom"&&(
+                  <div>
+                    <div onClick={()=>quoteBgRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${quoteBgCustomUrl?A.text:A.border}`,borderRadius:9,padding:"10px",cursor:"pointer",textAlign:"center",marginBottom:10}}>
+                      <span style={{fontSize:12,fontWeight:600,color:quoteBgCustomUrl?A.text:A.muted}}>{quoteBgCustomUrl?"✓ Background uploaded — click to change":"Upload your background image"}</span>
+                    </div>
+                    <p style={{color:A.muted,fontSize:11,margin:"0 0 12px",lineHeight:1.6}}>
+                      Safe zone: keep important elements within 80px from all edges.<br/>
+                      Recommended: <strong>{quoteFormat==="portrait"?"1080×1920px":"1080×1350px"}</strong>
+                    </p>
+                    <div style={{marginBottom:12}}>
+                      <label style={lbl}>Overlay darkness — {quoteOverlay}% <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(0% = no overlay)</span></label>
+                      <input type="range" min={0} max={80} value={quoteOverlay} onChange={e=>setQuoteOverlay(+e.target.value)}/>
+                    </div>
+                    <input ref={quoteBgRef} type="file" accept="image/*" onChange={e=>readFile(e,setQuoteBgCustomUrl)} style={{display:"none"}}/>
+                    {quoteBgCustomUrl&&(()=>{
+                      const sampleSlide = {headline:"Your quote will appear here",accent_word:"",tag:"",body:"",layout:"standard"};
+                      const isP = quoteFormat==="portrait";
+                      const W=1080,H=isP?1920:1350,scale=280/W;
+                      const html=buildQuoteHTML("Your quote will appear here");
+                      return (
+                        <div>
+                          <label style={{...lbl,marginBottom:8}}>Preview — check safe zone</label>
+                          <div style={{width:280,height:H*scale,borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                            <QuotePreview html={html} W={W} H={H} scale={scale}/>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Signature */}
-            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16}}>
-              <label style={lbl}>Signature <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(leave blank to use your brand name)</span></label>
-              <input value={quoteSignature} onChange={e=>setQuoteSignature(e.target.value)} placeholder={name||"Your name"} style={inp}/>
+            {/* Fonts */}
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16,display:"flex",flexDirection:"column",gap:16}}>
+              <div>
+                <label style={lbl}>Quote font</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {FONTS.map(f=>(
+                    <button key={f.id} onClick={()=>setQuoteFont(f.id)} style={{background:quoteFont===f.id?A.text:A.bg,border:`1.5px solid ${quoteFont===f.id?GOLD:A.border}`,borderRadius:8,padding:"6px 12px"}}>
+                      <span style={{fontFamily:`"${f.css}",serif`,fontSize:f.id==="dancing"?15:13,fontWeight:700,fontStyle:"italic",color:quoteFont===f.id?A.accentText:A.text}}>{f.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label style={lbl}>Signature font</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {FONTS.map(f=>(
+                    <button key={f.id} onClick={()=>setQuoteSigFont(f.id)} style={{background:quoteSigFont===f.id?A.text:A.bg,border:`1.5px solid ${quoteSigFont===f.id?GOLD:A.border}`,borderRadius:8,padding:"6px 12px"}}>
+                      <span style={{fontFamily:`"${f.css}",serif`,fontSize:f.id==="dancing"?15:13,fontWeight:600,color:quoteSigFont===f.id?A.accentText:A.text}}>{f.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label style={lbl}>Signature <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(leave blank to use brand name)</span></label>
+                <input value={quoteSignature} onChange={e=>setQuoteSignature(e.target.value)} placeholder={name||"Your name"} style={inp}/>
+                {handle&&<p style={{color:A.muted,fontSize:11,marginTop:6}}>Handle will show as: {handle.startsWith("@")?handle:"@"+handle}</p>}
+              </div>
             </div>
 
             {/* Quote inputs */}
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
                 <label style={{...lbl,marginBottom:0}}>Your quotes</label>
-                <button onClick={generateQuotes} disabled={generatingQuotes} style={{background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"6px 14px",borderRadius:7,fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:6}}>
-                  {generatingQuotes?<><Spin c={A.text}/>Generating...</>:"✦ Generate quotes"}
-                </button>
+                <div style={{display:"flex",gap:6}}>
+                  <button onClick={()=>setQuoteInputs(["","","","",""])} style={{background:"none",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 10px",borderRadius:7,fontSize:11,fontWeight:600}}>Clear all</button>
+                  <button onClick={generateQuotes} disabled={generatingQuotes} style={{background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
+                    {generatingQuotes?<><Spin c={A.text}/>Generating...</>:"✦ Generate"}
+                  </button>
+                </div>
               </div>
+              <p style={{color:A.muted,fontSize:12,margin:"0 0 14px",lineHeight:1.5}}>Enter your favourite quotes, or hit Generate to fill empty slots based on your brand.</p>
               <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 {quoteInputs.map((q,i)=>(
                   <div key={i} style={{display:"flex",alignItems:"flex-start",gap:10}}>
@@ -850,12 +952,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
                 <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:12}}>Preview</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
                   {quoteInputs.filter(q=>q.trim()).map((q,i)=>{
-                    const W=1080,H=1350,scale=180/W;
+                    const isP=quoteFormat==="portrait";
+                    const W=1080,H=isP?1920:1350,scale=180/W;
                     const html=buildQuoteHTML(q);
                     return (
-                      <div key={i} style={{position:"relative",width:180,height:H*scale,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,flexShrink:0}}>
+                      <div key={i} style={{width:180,height:H*scale,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,flexShrink:0}}>
                         <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
-                        <button onClick={()=>downloadQuote(q,i)} style={{position:"absolute",bottom:4,right:4,background:"rgba(0,0,0,0.7)",color:"#fff",fontSize:10,fontWeight:700,padding:"3px 7px",borderRadius:4,border:"none"}}>↓</button>
                       </div>
                     );
                   })}
@@ -896,18 +998,21 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
 
             {/* Inspiration — secondary, tucked away */}
             <div style={{marginBottom:16}}>
-              <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,cursor:"pointer"}} onClick={()=>inspirationImg?setInspirationImg(null):inspirationRef.current?.click()}>
+              <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:A.surface,border:`1.5px solid ${inspirationImg?GOLD:A.border}`,borderRadius:10,cursor:"pointer"}} onClick={()=>{if(inspirationImg){setInspirationImg(null);if(topic==="Recreating from uploaded screenshot...")setTopic("");}else{inspirationRef.current?.click();}}}>
                 <span style={{fontSize:16}}>📸</span>
                 <div style={{flex:1}}>
                   <span style={{fontSize:13,fontWeight:600,color:A.text}}>Seen a carousel you like? </span>
-                  <span style={{fontSize:12,color:A.muted}}>{inspirationImg?"Screenshot uploaded — click to remove":"Click here to upload a screenshot — I'll recreate it in your voice"}</span>
+                  {inspirationImg
+                    ? <span style={{fontSize:12,color:GOLD,fontWeight:500}}>Screenshot uploaded — topic box overridden. Click to remove.</span>
+                    : <span style={{fontSize:12,color:A.muted}}>Upload a screenshot — I'll recreate it in your voice, ignoring the topic box</span>
+                  }
                 </div>
                 {inspirationImg
-                  ? <img src={inspirationImg} style={{width:36,height:36,objectFit:"cover",borderRadius:4,border:`1px solid ${A.border}`}}/>
+                  ? <img src={inspirationImg} style={{width:36,height:36,objectFit:"cover",borderRadius:4,border:`1px solid ${GOLD}`}}/>
                   : <span style={{fontSize:11,fontWeight:700,color:A.muted,background:A.bg,padding:"4px 10px",borderRadius:6,flexShrink:0}}>Upload ↑</span>
                 }
               </div>
-              <input ref={inspirationRef} type="file" accept="image/*" onChange={e=>readFile(e,setInspirationImg)} style={{display:"none"}}/>
+              <input ref={inspirationRef} type="file" accept="image/*" onChange={e=>readFile(e,url=>{setInspirationImg(url);setTopic("Recreating from uploaded screenshot...");setErr("");}) } style={{display:"none"}}/>
             </div>
 
             {/* Cover photo + format + slides */}
@@ -1060,7 +1165,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
 
                 {/* Cover position */}
                 <label style={{...lbl,marginTop:14}}>Badge & hook position on cover</label>
-                <div style={{display:"flex",gap:8}}>
+                <div style={{display:"flex",gap:8,marginBottom:14}}>
                   {COVER_POSITIONS.map(p=>(
                     <button key={p.id} onClick={()=>setCoverPosition(p.id)} style={{flex:1,background:coverPosition===p.id?A.text:A.bg,border:`1.5px solid ${coverPosition===p.id?A.text:A.border}`,borderRadius:8,padding:"8px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
                       <span style={{fontSize:11,fontWeight:700,color:coverPosition===p.id?A.accentText:A.text}}>{p.label}</span>
@@ -1068,6 +1173,22 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
                     </button>
                   ))}
                 </div>
+
+                {/* Live cover preview */}
+                {activeCoverPhoto&&(()=>{
+                  const coverSlide = {headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null};
+                  const W=1080,H=1350,scale=280/W;
+                  const html=buildSlideHTML(coverSlide,0,1,{...slideOpts(),ratio:"instagram"},true);
+                  return (
+                    <div>
+                      <label style={{...lbl,marginBottom:8}}>Cover preview</label>
+                      <div style={{width:280,height:H*scale,borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                        <SlidePreview slide={coverSlide} idx={0} total={1} opts={{...slideOpts(),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
+                      </div>
+                      <p style={{color:A.muted,fontSize:11,marginTop:8}}>Switch position above to see how badge and headline sit on your photo.</p>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Voice profile */}
@@ -1168,6 +1289,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
                 <div><div style={{fontWeight:600,fontSize:13}}>Slide numbers</div><div style={{color:A.muted,fontSize:12}}>Watermark number on each slide</div></div>
                 {tog(showNums,setShowNums)}
               </div>
+
             </div>
           </div>
         )}
