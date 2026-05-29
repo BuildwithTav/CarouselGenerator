@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
 const GOLD = "#C9A84C";
-const STORAGE_KEY = "bwt_v10";
+const STORAGE_KEY = "bwt_v11";
 
 const ACCENT_SWATCHES = [
   { id:"gold",    label:"Gold",    hex:"#C9A84C" },
@@ -148,8 +148,8 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
   // Badge bottom = top(88) + avatar(110) + padding(20) = ~218px. Content starts at 250px min.
   const BADGE_BOTTOM = 230;
-  const topPad = isPortrait ? BADGE_BOTTOM + 40 : BADGE_BOTTOM + 40;
-  const botPad = isPortrait ? 200 : 120;
+  const topPad = isPortrait ? 280 : BADGE_BOTTOM + 40;
+  const botPad = isPortrait ? 160 : 120;
 
   const base = `
     @import url('${gFonts}');
@@ -516,7 +516,13 @@ export default function App() {
   const [generatingQuotes, setGeneratingQuotes] = useState(false);
   const [quoteSlides, setQuoteSlides] = useState([]);
   const [downloadingQuotes, setDownloadingQuotes] = useState(false);
+  const [cropModal, setCropModal] = useState(null);
+  const [cropPos, setCropPos] = useState({x:50,y:50});
+  const [cropZoom, setCropZoom] = useState(100);
+  const [cropDragging, setCropDragging] = useState(false);
+  const [cropDragStart, setCropDragStart] = useState(null);
   const [slideOverlays, setSlideOverlays] = useState({});
+  const cropRef = useRef(null);
   const [coverImgPos, setCoverImgPos] = useState({x:50,y:50});
   const [templateImgPos, setTemplateImgPos] = useState({x:50,y:50});
   const [isDraggingCover, setIsDraggingCover] = useState(false);
@@ -1023,15 +1029,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         </div>
         <div style={{display:"flex",alignItems:"center",gap:2}}>
           {NAV_ITEMS.map(([id,label])=>(
-            <button key={id} onClick={()=>{setNav(id);if(view==="preview"&&id!=="generate"){}}} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 16px",fontSize:13,fontWeight:nav===id?700:500,height:"100%",display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
+            <button key={id} onClick={()=>setNav(id)} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 16px",fontSize:13,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
               {label}
             </button>
           ))}
-          {view==="preview"&&<>
-            <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:8}}>↺ Regenerate</button>
-            <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
-          </>}
-          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4}}>Reset</button>
+          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:8}}>Reset</button>
         </div>
       </nav>
 
@@ -1298,19 +1300,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   )}
                   {activeCoverPhoto && (
                     <div>
-                      <div style={{fontSize:11,color:A.muted,marginTop:4,marginBottom:8}}>✓ Cover selected — manage photos in Brand settings</div>
-                      <label style={{...lbl,marginBottom:6}}>Reposition <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(drag)</span></label>
-                      <div
-                        ref={coverDragRef}
-                        onMouseDown={()=>setIsDraggingCover(true)}
-                        onMouseMove={e=>{if(isDraggingCover)handleDrag(e,setCoverImgPos,coverDragRef);}}
-                        onMouseUp={()=>setIsDraggingCover(false)}
-                        onMouseLeave={()=>setIsDraggingCover(false)}
-                        style={{width:"100%",height:100,borderRadius:8,overflow:"hidden",cursor:"crosshair",border:`1.5px solid ${A.border}`,position:"relative",userSelect:"none"}}
-                      >
-                        <img src={activeCoverPhoto} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:`${coverImgPos.x}% ${coverImgPos.y}%`,pointerEvents:"none"}}/>
-                        <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:16,height:16,borderRadius:"50%",border:"2px solid #fff",background:"rgba(0,0,0,0.4)",pointerEvents:"none"}}/>
-                      </div>
+                      <div style={{fontSize:11,color:A.muted,marginTop:4,marginBottom:6}}>✓ Cover selected — manage photos in Brand settings</div>
+                      <button onClick={()=>{setCropPos(coverImgPos);setCropZoom(100);setCropModal({type:"cover",url:activeCoverPhoto});}} style={{background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:7,padding:"5px 12px",fontSize:11,fontWeight:600,color:A.muted}}>⤢ Reposition / Zoom</button>
                     </div>
                   )}
                 </div>
@@ -1537,19 +1528,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     {templateBgUrl&&(
                       <div style={{marginTop:12}}>
                         <label style={lbl}>Overlay — {overlayDark}%</label>
-                        <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{marginBottom:14}}/>
-                        <label style={{...lbl,marginBottom:6}}>Reposition background <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(drag)</span></label>
-                        <div
-                          ref={templateDragRef}
-                          onMouseDown={()=>setIsDraggingTemplate(true)}
-                          onMouseMove={e=>{if(isDraggingTemplate)handleDrag(e,setTemplateImgPos,templateDragRef);}}
-                          onMouseUp={()=>setIsDraggingTemplate(false)}
-                          onMouseLeave={()=>setIsDraggingTemplate(false)}
-                          style={{width:"100%",height:140,borderRadius:10,overflow:"hidden",cursor:"crosshair",border:`1.5px solid ${A.border}`,position:"relative",userSelect:"none",marginBottom:8}}
-                        >
-                          <img src={templateBgUrl} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:`${templateImgPos.x}% ${templateImgPos.y}%`,pointerEvents:"none"}}/>
-                          <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:16,height:16,borderRadius:"50%",border:"2px solid #fff",background:"rgba(0,0,0,0.4)",pointerEvents:"none"}}/>
-                        </div>
+                        <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{marginBottom:10}}/>
+                        <button onClick={()=>{setCropPos(templateImgPos);setCropZoom(100);setCropModal({type:"template",url:templateBgUrl});}} style={{background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:7,padding:"5px 12px",fontSize:11,fontWeight:600,color:A.muted,marginBottom:14}}>⤢ Reposition / Zoom</button>
                         <label style={{...lbl,marginBottom:8}}>Preview — check safe zone</label>
                         <div style={{width:280,height:280*(1350/1080),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
                           <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts()} onClick={()=>{}} isActive={false} isCover={false}/>
@@ -1608,8 +1588,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <SlidePreview key={i} slide={slide} idx={i} total={slides.length} opts={slideOpts()} onClick={()=>setActive(i)} isActive={active===i} isCover={i===0}/>
                   ))}
                 </div>
-                <div style={{display:"flex",gap:8}}>
-                  <button onClick={()=>downloadOne(active)} disabled={downloading} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <div style={{display:"flex",gap:8,marginBottom:12}}>
+                  <button onClick={()=>generate(lastTopic)} style={{background:A.surface,border:`1.5px solid ${A.border}`,color:A.muted,padding:"7px 14px",borderRadius:7,fontSize:12,fontWeight:600}}>↺ Regenerate</button>
+                  <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:A.surface,border:`1.5px solid ${A.border}`,color:A.muted,padding:"7px 14px",borderRadius:7,fontSize:12,fontWeight:600}}>← New carousel</button>
+                </div> style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                     {downloading?<><Spin c={A.text}/>Processing...</>:downloadDone?"✓ Downloaded":`↓ Slide ${active+1}`}
                   </button>
                   <button onClick={downloadAll} disabled={downloadingAll} style={{flex:2,background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,padding:"10px",borderRadius:9,fontSize:13,fontWeight:800,border:`1px solid ${GOLD}33`,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
@@ -1645,17 +1627,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     />
                   </div>
                   <div>
-                    <label style={lbl}>Layout</label>
-                    <select value={slides[active]?.layout||"standard"} onChange={e=>updateSlide("layout",e.target.value)} style={{...inp,height:42,cursor:"pointer"}}>
-                      <option value="standard">Standard — headline + body</option>
-                      <option value="statement">Statement — big bold claim</option>
-                      <option value="split">Split — VS comparison</option>
-                      <option value="cards">Cards — numbered list</option>
-                      <option value="quote">Quote — powerful truth</option>
-                      <option value="hero">Hero — final CTA slide</option>
-                    </select>
-                  </div>
-                  <div>
                     <label style={lbl}>Format</label>
                     <div style={{display:"flex",gap:6}}>
                       {[["instagram","4:5"],["portrait","9:16"]].map(([id,label])=>(
@@ -1665,14 +1636,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   </div>
                   {bgMode==="custom"&&templateBgUrl&&(
                     <div>
-                      <label style={lbl}>Background overlay — {slideOverlays[active]??overlayDark}%</label>
+                      <label style={lbl}>Overlay — {slideOverlays[active]??overlayDark}%</label>
                       <input type="range" min={0} max={85} value={slideOverlays[active]??overlayDark} onChange={e=>setSlideOverlays(prev=>({...prev,[active]:+e.target.value}))}/>
                     </div>
                   )}
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18}}>
                   <label style={lbl}>AI Rewrite</label>
-                  <textarea value={rewritePrompt} onChange={e=>setRewritePrompt(e.target.value)} placeholder={`"Make this punchier"\n"Add a specific stat"\n"Change to a split comparing X vs Y"`} rows={3} style={{...inp,resize:"vertical",lineHeight:1.5,marginBottom:10}}/>
+                  <textarea value={rewritePrompt} onChange={e=>setRewritePrompt(e.target.value)} placeholder={`Try:\n"Make the headline punchier"\n"Change to a split comparing X vs Y"\n"Rewrite as a numbered list of 5 tips"\n"Add a specific stat or example"\n"Make the tone more direct"`} rows={4} style={{...inp,resize:"vertical",lineHeight:1.5,marginBottom:10}}/>
                   <button onClick={rewrite} disabled={rewriting||!rewritePrompt.trim()} style={{width:"100%",background:rewritePrompt.trim()?A.text:A.border,color:rewritePrompt.trim()?A.accentText:A.muted,padding:"9px",borderRadius:8,fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
                     {rewriting?<><Spin/>Rewriting...</>:"Rewrite This Slide →"}
                   </button>
@@ -1681,7 +1652,56 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </div>
           </div>
         )}
-      </div>
+
+      {/* ── CROP MODAL ── */}
+      {cropModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={e=>{if(e.target===e.currentTarget)setCropModal(null);}}>
+          <div style={{background:A.surface,borderRadius:16,padding:28,width:600,maxWidth:"95vw"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+              <div>
+                <div style={{fontSize:16,fontWeight:800}}>Reposition & Zoom</div>
+                <div style={{color:A.muted,fontSize:13,marginTop:2}}>Drag to pan · Use slider to zoom</div>
+              </div>
+              <button onClick={()=>setCropModal(null)} style={{background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,padding:"6px 14px",fontSize:13,fontWeight:600,color:A.text}}>Done ✓</button>
+            </div>
+            {/* Preview area */}
+            <div
+              ref={cropRef}
+              onMouseDown={e=>{setCropDragging(true);setCropDragStart({x:e.clientX,y:e.clientY,px:cropPos.x,py:cropPos.y});}}
+              onMouseMove={e=>{
+                if(!cropDragging||!cropDragStart) return;
+                const el=cropRef.current; if(!el) return;
+                const rect=el.getBoundingClientRect();
+                const dx=(e.clientX-cropDragStart.x)/rect.width*100;
+                const dy=(e.clientY-cropDragStart.y)/rect.height*100;
+                setCropPos({
+                  x:Math.max(0,Math.min(100,cropDragStart.px-dx)),
+                  y:Math.max(0,Math.min(100,cropDragStart.py-dy)),
+                });
+              }}
+              onMouseUp={()=>{setCropDragging(false);setCropDragStart(null);}}
+              onMouseLeave={()=>{setCropDragging(false);setCropDragStart(null);}}
+              style={{width:"100%",height:340,borderRadius:12,overflow:"hidden",cursor:cropDragging?"grabbing":"grab",border:`2px solid ${A.border}`,position:"relative",userSelect:"none",marginBottom:16}}
+            >
+              <img src={cropModal.url} style={{width:`${cropZoom}%`,height:`${cropZoom}%`,objectFit:"cover",objectPosition:`${cropPos.x}% ${cropPos.y}%`,pointerEvents:"none",minWidth:"100%",minHeight:"100%",position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>
+              <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:24,height:24,borderRadius:"50%",border:"3px solid rgba(255,255,255,0.9)",background:"rgba(0,0,0,0.3)",pointerEvents:"none",boxShadow:"0 0 0 1px rgba(0,0,0,0.3)"}}/>
+            </div>
+            {/* Zoom slider */}
+            <div style={{marginBottom:16}}>
+              <label style={{...lbl,marginBottom:8}}>Zoom — {cropZoom}%</label>
+              <input type="range" min={100} max={300} value={cropZoom} onChange={e=>setCropZoom(+e.target.value)}/>
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>{setCropPos({x:50,y:50});setCropZoom(100);}} style={{background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,padding:"8px 16px",fontSize:12,color:A.muted}}>Reset</button>
+              <button onClick={()=>{
+                if(cropModal.type==="cover") setCoverImgPos(cropPos);
+                else setTemplateImgPos(cropPos);
+                setCropModal(null);
+              }} style={{flex:1,background:A.text,color:A.accentText,borderRadius:8,padding:"8px",fontSize:13,fontWeight:700}}>Apply & Close</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer style={{borderTop:`1px solid ${A.border}`,padding:"14px 32px",textAlign:"center",marginTop:60}}>
         <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,fontWeight:700,textDecoration:"none",fontSize:12}}>Build with Tav</a>
