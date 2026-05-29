@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
 const GOLD = "#C9A84C";
-const STORAGE_KEY = "bwt_v9";
+const STORAGE_KEY = "bwt_v10";
 
 const ACCENT_SWATCHES = [
   { id:"gold",    label:"Gold",    hex:"#C9A84C" },
@@ -93,8 +93,10 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
     coverImageUrl, coverPosition, badgeArea,
     profileUrl, name, handle, blueTick, websiteUrl, showNums,
-    accentColor, ratio
+    accentColor, ratio, coverImgPos, templateImgPos,
   } = opts;
+  const coverPos2 = coverImgPos || {x:50,y:50};
+  const templatePos = templateImgPos || {x:50,y:50};
 
   const accent = accentColor || GOLD;
   const isDark = bgMode !== "light";
@@ -146,15 +148,15 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
   // Badge bottom = top(88) + avatar(110) + padding(20) = ~218px. Content starts at 250px min.
   const BADGE_BOTTOM = 230;
-  const topPad = isPortrait ? 400 : BADGE_BOTTOM + 40;
-  const botPad = isPortrait ? 220 : 120;
+  const topPad = isPortrait ? BADGE_BOTTOM + 40 : BADGE_BOTTOM + 40;
+  const botPad = isPortrait ? 200 : 120;
 
   const base = `
     @import url('${gFonts}');
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
     html, body { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; }
     .slide { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; }
-    .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; }
+    .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; object-position:${isCover?`${coverPos2.x}% ${coverPos2.y}%`:`${templatePos.x}% ${templatePos.y}%`}; }
     .bg-ov { position:absolute; inset:0; z-index:1; pointer-events:none; }
     .noise { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0.3;
       background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
@@ -475,7 +477,7 @@ export default function App() {
   const [accentColor, setAccentColor] = useState(S?.accentColor||GOLD);
   const [fontId, setFontId] = useState(S?.fontId||"montserrat");
   const [headlineStyle, setHeadlineStyle] = useState(S?.headlineStyle||"bold");
-  const [showNums, setShowNums] = useState(S?.showNums??true);
+  const [showNums, setShowNums] = useState(S?.showNums??false);
   const [bgMode, setBgMode] = useState(S?.bgMode||"dark");
   const [templateBgUrl, setTemplateBgUrl] = useState(S?.templateBgUrl||null);
   const [overlayDark, setOverlayDark] = useState(S?.overlayDark||65);
@@ -507,12 +509,21 @@ export default function App() {
   const [quoteBgMode, setQuoteBgMode] = useState("dark");
   const [quoteBgCustomUrl, setQuoteBgCustomUrl] = useState(null);
   const [quoteOverlay, setQuoteOverlay] = useState(0);
-  const [quoteAccent, setQuoteAccent] = useState(GOLD);
+  const [quoteTemplate, setQuoteTemplate] = useState("classic");
+  const [luxuryLabel, setLuxuryLabel] = useState("wisdom");
+  const [showHandle, setShowHandle] = useState(true);
   const [quoteFormat, setQuoteFormat] = useState("instagram");
   const [generatingQuotes, setGeneratingQuotes] = useState(false);
   const [quoteSlides, setQuoteSlides] = useState([]);
   const [downloadingQuotes, setDownloadingQuotes] = useState(false);
+  const [slideOverlays, setSlideOverlays] = useState({});
+  const [coverImgPos, setCoverImgPos] = useState({x:50,y:50});
+  const [templateImgPos, setTemplateImgPos] = useState({x:50,y:50});
+  const [isDraggingCover, setIsDraggingCover] = useState(false);
+  const [isDraggingTemplate, setIsDraggingTemplate] = useState(false);
   const profileRef = useRef(null);
+  const coverDragRef = useRef(null);
+  const templateDragRef = useRef(null);
   const coverPhotoRef = useRef(null);
   const templateBgRef = useRef(null);
   const inspirationRef = useRef(null);
@@ -655,13 +666,23 @@ Return ONLY valid JSON array:
 
   const updateSlide = (k,v) => { const next=[...slides]; next[active]={...next[active],[k]:v}; setSlides(next); };
 
+  const handleDrag = (e, setter, containerRef) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+    setter({x: Math.round(x), y: Math.round(y)});
+  };
+
   const slideOpts = useCallback(() => ({
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
     coverImageUrl: activeCoverPhoto, coverPosition, badgeArea,
     profileUrl, name, handle, blueTick,
     websiteUrl: showWebsite?website:"",
     showNums, ratio, accentColor,
-  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor]);
+    coverImgPos, templateImgPos,
+  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos]);
 
   const downloadOne = async (i) => {
     setDownloading(true);
@@ -707,53 +728,232 @@ Return ONLY valid JSON array:
     const accent = accentColor || GOLD;
     const isDark = quoteBgMode !== "light";
     const hasBgImg = quoteBgMode === "custom" && quoteBgCustomUrl;
-    const bg = quoteBgMode === "light" ? "#F5F3EF" : "#0A0A0A";
-    const textColor = hasBgImg ? "#FFFFFF" : (isDark ? "#FFFFFF" : "#0A0A0A");
-    const subColor = hasBgImg ? "rgba(255,255,255,0.75)" : (isDark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)");
-    const textShadow = hasBgImg ? "text-shadow:0 2px 20px rgba(0,0,0,0.9),0 1px 8px rgba(0,0,0,0.8);" : "";
+    const bg = isDark ? "#0d0b08" : "#F8F4EE";
+    const textColor = hasBgImg ? "#FFFFFF" : (isDark ? "#F5EDE0" : "#1a1208");
+    const subColor = hasBgImg ? "rgba(255,255,255,0.85)" : (isDark ? "rgba(245,237,224,0.7)" : "rgba(26,18,8,0.55)");
+    const textShadow = hasBgImg ? "text-shadow:0 2px 24px rgba(0,0,0,0.95),0 1px 8px rgba(0,0,0,0.8);" : "";
     const fontObj = FONTS.find(f => f.id === quoteFont) || FONTS[1];
     const sigFontObj = FONTS.find(f => f.id === quoteSigFont) || FONTS[5];
     const font = fontObj.css;
     const sigFont = sigFontObj.css;
     const isPortrait = quoteFormat === "portrait";
     const W = 1080, H = isPortrait ? 1920 : 1350;
-    const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&family=Dancing+Script:wght@600;700&display=swap`;
+    const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Poppins:wght@400;700;800;900&family=Inter:wght@400;700;800;900&family=Oswald:wght@600;700&family=Dancing+Script:wght@400;600;700&display=swap`;
     const signature = sig || quoteSignature || name || "";
-    const escapedQuote = (quoteText||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const esc = s => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const escapedQuote = esc(quoteText||"").replace(/\n/g,"<br/>");
+    const handleStr = handle ? (handle.startsWith("@")?handle:"@"+handle) : "";
+    const tmpl = hasBgImg ? "custom" : (quoteTemplate || "classic");
+    const luxAccent = isDark ? "#C9A84C" : "#8B6914";
+
+    // Scale factors for 4:5 vs 9:16
+    const s = isPortrait ? 1.4 : 1;
+    const brd = Math.round(28*s); // border inset
+    const brd2 = Math.round(44*s); // inner border inset
+    const cornerSz = Math.round(90*s); // corner bracket size
+    const dotSz = Math.round(18*s); // corner diamond size
+    const sigSz = Math.round(44*s); // signature font size
+    const quoteSz = Math.round(68*s); // quote font size
+    const handleBottom = Math.round(55*s);
+    const padX = Math.round(120*s);
+    const padTop = Math.round(180*s);
+    const padBottom = Math.round(200*s);
+
+    // ── CLASSIC: solid 54px border all 4 edges + corner L-bracket details inside
+    const frameBorder = Math.round(54*s);
+    const classicHTML = `
+      <div style="position:absolute;inset:0;border:${frameBorder}px solid ${accent};z-index:3;pointer-events:none;"></div>
+      <div style="position:absolute;top:${frameBorder+Math.round(12*s)}px;left:${frameBorder+Math.round(12*s)}px;width:${cornerSz}px;height:${cornerSz}px;border-top:${Math.round(4*s)}px solid ${accent};border-left:${Math.round(4*s)}px solid ${accent};z-index:4;pointer-events:none;opacity:0.55;"></div>
+      <div style="position:absolute;top:${frameBorder+Math.round(12*s)}px;right:${frameBorder+Math.round(12*s)}px;width:${cornerSz}px;height:${cornerSz}px;border-top:${Math.round(4*s)}px solid ${accent};border-right:${Math.round(4*s)}px solid ${accent};z-index:4;pointer-events:none;opacity:0.55;"></div>
+      <div style="position:absolute;bottom:${frameBorder+Math.round(12*s)}px;left:${frameBorder+Math.round(12*s)}px;width:${cornerSz}px;height:${cornerSz}px;border-bottom:${Math.round(4*s)}px solid ${accent};border-left:${Math.round(4*s)}px solid ${accent};z-index:4;pointer-events:none;opacity:0.55;"></div>
+      <div style="position:absolute;bottom:${frameBorder+Math.round(12*s)}px;right:${frameBorder+Math.round(12*s)}px;width:${cornerSz}px;height:${cornerSz}px;border-bottom:${Math.round(4*s)}px solid ${accent};border-right:${Math.round(4*s)}px solid ${accent};z-index:4;pointer-events:none;opacity:0.55;"></div>`;
+    const classicDivider = `
+      <div style="display:flex;align-items:center;gap:${Math.round(28*s)}px;width:75%;justify-content:center;margin-bottom:${Math.round(52*s)}px;">
+        <div style="flex:1;height:${Math.round(2.5*s)}px;background:${accent};opacity:0.7;"></div>
+        <div style="width:${Math.round(22*s)}px;height:${Math.round(22*s)}px;background:${accent};transform:rotate(45deg);"></div>
+        <div style="flex:1;height:${Math.round(2.5*s)}px;background:${accent};opacity:0.7;"></div>
+      </div>`;
+    const classicHandle = showHandle&&handleStr ? `
+      <div style="position:absolute;bottom:${Math.round(100*s)}px;left:0;right:0;text-align:center;z-index:6;">
+        <span style="color:${subColor};font-size:${Math.round(24*s)}px;font-family:'${sigFont}',cursive,serif;letter-spacing:${Math.round(3*s)}px;opacity:0.7;">${esc(handleStr)}</span>
+      </div>` : "";
+
+    // ── LUXURY: warm bg + crosshatch + double border + ornate corners + ornate divider
+    const luxuryHTML = `
+      <div style="position:absolute;inset:0;opacity:0.05;background-image:repeating-linear-gradient(45deg,${luxAccent} 0px,${luxAccent} 1px,transparent 1px,transparent ${Math.round(16*s)}px),repeating-linear-gradient(-45deg,${luxAccent} 0px,${luxAccent} 1px,transparent 1px,transparent ${Math.round(16*s)}px);pointer-events:none;z-index:1;"></div>
+      <div style="position:absolute;inset:${brd}px;border:${Math.round(3*s)}px solid ${luxAccent};opacity:0.8;border-radius:${Math.round(4*s)}px;pointer-events:none;z-index:2;"></div>
+      <div style="position:absolute;inset:${brd2}px;border:${Math.round(1.5*s)}px solid ${luxAccent};opacity:0.25;border-radius:${Math.round(3*s)}px;pointer-events:none;z-index:2;"></div>
+      <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;" viewBox="0 0 ${W} ${H}" fill="none">
+        <!-- TL corner -->
+        <path d="M${brd} ${brd} L${brd+cornerSz} ${brd} M${brd} ${brd} L${brd} ${brd+cornerSz}" stroke="${luxAccent}" stroke-width="${Math.round(5*s)}" opacity="0.9"/>
+        <path d="M${brd} ${brd} Q${brd+cornerSz*0.7} ${brd+cornerSz*0.7} ${brd+cornerSz*1.1} ${brd+cornerSz*0.5}" stroke="${luxAccent}" stroke-width="${Math.round(2*s)}" opacity="0.4" stroke-linecap="round"/>
+        <path d="M${brd} ${brd} Q${brd+cornerSz*0.5} ${brd+cornerSz*1.1} ${brd+cornerSz*0.5} ${brd+cornerSz*1.4}" stroke="${luxAccent}" stroke-width="${Math.round(2*s)}" opacity="0.4" stroke-linecap="round"/>
+        <circle cx="${brd}" cy="${brd}" r="${Math.round(10*s)}" fill="${luxAccent}" opacity="0.95"/>
+        <circle cx="${brd+cornerSz}" cy="${brd}" r="${Math.round(6*s)}" fill="${luxAccent}" opacity="0.6"/>
+        <circle cx="${brd}" cy="${brd+cornerSz}" r="${Math.round(6*s)}" fill="${luxAccent}" opacity="0.6"/>
+        <!-- TR corner -->
+        <path d="M${W-brd} ${brd} L${W-brd-cornerSz} ${brd} M${W-brd} ${brd} L${W-brd} ${brd+cornerSz}" stroke="${luxAccent}" stroke-width="${Math.round(5*s)}" opacity="0.9"/>
+        <path d="M${W-brd} ${brd} Q${W-brd-cornerSz*0.7} ${brd+cornerSz*0.7} ${W-brd-cornerSz*1.1} ${brd+cornerSz*0.5}" stroke="${luxAccent}" stroke-width="${Math.round(2*s)}" opacity="0.4" stroke-linecap="round"/>
+        <circle cx="${W-brd}" cy="${brd}" r="${Math.round(10*s)}" fill="${luxAccent}" opacity="0.95"/>
+        <circle cx="${W-brd-cornerSz}" cy="${brd}" r="${Math.round(6*s)}" fill="${luxAccent}" opacity="0.6"/>
+        <circle cx="${W-brd}" cy="${brd+cornerSz}" r="${Math.round(6*s)}" fill="${luxAccent}" opacity="0.6"/>
+        <!-- BL corner -->
+        <path d="M${brd} ${H-brd} L${brd+cornerSz} ${H-brd} M${brd} ${H-brd} L${brd} ${H-brd-cornerSz}" stroke="${luxAccent}" stroke-width="${Math.round(5*s)}" opacity="0.9"/>
+        <path d="M${brd} ${H-brd} Q${brd+cornerSz*0.7} ${H-brd-cornerSz*0.7} ${brd+cornerSz*1.1} ${H-brd-cornerSz*0.5}" stroke="${luxAccent}" stroke-width="${Math.round(2*s)}" opacity="0.4" stroke-linecap="round"/>
+        <circle cx="${brd}" cy="${H-brd}" r="${Math.round(10*s)}" fill="${luxAccent}" opacity="0.95"/>
+        <circle cx="${brd+cornerSz}" cy="${H-brd}" r="${Math.round(6*s)}" fill="${luxAccent}" opacity="0.6"/>
+        <circle cx="${brd}" cy="${H-brd-cornerSz}" r="${Math.round(6*s)}" fill="${luxAccent}" opacity="0.6"/>
+        <!-- BR corner -->
+        <path d="M${W-brd} ${H-brd} L${W-brd-cornerSz} ${H-brd} M${W-brd} ${H-brd} L${W-brd} ${H-brd-cornerSz}" stroke="${luxAccent}" stroke-width="${Math.round(5*s)}" opacity="0.9"/>
+        <path d="M${W-brd} ${H-brd} Q${W-brd-cornerSz*0.7} ${H-brd-cornerSz*0.7} ${W-brd-cornerSz*1.1} ${H-brd-cornerSz*0.5}" stroke="${luxAccent}" stroke-width="${Math.round(2*s)}" opacity="0.4" stroke-linecap="round"/>
+        <circle cx="${W-brd}" cy="${H-brd}" r="${Math.round(10*s)}" fill="${luxAccent}" opacity="0.95"/>
+        <circle cx="${W-brd-cornerSz}" cy="${H-brd}" r="${Math.round(6*s)}" fill="${luxAccent}" opacity="0.6"/>
+        <circle cx="${W-brd}" cy="${H-brd-cornerSz}" r="${Math.round(6*s)}" fill="${luxAccent}" opacity="0.6"/>
+        <!-- top centre ornamental bar -->
+        <line x1="${W*0.3}" y1="${brd}" x2="${W*0.42}" y2="${brd}" stroke="${luxAccent}" stroke-width="${Math.round(2.5*s)}" opacity="0.7"/>
+        <polygon points="${W/2},${brd-Math.round(10*s)} ${W/2+Math.round(10*s)},${brd} ${W/2},${brd+Math.round(10*s)} ${W/2-Math.round(10*s)},${brd}" fill="${luxAccent}" opacity="0.95"/>
+        <line x1="${W*0.58}" y1="${brd}" x2="${W*0.7}" y2="${brd}" stroke="${luxAccent}" stroke-width="${Math.round(2.5*s)}" opacity="0.7"/>
+        <circle cx="${W*0.42}" cy="${brd}" r="${Math.round(6*s)}" fill="${luxAccent}" opacity="0.7"/>
+        <circle cx="${W*0.58}" cy="${brd}" r="${Math.round(6*s)}" fill="${luxAccent}" opacity="0.7"/>
+        <!-- bottom centre ornamental bar -->
+        <line x1="${W*0.3}" y1="${H-brd}" x2="${W*0.42}" y2="${H-brd}" stroke="${luxAccent}" stroke-width="${Math.round(2.5*s)}" opacity="0.7"/>
+        <polygon points="${W/2},${H-brd-Math.round(10*s)} ${W/2+Math.round(10*s)},${H-brd} ${W/2},${H-brd+Math.round(10*s)} ${W/2-Math.round(10*s)},${H-brd}" fill="${luxAccent}" opacity="0.95"/>
+        <line x1="${W*0.58}" y1="${H-brd}" x2="${W*0.7}" y2="${H-brd}" stroke="${luxAccent}" stroke-width="${Math.round(2.5*s)}" opacity="0.7"/>
+        <circle cx="${W*0.42}" cy="${H-brd}" r="${Math.round(6*s)}" fill="${luxAccent}" opacity="0.7"/>
+        <circle cx="${W*0.58}" cy="${H-brd}" r="${Math.round(6*s)}" fill="${luxAccent}" opacity="0.7"/>
+      </svg>`;
+    const luxuryDivider = `
+      <div style="display:flex;align-items:center;gap:${Math.round(14*s)}px;justify-content:center;margin-bottom:${Math.round(52*s)}px;">
+        <div style="width:${Math.round(60*s)}px;height:${Math.round(2*s)}px;background:${luxAccent};opacity:0.7;"></div>
+        <div style="width:${Math.round(10*s)}px;height:${Math.round(10*s)}px;background:${luxAccent};transform:rotate(45deg);opacity:0.85;"></div>
+        <div style="width:${Math.round(30*s)}px;height:${Math.round(2*s)}px;background:${luxAccent};opacity:0.5;"></div>
+        <div style="width:${Math.round(16*s)}px;height:${Math.round(16*s)}px;background:${luxAccent};transform:rotate(45deg);"></div>
+        <div style="width:${Math.round(30*s)}px;height:${Math.round(2*s)}px;background:${luxAccent};opacity:0.5;"></div>
+        <div style="width:${Math.round(10*s)}px;height:${Math.round(10*s)}px;background:${luxAccent};transform:rotate(45deg);opacity:0.85;"></div>
+        <div style="width:${Math.round(60*s)}px;height:${Math.round(2*s)}px;background:${luxAccent};opacity:0.7;"></div>
+      </div>`;
+    const luxuryHandle = showHandle&&handleStr ? `
+      <div style="position:absolute;bottom:${Math.round(100*s)}px;left:0;right:0;text-align:center;z-index:6;">
+        <span style="color:${luxAccent};font-size:${Math.round(24*s)}px;font-family:'${sigFont}',cursive,serif;letter-spacing:${Math.round(4*s)}px;opacity:0.65;">${esc(handleStr)}</span>
+      </div>` : "";
+
+    // ── FEMININE: botanical clusters + arch + heart divider + bottom circle
+    const femBg = isDark ? "#0e0c0c" : "#FAF6F2";
+    const femAccent = accent;
+    const femText = isDark ? "#f5ede8" : "#3a2520";
+    const femSub = isDark ? `rgba(${isDark?"245,237,232":"58,37,32"},0.7)` : "rgba(58,37,32,0.6)";
+    const leafColor = isDark ? accent : "#b08878";
+    const leafFill = isDark ? "#2a2010" : "#e8b4a8";
+
+    const femBorder = Math.round(100*s); // ~1cm inset at full res
+    const feminineHTML = `
+      <div style="position:absolute;inset:${femBorder}px ${femBorder}px ${Math.round(120*s)}px;border:${Math.round(2*s)}px solid ${femAccent};opacity:0.55;border-radius:${Math.round(4*s)}px;pointer-events:none;z-index:2;"></div>
+      <div style="position:absolute;inset:${femBorder+Math.round(12*s)}px ${femBorder+Math.round(12*s)}px ${Math.round(130*s)}px;border:${Math.round(1*s)}px solid ${femAccent};opacity:0.18;border-radius:${Math.round(3*s)}px;pointer-events:none;z-index:2;"></div>
+      <div style="position:absolute;top:${femBorder}px;left:50%;transform:translateX(-50%);width:${Math.round(180*s)}px;height:${Math.round(4*s)}px;background:${femAccent};z-index:4;pointer-events:none;opacity:0.7;"></div>
+      <div style="position:absolute;bottom:${Math.round(120*s)}px;left:50%;transform:translateX(-50%);width:${Math.round(180*s)}px;height:${Math.round(4*s)}px;background:${femAccent};z-index:4;pointer-events:none;opacity:0.5;"></div>
+      <div style="position:absolute;top:${Math.round(femBorder-9*s)}px;left:${Math.round(femBorder-9*s)}px;width:${Math.round(18*s)}px;height:${Math.round(18*s)}px;background:${femAccent};transform:rotate(45deg);z-index:5;pointer-events:none;opacity:0.85;"></div>
+      <div style="position:absolute;top:${Math.round(femBorder-9*s)}px;right:${Math.round(femBorder-9*s)}px;width:${Math.round(18*s)}px;height:${Math.round(18*s)}px;background:${femAccent};transform:rotate(45deg);z-index:5;pointer-events:none;opacity:0.85;"></div>
+      <div style="position:absolute;bottom:${Math.round(120-9*s)}px;left:${Math.round(femBorder-9*s)}px;width:${Math.round(18*s)}px;height:${Math.round(18*s)}px;background:${femAccent};transform:rotate(45deg);z-index:5;pointer-events:none;opacity:0.7;"></div>
+      <div style="position:absolute;bottom:${Math.round(120-9*s)}px;right:${Math.round(femBorder-9*s)}px;width:${Math.round(18*s)}px;height:${Math.round(18*s)}px;background:${femAccent};transform:rotate(45deg);z-index:5;pointer-events:none;opacity:0.7;"></div>
+      <svg style="position:absolute;top:0;left:0;width:48%;height:48%;pointer-events:none;z-index:1;opacity:${isDark?0.65:0.75};" viewBox="0 0 120 140" fill="none">
+        <path d="M0 0 Q22 12 32 34 Q42 56 20 64" stroke="${leafColor}" stroke-width="${Math.round(2.5*s)}" stroke-linecap="round" opacity="0.55"/>
+        <path d="M4 0 Q26 22 36 48" stroke="${leafColor}" stroke-width="${Math.round(1.5*s)}" stroke-linecap="round" opacity="0.4"/>
+        <ellipse cx="18" cy="22" rx="22" ry="11" transform="rotate(-40 18 22)" fill="${leafFill}" opacity="${isDark?0.7:0.45}"/>
+        <ellipse cx="18" cy="22" rx="22" ry="11" transform="rotate(-40 18 22)" fill="none" stroke="${leafColor}" stroke-width="0.8" opacity="${isDark?0.5:0.3}"/>
+        <ellipse cx="8" cy="40" rx="20" ry="10" transform="rotate(-62 8 40)" fill="${leafFill}" opacity="${isDark?0.6:0.38}"/>
+        <ellipse cx="32" cy="16" rx="18" ry="9" transform="rotate(-22 32 16)" fill="${leafFill}" opacity="${isDark?0.55:0.35}"/>
+        <ellipse cx="22" cy="56" rx="24" ry="12" transform="rotate(-52 22 56)" fill="${leafFill}" opacity="${isDark?0.5:0.3}"/>
+        <path d="M44 4 Q60 16 54 38 Q48 54 32 58" stroke="${leafColor}" stroke-width="${Math.round(1.5*s)}" stroke-linecap="round" opacity="0.35"/>
+        <circle cx="28" cy="4" r="${Math.round(4*s)}" fill="${leafColor}" opacity="0.55"/>
+        <circle cx="34" cy="2" r="${Math.round(3*s)}" fill="${leafColor}" opacity="0.45"/>
+        <circle cx="22" cy="3" r="${Math.round(3*s)}" fill="${leafColor}" opacity="0.4"/>
+        <line x1="28" y1="4" x2="28" y2="16" stroke="${leafColor}" stroke-width="1.2" opacity="0.4"/>
+        <line x1="34" y1="2" x2="32" y2="14" stroke="${leafColor}" stroke-width="1.2" opacity="0.35"/>
+        <line x1="22" y1="3" x2="24" y2="14" stroke="${leafColor}" stroke-width="1.2" opacity="0.35"/>
+      </svg>
+      <svg style="position:absolute;bottom:0;right:0;width:50%;height:46%;pointer-events:none;z-index:1;opacity:${isDark?0.6:0.7};" viewBox="0 0 130 120" fill="none">
+        <path d="M130 120 Q108 98 86 93 Q64 88 60 66" stroke="${leafColor}" stroke-width="${Math.round(2.5*s)}" stroke-linecap="round" opacity="0.55"/>
+        <ellipse cx="108" cy="110" rx="24" ry="11" transform="rotate(42 108 110)" fill="${leafFill}" opacity="${isDark?0.7:0.45}"/>
+        <ellipse cx="108" cy="110" rx="24" ry="11" transform="rotate(42 108 110)" fill="none" stroke="${leafColor}" stroke-width="0.8" opacity="${isDark?0.45:0.28}"/>
+        <ellipse cx="120" cy="96" rx="22" ry="10" transform="rotate(22 120 96)" fill="${leafFill}" opacity="${isDark?0.62:0.4}"/>
+        <ellipse cx="88" cy="102" rx="26" ry="12" transform="rotate(56 88 102)" fill="${leafFill}" opacity="${isDark?0.55:0.35}"/>
+        <ellipse cx="74" cy="90" rx="22" ry="10" transform="rotate(38 74 90)" fill="${leafFill}" opacity="${isDark?0.48:0.3}"/>
+        <circle cx="112" cy="118" r="${Math.round(4*s)}" fill="${leafColor}" opacity="0.55"/>
+        <circle cx="120" cy="114" r="${Math.round(3*s)}" fill="${leafColor}" opacity="0.45"/>
+        <circle cx="106" cy="116" r="${Math.round(3*s)}" fill="${leafColor}" opacity="0.4"/>
+        <line x1="112" y1="118" x2="112" y2="106" stroke="${leafColor}" stroke-width="1.2" opacity="0.4"/>
+        <line x1="120" y1="114" x2="117" y2="102" stroke="${leafColor}" stroke-width="1.2" opacity="0.35"/>
+      </svg>
+      <div style="position:absolute;top:${Math.round(femBorder+20*s)}px;left:50%;transform:translateX(-50%);width:${Math.round(W*0.65)}px;height:${Math.round((H-femBorder*2-Math.round(140*s))*0.85)}px;border:${Math.round(1.5*s)}px solid ${femAccent};border-radius:${Math.round(W*0.33)}px ${Math.round(W*0.33)}px 38% 38% / 42% 42% 28% 28%;pointer-events:none;z-index:2;opacity:0.45;"></div>`;
+    const feminineDivider = `
+      <div style="display:flex;align-items:center;gap:${Math.round(16*s)}px;justify-content:center;margin-bottom:${Math.round(52*s)}px;">
+        <div style="width:${Math.round(70*s)}px;height:${Math.round(1.5*s)}px;background:${femAccent};opacity:0.5;"></div>
+        <svg width="${Math.round(28*s)}" height="${Math.round(24*s)}" viewBox="0 0 28 24" fill="${femAccent}" opacity="0.85"><path d="M14 23C14 23 1 14 1 7A6.5 6.5 0 0114 4 6.5 6.5 0 0127 7C27 14 14 23 14 23Z"/></svg>
+        <div style="width:${Math.round(70*s)}px;height:${Math.round(1.5*s)}px;background:${femAccent};opacity:0.5;"></div>
+      </div>`;
+    const feminineHandle = showHandle&&handleStr ? `
+      <div style="position:absolute;bottom:${Math.round(150*s)}px;left:0;right:0;text-align:center;z-index:10;">
+        <span style="color:${femAccent};font-size:${Math.round(24*s)}px;font-family:'${sigFont}',cursive,serif;letter-spacing:${Math.round(2*s)}px;opacity:0.65;">${esc(handleStr)}</span>
+      </div>` : "";
+
+    // ── RAW: heavy bars + left accent bar + left-aligned
+    const rawTextC = isDark ? "#FFFFFF" : "#0A0A0A";
+    const rawHTML = `
+      <div style="position:absolute;top:${Math.round(24*s)}px;left:${Math.round(24*s)}px;right:${Math.round(24*s)}px;height:${Math.round(18*s)}px;background:${rawTextC};z-index:3;pointer-events:none;border-radius:${Math.round(2*s)}px;"></div>
+      <div style="position:absolute;bottom:${Math.round(90*s)}px;left:${Math.round(24*s)}px;right:${Math.round(24*s)}px;height:${Math.round(6*s)}px;background:${rawTextC};opacity:0.5;z-index:3;pointer-events:none;border-radius:${Math.round(2*s)}px;"></div>
+      <div style="position:absolute;top:${Math.round(68*s)}px;left:${Math.round(24*s)}px;bottom:${Math.round(120*s)}px;width:${Math.round(10*s)}px;background:${accent};z-index:3;pointer-events:none;"></div>`;
+    const rawDivider = `
+      <div style="width:100%;height:${Math.round(2*s)}px;background:${rawTextC};opacity:0.12;margin-bottom:${Math.round(52*s)}px;"></div>`;
+    const rawLabel = `
+      <div style="margin-bottom:${Math.round(32*s)}px;width:100%;padding-left:${Math.round(20*s)}px;">
+        <span style="font-size:${Math.round(22*s)}px;letter-spacing:${Math.round(10*s)}px;text-transform:uppercase;font-family:'${font}',sans-serif;font-weight:700;color:${rawTextC};opacity:0.4;">Truth</span>
+      </div>`;
+    const rawHandle = showHandle&&handleStr ? `
+      <div style="position:absolute;bottom:${Math.round(100*s)}px;left:${Math.round(60*s)}px;z-index:6;">
+        <span style="color:${rawTextC};font-size:${Math.round(22*s)}px;font-family:'${sigFont}',cursive,serif;opacity:0.4;letter-spacing:${Math.round(2*s)}px;">${esc(handleStr)}</span>
+      </div>` : "";
+
+    // ── CUSTOM: clean, quote + line + sig only
+    const customDivider = `
+      <div style="width:${Math.round(100*s)}px;height:${Math.round(2*s)}px;background:${accent};margin:0 auto ${Math.round(52*s)}px;opacity:0.7;"></div>`;
+
+    const contentPadX = tmpl === "feminine" ? Math.round(140*s) : padX;
+    const contentPadTop = tmpl === "feminine" ? Math.round(220*s) : padTop;
+    const contentPadBottom = tmpl === "feminine" ? Math.round(240*s) : padBottom;
+    const isLeft = tmpl === "raw" && !hasBgImg;
+    const tExtras = { classic: classicHTML, luxury: luxuryHTML, feminine: feminineHTML, raw: rawHTML, custom: "" }[tmpl] || "";
+    const tDivider = { classic: classicDivider, luxury: luxuryDivider, feminine: feminineDivider, raw: rawDivider, custom: customDivider }[tmpl] || customDivider;
+    const tHandle = { classic: classicHandle, luxury: luxuryHandle, feminine: feminineHandle, raw: rawHandle, custom: "" }[tmpl] || (showHandle&&handleStr?`<div style="position:absolute;bottom:${handleBottom}px;left:0;right:0;text-align:center;z-index:6;"><span style="color:${accent};font-size:${Math.round(26*s)}px;font-family:'${sigFont}',cursive,serif;letter-spacing:2px;opacity:0.75;">${esc(handleStr)}</span></div>`:"");
+    const cardBg = tmpl === "feminine" ? femBg : bg;
+    const cardTextColor = tmpl === "feminine" ? femText : textColor;
+    const cardSubColor = tmpl === "feminine" ? (isDark?"rgba(245,237,232,0.7)":"rgba(58,37,32,0.6)") : subColor;
+
     return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>
 @import url('${gFonts}');
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
-.slide{width:${W}px;height:${H}px;background:${bg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:140px 110px;position:relative;}
+html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000":cardBg};}
+.slide{width:${W}px;height:${H}px;background:${hasBgImg?"transparent":cardBg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${contentPadTop}px ${contentPadX}px ${contentPadBottom}px;position:relative;}
 .bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
 .bg-ov{position:absolute;inset:0;z-index:1;background:rgba(0,0,0,${(quoteOverlay||0)/100});}
-.bk{position:absolute;width:52px;height:52px;z-index:3;}
-.tl{top:44px;left:52px;border-top:2.5px solid ${accent};border-left:2.5px solid ${accent};opacity:0.4;}
-.tr{top:44px;right:52px;border-top:2.5px solid ${accent};border-right:2.5px solid ${accent};opacity:0.4;}
-.bl{bottom:44px;left:52px;border-bottom:2.5px solid ${accent};border-left:2.5px solid ${accent};opacity:0.4;}
-.br{bottom:44px;right:52px;border-bottom:2.5px solid ${accent};border-right:2.5px solid ${accent};opacity:0.4;}
-.content{position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;}
-.quote{font-size:${isPortrait?80:72}px;font-weight:700;line-height:1.25;color:${textColor};font-style:italic;font-family:'${font}',serif;text-align:center;margin-bottom:60px;${textShadow}}
-.div{width:60px;height:1.5px;background:${accent};opacity:0.5;margin:0 auto 44px;}
-.sig{font-size:${isPortrait?36:30}px;font-weight:600;color:${subColor};font-family:'${sigFont}',cursive,serif;text-align:center;${textShadow}}
-.handle{font-size:${isPortrait?26:22}px;color:${accent};font-family:'${sigFont}',cursive,serif;text-align:center;margin-top:8px;opacity:0.85;${textShadow}}
+.content{position:relative;z-index:5;width:100%;display:flex;flex-direction:column;align-items:${isLeft?"flex-start":"center"};text-align:${isLeft?"left":"center"};}
+.quote{font-size:${quoteSz}px;font-weight:700;line-height:1.32;color:${cardTextColor};font-style:italic;font-family:'${font}',serif;text-align:${isLeft?"left":"center"};margin-bottom:${Math.round(60*s)}px;${textShadow}}
+.sig{font-size:${sigSz}px;font-weight:600;color:${cardSubColor};font-family:'${sigFont}',cursive,serif;${textShadow}text-align:${isLeft?"left":"center"};width:100%;}
 </style>
 </head><body>
 <div class="slide">
   ${hasBgImg?`<img class="bg-img" src="${quoteBgCustomUrl}" crossorigin="anonymous"/><div class="bg-ov"></div>`:""}
-  <div class="bk tl"></div><div class="bk tr"></div>
-  <div class="bk bl"></div><div class="bk br"></div>
+  ${tExtras}
   <div class="content">
+    ${tmpl==="raw"?rawLabel:""}
     <div class="quote">&#8220;${escapedQuote}&#8221;</div>
-    <div class="div"></div>
-    ${signature?`<div class="sig">— ${signature.replace(/&/g,"&amp;")}</div>`:""}
-    ${handle?`<div class="handle">${handle.startsWith("@")?handle:"@"+handle}</div>`:""}
+    ${tDivider}
+    ${signature?`<div class="sig">${esc(signature)}</div>`:""}
   </div>
+  ${tHandle}
 </div>
 </body></html>`;
   };
-
   const downloadQuote = async (quoteText, i) => {
     const isPortrait = quoteFormat === "portrait";
     const W = 1080, H = isPortrait ? 1920 : 1350;
@@ -823,7 +1023,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
         </div>
         <div style={{display:"flex",alignItems:"center",gap:2}}>
           {NAV_ITEMS.map(([id,label])=>(
-            <button key={id} onClick={()=>{setNav(id);if(view==="preview"&&id!=="generate"){}}} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 16px",fontSize:13,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",marginBottom:-1,cursor:"pointer"}}>
+            <button key={id} onClick={()=>{setNav(id);if(view==="preview"&&id!=="generate"){}}} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 16px",fontSize:13,fontWeight:nav===id?700:500,height:"100%",display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
               {label}
             </button>
           ))}
@@ -896,32 +1096,78 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
               </div>
             </div>
 
-            {/* Fonts */}
+            {/* Persistent live preview */}
+            {(()=>{
+              const isP = quoteFormat==="portrait";
+              const W=1080,H=isP?1920:1350,scale=260/W;
+              const html=buildQuoteHTML("Your quote will appear here");
+              return (
+                <div style={{marginBottom:16}}>
+                  <label style={{...lbl,marginBottom:8}}>Live preview</label>
+                  <div style={{width:260,height:H*scale,borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`,margin:"0 auto"}}>
+                    <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Template + Fonts + Handle */}
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16,display:"flex",flexDirection:"column",gap:16}}>
+
+              {/* Template */}
+              <div>
+                <label style={lbl}>Template</label>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:quoteTemplate==="luxury"?10:0}}>
+                  {[["classic","Classic","Corners + diamond"],["luxury","Notebook","Grid texture, clean lines"],["feminine","Feminine","Swirl flourishes"],["raw","Raw","Stark, left-aligned"]].map(([id,label,desc])=>(
+                    <button key={id} onClick={()=>setQuoteTemplate(id)} style={{background:quoteTemplate===id?A.text:A.bg,border:`1.5px solid ${quoteTemplate===id?GOLD:A.border}`,borderRadius:8,padding:"8px 10px",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                      <span style={{fontSize:12,fontWeight:700,color:quoteTemplate===id?A.accentText:A.text}}>{label}</span>
+                      <span style={{fontSize:9,color:quoteTemplate===id?"rgba(255,255,255,0.6)":A.muted,textAlign:"center"}}>{desc}</span>
+                    </button>
+                  ))}
+                </div>
+                {quoteTemplate==="luxury"&&(
+                  <div>
+                    <label style={{...lbl,marginBottom:6}}>Label word <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(shown above quote)</span></label>
+                    <input value={luxuryLabel} onChange={e=>setLuxuryLabel(e.target.value)} placeholder="wisdom" style={inp}/>
+                  </div>
+                )}
+              </div>
+
+              {/* Compact font pills */}
               <div>
                 <label style={lbl}>Quote font</label>
-                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
                   {FONTS.map(f=>(
-                    <button key={f.id} onClick={()=>setQuoteFont(f.id)} style={{background:quoteFont===f.id?A.text:A.bg,border:`1.5px solid ${quoteFont===f.id?GOLD:A.border}`,borderRadius:8,padding:"6px 12px"}}>
-                      <span style={{fontFamily:`"${f.css}",serif`,fontSize:f.id==="dancing"?15:13,fontWeight:700,fontStyle:"italic",color:quoteFont===f.id?A.accentText:A.text}}>{f.label}</span>
+                    <button key={f.id} onClick={()=>setQuoteFont(f.id)} style={{background:quoteFont===f.id?A.text:"none",border:`1.5px solid ${quoteFont===f.id?A.text:A.border}`,borderRadius:20,padding:"4px 12px"}}>
+                      <span style={{fontFamily:`"${f.css}",serif`,fontSize:12,fontWeight:600,fontStyle:"italic",color:quoteFont===f.id?A.accentText:A.muted}}>{f.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
               <div>
                 <label style={lbl}>Signature font</label>
-                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
                   {FONTS.map(f=>(
-                    <button key={f.id} onClick={()=>setQuoteSigFont(f.id)} style={{background:quoteSigFont===f.id?A.text:A.bg,border:`1.5px solid ${quoteSigFont===f.id?GOLD:A.border}`,borderRadius:8,padding:"6px 12px"}}>
-                      <span style={{fontFamily:`"${f.css}",serif`,fontSize:f.id==="dancing"?15:13,fontWeight:600,color:quoteSigFont===f.id?A.accentText:A.text}}>{f.label}</span>
+                    <button key={f.id} onClick={()=>setQuoteSigFont(f.id)} style={{background:quoteSigFont===f.id?A.text:"none",border:`1.5px solid ${quoteSigFont===f.id?A.text:A.border}`,borderRadius:20,padding:"4px 12px"}}>
+                      <span style={{fontFamily:`"${f.css}",serif`,fontSize:12,fontWeight:600,color:quoteSigFont===f.id?A.accentText:A.muted}}>{f.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
+
+              {/* Signature */}
               <div>
                 <label style={lbl}>Signature <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(leave blank to use brand name)</span></label>
                 <input value={quoteSignature} onChange={e=>setQuoteSignature(e.target.value)} placeholder={name||"Your name"} style={inp}/>
-                {handle&&<p style={{color:A.muted,fontSize:11,marginTop:6}}>Handle will show as: {handle.startsWith("@")?handle:"@"+handle}</p>}
+              </div>
+
+              {/* Handle toggle */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div>
+                  <div style={{fontWeight:600,fontSize:13}}>Show handle</div>
+                  <div style={{color:A.muted,fontSize:12}}>{handle?(handle.startsWith("@")?handle:"@"+handle):"Set handle in Brand settings"}</div>
+                </div>
+                {tog(showHandle,setShowHandle)}
               </div>
             </div>
 
@@ -949,7 +1195,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
 
             {quoteInputs.some(q=>q.trim()) ? (
               <div style={{marginBottom:20}}>
-                <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:12}}>Preview</div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                  <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted}}>Preview</div>
+                  <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                    <span style={{fontSize:10,color:A.muted,marginRight:4}}>Font:</span>
+                    {FONTS.map(f=>(
+                      <button key={f.id} onClick={()=>setQuoteFont(f.id)} style={{background:quoteFont===f.id?A.text:"none",border:`1px solid ${quoteFont===f.id?A.text:A.border}`,borderRadius:12,padding:"2px 8px"}}>
+                        <span style={{fontFamily:`"${f.css}",serif`,fontSize:10,fontStyle:"italic",color:quoteFont===f.id?A.accentText:A.muted}}>{f.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
                   {quoteInputs.filter(q=>q.trim()).map((q,i)=>{
                     const isP=quoteFormat==="portrait";
@@ -1040,7 +1296,23 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
                       <button onClick={()=>coverPhotoRef.current?.click()} style={{background:A.text,color:A.accentText,padding:"6px 12px",borderRadius:7,fontSize:11,fontWeight:700,flexShrink:0}}>Upload ↑</button>
                     </div>
                   )}
-                  {activeCoverPhoto && <div style={{fontSize:11,color:A.muted,marginTop:4}}>✓ Cover selected — manage photos in Brand settings</div>}
+                  {activeCoverPhoto && (
+                    <div>
+                      <div style={{fontSize:11,color:A.muted,marginTop:4,marginBottom:8}}>✓ Cover selected — manage photos in Brand settings</div>
+                      <label style={{...lbl,marginBottom:6}}>Reposition <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(drag)</span></label>
+                      <div
+                        ref={coverDragRef}
+                        onMouseDown={()=>setIsDraggingCover(true)}
+                        onMouseMove={e=>{if(isDraggingCover)handleDrag(e,setCoverImgPos,coverDragRef);}}
+                        onMouseUp={()=>setIsDraggingCover(false)}
+                        onMouseLeave={()=>setIsDraggingCover(false)}
+                        style={{width:"100%",height:100,borderRadius:8,overflow:"hidden",cursor:"crosshair",border:`1.5px solid ${A.border}`,position:"relative",userSelect:"none"}}
+                      >
+                        <img src={activeCoverPhoto} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:`${coverImgPos.x}% ${coverImgPos.y}%`,pointerEvents:"none"}}/>
+                        <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:16,height:16,borderRadius:"50%",border:"2px solid #fff",background:"rgba(0,0,0,0.4)",pointerEvents:"none"}}/>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
               </div>
@@ -1265,7 +1537,23 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
                     {templateBgUrl&&(
                       <div style={{marginTop:12}}>
                         <label style={lbl}>Overlay — {overlayDark}%</label>
-                        <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)}/>
+                        <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{marginBottom:14}}/>
+                        <label style={{...lbl,marginBottom:6}}>Reposition background <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(drag)</span></label>
+                        <div
+                          ref={templateDragRef}
+                          onMouseDown={()=>setIsDraggingTemplate(true)}
+                          onMouseMove={e=>{if(isDraggingTemplate)handleDrag(e,setTemplateImgPos,templateDragRef);}}
+                          onMouseUp={()=>setIsDraggingTemplate(false)}
+                          onMouseLeave={()=>setIsDraggingTemplate(false)}
+                          style={{width:"100%",height:140,borderRadius:10,overflow:"hidden",cursor:"crosshair",border:`1.5px solid ${A.border}`,position:"relative",userSelect:"none",marginBottom:8}}
+                        >
+                          <img src={templateBgUrl} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:`${templateImgPos.x}% ${templateImgPos.y}%`,pointerEvents:"none"}}/>
+                          <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:16,height:16,borderRadius:"50%",border:"2px solid #fff",background:"rgba(0,0,0,0.4)",pointerEvents:"none"}}/>
+                        </div>
+                        <label style={{...lbl,marginBottom:8}}>Preview — check safe zone</label>
+                        <div style={{width:280,height:280*(1350/1080),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                          <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts()} onClick={()=>{}} isActive={false} isCover={false}/>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1295,7 +1583,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
         )}
 
         {/* ── GENERATING ── */}
-        {view==="generating"&&(
+        {nav==="generate"&&view==="generating"&&(
           <div style={{textAlign:"center",padding:"100px 0",animation:"fadeUp 0.3s ease"}}>
             <div style={{width:44,height:44,borderRadius:"50%",border:`3px solid ${A.border}`,borderTop:`3px solid ${GOLD}`,animation:"spin 0.8s linear infinite",margin:"0 auto 22px"}}/>
             <div style={{fontSize:11,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:GOLD,marginBottom:8}}>Creating</div>
@@ -1305,7 +1593,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
         )}
 
         {/* ── PREVIEW ── */}
-        {view==="preview"&&slides.length>0&&(
+        {nav==="generate"&&view==="preview"&&slides.length>0&&(
           <div style={{animation:"fadeUp 0.3s ease"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
               <span style={{fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:A.muted}}>Format:</span>
@@ -1375,6 +1663,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
                       ))}
                     </div>
                   </div>
+                  {bgMode==="custom"&&templateBgUrl&&(
+                    <div>
+                      <label style={lbl}>Background overlay — {slideOverlays[active]??overlayDark}%</label>
+                      <input type="range" min={0} max={85} value={slideOverlays[active]??overlayDark} onChange={e=>setSlideOverlays(prev=>({...prev,[active]:+e.target.value}))}/>
+                    </div>
+                  )}
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18}}>
                   <label style={lbl}>AI Rewrite</label>
