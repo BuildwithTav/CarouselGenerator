@@ -847,29 +847,25 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${bg};}
 
             </div>
 
-            {/* Create button */}
             {quoteInputs.some(q=>q.trim()) ? (
-              <>
-                {/* Preview + download */}
-                <div style={{marginBottom:20}}>
-                  <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:12}}>Preview</div>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
-                    {quoteInputs.filter(q=>q.trim()).map((q,i)=>{
-                      const W=1080,H=1350,scale=180/W;
-                      const html=buildQuoteHTML(q);
-                      return (
-                        <div key={i} style={{position:"relative",width:180,height:H*scale,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,flexShrink:0}}>
-                          <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
-                          <button onClick={()=>downloadQuote(q,i)} style={{position:"absolute",bottom:4,right:4,background:"rgba(0,0,0,0.7)",color:"#fff",fontSize:10,fontWeight:700,padding:"3px 7px",borderRadius:4,border:"none"}}>↓</button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <button onClick={downloadAllQuotes} disabled={downloadingQuotes} style={{width:"100%",padding:"13px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:14,fontWeight:800,border:`1px solid ${GOLD}33`,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                    {downloadingQuotes?<><Spin/>Downloading...</>:`↓ Download All ${quoteInputs.filter(q=>q.trim()).length} Quote Cards`}
-                  </button>
+              <div style={{marginBottom:20}}>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:12}}>Preview</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
+                  {quoteInputs.filter(q=>q.trim()).map((q,i)=>{
+                    const W=1080,H=1350,scale=180/W;
+                    const html=buildQuoteHTML(q);
+                    return (
+                      <div key={i} style={{position:"relative",width:180,height:H*scale,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,flexShrink:0}}>
+                        <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
+                        <button onClick={()=>downloadQuote(q,i)} style={{position:"absolute",bottom:4,right:4,background:"rgba(0,0,0,0.7)",color:"#fff",fontSize:10,fontWeight:700,padding:"3px 7px",borderRadius:4,border:"none"}}>↓</button>
+                      </div>
+                    );
+                  })}
                 </div>
-              </>
+                <button onClick={downloadAllQuotes} disabled={downloadingQuotes} style={{width:"100%",padding:"13px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:14,fontWeight:800,border:`1px solid ${GOLD}33`,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                  {downloadingQuotes?<><Spin/>Downloading...</>:`↓ Download All ${quoteInputs.filter(q=>q.trim()).length} Quote Cards`}
+                </button>
+              </div>
             ) : (
               <button disabled style={{width:"100%",padding:"13px",background:A.border,color:A.muted,borderRadius:10,fontSize:14,fontWeight:800,border:"none"}}>
                 Add quotes above to create cards
