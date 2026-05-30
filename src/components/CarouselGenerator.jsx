@@ -146,8 +146,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const ts2 = C.dark || bgImageUrl ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : "";
 
   const BADGE_BOTTOM = 230;
-  const topPad = isPortrait ? 280 : 220;
-  const botPad = isPortrait ? 160 : 100;
+  const hPad = 90;
 
   const base = `
     @import url('${gFonts}');
@@ -196,13 +195,13 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
   const layouts = {
     standard: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 90px; text-align:center; overflow:hidden; }
       .hl { font-size:${isPortrait?96:80}px; font-weight:900; line-height:1.08; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; }
       .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; ${ts2} font-family:'${bodyFont}',sans-serif; }
       .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?28:24}px; font-weight:800; color:${C.accent}; font-family:'${bodyFont}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; }
     `,
     statement: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 70px ${botPad}px; text-align:center; overflow:hidden; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 70px; text-align:center; overflow:hidden; }
       .hl { font-size:${isPortrait?116:98}px; font-weight:900; line-height:1.0; letter-spacing:${hs.id==="upper"?"2px":"-2px"}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; }
       .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
     `,
@@ -221,7 +220,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       .vt { font-size:26px; font-weight:900; color:${C.accent}; font-family:'${bodyFont}',sans-serif; }
     `,
     cards: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:${topPad}px 72px ${botPad}px; overflow:hidden; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 72px; overflow:hidden; }
       .hl { font-size:${isPortrait?82:64}px; font-weight:900; line-height:1.08; letter-spacing:${hs.letterSpacing}; ${ts} text-align:center; margin-bottom:4px; font-family:'${hlFont}',sans-serif; flex-shrink:0; }
       .cg { width:100%; display:flex; flex-direction:column; gap:${isPortrait?14:9}px; margin-top:20px; overflow:hidden; }
       .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:10px; padding:${isPortrait?22:14}px 24px; display:flex; align-items:flex-start; gap:16px; flex-shrink:0; }
@@ -230,13 +229,13 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       .cs { font-size:${isPortrait?20:16}px; color:${C.sub}; margin-top:2px; font-family:'${bodyFont}',sans-serif; }
     `,
     quote: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 110px ${botPad+40}px; text-align:center; overflow:hidden; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 110px; text-align:center; overflow:hidden; }
       .qm { font-size:260px; font-weight:900; color:${C.accent}20; line-height:0.65; font-family:'${hlFont}',sans-serif; margin-bottom:-20px; flex-shrink:0; }
       .hl { font-size:${isPortrait?96:84}px; font-weight:900; line-height:1.06; letter-spacing:${hs.letterSpacing}; ${ts} font-style:${hs.id==="serif"?"italic":"normal"}; font-family:'${hlFont}',sans-serif; }
       .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
     `,
     hero: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad+20}px 90px ${botPad+20}px; gap:24px; text-align:center; overflow:hidden; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 90px; gap:24px; text-align:center; overflow:hidden; }
       .hi { width:${isPortrait?190:170}px; height:${isPortrait?190:170}px; border-radius:50%; border:1.5px solid ${C.accent}40; background:${C.accent}12; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
       .hs { font-size:${isPortrait?110:100}px; line-height:1; }
       .hl { font-size:${isPortrait?90:78}px; font-weight:900; line-height:1.06; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; }
@@ -998,21 +997,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           <span style={{fontSize:13,fontWeight:800,letterSpacing:-0.3}}>Carousel Studio</span>
           <span style={{fontSize:11,color:A.muted}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
         </div>
-        <div style={{display:"flex",alignItems:"stretch",gap:0}}>
-        <div style={{display:"flex",alignItems:"stretch",height:56}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
           {NAV_ITEMS.map(([id,label])=>(
             <button key={id} onClick={()=>setNav(id)} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 14px",fontSize:13,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
               {label}
             </button>
           ))}
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:6,paddingLeft:12}}>
           {view==="preview"&&<>
-            <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>↺ Regenerate</button>
-            <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
+            <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 10px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:4}}>↺ Regenerate</button>
+            <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 10px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
           </>}
-          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12}}>Reset</button>
-        </div>
+          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 10px",borderRadius:7,fontSize:12,marginLeft:4}}>Reset</button>
         </div>
       </nav>
 
