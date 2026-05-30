@@ -1088,7 +1088,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         ::placeholder{color:${A.muted};opacity:0.65}
       `}</style>
 
-      <nav style={{borderBottom:`1px solid ${A.border}`,padding:"0 32px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56,position:"sticky",top:0,background:`${A.bg}EE`,backdropFilter:"blur(20px)",zIndex:100}}>
+      <nav style={{borderBottom:`1px solid ${A.border}`,padding:"0 32px",display:"flex",alignItems:"center",justifyContent:"flex-start",height:56,position:"sticky",top:0,background:`${A.bg}EE`,backdropFilter:"blur(20px)",zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,#1a1a1a,#2a2a2a)`,border:`1.5px solid ${GOLD}44`,display:"flex",alignItems:"center",justifyContent:"center"}}>
             <span style={{color:GOLD,fontSize:12,fontWeight:900}}>C</span>
@@ -1096,7 +1096,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           <span style={{fontSize:13,fontWeight:800,letterSpacing:-0.3}}>Carousel Studio</span>
           <span style={{fontSize:11,color:A.muted}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:2}}>
+        <div style={{display:"flex",alignItems:"center",gap:2,marginLeft:"auto"}}>
           {NAV_ITEMS.map(([id,label])=>(
             <button key={id} onClick={()=>setNav(id)} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 14px",fontSize:13,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
               {label}
