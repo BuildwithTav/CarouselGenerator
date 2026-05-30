@@ -206,11 +206,11 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
     `,
     split: `
-      .c { position:absolute; inset:0; z-index:5; overflow:hidden; }
-      .split-top { position:absolute; top:${isPortrait?400:260}px; left:60px; right:60px; text-align:center; z-index:4; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:${isPortrait?32:20}px; overflow:hidden; }
+      .split-top { width:100%; padding:0 60px; text-align:center; z-index:4; }
       .split-tag { display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"}; font-size:14px; font-weight:800; letter-spacing:2px; padding:8px 24px; border-radius:60px; font-family:'${bodyFont}',sans-serif; margin-bottom:16px; }
       .split-hl { font-size:${isPortrait?68:52}px; font-weight:900; line-height:1.06; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; color:${C.text}; }
-      .split-panels { position:absolute; top:${isPortrait?660:490}px; left:0; right:0; bottom:60px; display:grid; grid-template-columns:1fr 1fr; z-index:3; }
+      .split-panels { width:100%; display:grid; grid-template-columns:1fr 1fr; z-index:3; min-height:${isPortrait?300:220}px; }
       .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 44px; text-align:center; gap:12px; overflow:hidden; }
       .panel:first-child { background:${C.accent}10; border-right:1px solid ${C.accent}28; }
       .pl { font-size:${isPortrait?44:36}px; font-weight:900; font-family:'${hlFont}',sans-serif; line-height:1.1; color:${C.text}; }
@@ -294,7 +294,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
           ${slide.tag ? `<div style="margin-bottom:16px"><span class="split-tag">${esc(slide.tag.toUpperCase())}</span></div>` : ""}
           <div class="split-hl">${hl}</div>
         </div>
-        <div class="split-panels" style="position:relative">
+        <div class="split-panels">
           <div class="panel"><div class="pl pa">${esc(a.label||"")}</div>${a.sub?`<div class="ps">${esc(a.sub)}</div>`:""}</div>
           <div class="vs"><div class="vt">${esc(slide.vs_label||"VS")}</div></div>
           <div class="panel"><div class="pl" style="opacity:0.75">${esc(b.label||"")}</div>${b.sub?`<div class="ps">${esc(b.sub)}</div>`:""}</div>
@@ -989,7 +989,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         ::placeholder{color:${A.muted};opacity:0.65}
       `}</style>
 
-      <nav style={{borderBottom:`1px solid ${A.border}`,padding:"0 32px",display:"flex",alignItems:"stretch",justifyContent:"space-between",height:56,position:"sticky",top:0,background:`${A.bg}EE`,backdropFilter:"blur(20px)",zIndex:100}}>
+      <nav style={{borderBottom:`1px solid ${A.border}`,padding:"0 32px",display:"flex",alignItems:"stretch",justifyContent:"space-between",height:56,position:"sticky",top:0,background:`${A.bg}EE`,backdropFilter:"blur(20px)",zIndex:200}}>
         <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
           <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,#1a1a1a,#2a2a2a)`,border:`1.5px solid ${GOLD}44`,display:"flex",alignItems:"center",justifyContent:"center"}}>
             <span style={{color:GOLD,fontSize:12,fontWeight:900}}>C</span>
