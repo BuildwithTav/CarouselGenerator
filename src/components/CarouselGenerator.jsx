@@ -511,6 +511,7 @@ export default function App() {
   const [showHandle, setShowHandle] = useState(true);
   const [quoteFormat, setQuoteFormat] = useState("instagram");
   const [generatingQuotes, setGeneratingQuotes] = useState(false);
+  const [quoteMode, setQuoteMode] = useState("brand");
   const [quoteSlides, setQuoteSlides] = useState([]);
   const [downloadingQuotes, setDownloadingQuotes] = useState(false);
   const [slideOverlays, setSlideOverlays] = useState({});
@@ -693,19 +694,20 @@ Return ONLY valid JSON array:
     setter({x: Math.round(x), y: Math.round(y)});
   };
 
-  const slideOpts = useCallback(() => ({
-    fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
+  const slideOpts = useCallback((slideIdx) => ({
+    fontId, headlineStyle, bgMode, templateBgUrl,
+    overlayDark: slideOverlays[slideIdx]??overlayDark,
     coverImageUrl: activeCoverPhoto, coverPosition, badgeArea,
     profileUrl, name, handle, blueTick,
     websiteUrl: showWebsite?website:"",
     showNums, ratio, accentColor, bgColour,
     coverImgPos, templateImgPos,
-  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour]);
+  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays]);
 
   const downloadOne = async (i) => {
     setDownloading(true);
     try {
-      await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(), `slide-${i+1}.png`, i===0);
+      await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`, i===0);
       setDownloadDone(true); setTimeout(()=>setDownloadDone(false), 2000);
     } catch(e) { console.error(e); alert("Download failed — try again."); }
     setDownloading(false);
@@ -714,7 +716,7 @@ Return ONLY valid JSON array:
   const downloadAll = async () => {
     setDownloadingAll(true);
     for (let i=0; i<slides.length; i++) {
-      try { await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(), `slide-${i+1}.png`, i===0); await new Promise(r=>setTimeout(r,600)); }
+      try { await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`, i===0); await new Promise(r=>setTimeout(r,600)); }
       catch(e) { console.error(e); }
     }
     setDownloadingAll(false); setDownloadDone(true); setTimeout(()=>setDownloadDone(false), 2500);
@@ -726,7 +728,27 @@ Return ONLY valid JSON array:
     const emptyCount = quoteInputs.filter(q=>!q.trim()).length;
     const needed = emptyCount || 3;
     try {
-      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:400, messages:[{ role:"user", content:`Generate ${needed} short, powerful quotes for a ${btLabel}. Voice: ${voiceProfile||"direct, honest, real"}. Return ONLY a JSON array of ${needed} strings. No attribution, no author names, max 15 words each.` }] });
+      const prompt = quoteMode === "life"
+        ? `Generate ${needed} short, powerful life and mindset quotes. Theme: positivity, resilience, self-belief, growth, emotional truth. Universal — anyone can relate regardless of industry.
+
+RULES:
+- About the reader's own inner world, choices, and potential. Never business-specific.
+- The logic must hold as a standalone truth. No contradictions.
+- Emotionally resonant — should make someone stop and think or feel something.
+- Max 12 words each. No attribution, no author names.
+
+Return ONLY a JSON array of ${needed} strings.`
+        : `Generate ${needed} short, powerful quotes for a ${btLabel}. Voice: ${voiceProfile||"direct, honest, real"}.
+
+RULES:
+- Every quote must be about the READER and their own situation. Never mention competitors or third parties.
+- The subject and conclusion must be directly and logically connected. No contradictions.
+- Must stand alone as a complete truth — no context needed to understand it.
+- Read each quote back and ask: does the logic hold? If not, rewrite it.
+- Max 12 words each. No attribution, no author names.
+
+Return ONLY a JSON array of ${needed} strings.`;
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:400, messages:[{ role:"user", content:prompt }] });
       const raw = (d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
       const m = raw.match(/\[[\s\S]*\]/);
       if (m) {
@@ -1046,7 +1068,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:640,margin:"0 auto"}}>
             <div style={{marginBottom:24}}>
               <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px"}}>Quote Cards</h2>
-              <p style={{color:A.muted,fontSize:14,margin:0}}>Create up to 5 branded quote cards. Accent colour pulls from Brand settings.</p>
+              <p style={{color:A.muted,fontSize:14,margin:0}}>Create up to 3 branded quote cards. Accent colour pulls from Brand settings.</p>
+            </div>
+            <div style={{display:"flex",gap:8,marginBottom:20}}>
+              {[["brand","On Brand"],["life","Life & Mindset"]].map(([id,label])=>(
+                <button key={id} onClick={()=>setQuoteMode(id)} style={{flex:1,padding:"10px",borderRadius:9,border:`1.5px solid ${quoteMode===id?GOLD:A.border}`,background:quoteMode===id?A.text:A.surface,color:quoteMode===id?A.accentText:A.muted,fontSize:13,fontWeight:700}}>
+                  {label}
+                </button>
+              ))}
             </div>
 
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16,display:"flex",flexDirection:"column",gap:16}}>
@@ -1272,7 +1301,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <div>
                       <label style={{...lbl,marginBottom:8}}>Cover preview</label>
                       <div style={{width:previewW,height:Math.round(1350*scale),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                        <SlidePreview slide={{headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={0} total={1} opts={{...slideOpts(),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
+                        <SlidePreview slide={{headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
                       </div>
                     </div>
                   );
@@ -1421,7 +1450,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <div>
                       <label style={{...lbl,marginBottom:8}}>Cover preview</label>
                       <div style={{width:280,height:280*(1350/1080),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                        <SlidePreview slide={coverSlide} idx={0} total={1} opts={{...slideOpts(),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
+                        <SlidePreview slide={coverSlide} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
                       </div>
                       <p style={{color:A.muted,fontSize:11,marginTop:8}}>Switch position above to see how badge and headline sit on your photo.</p>
                     </div>
@@ -1522,7 +1551,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                         </div>
                         <label style={{...lbl,marginBottom:8}}>Preview — check safe zone</label>
                         <div style={{width:280,height:280*(1350/1080),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                          <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts()} onClick={()=>{}} isActive={false} isCover={false}/>
+                          <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
                         </div>
                       </div>
                     )}
@@ -1571,7 +1600,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
                   {slides.map((slide,i)=>(
-                    <SlidePreview key={i} slide={slide} idx={i} total={slides.length} opts={slideOpts()} onClick={()=>setActive(i)} isActive={active===i} isCover={i===0}/>
+                    <SlidePreview key={i} slide={slide} idx={i} total={slides.length} opts={slideOpts(i)} onClick={()=>setActive(i)} isActive={active===i} isCover={i===0}/>
                   ))}
                 </div>
                 <div style={{display:"flex",gap:8}}>
