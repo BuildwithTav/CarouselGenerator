@@ -32,13 +32,14 @@ const HEADLINE_STYLES = [
 ];
 
 const BUSINESS_TYPES = [
-  { id:"marketer",   label:"Digital Marketer" },
-  { id:"creator",    label:"Creator / Influencer" },
-  { id:"coach",      label:"Coach / Consultant" },
-  { id:"business",   label:"Business" },
-  { id:"restaurant", label:"Restaurant / Café" },
-  { id:"personal",   label:"Personal Page" },
-  { id:"other",      label:"Other" },
+  { id:"marketer",   label:"Digital Marketer",        audience:"content creators and online entrepreneurs" },
+  { id:"coach",      label:"Coach / Consultant",      audience:"people looking to grow or transform" },
+  { id:"fitness",    label:"Fitness / Personal Trainer", audience:"people wanting to get fit or lose weight" },
+  { id:"beauty",     label:"Beauty / Salon",          audience:"clients looking for beauty and self-care" },
+  { id:"restaurant", label:"Restaurant / Café",       audience:"diners and food lovers" },
+  { id:"realestate", label:"Real Estate",             audience:"buyers, sellers, and property investors" },
+  { id:"ecommerce",  label:"E-commerce / Product Brand", audience:"online shoppers and customers" },
+  { id:"other",      label:"Other",                   audience:"your target audience" },
 ];
 
 const BG_MODES = [
@@ -487,6 +488,8 @@ export default function App() {
   const [slideCount, setSlideCount] = useState(6);
   const [err, setErr] = useState("");
   const [randomising, setRandomising] = useState(false);
+  const [audienceType, setAudienceType] = useState("customers");
+  const [angle, setAngle] = useState("");
 
   const [view, setView] = useState("setup");
   const [slides, setSlides] = useState([]);
@@ -577,7 +580,9 @@ export default function App() {
   });
 
   const buildPrompt = (topicStr, imgBase64) => {
-    const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
+    const btObj = BUSINESS_TYPES.find(b=>b.id===businessType);
+    const btLabel = businessType==="other"?(otherType||"brand"):btObj?.label||"Digital Marketer";
+    const audienceDesc = audienceType==="peers" ? `other ${btLabel.toLowerCase()}s and industry professionals` : (btObj?.audience||"your target audience");
     const voice = voiceProfile || `Write for a ${btLabel}. Direct, specific, speak to real problems. No hype.`;
     const inspiration = imgBase64 ? `\nINSPIRATION IMAGE: I've attached a screenshot of a carousel I like. Analyse the topic, hook angle and energy — then recreate it in my voice with fresh content. Don't copy, just match the quality and angle.` : "";
     const styles = [
@@ -588,11 +593,12 @@ export default function App() {
       "step-by-step: practical, sequential, each slide one concrete action",
       "empathetic: speak directly to the frustration, validate it, then reframe it",
     ];
-    const style = styles[Math.floor(Math.random()*styles.length)];
+    const style = angle ? `guided by this creative direction: "${angle}"` : styles[Math.floor(Math.random()*styles.length)];
     return `You are creating an Instagram carousel for a ${btLabel}.
 You are the copywriter AND creative director. Every slide must earn its place.
 
 VOICE: ${voice}
+AUDIENCE: ${audienceDesc}
 TOPIC: "${topicStr}"${inspiration}
 SLIDES: ${slideCount}
 NARRATIVE STYLE: ${style}
@@ -618,7 +624,7 @@ RULES:
 - No two consecutive slides same layout
 - Only final slide gets cta. All others cta is null.
 - No HTML, no cite tags, plain text only
-- NO invented statistics or fabricated data. If using a stat, only use well-known established facts. Otherwise frame as principle or observation.
+- NO invented statistics or fabricated data. Only use facts you are confident are accurate and well-established. If uncertain, frame as a principle, observation, or opinion — never as a stated fact. Every body text must be specific and genuinely useful, not a generic statement dressed as insight.
 
 Return ONLY valid JSON array:
 [{"tag":"LABEL","headline":"text","body":"text","accent_word":"word","layout":"type","items":[],"vs_label":"VS","icon_symbol":"◆","cta_items":[],"cta":null}]`;
@@ -661,11 +667,13 @@ Return ONLY valid JSON array:
 
   const randomiseTopic = async () => {
     setRandomising(true);
-    const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
+    const btObj2 = BUSINESS_TYPES.find(b=>b.id===businessType);
+    const btLabel = businessType==="other"?(otherType||"brand"):btObj2?.label||"Digital Marketer";
+    const audDesc = audienceType==="peers" ? `other ${btLabel.toLowerCase()}s and industry professionals` : (btObj2?.audience||"your target audience");
     try {
       const angles = ["a surprising myth to bust","a counterintuitive truth most people get wrong","a specific mistake that costs people money or time","a data point that would shock most people","a common belief that is completely backwards","a simple shift that changes everything","something everyone does that quietly holds them back","a question nobody is asking but should be"];
       const angle = angles[Math.floor(Math.random()*angles.length)];
-      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:80, messages:[{ role:"user", content:`You are a creative director for social media. Give me ONE punchy Instagram carousel topic for a ${btLabel} — specifically about ${angle}. Voice: ${voiceProfile||"direct, honest, no hype"}. Make it specific, not generic. Return ONLY the topic, no explanation, no quotes, max 12 words.` }] });
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:80, messages:[{ role:"user", content:`You are a creative director for social media. Give me ONE punchy Instagram carousel topic for a ${btLabel} whose audience is ${audDesc} — specifically about ${angle}. Voice: ${voiceProfile||"direct, honest, no hype"}. Make it specific, not generic. Return ONLY the topic, no explanation, no quotes, max 12 words.` }] });
       const idea = d.content?.find(b=>b.type==="text")?.text?.trim()||"";
       if (idea) setTopic(idea);
     } catch {}
@@ -1261,10 +1269,19 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <p style={{color:A.muted,fontSize:14,margin:0}}>One topic. I handle the strategy, layouts, and copy.</p>
             </div>
 
+            <div style={{marginBottom:12}}>
+              <label style={lbl}>Who is your audience?</label>
+              <div style={{display:"flex",gap:8}}>
+                {[["customers","Their Customers"],["peers","Industry Peers"]].map(([id,label])=>(
+                  <button key={id} onClick={()=>setAudienceType(id)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${audienceType===id?A.text:A.border}`,background:audienceType===id?A.text:A.surface,color:audienceType===id?A.accentText:A.muted,fontSize:12,fontWeight:700}}>{label}</button>
+                ))}
+              </div>
+            </div>
+
             <div style={{marginBottom:16}}>
               <div style={{display:"flex",gap:8,marginBottom:8}}>
                 <input value={topic} onChange={e=>{setTopic(e.target.value);if(err)setErr("");}}
-                  placeholder="e.g. Why your content gets views but zero clients"
+                  placeholder={businessType==="fitness"?"e.g. Why most people quit the gym after 3 weeks":businessType==="beauty"?"e.g. Why clients don't rebook after their first visit":businessType==="restaurant"?"e.g. Why most cafés lose money on their most popular item":businessType==="realestate"?"e.g. Why most people buy in the wrong order":businessType==="ecommerce"?"e.g. Why your product page is losing sales silently":businessType==="coach"?"e.g. Why most clients don't get results from coaching":businessType==="other"?(otherType?"e.g. A common myth about "+otherType:"e.g. A common myth in your industry"):"e.g. Why your content gets views but zero clients"}
                   style={{...inp,fontSize:15,fontWeight:500,flex:1,borderColor:err?"#c0392b":A.border}}
                   onKeyDown={e=>{if(e.key==="Enter"&&e.metaKey)generate();}}/>
                 <button onClick={randomiseTopic} disabled={randomising} title="Randomise topic" style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"0 16px",fontSize:18,color:A.muted,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:48}}>
@@ -1272,6 +1289,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </button>
               </div>
               {err&&<p style={{color:"#c0392b",fontSize:12,margin:"4px 0 0",fontWeight:600}}>⚠ {err}</p>}
+            </div>
+
+            <div style={{marginBottom:16}}>
+              <label style={lbl}>Angle <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional — what should this teach, challenge, or make people feel?)</span></label>
+              <input value={angle} onChange={e=>setAngle(e.target.value)} placeholder="e.g. Make them feel the pain before giving the fix" style={{...inp,fontSize:13}}/>
             </div>
 
             <div style={{marginBottom:16}}>
