@@ -208,10 +208,10 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     `,
     split: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; overflow:hidden; }
-      .split-top { width:100%; text-align:center; z-index:4; }
+      .split-top { width:100%; text-align:center; z-index:4; margin-bottom:${isPortrait?24:16}px; flex-shrink:0; }
       .split-tag { display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"}; font-size:14px; font-weight:800; letter-spacing:2px; padding:8px 24px; border-radius:60px; font-family:'${bodyFont}',sans-serif; margin-bottom:16px; }
       .split-hl { font-size:${isPortrait?52:42}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; color:${C.text}; }
-      .split-panels { width:100%; display:grid; grid-template-columns:1fr 1fr; z-index:3; min-height:${isPortrait?300:220}px; }
+      .split-panels { width:100%; display:grid; grid-template-columns:1fr 1fr; z-index:3; flex:1; }
       .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 44px; text-align:center; gap:12px; overflow:hidden; }
       .panel:first-child { background:${C.accent}10; border-right:1px solid ${C.accent}28; }
       .pl { font-size:${isPortrait?44:36}px; font-weight:900; font-family:'${hlFont}',sans-serif; line-height:1.1; color:${C.text}; }
@@ -221,7 +221,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       .vt { font-size:26px; font-weight:900; color:${C.accent}; font-family:'${bodyFont}',sans-serif; }
     `,
     cards: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:${topPad}px 90px ${botPad}px; overflow:hidden; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; overflow:hidden; }
       .hl { font-size:${isPortrait?56:46}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} text-align:center; margin-bottom:4px; font-family:'${hlFont}',sans-serif; flex-shrink:0; }
       .cg { width:100%; display:flex; flex-direction:column; gap:${isPortrait?14:9}px; margin-top:20px; overflow:hidden; }
       .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:10px; padding:${isPortrait?22:14}px 24px; display:flex; align-items:flex-start; gap:16px; flex-shrink:0; }
@@ -559,7 +559,7 @@ export default function App() {
     body: (s.body||"").replace(/<[^>]+>/g,"").trim(),
     accent_word: (s.accent_word||"").replace(/<[^>]+>/g,"").trim(),
     cta: (s.cta||"").replace(/<[^>]+>/g,"").trim()||null,
-    layout: s.layout||"standard",
+    layout: ["statement","standard","quote","hero"].includes(s.layout) ? s.layout : "standard",
     items: Array.isArray(s.items)?s.items:[],
     vs_label: s.vs_label||"VS",
     icon_symbol: s.icon_symbol||"◆",
@@ -580,12 +580,12 @@ SLIDES: ${slideCount}
 NARRATIVE ARC: hook → reality → insight → shift → advice → CTA
 
 LAYOUT SYSTEM:
-- "statement" — MASSIVE headline, almost no body. ALWAYS use for slide 1. Make it provocative. Must stop the scroll.
-- "standard" — headline + body. Good for most slides.
-- "split" — two panels with VS. ONLY for comparisons. Requires "items":[{"label":"...","sub":"..."},{"label":"...","sub":"..."}] and "vs_label".
-- "cards" — numbered rows. For lists. Requires "items":[{"label":"...","sub":"..."}] — MUST include "label" field.
-- "quote" — italic headline, big quote mark. For one powerful human truth. Max one per carousel.
-- "hero" — icon + headline + single CTA. ALWAYS final slide. Add "icon_symbol" and "cta_items":["one CTA only"].
+- "statement" — Bold headline, no body. ALWAYS use for slide 1. Make it provocative. Stop the scroll.
+- "standard" — headline + body. Use for ALL middle slides. Body is where the value lives.
+- "quote" — headline wrapped in quote marks. For one powerful truth. Max one per carousel.
+- "hero" — headline + body + CTA. ALWAYS final slide. Add "cta_items":["one CTA only"].
+
+DO NOT use "split" or "cards" layouts. Write lists and comparisons as body text instead.
 
 RULES:
 - No two consecutive slides same layout
@@ -595,7 +595,7 @@ RULES:
 - Tags: editorial and specific. NOT "HOOK", "SLIDE 1", "CTA"
 - Headlines: max 10 words. A clear statement, question, or insight. Think subheading not billboard.
 - Body: REQUIRED on every slide except hero. 1-2 sentences MAX. One sharp insight, specific stat, or actionable point. Make them think "I didn't know that" or "I'll try that." No fluff.
-- Final slide (hero) CTA: psychology-driven, varied. Pick ONE of: "Follow for more like this", "Save this so you can come back to it", "Share this with someone who needs to hear it", "Comment below — does this match your experience?", "Follow if this made you think differently". Never invent a download, product, or link that may not exist.
+- Final slide (hero) CTA: MUST have body text (1-2 sentences reinforcing why they should act — e.g. "If this changed how you see your budget, there's more where that came from." or "Most people scroll past. The ones who save it are the ones who act on it."). Then cta_items with ONE of: "Follow for more like this", "Save this so you can come back to it", "Share this with someone who needs to hear it", "Comment below — does this match your experience?", "Follow if this made you think differently". Never invent a download, product, or link.
 - No two consecutive slides same layout
 - Only final slide gets cta. All others cta is null.
 - No HTML, no cite tags, plain text only
@@ -1305,6 +1305,19 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               Generate Carousel →
             </button>
             <p style={{textAlign:"center",color:A.muted,fontSize:11,marginTop:10}}>⌘ + Enter · ~15–25 seconds</p>
+            <button onClick={()=>{
+              const mock=[
+                {tag:"THE HOOK",headline:"Most ad budgets don't fail. They leak.",body:"Small, invisible losses across targeting, creative, and timing quietly drain campaigns that look fine on the surface.",accent_word:"leak",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null},
+                {tag:"THE REAL NUMBERS",headline:"76% of ad spend never reaches the right audience.",body:"Studies show most digital budgets are lost to mismatched targeting and poor bidding. Most accounts are optimising for the wrong signal from day one.",accent_word:"76%",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null},
+                {tag:"THE PATTERN",headline:"Optimising bad creative just wastes money faster.",body:"A/B testing headlines on a weak offer doesn't fix the real problem. Creative is the variable most marketers over-invest in.",accent_word:"faster",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null},
+                {tag:"THE UNCOMFORTABLE TRUTH",headline:"Spending less per click isn't the goal.",body:"Low CPM with low intent means every conversion costs more anyway. The metric that matters is cost per actual customer.",accent_word:"goal",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null},
+                {tag:"THE BODY CAUSE",headline:'"Bad targeting isn't the problem. Bad decisions before targeting are."',body:"Most budgets are wasted at the strategy layer — wrong objective, wrong funnel stage, wrong offer — before a single dollar is spent.",accent_word:"before",layout:"quote",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null},
+                {tag:"SMARTER SPEND",headline:"Better allocation beats bigger budgets.",body:"If this changed how you see your ad spend, there's more where that came from. Save this so you can come back to it.",accent_word:"allocation",layout:"hero",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:["Save this so you can come back to it"],cta:null},
+              ];
+              setSlides(mock);setActive(0);setView("preview");setLastTopic("Mock preview");
+            }} style={{width:"100%",padding:"11px",background:"transparent",color:A.muted,borderRadius:10,fontSize:13,fontWeight:600,border:`1.5px solid ${A.border}`,marginTop:8}}>
+              Preview Layout (no API)
+            </button>
           </div>
         )}
 
