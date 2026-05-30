@@ -1,25 +1,24 @@
-import { NextResponse } from 'next/server';
-
-export const maxDuration = 60;
-
-export async function POST(request) {
+import Anthropic from "@anthropic-ai/sdk";
+ 
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+ 
+export async function POST(req) {
   try {
-    const body = await request.json();
-    
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'web-search-2025-03-05',
-      },
-      body: JSON.stringify(body),
-    });
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const body = await req.json();
+    const { model, max_tokens, messages, tools } = body;
+ 
+    const params = {
+      model: model || "claude-sonnet-4-6",
+      max_tokens: max_tokens || 1000,
+      messages,
+    };
+    if (tools) params.tools = tools;
+ 
+    const response = await client.messages.create(params);
+    return Response.json(response);
+  } catch (err) {
+    console.error("API route error:", err);
+    return Response.json({ error: err.message }, { status: 500 });
   }
 }
+ 
