@@ -1,44 +1,24 @@
-import { NextResponse } from 'next/server';
-import chromium from '@sparticuz/chromium';
-import puppeteer from 'puppeteer-core';
-
-export const maxDuration = 60;
-
-export async function POST(request) {
-  let browser = null;
+import Anthropic from "@anthropic-ai/sdk";
+ 
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+ 
+export async function POST(req) {
   try {
-    const { html, width = 1080, height = 1080 } = await request.json();
-
-    browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: { width, height },
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-    });
-
-    const page = await browser.newPage();
-    await page.setViewport({ width, height });
-    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
-
-    // Wait for fonts to load
-    await page.evaluateHandle('document.fonts.ready');
-
-    const screenshot = await page.screenshot({
-      type: 'png',
-      clip: { x: 0, y: 0, width, height },
-      omitBackground: false,
-    });
-
-    await browser.close();
-
-    return new NextResponse(screenshot, {
-      headers: {
-        'Content-Type': 'image/png',
-        'Content-Length': screenshot.length.toString(),
-      },
-    });
-  } catch (error) {
-    if (browser) await browser.close().catch(() => {});
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const body = await req.json();
+    const { model, max_tokens, messages, tools } = body;
+ 
+    const params = {
+      model: model || "claude-sonnet-4-6",
+      max_tokens: max_tokens || 1000,
+      messages,
+    };
+    if (tools) params.tools = tools;
+ 
+    const response = await client.messages.create(params);
+    return Response.json(response);
+  } catch (err) {
+    console.error("API route error:", err);
+    return Response.json({ error: err.message }, { status: 500 });
   }
 }
+ 
