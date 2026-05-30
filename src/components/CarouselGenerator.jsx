@@ -675,7 +675,7 @@ Return ONLY valid JSON array:
       const angle = angles[Math.floor(Math.random()*angles.length)];
       const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:80, messages:[{ role:"user", content:`You are a creative director for social media. Give me ONE punchy Instagram carousel topic for a ${btLabel} whose audience is ${audDesc} — specifically about ${angle}. Voice: ${voiceProfile||"direct, honest, no hype"}. Make it specific, not generic. Return ONLY the topic, no explanation, no quotes, max 12 words.` }] });
       const idea = d.content?.find(b=>b.type==="text")?.text?.trim()||"";
-      if (idea) setTopic(idea);
+      if (idea) { const clean = idea.replace(/[*_]/g,'').replace(/^["']+|["']+$/g,'').trim(); setTopic(clean.length>80?clean.slice(0,77)+'...':clean); }
     } catch {}
     setRandomising(false);
   };
@@ -1032,7 +1032,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
     </div>
   );
 
-  const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"]];
+  const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"]];
 
   return (
     <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
@@ -1272,7 +1272,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <div style={{marginBottom:12}}>
               <label style={lbl}>Who is your audience?</label>
               <div style={{display:"flex",gap:8}}>
-                {[["customers","Their Customers"],["peers","Industry Peers"]].map(([id,label])=>(
+                {[["customers","Your Customers / Clients"],["peers","Industry Peers"]].map(([id,label])=>(
                   <button key={id} onClick={()=>setAudienceType(id)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${audienceType===id?A.text:A.border}`,background:audienceType===id?A.text:A.surface,color:audienceType===id?A.accentText:A.muted,fontSize:12,fontWeight:700}}>{label}</button>
                 ))}
               </div>
@@ -1293,7 +1293,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
             <div style={{marginBottom:16}}>
               <label style={lbl}>Angle <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional — what should this teach, challenge, or make people feel?)</span></label>
-              <input value={angle} onChange={e=>setAngle(e.target.value)} placeholder="e.g. Make them feel the pain before giving the fix" style={{...inp,fontSize:13}}/>
+              <input value={angle} onChange={e=>setAngle(e.target.value)} placeholder="e.g. Show the problem first, then give them the answer" style={{...inp,fontSize:13}}/>
             </div>
 
             <div style={{marginBottom:16}}>
@@ -1354,19 +1354,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               Generate Carousel →
             </button>
             <p style={{textAlign:"center",color:A.muted,fontSize:11,marginTop:10}}>⌘ + Enter · ~15–25 seconds</p>
-            <button onClick={()=>{
-              const mock=[
-                {tag:"THE HOOK",headline:"Most ad budgets don't fail. They leak.",body:"Small, invisible losses across targeting, creative, and timing quietly drain campaigns that look fine on the surface.",accent_word:"leak",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null},
-                {tag:"THE REAL NUMBERS",headline:"76% of ad spend never reaches the right audience.",body:"Studies show most digital budgets are lost to mismatched targeting and poor bidding. Most accounts are optimising for the wrong signal from day one.",accent_word:"76%",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null},
-                {tag:"THE PATTERN",headline:"Optimising bad creative just wastes money faster.",body:"A/B testing headlines on a weak offer doesn't fix the real problem. Creative is the variable most marketers over-invest in.",accent_word:"faster",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null},
-                {tag:"THE UNCOMFORTABLE TRUTH",headline:"Spending less per click isn't the goal.",body:"Low CPM with low intent means every conversion costs more anyway. The metric that matters is cost per actual customer.",accent_word:"goal",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null},
-                {tag:"THE BODY CAUSE",headline:"Bad targeting isn\'t the problem. Bad decisions before targeting are.",body:"Most budgets are wasted at the strategy layer — wrong objective, wrong funnel stage, wrong offer — before a single dollar is spent.",accent_word:"before",layout:"quote",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null},
-                {tag:"SMARTER SPEND",headline:"Better allocation beats bigger budgets.",body:"If this changed how you see your ad spend, there's more where that came from. Save this so you can come back to it.",accent_word:"allocation",layout:"hero",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:["Save this so you can come back to it"],cta:null},
-              ];
-              setSlides(mock);setActive(0);setView("preview");setLastTopic("Mock preview");
-            }} style={{width:"100%",padding:"11px",background:"transparent",color:A.muted,borderRadius:10,fontSize:13,fontWeight:600,border:`1.5px solid ${A.border}`,marginTop:8}}>
-              Preview Layout (no API)
-            </button>
           </div>
         )}
 
@@ -1686,6 +1673,50 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           </div>
         )}
       </div>
+
+        {nav==="help"&&(
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:560,margin:"0 auto"}}>
+            <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Help & Support</h2>
+
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24,marginBottom:16}}>
+              <p style={{fontSize:14,lineHeight:1.8,color:A.text,margin:"0 0 16px"}}>
+                Built this because I needed it. Spent too long copying and pasting into Canva and getting inconsistent results. Carousel Studio is my answer to that — and I hope it saves you the same frustration.
+              </p>
+              <p style={{fontSize:14,fontWeight:700,color:A.text,margin:0}}>— Tav</p>
+            </div>
+
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24,marginBottom:16}}>
+              <label style={lbl}>Find me here</label>
+              <div style={{display:"flex",flexDirection:"column",gap:10,marginTop:8}}>
+                {[
+                  ["Website","www.buildwithtav.co","https://www.buildwithtav.co"],
+                  ["Instagram","@buildwithtav","https://www.instagram.com/buildwithtav"],
+                  ["TikTok","@buildwithtav","https://www.tiktok.com/@buildwithtav"],
+                  ["YouTube","@buildwithtav","https://www.youtube.com/@buildwithtav"],
+                ].map(([platform,handle,url])=>(
+                  <a key={platform} href={url} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:A.bg,borderRadius:9,border:`1.5px solid ${A.border}`,textDecoration:"none"}}>
+                    <span style={{fontWeight:700,fontSize:13,color:A.text}}>{platform}</span>
+                    <span style={{color:GOLD,fontSize:12,fontWeight:700}}>{handle}</span>
+                  </a>
+                ))}
+                <a href="mailto:tav@buildwithtav.co" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:A.bg,borderRadius:9,border:`1.5px solid ${A.border}`,textDecoration:"none"}}>
+                  <span style={{fontWeight:700,fontSize:13,color:A.text}}>Email</span>
+                  <span style={{color:GOLD,fontSize:12,fontWeight:700}}>tav@buildwithtav.co</span>
+                </a>
+              </div>
+            </div>
+
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24}}>
+              <label style={lbl}>Found a bug?</label>
+              <p style={{fontSize:13,lineHeight:1.7,color:A.muted,margin:"8px 0 14px"}}>
+                Email me a screenshot and description at <a href="mailto:tav@buildwithtav.co" style={{color:GOLD,fontWeight:700,textDecoration:"none"}}>tav@buildwithtav.co</a> — I read every one and reply when it is fixed so you can get back to it.
+              </p>
+              <a href="mailto:tav@buildwithtav.co?subject=Carousel Studio Bug Report" style={{display:"block",textAlign:"center",padding:"11px",background:A.text,color:A.accentText,borderRadius:9,fontWeight:700,fontSize:13,textDecoration:"none"}}>
+                Report a Bug
+              </a>
+            </div>
+          </div>
+        )}
 
       <footer style={{borderTop:`1px solid ${A.border}`,padding:"14px 32px",textAlign:"center",marginTop:60}}>
         <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,fontWeight:700,textDecoration:"none",fontSize:12}}>Build with Tav</a>
