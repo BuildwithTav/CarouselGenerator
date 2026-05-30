@@ -605,7 +605,7 @@ export default function App() {
     const btLabel = businessType==="other"?(otherType||"brand"):btObj?.label||"Digital Marketer";
     const audienceDesc = audienceType==="peers" ? `other ${btLabel.toLowerCase()}s and industry professionals` : (btObj?.audience||"your target audience");
     const voice = voiceProfile || `Write for a ${btLabel}. Direct, specific, speak to real problems. No hype.`;
-    const inspiration = imgBase64 ? `\nINSPIRATION IMAGE: I've attached a screenshot of a carousel I like. Analyse the topic, hook angle and energy — then recreate it in my voice with fresh content. Don't copy, just match the quality and angle.` : "";
+    const inspiration = imgBase64 ? `\nINSPIRATION IMAGE: Read all the text visible in this image. Extract the core topic and key message. Use that as your brief — same subject and angle, but written entirely in my voice with fresh copy. Do not reproduce any text directly.` : "";
     const styles = [
       "myth-busting: challenge a common belief head-on, use data or logic to flip it",
       "story-driven: open with a relatable scenario, build tension, then resolve with insight",
@@ -661,7 +661,7 @@ Return ONLY valid JSON array:
         role: "user",
         content: inspirationImg
           ? [
-              { type:"image", source:{ type:"base64", media_type:"image/jpeg", data: inspirationImg.split(",")[1] }},
+              { type:"image", source:{ type:"base64", media_type:(inspirationImg.match(/data:(image\/[a-z]+);/)?.[1]||"image/jpeg"), data: inspirationImg.split(",")[1] }},
               { type:"text", text: buildPrompt(t, inspirationImg) }
             ]
           : buildPrompt(t, null)
