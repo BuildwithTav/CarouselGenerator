@@ -192,6 +192,9 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     .div { width:80px; height:1.5px; background:${C.accent}; opacity:0.5; margin:0 auto; position:relative; }
     .div::after { content:''; position:absolute; top:-4px; left:50%;
       transform:translateX(-50%) rotate(45deg); width:10px; height:10px; background:${C.accent}; opacity:0.9; }
+    .deco { position:absolute; bottom:${isPortrait?140:100}px; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:16px; pointer-events:none; z-index:2; opacity:0.25; }
+    .deco-line { height:1px; width:${isPortrait?120:80}px; background:${C.accent}; }
+    .deco-diamond { width:6px; height:6px; background:${C.accent}; transform:rotate(45deg); flex-shrink:0; }
   `;
 
   const layouts = {
@@ -364,6 +367,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   </div>`}
   ${showNums===true?`<div class="wm">${String(idx+1).padStart(2,"0")}</div><div class="cnt">${idx+1} / ${total}</div>`:""}
   ${layoutHTML()}
+  ${isCover?"":"<div class=\"deco\"><div class=\"deco-line\"></div><div class=\"deco-diamond\"></div><div class=\"deco-line\"></div></div>"}
   ${websiteUrl?`<div class="site">${esc(websiteUrl)}</div>`:""}
 </div>
 </body></html>`;
@@ -570,12 +574,22 @@ export default function App() {
     const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
     const voice = voiceProfile || `Write for a ${btLabel}. Direct, specific, speak to real problems. No hype.`;
     const inspiration = imgBase64 ? `\nINSPIRATION IMAGE: I've attached a screenshot of a carousel I like. Analyse the topic, hook angle and energy — then recreate it in my voice with fresh content. Don't copy, just match the quality and angle.` : "";
+    const styles = [
+      "myth-busting: challenge a common belief head-on, use data or logic to flip it",
+      "story-driven: open with a relatable scenario, build tension, then resolve with insight",
+      "contrarian: take the position most people disagree with and defend it with evidence",
+      "data-driven: lead with a surprising stat or number on every slide, back every claim",
+      "step-by-step: practical, sequential, each slide one concrete action",
+      "empathetic: speak directly to the frustration, validate it, then reframe it",
+    ];
+    const style = styles[Math.floor(Math.random()*styles.length)];
     return `You are creating an Instagram carousel for a ${btLabel}.
 You are the copywriter AND creative director. Every slide must earn its place.
 
 VOICE: ${voice}
 TOPIC: "${topicStr}"${inspiration}
 SLIDES: ${slideCount}
+NARRATIVE STYLE: ${style}
 
 NARRATIVE ARC: hook → reality → insight → shift → advice → CTA
 
@@ -639,7 +653,9 @@ Return ONLY valid JSON array:
     setRandomising(true);
     const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
     try {
-      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:80, messages:[{ role:"user", content:`Give me ONE punchy Instagram carousel topic idea for a ${btLabel}. Voice profile: ${voiceProfile||"direct, honest, no hype"}. Return ONLY the topic, no explanation, no quotes, max 12 words.` }] });
+      const angles = ["a surprising myth to bust","a counterintuitive truth most people get wrong","a specific mistake that costs people money or time","a data point that would shock most people","a common belief that is completely backwards","a simple shift that changes everything","something everyone does that quietly holds them back","a question nobody is asking but should be"];
+      const angle = angles[Math.floor(Math.random()*angles.length)];
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:80, messages:[{ role:"user", content:`You are a creative director for social media. Give me ONE punchy Instagram carousel topic for a ${btLabel} — specifically about ${angle}. Voice: ${voiceProfile||"direct, honest, no hype"}. Make it specific, not generic. Return ONLY the topic, no explanation, no quotes, max 12 words.` }] });
       const idea = d.content?.find(b=>b.type==="text")?.text?.trim()||"";
       if (idea) setTopic(idea);
     } catch {}
