@@ -233,7 +233,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       .cs { font-size:${isPortrait?20:16}px; color:${C.sub}; margin-top:2px; font-family:'${bodyFont}',sans-serif; }
     `,
     quote: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
 
       .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-style:italic; font-family:'${hlFont}',sans-serif; }
       .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
@@ -328,7 +328,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
     if (layout==="quote") {
       return `<div class="c">
-        ${tag}<div class="hl">&#8220;${hl}&#8221;</div>
+        ${tag}<div class="hl">${hl}</div>
         ${slide.body?divider+body:""}
       </div>`;
     }
@@ -367,7 +367,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   </div>`}
   ${showNums===true?`<div class="wm">${String(idx+1).padStart(2,"0")}</div><div class="cnt">${idx+1} / ${total}</div>`:""}
   ${layoutHTML()}
-  ${isCover?"":"<div class=\"deco\"><div class=\"deco-line\"></div><div class=\"deco-diamond\"></div><div class=\"deco-line\"></div></div>"}
+  ${isCover?'':`<div class="deco"><div class="deco-line"></div><div class="deco-diamond"></div><div class="deco-line"></div></div>`}
   ${websiteUrl?`<div class="site">${esc(websiteUrl)}</div>`:""}
 </div>
 </body></html>`;
@@ -613,6 +613,7 @@ RULES:
 - No two consecutive slides same layout
 - Only final slide gets cta. All others cta is null.
 - No HTML, no cite tags, plain text only
+- NO invented statistics or fabricated data. If using a stat, only use well-known established facts. Otherwise frame as principle or observation.
 
 Return ONLY valid JSON array:
 [{"tag":"LABEL","headline":"text","body":"text","accent_word":"word","layout":"type","items":[],"vs_label":"VS","icon_symbol":"◆","cta_items":[],"cta":null}]`;
