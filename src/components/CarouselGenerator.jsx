@@ -541,7 +541,7 @@ export default function App() {
   const fetchWithRetry = async (body, tries=4) => {
     for (let i=0; i<=tries; i++) {
       try {
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
+        const res = await fetch("/api/generate", {
           method:"POST",
           headers:{"Content-Type":"application/json"},
           body:JSON.stringify(body)
@@ -998,7 +998,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           <span style={{fontSize:13,fontWeight:800,letterSpacing:-0.3}}>Carousel Studio</span>
           <span style={{fontSize:11,color:A.muted}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:2}}>
+        <div style={{display:"flex",alignItems:"stretch",gap:2,height:56}}>
           {NAV_ITEMS.map(([id,label])=>(
             <button key={id} onClick={()=>setNav(id)} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 16px",fontSize:13,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
               {label}
