@@ -146,8 +146,8 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const ts2 = C.dark || bgImageUrl ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : "";
 
   const BADGE_BOTTOM = 230;
-  const topPad = isPortrait ? 140 : 100;
-  const botPad = isPortrait ? 120 : 80;
+  const topPad = isPortrait ? 300 : 270;
+  const botPad = isPortrait ? 300 : 270;
 
   const base = `
     @import url('${gFonts}');
@@ -166,10 +166,10 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     .br { bottom:44px; right:52px; border-bottom:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:0.4; }
     .fade { position:absolute; bottom:0; left:0; right:0; height:45%; z-index:3; pointer-events:none;
       background:linear-gradient(to bottom,transparent,rgba(0,0,0,0.65)); }
-    .badge { display:inline-flex; align-items:center; gap:14px;
+    .badge { position:absolute; top:80px; left:80px; z-index:10;
+      display:inline-flex; align-items:center; gap:14px;
       background:${pillBg}; padding:10px 22px 10px 10px; border-radius:60px;
-      backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
-      margin-bottom:${isPortrait?32:24}px; flex-shrink:0; }
+      backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
     .av { width:110px; height:110px; border-radius:50%; border:3px solid ${C.accent};
       overflow:hidden; flex-shrink:0; background:${C.dark?"#1a1a1a":"#ddd"};
       display:flex; align-items:center; justify-content:center; position:relative; }
@@ -196,13 +196,13 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
   const layouts = {
     standard: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
       .hl { font-size:${isPortrait?96:80}px; font-weight:900; line-height:1.08; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; }
       .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; ${ts2} font-family:'${bodyFont}',sans-serif; }
       .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?28:24}px; font-weight:800; color:${C.accent}; font-family:'${bodyFont}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; }
     `,
     statement: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 70px ${botPad}px; text-align:center; overflow:hidden; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 70px ${botPad}px; text-align:center; overflow:hidden; }
       .hl { font-size:${isPortrait?116:98}px; font-weight:900; line-height:1.0; letter-spacing:${hs.id==="upper"?"2px":"-2px"}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; }
       .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
     `,
@@ -230,7 +230,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       .cs { font-size:${isPortrait?20:16}px; color:${C.sub}; margin-top:2px; font-family:'${bodyFont}',sans-serif; }
     `,
     quote: `
-      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 110px ${botPad+40}px; text-align:center; overflow:hidden; }
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 110px ${botPad+40}px; text-align:center; overflow:hidden; }
       .qm { font-size:260px; font-weight:900; color:${C.accent}20; line-height:0.65; font-family:'${hlFont}',sans-serif; margin-bottom:-20px; flex-shrink:0; }
       .hl { font-size:${isPortrait?96:84}px; font-weight:900; line-height:1.06; letter-spacing:${hs.letterSpacing}; ${ts} font-style:${hs.id==="serif"?"italic":"normal"}; font-family:'${hlFont}',sans-serif; }
       .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
@@ -291,7 +291,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     if (layout==="split" && slide.items?.length >= 2) {
       const [a,b] = slide.items;
       return `<div class="c">
-        ${badgeHTML}<div class="split-top">
+        <div class="split-top">
           ${slide.tag ? `<div style="margin-bottom:16px"><span class="split-tag">${esc(slide.tag.toUpperCase())}</span></div>` : ""}
           <div class="split-hl">${hl}</div>
         </div>
@@ -305,7 +305,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
     if (layout==="cards" && slide.items?.length) {
       return `<div class="c">
-        ${badgeHTML}${tag}<div class="hl">${hl}</div>
+        ${tag}<div class="hl">${hl}</div>
         <div class="cg">${slide.items.map((it,i)=>`
           <div class="card">
             <div class="cn">${String(i+1).padStart(2,"0")}</div>
@@ -318,7 +318,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     if (layout==="hero") {
       const ctaText = slide.cta_items?.[0] || slide.cta || "";
       return `<div class="c">
-        ${badgeHTML}${tag}${slide.icon_symbol?`<div class="hi"><span class="hs">${slide.icon_symbol}</span></div>`:""}
+        ${slide.icon_symbol?`<div class="hi"><span class="hs">${slide.icon_symbol}</span></div>`:""}
         ${tag}<div class="hl">${hl}</div>
         ${slide.body?divider+body:""}
         ${ctaText?`<div class="cb">${esc(ctaText)}</div>`:""}
@@ -327,14 +327,14 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
     if (layout==="quote") {
       return `<div class="c">
-        ${badgeHTML}${tag}<div class="qm">"</div>
-        <div class="hl">${hl}</div>
+        <div class="qm">"</div>
+        ${tag}<div class="hl">${hl}</div>
         ${slide.body?divider+body:""}
       </div>`;
     }
 
     const cta = slide.cta ? `<div class="cta">${esc(slide.cta)}</div>` : "";
-    return `<div class="c">${badgeHTML}${tag}<div class="hl">${hl}</div>${slide.body?divider+body:""}${cta}</div>`;
+    return `<div class="c">${tag}<div class="hl">${hl}</div>${slide.body?divider+body:""}${cta}</div>`;
   }
 
   const hasBg = !!bgImageUrl;
@@ -347,8 +347,6 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     ? `<img src="${profileUrl}" crossorigin="anonymous"/>`
     : `<div class="av-i">${esc((name||"?")[0].toUpperCase())}</div>`;
 
-  const badgeHTML = isCover ? "" : `<div class="badge"><div class="av">${avHtml}</div><div><div class="bn">${esc(name||"Your Brand")}${blueTick?' <span class="tick">✓</span>':""}</div><div class="bh">${esc(handle||"@yourhandle")}</div></div></div>`;
-
   const coverStyle = isCover ? coverLayouts[coverPos] || coverLayouts.centre : "";
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
@@ -360,7 +358,13 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   <div class="bk tl"></div><div class="bk tr"></div>
   <div class="bk bl"></div><div class="bk br"></div>
   ${C.dark||hasBg?'<div class="fade"></div>':""}
-
+  ${isCover ? "" : `<div class="badge">
+    <div class="av">${avHtml}</div>
+    <div>
+      <div class="bn">${esc(name||"Your Brand")}${blueTick?` <span class="tick">✓</span>`:""}</div>
+      <div class="bh">${esc(handle||"@yourhandle")}</div>
+    </div>
+  </div>`}
   ${showNums===true?`<div class="wm">${String(idx+1).padStart(2,"0")}</div><div class="cnt">${idx+1} / ${total}</div>`:""}
   ${layoutHTML()}
   ${websiteUrl?`<div class="site">${esc(websiteUrl)}</div>`:""}
@@ -389,7 +393,7 @@ function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover }) {
   return (
     <div onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#0A0A0A":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:previewW, height:previewH, flexShrink:0 }}>
       <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin" title={`slide-${idx+1}`}/>
-      <div style={{ position:"absolute", bottom:4, right:4, fontSize:10, color:"rgba(255,255,255,0.85)", background:"rgba(0,0,0,0.6)", padding:"2px 6px", borderRadius:4, fontWeight:700 }}>{idx+1}</div>
+
     </div>
   );
 }
