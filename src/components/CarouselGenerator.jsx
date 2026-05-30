@@ -605,7 +605,7 @@ export default function App() {
     const btLabel = businessType==="other"?(otherType||"brand"):btObj?.label||"Digital Marketer";
     const audienceDesc = audienceType==="peers" ? `other ${btLabel.toLowerCase()}s and industry professionals` : (btObj?.audience||"your target audience");
     const voice = voiceProfile || `Write for a ${btLabel}. Direct, specific, speak to real problems. No hype.`;
-    const inspiration = imgBase64 ? `\nINSPIRATION IMAGE: Read all the text visible in this image. Extract the core topic and key message. Use that as your brief — same subject and angle, but written entirely in my voice with fresh copy. Do not reproduce any text directly.` : "";
+    const inspiration = imgBase64 ? `\nINSPIRATION IMAGE: The topic has been extracted from the image and is shown above. Use that exact topic. Write the carousel entirely in my voice with fresh copy — do not reproduce any text from the image.` : "";
     const styles = [
       "myth-busting: challenge a common belief head-on, use data or logic to flip it",
       "story-driven: open with a relatable scenario, build tension, then resolve with insight",
@@ -699,6 +699,25 @@ Return ONLY valid JSON array:
       if (idea) { const clean = idea.replace(/[*_]/g,'').replace(/^["']+|["']+$/g,'').trim(); setTopic(clean.length>80?clean.slice(0,77)+'...':clean); }
     } catch {}
     setRandomising(false);
+  };
+
+  const extractTopicFromImage = async (imgBase64) => {
+    try {
+      const mediaType = imgBase64.match(/data:(image\/[a-z]+);/)?.[1] || "image/jpeg";
+      const d = await fetchWithRetry({
+        model: "claude-sonnet-4-6",
+        max_tokens: 60,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "image", source: { type: "base64", media_type: mediaType, data: imgBase64.split(",")[1] }},
+            { type: "text", text: "Read the text in this image. Extract the main topic or headline in 10 words or less. Return ONLY the topic, nothing else." }
+          ]
+        }]
+      });
+      const extracted = d.content?.find(b => b.type === "text")?.text?.replace(/[*_"]/g,"").trim() || "";
+      if (extracted) setTopic(extracted);
+    } catch(e) { console.error("Extract failed", e); }
   };
 
   const rewrite = async () => {
@@ -1332,7 +1351,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   : <span style={{fontSize:11,fontWeight:700,color:A.muted,background:A.bg,padding:"4px 10px",borderRadius:6,flexShrink:0}}>Upload ↑</span>
                 }
               </div>
-              <input ref={inspirationRef} type="file" accept="image/*" onChange={e=>readFile(e,url=>{setInspirationImg(url);setTopic("Recreating from uploaded screenshot...");setErr("");}) } style={{display:"none"}}/>
+              <input ref={inspirationRef} type="file" accept="image/*" onChange={e=>readFile(e,url=>{setInspirationImg(url);setTopic("Reading screenshot...");setErr("");extractTopicFromImage(url);}) } style={{display:"none"}}/>
             </div>
 
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
