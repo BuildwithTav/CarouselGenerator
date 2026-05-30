@@ -627,7 +627,7 @@ NARRATIVE STYLE: ${style}
 NARRATIVE ARC: hook → reality → insight → shift → advice → CTA
 
 LAYOUT SYSTEM:
-- "statement" — Bold headline, no body. ALWAYS use for slide 1. Make it provocative. Stop the scroll.
+- "statement" — ALWAYS slide 1. Big bold headline, short punchy body optional. Make it provocative. Stop the scroll.
 - "standard" — headline + body. Use for ALL middle slides. Body is where the value lives.
 - "hero" — headline + body + CTA. ALWAYS final slide. Add "cta_items":["one CTA only"].
 
@@ -641,8 +641,7 @@ RULES:
 - Tags: editorial and specific. NOT "HOOK", "SLIDE 1", "CTA"
 - Headlines: max 10 words. A clear statement, question, or insight. Think subheading not billboard.
 - Body: REQUIRED on every slide except hero. 1-2 sentences MAX. One sharp insight, specific stat, or actionable point. Make them think "I didn't know that" or "I'll try that." No fluff.
-- Final slide (hero) CTA: MUST have body text (1-2 sentences reinforcing why they should act — e.g. "If this changed how you see your budget, there's more where that came from." or "Most people scroll past. The ones who save it are the ones who act on it."). Then cta_items with ONE of: "Follow for more like this", "Save this so you can come back to it", "Share this with someone who needs to hear it", "Comment below — does this match your experience?", "Follow if this made you think differently". Never invent a download, product, or link.
-- No two consecutive slides same layout
+- Final slide (hero) CTA: MUST have body text (1-2 sentences reinforcing why they should act — e.g. "If this made you think differently, there is more where that came from." or "Most people scroll past. The ones who save it are the ones who act on it."). Then cta_items with ONE of: "Follow for more like this", "Save this so you can come back to it", "Share this with someone who needs to hear it", "Comment below — does this match your experience?", "Follow if this made you think differently". Never invent a download, product, or link.
 - Only final slide gets cta. All others cta is null.
 - No HTML, no cite tags, plain text only
 - NO invented statistics or fabricated data. Only use facts you are confident are accurate and well-established. If uncertain, frame as a principle, observation, or opinion — never as a stated fact. Every body text must be specific and genuinely useful, not a generic statement dressed as insight.
@@ -694,7 +693,7 @@ Return ONLY valid JSON array:
     try {
       const angles = ["a surprising myth to bust","a counterintuitive truth most people get wrong","a specific mistake that costs people money or time","a data point that would shock most people","a common belief that is completely backwards","a simple shift that changes everything","something everyone does that quietly holds them back","a question nobody is asking but should be"];
       const angle = angles[Math.floor(Math.random()*angles.length)];
-      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:80, messages:[{ role:"user", content:`You are a creative director for social media. Give me ONE punchy Instagram carousel topic for a ${btLabel} whose audience is ${audDesc} — specifically about ${angle}. Voice: ${voiceProfile||"direct, honest, no hype"}. Make it specific, not generic. Return ONLY the topic, no explanation, no quotes, max 12 words.` }] });
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:80, messages:[{ role:"user", content:`You are a creative director for social media. Give me ONE punchy Instagram carousel topic for a ${btLabel} whose audience is ${audDesc} — specifically about ${angle}. Voice: ${voiceProfile||"direct, honest, no hype"}. Make it specific, not generic. Never use asterisks or quotes. Return ONLY the topic, max 12 words.` }] });
       const idea = d.content?.find(b=>b.type==="text")?.text?.trim()||"";
       if (idea) { const clean = idea.replace(/[*_]/g,'').replace(/^["']+|["']+$/g,'').trim(); setTopic(clean.length>80?clean.slice(0,77)+'...':clean); }
     } catch {}
