@@ -237,8 +237,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     `,
     hero: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad+20}px 90px ${botPad+20}px; gap:24px; text-align:center; overflow:hidden; }
-      .hi { width:${isPortrait?190:170}px; height:${isPortrait?190:170}px; border-radius:50%; border:1.5px solid ${C.accent}40; background:${C.accent}12; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-      .hs { font-size:${isPortrait?110:100}px; line-height:1; }
+
       .hl { font-size:${isPortrait?90:78}px; font-weight:900; line-height:1.06; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; }
       .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; }
       .cb { width:100%; max-width:860px; padding:${isPortrait?30:24}px 50px; border-radius:12px; font-size:${isPortrait?28:24}px; font-weight:800; font-family:'${bodyFont}',sans-serif; text-align:center; background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
@@ -318,7 +317,6 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     if (layout==="hero") {
       const ctaText = slide.cta_items?.[0] || slide.cta || "";
       return `<div class="c">
-        ${slide.icon_symbol?`<div class="hi"><span class="hs">${slide.icon_symbol}</span></div>`:""}
         ${tag}<div class="hl">${hl}</div>
         ${slide.body?divider+body:""}
         ${ctaText?`<div class="cb">${esc(ctaText)}</div>`:""}
