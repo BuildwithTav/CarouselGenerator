@@ -157,7 +157,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     @import url('${gFonts}');
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
     html, body { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; }
-    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; outline:1.5px solid ${C.dark?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.12)"}; }
+    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; box-shadow:inset 0 0 0 3px ${C.dark?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.15)"}; }
     .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; object-position:${isCover?`${coverPos2.x}% ${coverPos2.y}%`:`${templatePos.x}% ${templatePos.y}%`}; }
     .bg-ov { position:absolute; inset:0; z-index:1; pointer-events:none; }
     .noise { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0.3;
@@ -361,17 +361,6 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   <div class="bk tl"></div><div class="bk tr"></div>
   <div class="bk bl"></div><div class="bk br"></div>
   ${C.dark||hasBg?'<div class="fade"></div>':""}
-  ${isCover ? `<div style="position:absolute;bottom:60px;right:60px;z-index:10;opacity:0.5;">
-    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M20 8C20 6.9 20.9 6 22 6C23.1 6 24 6.9 24 8V22" stroke="${C.accent}" stroke-width="2.5" stroke-linecap="round"/>
-      <path d="M24 14C24 12.9 24.9 12 26 12C27.1 12 28 12.9 28 14V22" stroke="${C.accent}" stroke-width="2.5" stroke-linecap="round"/>
-      <path d="M28 16C28 14.9 28.9 14 30 14C31.1 14 32 14.9 32 16V24" stroke="${C.accent}" stroke-width="2.5" stroke-linecap="round"/>
-      <path d="M16 18C16 16.9 16.9 16 18 16H20V30C20 30 19 32 16 32C13 32 12 28 14 24L13 22C12 20 12.9 18 14.5 18" stroke="${C.accent}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M32 22V28C32 33 28 36 24 36C20 36 16 33 16 28" stroke="${C.accent}" stroke-width="2.5" stroke-linecap="round"/>
-      <path d="M36 28L40 24" stroke="${C.accent}" stroke-width="2" stroke-linecap="round"/>
-      <path d="M34 30L40 30" stroke="${C.accent}" stroke-width="2" stroke-linecap="round"/>
-    </svg>
-  </div>` : ""}
   ${isCover ? "" : `<div class="badge">
     <div class="av">${avHtml}</div>
     <div>
