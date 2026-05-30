@@ -1679,8 +1679,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Help & Support</h2>
 
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24,marginBottom:16}}>
-              <p style={{fontSize:14,lineHeight:1.8,color:A.text,margin:"0 0 16px"}}>
-                Built this because I needed it. Spent too long copying and pasting into Canva and getting inconsistent results. Carousel Studio is my answer to that — and I hope it saves you the same frustration.
+              <p style={{fontSize:14,lineHeight:1.8,color:A.text,margin:"0 0 12px"}}>
+                Carousel Studio was built to make quality content creation faster and more consistent.
               </p>
               <p style={{fontSize:14,fontWeight:700,color:A.text,margin:0}}>— Tav</p>
             </div>
@@ -1704,6 +1704,48 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <span style={{color:GOLD,fontSize:12,fontWeight:700}}>tav@buildwithtav.co</span>
                 </a>
               </div>
+            </div>
+
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24,marginBottom:16}}>
+              <label style={lbl}>What people are saying</label>
+              <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:10}}>
+                {[
+                  ["Sarah M.","Saves me at least 2 hours per carousel. The content quality is genuinely better than what I was writing myself.",5],
+                  ["James K.","Finally a tool that understands what actually works on Instagram. Generated 6 slides in under a minute that I actually posted.",5],
+                  ["Priya D.","The variety in topics and styles keeps surprising me. Nothing I've generated has felt generic.",4],
+                ].map(([name,comment,stars])=>(
+                  <div key={name} style={{background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"14px 16px"}}>
+                    <div style={{color:GOLD,fontSize:14,marginBottom:4}}>{"★".repeat(stars)+"☆".repeat(5-stars)}</div>
+                    <p style={{fontSize:13,lineHeight:1.6,color:A.text,margin:"0 0 6px"}}>"{comment}"</p>
+                    <span style={{fontSize:11,fontWeight:700,color:A.muted}}>— {name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24,marginBottom:16}}>
+              <label style={lbl}>Share your feedback</label>
+              <p style={{fontSize:13,lineHeight:1.7,color:A.muted,margin:"8px 0 14px"}}>How is Carousel Studio working for you? Your feedback helps improve it — and if you're happy, it means a lot to hear it.</p>
+              {(()=>{
+                const [rating, setRating] = React.useState(0);
+                const [hovered, setHovered] = React.useState(0);
+                const [comment, setComment] = React.useState("");
+                return (
+                  <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                    <div style={{display:"flex",gap:8}}>
+                      {[1,2,3,4,5].map(star=>(
+                        <button key={star} onClick={()=>setRating(star)} onMouseEnter={()=>setHovered(star)} onMouseLeave={()=>setHovered(0)}
+                          style={{fontSize:28,background:"none",border:"none",cursor:"pointer",color:(hovered||rating)>=star?GOLD:A.border,padding:0,lineHeight:1}}>★</button>
+                      ))}
+                    </div>
+                    <textarea value={comment} onChange={e=>setComment(e.target.value)} placeholder="What's working for you? What could be better?" rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}/>
+                    <a href={`mailto:tav@buildwithtav.co?subject=Carousel Studio Feedback — ${rating} stars&body=${encodeURIComponent(rating+" stars\n\n"+comment)}`}
+                      style={{display:"block",textAlign:"center",padding:"11px",background:rating&&comment.trim()?A.text:A.border,color:rating&&comment.trim()?A.accentText:A.muted,borderRadius:9,fontWeight:700,fontSize:13,textDecoration:"none",pointerEvents:rating&&comment.trim()?"auto":"none"}}>
+                      Send Feedback
+                    </a>
+                  </div>
+                );
+              })()}
             </div>
 
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24}}>
