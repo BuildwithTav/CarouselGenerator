@@ -146,8 +146,8 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const ts2 = C.dark || bgImageUrl ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : "";
 
   const BADGE_BOTTOM = 230;
-  const topPad = BADGE_BOTTOM + 40;
-  const botPad = BADGE_BOTTOM + 40;
+  const topPad = isPortrait ? 280 : 220;
+  const botPad = isPortrait ? 160 : 100;
 
   const base = `
     @import url('${gFonts}');
@@ -393,7 +393,7 @@ function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover }) {
   return (
     <div onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#0A0A0A":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:previewW, height:previewH, flexShrink:0 }}>
       <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin" title={`slide-${idx+1}`}/>
-      <div style={{ position:"absolute", bottom:4, right:4, fontSize:10, color:"rgba(255,255,255,0.85)", background:"rgba(0,0,0,0.6)", padding:"2px 6px", borderRadius:4, fontWeight:700 }}>{idx+1}</div>
+
     </div>
   );
 }
@@ -998,17 +998,21 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           <span style={{fontSize:13,fontWeight:800,letterSpacing:-0.3}}>Carousel Studio</span>
           <span style={{fontSize:11,color:A.muted}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
         </div>
-        <div style={{display:"flex",alignItems:"stretch",gap:0,height:56,flexWrap:"nowrap",overflow:"visible"}}>
+        <div style={{display:"flex",alignItems:"stretch",gap:0}}>
+        <div style={{display:"flex",alignItems:"stretch",height:56}}>
           {NAV_ITEMS.map(([id,label])=>(
-            <button key={id} onClick={()=>setNav(id)} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 14px",fontSize:13,fontWeight:nav===id?700:500,height:"100%",display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0,boxSizing:"border-box"}}>
+            <button key={id} onClick={()=>setNav(id)} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 14px",fontSize:13,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
               {label}
             </button>
           ))}
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:6,paddingLeft:12}}>
           {view==="preview"&&<>
-            <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"0 12px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:8,height:36,alignSelf:"center"}}>↺ Regenerate</button>
-            <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"0 12px",borderRadius:7,fontSize:12,fontWeight:600,height:36,alignSelf:"center"}}>← New</button>
+            <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>↺ Regenerate</button>
+            <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
           </>}
-          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"0 12px",borderRadius:7,fontSize:12,marginLeft:4,height:36,alignSelf:"center"}}>Reset</button>
+          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12}}>Reset</button>
+        </div>
         </div>
       </nav>
 
