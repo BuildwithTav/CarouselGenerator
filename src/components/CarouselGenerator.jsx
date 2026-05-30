@@ -91,15 +91,14 @@ async function sampleImageBrightness(imageUrl) {
 function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const {
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
-    coverImageUrl, coverPosition,
+    coverImageUrl, coverPosition, badgeArea,
     profileUrl, name, handle, blueTick, websiteUrl, showNums,
-    accentColor, ratio, coverImgPos, templateImgPos, alignment,
+    accentColor, ratio, coverImgPos, templateImgPos,
   } = opts;
   const coverPos2 = coverImgPos || {x:50,y:50};
   const templatePos = templateImgPos || {x:50,y:50};
-  const isLeft = !isCover && (alignment === "left");
 
-  const accent = accentColor || "#C9A84C";
+  const accent = accentColor || GOLD;
   const isDark = bgMode !== "light";
   const slideBg = bgMode === "light" ? "#F5F3EF" : "#0A0A0A";
   const C = {
@@ -110,21 +109,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     dark: isDark,
   };
 
-  const hs = [
-    { id:"bold", letterSpacing:"-1px", transform:"none" },
-    { id:"upper", letterSpacing:"1px", transform:"uppercase" },
-    { id:"serif", letterSpacing:"-0.5px", transform:"none", forceFont:"Playfair Display" },
-    { id:"minimal", letterSpacing:"0px", transform:"none" },
-  ].find(h => h.id === headlineStyle) || { id:"bold", letterSpacing:"-1px", transform:"none" };
-
-  const FONTS = [
-    { id:"montserrat", css:"Montserrat" },
-    { id:"playfair", css:"Playfair Display" },
-    { id:"poppins", css:"Poppins" },
-    { id:"inter", css:"Inter" },
-    { id:"oswald", css:"Oswald" },
-    { id:"dancing", css:"Dancing Script" },
-  ];
+  const hs = HEADLINE_STYLES.find(h => h.id === headlineStyle) || HEADLINE_STYLES[0];
   const baseFontObj = FONTS.find(f => f.id === fontId) || FONTS[0];
   const hlFont = hs.forceFont || baseFontObj.css;
   const bodyFont = baseFontObj.css;
@@ -132,22 +117,14 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const isPortrait = ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1350;
   const layout = slide.layout || "standard";
+
   const bgImageUrl = isCover ? coverImageUrl : (bgMode === "custom" ? templateBgUrl : null);
-  const hasBg = !!bgImageUrl;
 
-  const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&family=Dancing+Script:wght@600;700&display=swap`;
-  const ts = C.dark || hasBg ? "text-shadow:0 2px 28px rgba(0,0,0,0.95);" : "";
-  const ts2 = C.dark || hasBg ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : "";
-
-  const topPad = isPortrait ? 220 : 180;
-  const sidePad = 80;
-  const alignStyle = isLeft ? "flex-start" : "center";
-  const textAlignStyle = isLeft ? "left" : "center";
-
-  // Badge colours — no pill, just clean text
-  const badgeNameC = C.dark || hasBg ? "#FFFFFF" : "#0A0A0A";
-  const badgeHandleC = C.dark || hasBg ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)";
-  const badgeShadow = hasBg ? "text-shadow:0 1px 8px rgba(0,0,0,0.9);" : "";
+  const pillBg = bgImageUrl
+    ? badgeArea === "light" ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.58)"
+    : C.dark ? "rgba(0,0,0,0.62)" : "rgba(255,255,255,0.88)";
+  const pillText = bgImageUrl || C.dark ? "#fff" : "#111";
+  const pillSub = bgImageUrl || C.dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)";
 
   function esc(s) { return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
@@ -159,181 +136,234 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     }
     const i = text.indexOf(aw);
     const before = hs.transform === "uppercase" ? text.slice(0,i).toUpperCase() : text.slice(0,i);
-    const accentW = hs.transform === "uppercase" ? aw.toUpperCase() : aw;
+    const accent = hs.transform === "uppercase" ? aw.toUpperCase() : aw;
     const after = hs.transform === "uppercase" ? text.slice(i+aw.length).toUpperCase() : text.slice(i+aw.length);
-    return `${esc(before)}<span style="color:${C.accent}">${esc(accentW)}</span>${esc(after)}`;
+    return `${esc(before)}<span style="color:${C.accent}">${esc(accent)}</span>${esc(after)}`;
   }
 
-  const avSize = isPortrait ? 90 : 80;
-  const avHTML = profileUrl
-    ? '<img src="' + profileUrl + '" crossorigin="anonymous" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;object-fit:cover;"/>'
-    : '<span style="font-size:' + (isPortrait?32:28) + 'px;font-weight:900;color:' + C.accent + ';font-family:\'' + hlFont + '\',sans-serif;">' + esc((name||"?")[0].toUpperCase()) + '</span>';
+  const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&family=Dancing+Script:wght@600;700&display=swap`;
+  const ts = C.dark || bgImageUrl ? "text-shadow:0 2px 28px rgba(0,0,0,0.95);" : "";
+  const ts2 = C.dark || bgImageUrl ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : "";
 
-  const badgeHTML = `
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:${isPortrait?36:28}px;flex-shrink:0;">
-      <div style="width:${avSize}px;height:${avSize}px;border-radius:50%;border:2.5px solid ${C.accent};overflow:hidden;flex-shrink:0;background:${C.dark?"#1a1a1a":"#ddd"};display:flex;align-items:center;justify-content:center;position:relative;">
-        ${avHTML}
+  const BADGE_BOTTOM = 230;
+  const topPad = isPortrait ? 140 : 100;
+  const botPad = isPortrait ? 120 : 80;
+
+  const base = `
+    @import url('${gFonts}');
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    html, body { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; }
+    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; }
+    .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; object-position:${isCover?`${coverPos2.x}% ${coverPos2.y}%`:`${templatePos.x}% ${templatePos.y}%`}; }
+    .bg-ov { position:absolute; inset:0; z-index:1; pointer-events:none; }
+    .noise { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0.3;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+      background-repeat:repeat; }
+    .bk { position:absolute; width:52px; height:52px; z-index:3; }
+    .tl { top:44px; left:52px; border-top:2.5px solid ${C.accent}; border-left:2.5px solid ${C.accent}; opacity:0.4; }
+    .tr { top:44px; right:52px; border-top:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:0.4; }
+    .bl { bottom:44px; left:52px; border-bottom:2.5px solid ${C.accent}; border-left:2.5px solid ${C.accent}; opacity:0.4; }
+    .br { bottom:44px; right:52px; border-bottom:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:0.4; }
+    .fade { position:absolute; bottom:0; left:0; right:0; height:45%; z-index:3; pointer-events:none;
+      background:linear-gradient(to bottom,transparent,rgba(0,0,0,0.65)); }
+    .badge { display:inline-flex; align-items:center; gap:14px;
+      background:${pillBg}; padding:10px 22px 10px 10px; border-radius:60px;
+      backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+      margin-bottom:${isPortrait?32:24}px; flex-shrink:0; }
+    .av { width:110px; height:110px; border-radius:50%; border:3px solid ${C.accent};
+      overflow:hidden; flex-shrink:0; background:${C.dark?"#1a1a1a":"#ddd"};
+      display:flex; align-items:center; justify-content:center; position:relative; }
+    .av img { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:100%; height:100%; object-fit:cover; }
+    .av-i { font-size:44px; font-weight:900; color:${C.accent}; font-family:'${hlFont}',sans-serif; }
+    .bn { font-size:22px; font-weight:800; color:${pillText}; line-height:1.2; font-family:'${bodyFont}',sans-serif; }
+    .bh { font-size:15px; color:${pillSub}; font-family:'${bodyFont}',sans-serif; }
+    .tick { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; background:#1D9BF0; border-radius:50%; font-size:10px; color:#fff; margin-left:5px; vertical-align:middle; }
+    .wm { position:absolute; bottom:28px; right:38px; z-index:3;
+      font-size:${Math.floor(H*0.18)}px; font-weight:900; line-height:1;
+      color:${C.dark?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.035)"};
+      font-family:'${hlFont}',sans-serif; pointer-events:none; user-select:none; }
+    .cnt { position:absolute; top:52px; right:60px; z-index:10;
+      font-size:14px; font-weight:700; color:${C.accent}88; font-family:'${bodyFont}',sans-serif; }
+    .site { position:absolute; bottom:28px; left:0; right:0; text-align:center; z-index:10;
+      font-size:17px; color:${C.dark?"rgba(255,255,255,0.28)":"rgba(0,0,0,0.25)"}; font-family:'${bodyFont}',sans-serif; }
+    .tag { display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"};
+      font-size:14px; font-weight:800; letter-spacing:2px;
+      padding:8px 24px; border-radius:60px; font-family:'${bodyFont}',sans-serif; }
+    .div { width:80px; height:1.5px; background:${C.accent}; opacity:0.5; margin:0 auto; position:relative; }
+    .div::after { content:''; position:absolute; top:-4px; left:50%;
+      transform:translateX(-50%) rotate(45deg); width:10px; height:10px; background:${C.accent}; opacity:0.9; }
+  `;
+
+  const layouts = {
+    standard: `
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
+      .hl { font-size:${isPortrait?96:80}px; font-weight:900; line-height:1.08; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; }
+      .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; ${ts2} font-family:'${bodyFont}',sans-serif; }
+      .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?28:24}px; font-weight:800; color:${C.accent}; font-family:'${bodyFont}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; }
+    `,
+    statement: `
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 70px ${botPad}px; text-align:center; overflow:hidden; }
+      .hl { font-size:${isPortrait?116:98}px; font-weight:900; line-height:1.0; letter-spacing:${hs.id==="upper"?"2px":"-2px"}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; }
+      .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
+    `,
+    split: `
+      .c { position:absolute; inset:0; z-index:5; overflow:hidden; }
+      .split-top { position:absolute; top:${isPortrait?400:260}px; left:60px; right:60px; text-align:center; z-index:4; }
+      .split-tag { display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"}; font-size:14px; font-weight:800; letter-spacing:2px; padding:8px 24px; border-radius:60px; font-family:'${bodyFont}',sans-serif; margin-bottom:16px; }
+      .split-hl { font-size:${isPortrait?68:52}px; font-weight:900; line-height:1.06; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; color:${C.text}; }
+      .split-panels { position:absolute; top:${isPortrait?660:490}px; left:0; right:0; bottom:60px; display:grid; grid-template-columns:1fr 1fr; z-index:3; }
+      .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 44px; text-align:center; gap:12px; overflow:hidden; }
+      .panel:first-child { background:${C.accent}10; border-right:1px solid ${C.accent}28; }
+      .pl { font-size:${isPortrait?44:36}px; font-weight:900; font-family:'${hlFont}',sans-serif; line-height:1.1; color:${C.text}; }
+      .pa { color:${C.accent}; }
+      .ps { font-size:${isPortrait?24:20}px; color:${C.sub}; font-family:'${bodyFont}',sans-serif; line-height:1.4; }
+      .vs { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:6; width:80px; height:80px; border-radius:50%; background:${C.bg}; border:1.5px solid ${C.accent}44; display:flex; align-items:center; justify-content:center; }
+      .vt { font-size:26px; font-weight:900; color:${C.accent}; font-family:'${bodyFont}',sans-serif; }
+    `,
+    cards: `
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; padding:${topPad}px 72px ${botPad}px; overflow:hidden; }
+      .hl { font-size:${isPortrait?82:64}px; font-weight:900; line-height:1.08; letter-spacing:${hs.letterSpacing}; ${ts} text-align:center; margin-bottom:4px; font-family:'${hlFont}',sans-serif; flex-shrink:0; }
+      .cg { width:100%; display:flex; flex-direction:column; gap:${isPortrait?14:9}px; margin-top:20px; overflow:hidden; }
+      .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:10px; padding:${isPortrait?22:14}px 24px; display:flex; align-items:flex-start; gap:16px; flex-shrink:0; }
+      .cn { font-size:${isPortrait?28:20}px; font-weight:900; color:${C.accent}; font-family:'${bodyFont}',sans-serif; flex-shrink:0; width:36px; line-height:1; }
+      .ct { font-size:${isPortrait?25:19}px; color:${C.text}; font-family:'${bodyFont}',sans-serif; line-height:1.35; font-weight:600; }
+      .cs { font-size:${isPortrait?20:16}px; color:${C.sub}; margin-top:2px; font-family:'${bodyFont}',sans-serif; }
+    `,
+    quote: `
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 110px ${botPad+40}px; text-align:center; overflow:hidden; }
+      .qm { font-size:260px; font-weight:900; color:${C.accent}20; line-height:0.65; font-family:'${hlFont}',sans-serif; margin-bottom:-20px; flex-shrink:0; }
+      .hl { font-size:${isPortrait?96:84}px; font-weight:900; line-height:1.06; letter-spacing:${hs.letterSpacing}; ${ts} font-style:${hs.id==="serif"?"italic":"normal"}; font-family:'${hlFont}',sans-serif; }
+      .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
+    `,
+    hero: `
+      .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad+20}px 90px ${botPad+20}px; gap:24px; text-align:center; overflow:hidden; }
+      .hi { width:${isPortrait?190:170}px; height:${isPortrait?190:170}px; border-radius:50%; border:1.5px solid ${C.accent}40; background:${C.accent}12; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+      .hs { font-size:${isPortrait?110:100}px; line-height:1; }
+      .hl { font-size:${isPortrait?90:78}px; font-weight:900; line-height:1.06; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; }
+      .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; }
+      .cb { width:100%; max-width:860px; padding:${isPortrait?30:24}px 50px; border-radius:12px; font-size:${isPortrait?28:24}px; font-weight:800; font-family:'${bodyFont}',sans-serif; text-align:center; background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
+    `,
+  };
+
+  const coverPos = coverPosition || "centre";
+
+  const coverBadgeHTML = `
+    <div style="display:inline-flex;align-items:center;gap:14px;background:${pillBg};padding:10px 22px 10px 10px;border-radius:60px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);margin-bottom:24px;">
+      <div style="width:80px;height:80px;border-radius:50%;border:3px solid ${C.accent};overflow:hidden;flex-shrink:0;background:${C.dark?"#1a1a1a":"#ddd"};display:flex;align-items:center;justify-content:center;position:relative;">
+        ${profileUrl?`<img src="${profileUrl}" crossorigin="anonymous" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;object-fit:cover;"/>`:`<span style="font-size:32px;font-weight:900;color:${C.accent};font-family:'${hlFont}',sans-serif;">${esc((name||"?")[0].toUpperCase())}</span>`}
       </div>
       <div>
-        <div style="font-size:${isPortrait?26:22}px;font-weight:800;color:${badgeNameC};line-height:1.2;font-family:'${bodyFont}',sans-serif;${badgeShadow}">${esc(name||"Your Brand")}${blueTick?' <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:#1D9BF0;border-radius:50%;font-size:10px;color:#fff;margin-left:5px;">✓</span>':""}</div>
-        <div style="font-size:${isPortrait?18:15}px;color:${badgeHandleC};font-family:'${bodyFont}',sans-serif;margin-top:2px;${badgeShadow}">${esc(handle||"@yourhandle")}</div>
+        <div style="font-size:20px;font-weight:800;color:${pillText};line-height:1.2;font-family:'${bodyFont}',sans-serif;">${esc(name||"Your Brand")}${blueTick?` <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:#1D9BF0;border-radius:50%;font-size:10px;color:#fff;margin-left:5px;">✓</span>`:""}</div>
+        <div style="font-size:15px;color:${pillSub};font-family:'${bodyFont}',sans-serif;">${esc(handle||"@yourhandle")}</div>
       </div>
     </div>`;
 
-  const tagHTML = slide.tag ? `
-    <div style="margin-bottom:${isPortrait?28:20}px;flex-shrink:0;">
-      <span style="display:inline-block;background:${C.accent};color:${C.dark?"#000":"#fff"};font-size:14px;font-weight:800;letter-spacing:2px;padding:8px 24px;border-radius:60px;font-family:'${bodyFont}',sans-serif;">${esc(slide.tag.toUpperCase())}</span>
-    </div>` : "";
-
-  const dividerHTML = `<div style="width:80px;height:1.5px;background:${C.accent};opacity:0.6;margin:${isPortrait?"28px 0":"22px 0"} ${isLeft?"":"auto"};position:relative;flex-shrink:0;"><div style="position:absolute;top:-4px;left:50%;transform:translateX(-50%) rotate(45deg);width:10px;height:10px;background:${C.accent};opacity:0.9;"></div></div>`;
-
-  const heroLineHTML = `<div style="width:${isLeft?"100px":"60px"};height:2px;background:${C.accent};opacity:0.7;margin:${isPortrait?"28px 0":"20px 0"} ${isLeft?"":"auto"};flex-shrink:0;"></div>`;
-
-  // Main content container style
-  const cStyle = `position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:${alignStyle};justify-content:flex-start;padding:${topPad}px ${sidePad}px 80px;text-align:${textAlignStyle};overflow:hidden;`;
+  const coverLayouts = {
+    top: `
+      .cover-content { position:absolute; top:${isPortrait?200:120}px; left:70px; right:70px; z-index:5; display:flex; flex-direction:column; align-items:center; text-align:center; }
+    `,
+    centre: `
+      .cover-content { position:absolute; top:50%; left:70px; right:70px; transform:translateY(-50%); z-index:5; display:flex; flex-direction:column; align-items:center; text-align:center; }
+    `,
+    bottom: `
+      .cover-content { position:absolute; bottom:${isPortrait?200:120}px; left:70px; right:70px; z-index:5; display:flex; flex-direction:column; align-items:center; text-align:center; }
+    `,
+  };
 
   function layoutHTML() {
     if (isCover) {
-      // Cover: badge flows with content, position controlled by coverPosition
-      const coverPos = coverPosition || "centre";
-      const coverPosStyle = {
-        top: `position:absolute;top:${isPortrait?160:100}px;left:70px;right:70px;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;`,
-        centre: `position:absolute;top:50%;left:70px;right:70px;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;`,
-        bottom: `position:absolute;bottom:${isPortrait?160:100}px;left:70px;right:70px;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;`,
-      }[coverPos] || `position:absolute;top:50%;left:70px;right:70px;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;`;
-
-      const coverBadge = `
-        <div style="display:inline-flex;align-items:center;gap:14px;margin-bottom:24px;">
-          <div style="width:80px;height:80px;border-radius:50%;border:3px solid ${C.accent};overflow:hidden;flex-shrink:0;background:${C.dark?"#1a1a1a":"#ddd"};display:flex;align-items:center;justify-content:center;position:relative;">
-            ${avHTML}
-          </div>
-          <div>
-            <div style="font-size:20px;font-weight:800;color:#fff;line-height:1.2;font-family:'${bodyFont}',sans-serif;text-shadow:0 1px 8px rgba(0,0,0,0.5);">${esc(name||"Your Brand")}${blueTick?' <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:#1D9BF0;border-radius:50%;font-size:10px;color:#fff;margin-left:5px;">✓</span>':""}</div>
-            <div style="font-size:15px;color:rgba(255,255,255,0.6);font-family:'${bodyFont}',sans-serif;">${esc(handle||"@yourhandle")}</div>
-          </div>
-        </div>`;
-
       const hl = accentHL(slide.headline||"");
-      return `<div style="${coverPosStyle}">
-        ${coverBadge}
-        ${slide.tag ? '<div style="margin-bottom:20px"><span style="display:inline-block;background:' + C.accent + ';color:' + (C.dark?"#000":"#fff") + ';font-size:14px;font-weight:800;letter-spacing:2px;padding:8px 24px;border-radius:60px;font-family:\''+ bodyFont +'\',sans-serif;">' + esc(slide.tag.toUpperCase()) + '</span></div>' : ""}
-        <div style="font-size:${isPortrait?110:90}px;font-weight:900;line-height:1.05;letter-spacing:${hs.letterSpacing};${ts}font-family:'${hlFont}',sans-serif;color:${C.text};text-align:center;width:100%;">${hl}</div>
-        ${slide.body ? '<div style="font-size:' + (isPortrait?32:26) + 'px;line-height:1.6;color:' + C.sub + ';margin-top:24px;font-family:\''+ bodyFont +'\',sans-serif;'+ ts2 +'text-align:center;">' + esc(slide.body) + '</div>' : ""}
-      </div>`;
+      const isCentre = coverPos === "centre";
+      return `
+        <div class="cover-content">
+          ${coverBadgeHTML}
+          ${slide.tag ? `<div style="margin-bottom:20px"><span class="tag">${esc(slide.tag.toUpperCase())}</span></div>` : ""}
+          <div style="font-size:${isPortrait?110:90}px;font-weight:900;line-height:1.05;letter-spacing:${hs.letterSpacing};${ts}font-family:'${hlFont}',sans-serif;color:${C.text};${isCentre?"text-align:center;":""}width:100%;">${hl}</div>
+          ${slide.body ? `<div style="font-size:${isPortrait?32:26}px;line-height:1.6;color:${C.sub};margin-top:24px;font-family:'${bodyFont}',sans-serif;${ts2}${isCentre?"text-align:center;":""}">${esc(slide.body)}</div>` : ""}
+        </div>`;
     }
 
     const hl = accentHL(slide.headline||"");
-    const body = slide.body ? `<div style="font-size:${isPortrait?32:28}px;line-height:1.65;color:${C.sub};max-width:860px;margin-top:${isPortrait?28:20}px;${ts2}font-family:'${bodyFont}',sans-serif;">${esc(slide.body)}</div>` : "";
+    const tag = slide.tag ? `<div style="margin-bottom:28px"><span class="tag">${esc(slide.tag.toUpperCase())}</span></div>` : "";
+    const divider = `<div class="div" style="margin:28px auto"></div>`;
+    const body = slide.body ? `<div class="body">${esc(slide.body)}</div>` : "";
 
-    // CARDS layout
-    if (layout==="cards" && slide.items?.length) {
-      return `<div style="${cStyle}">
-        ${badgeHTML}${tagHTML}
-        <div style="font-size:${isPortrait?72:58}px;font-weight:900;line-height:1.08;letter-spacing:${hs.letterSpacing};${ts}font-family:'${hlFont}',sans-serif;flex-shrink:0;margin-bottom:${isPortrait?24:16}px;">${hl}</div>
-        <div style="width:100%;display:flex;flex-direction:column;gap:${isPortrait?14:9}px;overflow:hidden;">
-          ${slide.items.map((it,i)=>`
-            <div style="background:${C.dark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.05)'};border:1px solid ${C.accent}28;border-radius:10px;padding:${isPortrait?22:14}px 24px;display:flex;align-items:flex-start;gap:16px;flex-shrink:0;">
-              <div style="font-size:${isPortrait?28:20}px;font-weight:900;color:${C.accent};font-family:'${bodyFont}',sans-serif;flex-shrink:0;width:36px;line-height:1;">${String(i+1).padStart(2,"0")}</div>
-              <div>
-                <div style="font-size:${isPortrait?25:19}px;color:${C.text};font-family:'${bodyFont}',sans-serif;line-height:1.35;font-weight:600;">${esc(it.label||it.text||it.title||it.point||it.content||Object.values(it).find(v=>typeof v==="string"&&v.length>2)||"")}</div>
-                ${(it.sub||it.description||it.body)?('<div style="font-size:'+(isPortrait?20:16)+'px;color:'+C.sub+';margin-top:2px;font-family:\''+ bodyFont +'\',sans-serif;">'+esc(it.sub||it.description||it.body)+'</div>'):""}
-              </div>
-            </div>`).join("")}
-        </div>
-      </div>`;
-    }
-
-    // SPLIT → stacked comparison (no split-screen)
     if (layout==="split" && slide.items?.length >= 2) {
       const [a,b] = slide.items;
-      return `<div style="${cStyle}">
-        ${badgeHTML}${tagHTML}
-        <div style="font-size:${isPortrait?72:58}px;font-weight:900;line-height:1.08;letter-spacing:${hs.letterSpacing};${ts}font-family:'${hlFont}',sans-serif;flex-shrink:0;margin-bottom:${isPortrait?32:24}px;">${hl}</div>
-        <div style="width:100%;display:flex;flex-direction:column;gap:0;overflow:hidden;">
-          <div style="padding:${isPortrait?28:20}px 0;border-bottom:1px solid ${C.accent}33;flex-shrink:0;">
-            <div style="font-size:${isPortrait?22:17}px;font-weight:800;color:${C.accent};font-family:'${bodyFont}',sans-serif;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">${esc(a.label||"Option A")}</div>
-            ${a.sub?('<div style="font-size:'+(isPortrait?28:22)+'px;font-weight:700;color:'+C.text+';font-family:\''+ hlFont +'\',sans-serif;line-height:1.3;">'+esc(a.sub)+'</div>'):""}
-          </div>
-          <div style="padding:${isPortrait?28:20}px 0;flex-shrink:0;">
-            <div style="font-size:${isPortrait?22:17}px;font-weight:800;color:${C.sub};font-family:'${bodyFont}',sans-serif;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">${esc(b.label||"Option B")}</div>
-            ${b.sub?('<div style="font-size:'+(isPortrait?28:22)+'px;font-weight:700;color:'+C.text+';font-family:\''+ hlFont +'\',sans-serif;line-height:1.3;opacity:0.7;">'+esc(b.sub)+'</div>'):""}
-          </div>
+      return `<div class="c">
+        ${badgeHTML}<div class="split-top">
+          ${slide.tag ? `<div style="margin-bottom:16px"><span class="split-tag">${esc(slide.tag.toUpperCase())}</span></div>` : ""}
+          <div class="split-hl">${hl}</div>
+        </div>
+        <div class="split-panels" style="position:relative">
+          <div class="panel"><div class="pl pa">${esc(a.label||"")}</div>${a.sub?`<div class="ps">${esc(a.sub)}</div>`:""}</div>
+          <div class="vs"><div class="vt">${esc(slide.vs_label||"VS")}</div></div>
+          <div class="panel"><div class="pl" style="opacity:0.75">${esc(b.label||"")}</div>${b.sub?`<div class="ps">${esc(b.sub)}</div>`:""}</div>
         </div>
       </div>`;
     }
 
-    // QUOTE layout
-    if (layout==="quote") {
-      return `<div style="${cStyle}">
-        ${badgeHTML}${tagHTML}
-        <div style="font-size:${isPortrait?140:110}px;font-weight:900;color:${C.accent}20;line-height:0.7;font-family:'${hlFont}',sans-serif;flex-shrink:0;">"</div>
-        <div style="font-size:${isPortrait?88:76}px;font-weight:900;line-height:1.06;letter-spacing:${hs.letterSpacing};${ts}font-style:italic;font-family:'${hlFont}',sans-serif;margin-top:-10px;">${hl}</div>
-        ${body}
+    if (layout==="cards" && slide.items?.length) {
+      return `<div class="c">
+        ${badgeHTML}${tag}<div class="hl">${hl}</div>
+        <div class="cg">${slide.items.map((it,i)=>`
+          <div class="card">
+            <div class="cn">${String(i+1).padStart(2,"0")}</div>
+            <div><div class="ct">${esc(it.label||it.text||it.title||it.point||it.content||Object.values(it).find(v=>typeof v==="string"&&v.length>2)||"")}</div>${(it.sub||it.description||it.body)?`<div class="cs">${esc(it.sub||it.description||it.body)}</div>`:""}</div>
+          </div>`).join("")}
+        </div>
       </div>`;
     }
 
-    // HERO layout — geometric line instead of icon
     if (layout==="hero") {
       const ctaText = slide.cta_items?.[0] || slide.cta || "";
-      return `<div style="${cStyle}">
-        ${badgeHTML}${tagHTML}
-        <div style="font-size:${isPortrait?90:78}px;font-weight:900;line-height:1.06;letter-spacing:${hs.letterSpacing};${ts}font-family:'${hlFont}',sans-serif;flex-shrink:0;">${hl}</div>
-        ${heroLineHTML}
-        ${body}
-        ${ctaText?('<div style="margin-top:'+(isPortrait?36:28)+'px;width:100%;max-width:860px;padding:'+(isPortrait?30:24)+'px 50px;border-radius:12px;font-size:'+(isPortrait?28:24)+'px;font-weight:800;font-family:\''+ bodyFont +'\',sans-serif;text-align:center;background:'+C.accent+';color:'+(C.dark?"#000":"#fff")+';flex-shrink:0;">'+esc(ctaText)+'</div>'):""}
+      return `<div class="c">
+        ${badgeHTML}${tag}${slide.icon_symbol?`<div class="hi"><span class="hs">${slide.icon_symbol}</span></div>`:""}
+        ${tag}<div class="hl">${hl}</div>
+        ${slide.body?divider+body:""}
+        ${ctaText?`<div class="cb">${esc(ctaText)}</div>`:""}
       </div>`;
     }
 
-    // STATEMENT layout
-    if (layout==="statement") {
-      return `<div style="${cStyle}">
-        ${badgeHTML}${tagHTML}
-        <div style="font-size:${isPortrait?116:98}px;font-weight:900;line-height:1.0;letter-spacing:${hs.id==="upper"?"2px":"-2px"};${ts}font-family:'${hlFont}',sans-serif;flex-shrink:0;">${hl}</div>
-        ${body}
+    if (layout==="quote") {
+      return `<div class="c">
+        ${badgeHTML}${tag}<div class="qm">"</div>
+        <div class="hl">${hl}</div>
+        ${slide.body?divider+body:""}
       </div>`;
     }
 
-    // STANDARD layout (default)
-    const cta = slide.cta ? `<div style="margin-top:36px;border:1px solid ${C.accent}44;background:${C.accent}16;padding:22px 60px;border-radius:8px;font-size:${isPortrait?28:24}px;font-weight:800;color:${C.accent};font-family:'${bodyFont}',sans-serif;width:100%;max-width:860px;text-align:center;flex-shrink:0;">${esc(slide.cta)}</div>` : "";
-    return `<div style="${cStyle}">
-      ${badgeHTML}${tagHTML}
-      <div style="font-size:${isPortrait?96:80}px;font-weight:900;line-height:1.08;letter-spacing:${hs.letterSpacing};${ts}font-family:'${hlFont}',sans-serif;flex-shrink:0;">${hl}</div>
-      ${body}${cta}
-    </div>`;
+    const cta = slide.cta ? `<div class="cta">${esc(slide.cta)}</div>` : "";
+    return `<div class="c">${badgeHTML}${tag}<div class="hl">${hl}</div>${slide.body?divider+body:""}${cta}</div>`;
   }
 
+  const hasBg = !!bgImageUrl;
   const overlayAlpha = (overlayDark||65)/100;
   const bgHtml = hasBg ? `
-    <img style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;object-position:${isCover?(coverPos2.x+"% "+coverPos2.y+"%"):(templatePos.x+"% "+templatePos.y+"%")};" src="${bgImageUrl}" crossorigin="anonymous"/>
-    <div style="position:absolute;inset:0;z-index:1;background:linear-gradient(to bottom,rgba(0,0,0,${Math.min(overlayAlpha*0.92,0.88)}) 0%,rgba(0,0,0,${Math.min(overlayAlpha*0.42,0.5)}) 40%,rgba(0,0,0,${Math.min(overlayAlpha*0.95,0.92)}) 100%);pointer-events:none;"></div>` : "";
+    <img class="bg-img" src="${bgImageUrl}" crossorigin="anonymous"/>
+    <div class="bg-ov" style="background:linear-gradient(to bottom,rgba(0,0,0,${Math.min(overlayAlpha*0.92,0.88)}) 0%,rgba(0,0,0,${Math.min(overlayAlpha*0.42,0.5)}) 40%,rgba(0,0,0,${Math.min(overlayAlpha*0.95,0.92)}) 100%)"></div>` : "";
 
-  const noiseHTML = C.dark||hasBg ? `<div style="position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0.3;background-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22300%22%20height%3D%22300%22%3E%3Cfilter%20id%3D%22n%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.75%22%20numOctaves%3D%224%22%20stitchTiles%3D%22stitch%22/%3E%3CfeColorMatrix%20type%3D%22saturate%22%20values%3D%220%22/%3E%3C/filter%3E%3Crect%20width%3D%22300%22%20height%3D%22300%22%20filter%3D%22url(%23n)%22%20opacity%3D%220.08%22/%3E%3C/svg%3E');background-repeat:repeat;"></div>` : "";
+  const avHtml = profileUrl
+    ? `<img src="${profileUrl}" crossorigin="anonymous"/>`
+    : `<div class="av-i">${esc((name||"?")[0].toUpperCase())}</div>`;
 
-  const cornersHTML = `
-    <div style="position:absolute;width:52px;height:52px;z-index:3;top:44px;left:52px;border-top:2.5px solid ${C.accent};border-left:2.5px solid ${C.accent};opacity:0.4;"></div>
-    <div style="position:absolute;width:52px;height:52px;z-index:3;top:44px;right:52px;border-top:2.5px solid ${C.accent};border-right:2.5px solid ${C.accent};opacity:0.4;"></div>
-    <div style="position:absolute;width:52px;height:52px;z-index:3;bottom:44px;left:52px;border-bottom:2.5px solid ${C.accent};border-left:2.5px solid ${C.accent};opacity:0.4;"></div>
-    <div style="position:absolute;width:52px;height:52px;z-index:3;bottom:44px;right:52px;border-bottom:2.5px solid ${C.accent};border-right:2.5px solid ${C.accent};opacity:0.4;"></div>`;
+  const badgeHTML = isCover ? "" : `<div class="badge"><div class="av">${avHtml}</div><div><div class="bn">${esc(name||"Your Brand")}${blueTick?' <span class="tick">✓</span>':""}</div><div class="bh">${esc(handle||"@yourhandle")}</div></div></div>`;
 
-  const fadeHTML = C.dark||hasBg ? `<div style="position:absolute;bottom:0;left:0;right:0;height:45%;z-index:3;pointer-events:none;background:linear-gradient(to bottom,transparent,rgba(0,0,0,0.65));"></div>` : "";
-
-  const numsHTML = showNums===true ? `
-    <div style="position:absolute;bottom:28px;right:38px;z-index:3;font-size:${Math.floor(H*0.18)}px;font-weight:900;line-height:1;color:${C.dark?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.035)"};font-family:'${hlFont}',sans-serif;pointer-events:none;user-select:none;">${String(idx+1).padStart(2,"0")}</div>
-    <div style="position:absolute;top:52px;right:60px;z-index:10;font-size:14px;font-weight:700;color:${C.accent}88;font-family:'${bodyFont}',sans-serif;">${idx+1} / ${total}</div>` : "";
-
-  const siteHTML = websiteUrl ? `<div style="position:absolute;bottom:28px;left:0;right:0;text-align:center;z-index:10;font-size:17px;color:${C.dark?"rgba(255,255,255,0.28)":"rgba(0,0,0,0.25)"};font-family:'${bodyFont}',sans-serif;">${esc(websiteUrl)}</div>` : "";
+  const coverStyle = isCover ? coverLayouts[coverPos] || coverLayouts.centre : "";
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
-<style>
-@import url('${gFonts}');
-*{box-sizing:border-box;margin:0;padding:0;}
-html,body{width:${W}px;height:${H}px;overflow:hidden;background:${slideBg};}
-</style>
+<style>${base}${isCover ? coverStyle : (layouts[layout]||layouts.standard)}</style>
 </head><body>
-<div style="width:${W}px;height:${H}px;overflow:hidden;background:${slideBg};position:relative;">
-  ${bgHtml}${noiseHTML}${cornersHTML}${fadeHTML}
+<div class="slide">
+  ${bgHtml}
+  ${C.dark||hasBg?'<div class="noise"></div>':""}
+  <div class="bk tl"></div><div class="bk tr"></div>
+  <div class="bk bl"></div><div class="bk br"></div>
+  ${C.dark||hasBg?'<div class="fade"></div>':""}
+
+  ${showNums===true?`<div class="wm">${String(idx+1).padStart(2,"0")}</div><div class="cnt">${idx+1} / ${total}</div>`:""}
   ${layoutHTML()}
-  ${numsHTML}${siteHTML}
+  ${websiteUrl?`<div class="site">${esc(websiteUrl)}</div>`:""}
 </div>
 </body></html>`;
 }
@@ -359,7 +389,7 @@ function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover }) {
   return (
     <div onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#0A0A0A":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:previewW, height:previewH, flexShrink:0 }}>
       <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin" title={`slide-${idx+1}`}/>
-
+      <div style={{ position:"absolute", bottom:4, right:4, fontSize:10, color:"rgba(255,255,255,0.85)", background:"rgba(0,0,0,0.6)", padding:"2px 6px", borderRadius:4, fontWeight:700 }}>{idx+1}</div>
     </div>
   );
 }
@@ -444,7 +474,6 @@ export default function App() {
   const [topic, setTopic] = useState("");
   const [inspirationImg, setInspirationImg] = useState(null);
   const [ratio, setRatio] = useState(S?.ratio||"instagram");
-  const [alignment, setAlignment] = useState(S?.alignment||"centre");
   const [slideCount, setSlideCount] = useState(6);
   const [err, setErr] = useState("");
   const [randomising, setRandomising] = useState(false);
@@ -475,9 +504,13 @@ export default function App() {
   const [quoteSlides, setQuoteSlides] = useState([]);
   const [downloadingQuotes, setDownloadingQuotes] = useState(false);
   const [slideOverlays, setSlideOverlays] = useState({});
-  const [coverImgPos] = useState({x:50,y:50});
-  const [templateImgPos] = useState({x:50,y:50});
+  const [coverImgPos, setCoverImgPos] = useState({x:50,y:50});
+  const [templateImgPos, setTemplateImgPos] = useState({x:50,y:50});
+  const [isDraggingCover, setIsDraggingCover] = useState(false);
+  const [isDraggingTemplate, setIsDraggingTemplate] = useState(false);
   const profileRef = useRef(null);
+  const coverDragRef = useRef(null);
+  const templateDragRef = useRef(null);
   const coverPhotoRef = useRef(null);
   const templateBgRef = useRef(null);
   const inspirationRef = useRef(null);
@@ -486,10 +519,10 @@ export default function App() {
   useEffect(() => {
     saveS({profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,fontId,headlineStyle,showNums,
-           bgMode,templateBgUrl,overlayDark,ratio,alignment});
+           bgMode,templateBgUrl,overlayDark,ratio});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,fontId,headlineStyle,showNums,
-      bgMode,templateBgUrl,overlayDark,ratio,alignment]);
+      bgMode,templateBgUrl,overlayDark,ratio]);
 
   const readFile = (e, cb) => {
     const f = e.target.files[0]; if (!f) return;
@@ -637,9 +670,9 @@ Return ONLY valid JSON array:
     coverImageUrl: activeCoverPhoto, coverPosition, badgeArea,
     profileUrl, name, handle, blueTick,
     websiteUrl: showWebsite?website:"",
-    showNums: showNums===true, ratio, accentColor, alignment,
+    showNums, ratio, accentColor,
     coverImgPos, templateImgPos,
-  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,alignment]);
+  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos]);
 
   const downloadOne = async (i) => {
     setDownloading(true);
@@ -889,7 +922,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 <div class="slide">
   ${hasBgImg?`<img class="bg-img" src="${quoteBgCustomUrl}" crossorigin="anonymous"/><div class="bg-ov"></div>`:""}
   ${tExtras}
-  
+  <div class="content">
     ${tmpl==="raw"?rawLabel:""}
     <div class="quote">&#8220;${escapedQuote}&#8221;</div>
     ${tDivider}
@@ -944,7 +977,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
   const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"]];
 
   return (
-    <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif",position:"relative"}}>
+    <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
         @keyframes spin{to{transform:rotate(360deg)}}
@@ -957,29 +990,29 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         ::placeholder{color:${A.muted};opacity:0.65}
       `}</style>
 
-      <nav style={{borderBottom:`1px solid ${A.border}`,padding:"0 32px",display:"flex",alignItems:"stretch",justifyContent:"flex-start",height:56,position:"sticky",top:0,background:`${A.bg}EE`,backdropFilter:"blur(20px)",zIndex:200,isolation:"isolate"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+      <nav style={{borderBottom:`1px solid ${A.border}`,padding:"0 32px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56,position:"sticky",top:0,background:`${A.bg}EE`,backdropFilter:"blur(20px)",zIndex:100}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
           <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,#1a1a1a,#2a2a2a)`,border:`1.5px solid ${GOLD}44`,display:"flex",alignItems:"center",justifyContent:"center"}}>
             <span style={{color:GOLD,fontSize:12,fontWeight:900}}>C</span>
           </div>
           <span style={{fontSize:13,fontWeight:800,letterSpacing:-0.3}}>Carousel Studio</span>
           <span style={{fontSize:11,color:A.muted}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:0,marginLeft:"auto"}}>
+        <div style={{display:"flex",alignItems:"center",gap:2}}>
           {NAV_ITEMS.map(([id,label])=>(
             <button key={id} onClick={()=>setNav(id)} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 14px",fontSize:13,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
               {label}
             </button>
           ))}
           {view==="preview"&&<>
-            <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"0 10px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:8,height:56,display:"flex",alignItems:"center"}}>↺ Regenerate</button>
-            <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"0 10px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:4,height:56,display:"flex",alignItems:"center"}}>← New</button>
+            <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:8}}>↺ Regenerate</button>
+            <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
           </>}
-          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"0 10px",borderRadius:7,fontSize:12,marginLeft:8,height:56,display:"flex",alignItems:"center"}}>Reset</button>
+          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4}}>Reset</button>
         </div>
       </nav>
 
-      <div style={{maxWidth:1200,margin:"0 auto",padding:"28px 24px",position:"relative",zIndex:1}}>
+      <div style={{maxWidth:1200,margin:"0 auto",padding:"28px 24px"}}>
 
         {nav==="quotes"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:640,margin:"0 auto"}}>
@@ -1228,6 +1261,18 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   {activeCoverPhoto && (
                     <div>
                       <div style={{fontSize:11,color:A.muted,marginTop:4,marginBottom:8}}>✓ Cover selected — manage photos in Brand settings</div>
+                      <label style={{...lbl,marginBottom:6}}>Reposition <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(drag)</span></label>
+                      <div
+                        ref={coverDragRef}
+                        onMouseDown={()=>setIsDraggingCover(true)}
+                        onMouseMove={e=>{if(isDraggingCover)handleDrag(e,setCoverImgPos,coverDragRef);}}
+                        onMouseUp={()=>setIsDraggingCover(false)}
+                        onMouseLeave={()=>setIsDraggingCover(false)}
+                        style={{width:"100%",height:100,borderRadius:8,overflow:"hidden",cursor:"crosshair",border:`1.5px solid ${A.border}`,position:"relative",userSelect:"none"}}
+                      >
+                        <img src={activeCoverPhoto} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:`${coverImgPos.x}% ${coverImgPos.y}%`,pointerEvents:"none"}}/>
+                        <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:16,height:16,borderRadius:"50%",border:"2px solid #fff",background:"rgba(0,0,0,0.4)",pointerEvents:"none"}}/>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1239,14 +1284,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <div style={{display:"flex",gap:6}}>
                     {[["instagram","Instagram 4:5"],["portrait","Stories 9:16"]].map(([id,label])=>(
                       <button key={id} onClick={()=>setRatio(id)} style={{flex:1,background:ratio===id?A.text:A.bg,border:`1.5px solid ${ratio===id?A.text:A.border}`,color:ratio===id?A.accentText:A.muted,padding:"7px 4px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label style={lbl}>Alignment</label>
-                  <div style={{display:"flex",gap:6}}>
-                    {[["centre","Centre"],["left","Left"]].map(([id,label])=>(
-                      <button key={id} onClick={()=>setAlignment(id)} style={{flex:1,background:alignment===id?A.text:A.bg,border:`1.5px solid ${alignment===id?A.text:A.border}`,color:alignment===id?A.accentText:A.muted,padding:"7px 4px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                     ))}
                   </div>
                 </div>
@@ -1315,11 +1352,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:12}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                    <div><div style={{fontWeight:600,fontSize:13}}>Blue tick</div><div style={{color:A.muted,fontSize:12}}>Verified badge on slides</div>
+                    <div><div style={{fontWeight:600,fontSize:13}}>Blue tick</div><div style={{color:A.muted,fontSize:12}}>Verified badge on slides</div></div>
                     {tog(blueTick,setBlueTick)}
                   </div>
                   <div style={{borderTop:`1px solid ${A.border}`,paddingTop:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                    <div><div style={{fontWeight:600,fontSize:13}}>Website on slides</div><div style={{color:A.muted,fontSize:12}}>Show URL at bottom</div>
+                    <div><div style={{fontWeight:600,fontSize:13}}>Website on slides</div><div style={{color:A.muted,fontSize:12}}>Show URL at bottom</div></div>
                     {tog(showWebsite,setShowWebsite)}
                   </div>
                   {showWebsite&&<input value={website} onChange={e=>setWebsite(e.target.value)} placeholder="www.yoursite.co" style={inp}/>}
@@ -1448,7 +1485,18 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       <div style={{marginTop:12}}>
                         <label style={lbl}>Overlay — {overlayDark}%</label>
                         <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{marginBottom:14}}/>
-
+                        <label style={{...lbl,marginBottom:6}}>Reposition background <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(drag)</span></label>
+                        <div
+                          ref={templateDragRef}
+                          onMouseDown={()=>setIsDraggingTemplate(true)}
+                          onMouseMove={e=>{if(isDraggingTemplate)handleDrag(e,setTemplateImgPos,templateDragRef);}}
+                          onMouseUp={()=>setIsDraggingTemplate(false)}
+                          onMouseLeave={()=>setIsDraggingTemplate(false)}
+                          style={{width:"100%",height:140,borderRadius:10,overflow:"hidden",cursor:"crosshair",border:`1.5px solid ${A.border}`,position:"relative",userSelect:"none",marginBottom:8}}
+                        >
+                          <img src={templateBgUrl} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:`${templateImgPos.x}% ${templateImgPos.y}%`,pointerEvents:"none"}}/>
+                          <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:16,height:16,borderRadius:"50%",border:"2px solid #fff",background:"rgba(0,0,0,0.4)",pointerEvents:"none"}}/>
+                        </div>
                         <label style={{...lbl,marginBottom:8}}>Preview — check safe zone</label>
                         <div style={{width:280,height:280*(1350/1080),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
                           <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts()} onClick={()=>{}} isActive={false} isCover={false}/>
@@ -1471,7 +1519,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <div><div style={{fontWeight:600,fontSize:13}}>Slide numbers</div><div style={{color:A.muted,fontSize:12}}>Watermark number on each slide</div>
+                <div><div style={{fontWeight:600,fontSize:13}}>Slide numbers</div><div style={{color:A.muted,fontSize:12}}>Watermark number on each slide</div></div>
                 {tog(showNums,setShowNums)}
               </div>
 
@@ -1490,7 +1538,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
         {nav==="generate"&&view==="preview"&&slides.length>0&&(
           <div style={{animation:"fadeUp 0.3s ease"}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,position:"relative",zIndex:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
               <span style={{fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:A.muted}}>Format:</span>
               {[["instagram","Instagram 4:5"],["portrait","Stories 9:16"]].map(([id,label])=>(
                 <button key={id} onClick={()=>setRatio(id)} style={{background:ratio===id?A.text:A.surface,border:`1.5px solid ${ratio===id?A.text:A.border}`,color:ratio===id?A.accentText:A.muted,padding:"5px 14px",borderRadius:7,fontSize:12,fontWeight:700}}>{label}</button>
@@ -1556,7 +1604,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18}}>
                   <label style={lbl}>AI Rewrite</label>
-                  <textarea value={rewritePrompt} onChange={e=>setRewritePrompt(e.target.value)} placeholder={`e.g. Make the headline more direct\nAdd a stat about income\nRewrite as a 3-point list`} rows={3} style={{...inp,resize:"vertical",lineHeight:1.5,marginBottom:10}}/>
+                  <textarea value={rewritePrompt} onChange={e=>setRewritePrompt(e.target.value)} placeholder={`"Make this punchier"\n"Add a specific stat"\n"Change to a split comparing X vs Y"`} rows={3} style={{...inp,resize:"vertical",lineHeight:1.5,marginBottom:10}}/>
                   <button onClick={rewrite} disabled={rewriting||!rewritePrompt.trim()} style={{width:"100%",background:rewritePrompt.trim()?A.text:A.border,color:rewritePrompt.trim()?A.accentText:A.muted,padding:"9px",borderRadius:8,fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
                     {rewriting?<><Spin/>Rewriting...</>:"Rewrite This Slide →"}
                   </button>
