@@ -716,7 +716,7 @@ Return ONLY valid JSON array:
         }]
       });
       const extracted = d.content?.find(b => b.type === "text")?.text?.replace(/[*_"]/g,"").trim() || "";
-      if (extracted) setTopic(extracted);
+      if (extracted) { setTopic(extracted); setInspirationImg(null); }
     } catch(e) { console.error("Extract failed", e); }
   };
 
