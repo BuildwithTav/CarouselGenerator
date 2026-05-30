@@ -453,6 +453,27 @@ function QuotePreview({ html, W, H, scale }) {
 
 // ─── APP ─────────────────────────────────────────────────
 
+function FeedbackForm({ A, inp, GOLD }) {
+  const [rating, setRating] = useState(0);
+  const [hovered, setHovered] = useState(0);
+  const [comment, setComment] = useState("");
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{display:"flex",gap:8}}>
+        {[1,2,3,4,5].map(star=>(
+          <button key={star} onClick={()=>setRating(star)} onMouseEnter={()=>setHovered(star)} onMouseLeave={()=>setHovered(0)}
+            style={{fontSize:28,background:"none",border:"none",cursor:"pointer",color:(hovered||rating)>=star?GOLD:A.border,padding:0,lineHeight:1}}>★</button>
+        ))}
+      </div>
+      <textarea value={comment} onChange={e=>setComment(e.target.value)} placeholder="What is working for you? What could be better?" rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}/>
+      <a href={`mailto:tav@buildwithtav.co?subject=Carousel Studio Feedback — ${rating} stars&body=${encodeURIComponent(rating+" stars\n\n"+comment)}`}
+        style={{display:"block",textAlign:"center",padding:"11px",background:rating&&comment.trim()?A.text:A.border,color:rating&&comment.trim()?A.accentText:A.muted,borderRadius:9,fontWeight:700,fontSize:13,textDecoration:"none",pointerEvents:rating&&comment.trim()?"auto":"none"}}>
+        Send Feedback
+      </a>
+    </div>
+  );
+}
+
 export default function App() {
   const S = loadS();
 
@@ -1281,7 +1302,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <div style={{marginBottom:16}}>
               <div style={{display:"flex",gap:8,marginBottom:8}}>
                 <input value={topic} onChange={e=>{setTopic(e.target.value);if(err)setErr("");}}
-                  placeholder={businessType==="fitness"?"e.g. Why most people quit the gym after 3 weeks":businessType==="beauty"?"e.g. Why clients don't rebook after their first visit":businessType==="restaurant"?"e.g. Why most cafés lose money on their most popular item":businessType==="realestate"?"e.g. Why most people buy in the wrong order":businessType==="ecommerce"?"e.g. Why your product page is losing sales silently":businessType==="coach"?"e.g. Why most clients don't get results from coaching":businessType==="other"?(otherType?"e.g. A common myth about "+otherType:"e.g. A common myth in your industry"):"e.g. Why your content gets views but zero clients"}
+                  placeholder={audienceType==="peers"?(businessType==="fitness"?"e.g. Why most PTs price themselves out of business":businessType==="beauty"?"e.g. Why most salons lose money on their best service":businessType==="restaurant"?"e.g. Why most restaurants fail in year two":businessType==="realestate"?"e.g. The mistake most agents make with new listings":businessType==="ecommerce"?"e.g. Why most product brands waste their ad budget":businessType==="coach"?"e.g. Why most coaches struggle to retain clients":businessType==="other"?(otherType?"e.g. A hard truth about "+otherType:"e.g. A hard truth most in your industry ignore"):"e.g. Why your content gets views but zero clients"):(businessType==="fitness"?"e.g. Why most people quit the gym after 3 weeks":businessType==="beauty"?"e.g. Why your skin actually needs less, not more":businessType==="restaurant"?"e.g. What really goes into your favourite dish":businessType==="realestate"?"e.g. What nobody tells you before buying your first home":businessType==="ecommerce"?"e.g. Why fast shipping matters more than price":businessType==="coach"?"e.g. Why mindset alone won't get you results":businessType==="other"?(otherType?"e.g. Something surprising about "+otherType:"e.g. Something your audience doesn't know yet"):"e.g. Why your content gets views but zero clients")}
                   style={{...inp,fontSize:15,fontWeight:500,flex:1,borderColor:err?"#c0392b":A.border}}
                   onKeyDown={e=>{if(e.key==="Enter"&&e.metaKey)generate();}}/>
                 <button onClick={randomiseTopic} disabled={randomising} title="Randomise topic" style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"0 16px",fontSize:18,color:A.muted,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:48}}>
@@ -1726,26 +1747,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24,marginBottom:16}}>
               <label style={lbl}>Share your feedback</label>
               <p style={{fontSize:13,lineHeight:1.7,color:A.muted,margin:"8px 0 14px"}}>How is Carousel Studio working for you? Your feedback helps improve it — and if you're happy, it means a lot to hear it.</p>
-              {(()=>{
-                const [rating, setRating] = React.useState(0);
-                const [hovered, setHovered] = React.useState(0);
-                const [comment, setComment] = React.useState("");
-                return (
-                  <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                    <div style={{display:"flex",gap:8}}>
-                      {[1,2,3,4,5].map(star=>(
-                        <button key={star} onClick={()=>setRating(star)} onMouseEnter={()=>setHovered(star)} onMouseLeave={()=>setHovered(0)}
-                          style={{fontSize:28,background:"none",border:"none",cursor:"pointer",color:(hovered||rating)>=star?GOLD:A.border,padding:0,lineHeight:1}}>★</button>
-                      ))}
-                    </div>
-                    <textarea value={comment} onChange={e=>setComment(e.target.value)} placeholder="What's working for you? What could be better?" rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}/>
-                    <a href={`mailto:tav@buildwithtav.co?subject=Carousel Studio Feedback — ${rating} stars&body=${encodeURIComponent(rating+" stars\n\n"+comment)}`}
-                      style={{display:"block",textAlign:"center",padding:"11px",background:rating&&comment.trim()?A.text:A.border,color:rating&&comment.trim()?A.accentText:A.muted,borderRadius:9,fontWeight:700,fontSize:13,textDecoration:"none",pointerEvents:rating&&comment.trim()?"auto":"none"}}>
-                      Send Feedback
-                    </a>
-                  </div>
-                );
-              })()}
+              <FeedbackForm A={A} inp={inp} GOLD={GOLD}/>
             </div>
 
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24}}>
