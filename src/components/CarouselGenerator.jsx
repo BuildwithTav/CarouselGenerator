@@ -166,7 +166,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     .br { bottom:44px; right:52px; border-bottom:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:0.4; }
     .fade { position:absolute; bottom:0; left:0; right:0; height:45%; z-index:3; pointer-events:none;
       background:linear-gradient(to bottom,transparent,rgba(0,0,0,0.65)); }
-    .badge { position:absolute; top:80px; left:80px; z-index:10;
+    .badge { position:absolute; top:120px; left:80px; z-index:10;
       display:inline-flex; align-items:center; gap:14px;
       background:${pillBg}; padding:10px 22px 10px 10px; border-radius:60px;
       backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
@@ -563,7 +563,7 @@ export default function App() {
     body: (s.body||"").replace(/<[^>]+>/g,"").trim(),
     accent_word: (s.accent_word||"").replace(/<[^>]+>/g,"").trim(),
     cta: (s.cta||"").replace(/<[^>]+>/g,"").trim()||null,
-    layout: ["statement","standard","quote","hero"].includes(s.layout) ? s.layout : "standard",
+    layout: ["statement","standard","hero"].includes(s.layout) ? s.layout : "standard",
     items: Array.isArray(s.items)?s.items:[],
     vs_label: s.vs_label||"VS",
     icon_symbol: s.icon_symbol||"◆",
@@ -596,7 +596,6 @@ NARRATIVE ARC: hook → reality → insight → shift → advice → CTA
 LAYOUT SYSTEM:
 - "statement" — Bold headline, no body. ALWAYS use for slide 1. Make it provocative. Stop the scroll.
 - "standard" — headline + body. Use for ALL middle slides. Body is where the value lives.
-- "quote" — headline wrapped in quote marks. For one powerful truth. Max one per carousel.
 - "hero" — headline + body + CTA. ALWAYS final slide. Add "cta_items":["one CTA only"].
 
 DO NOT use "split" or "cards" layouts. Write lists and comparisons as body text instead.
