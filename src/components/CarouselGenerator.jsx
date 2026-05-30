@@ -342,9 +342,10 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
   const hasBg = !!bgImageUrl;
   const overlayAlpha = (overlayDark||65)/100;
+  const coverOverlayAlpha = isCover ? Math.max(overlayAlpha, 0.55) : overlayAlpha;
   const bgHtml = hasBg ? `
     <img class="bg-img" src="${bgImageUrl}" crossorigin="anonymous"/>
-    <div class="bg-ov" style="background:linear-gradient(to bottom,rgba(0,0,0,${Math.min(overlayAlpha*0.92,0.88)}) 0%,rgba(0,0,0,${Math.min(overlayAlpha*0.42,0.5)}) 40%,rgba(0,0,0,${Math.min(overlayAlpha*0.95,0.92)}) 100%)"></div>` : "";
+    <div class="bg-ov" style="background:linear-gradient(to bottom,rgba(0,0,0,${Math.min((isCover?coverOverlayAlpha:overlayAlpha)*0.92,0.92)}) 0%,rgba(0,0,0,${Math.min((isCover?coverOverlayAlpha:overlayAlpha)*0.42,0.55)}) 40%,rgba(0,0,0,${Math.min((isCover?coverOverlayAlpha:overlayAlpha)*0.95,0.92)}) 100%)"></div>` : "";
 
   const avHtml = profileUrl
     ? `<img src="${profileUrl}" crossorigin="anonymous"/>`
@@ -360,7 +361,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   ${C.dark||hasBg?'<div class="noise"></div>':""}
   <div class="bk tl"></div><div class="bk tr"></div>
   <div class="bk bl"></div><div class="bk br"></div>
-  ${C.dark||hasBg?'<div class="fade"></div>':""}
+  ${C.dark||hasBg||bgMode==="colour"?'<div class="fade"></div>':""}
   ${isCover ? "" : `<div class="badge">
     <div class="av">${avHtml}</div>
     <div>
@@ -567,7 +568,7 @@ export default function App() {
     body: (s.body||"").replace(/<[^>]+>/g,"").trim(),
     accent_word: (s.accent_word||"").replace(/<[^>]+>/g,"").trim(),
     cta: (s.cta||"").replace(/<[^>]+>/g,"").trim()||null,
-    layout: ["statement","standard","hero"].includes(s.layout) ? s.layout : "standard",
+    layout: s.layout === "hero" ? "hero" : s.layout === "statement" ? "statement" : "standard",
     items: Array.isArray(s.items)?s.items:[],
     vs_label: s.vs_label||"VS",
     icon_symbol: s.icon_symbol||"◆",
@@ -643,7 +644,11 @@ Return ONLY valid JSON array:
       const clean = raw.replace(/<cite[^>]*>/g,"").replace(/<\/cite>/g,"").replace(/<[^>]+>/g,"");
       const m = clean.match(/\[[\s\S]*\]/);
       if (!m) throw new Error("no json");
-      const newSlides = JSON.parse(m[0]).map(sanitize);
+      const parsed = JSON.parse(m[0]).map(sanitize);
+      const newSlides = parsed.map((s, i) => ({
+        ...s,
+        layout: i === 0 ? "statement" : i === parsed.length - 1 ? "hero" : "standard"
+      }));
       setSlides(newSlides); setActive(0); setView("preview");
 
       const entry = { id: Date.now(), topic: t, slides: newSlides, date: new Date().toLocaleDateString() };
@@ -1261,44 +1266,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
               <div>
                 <label style={lbl}>Cover photo <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional)</span></label>
-                <div>
-                  {coverPhotos.length > 0 && (
-                    <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
-                      <div onClick={()=>setActiveCoverPhoto(null)} style={{width:48,height:48,borderRadius:6,border:`2px solid ${!activeCoverPhoto?A.text:A.border}`,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:A.bg}}>
-                        <span style={{fontSize:9,fontWeight:700,color:!activeCoverPhoto?A.text:A.muted,textAlign:"center",lineHeight:1.2}}>None</span>
-                      </div>
-                      {coverPhotos.map((p,i)=>(
-                        <div key={i} onClick={()=>{setActiveCoverPhoto(p);sampleImageBrightness(p).then(setBadgeArea);}} style={{width:48,height:48,borderRadius:6,overflow:"hidden",border:`2px solid ${activeCoverPhoto===p?A.text:A.border}`,cursor:"pointer",flexShrink:0}}>
-                          <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                        </div>
-                      ))}
-                      <div onClick={()=>coverPhotoRef.current?.click()} style={{width:48,height:48,borderRadius:6,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:20,flexShrink:0}}>+</div>
-                    </div>
-                  )}
-                  {coverPhotos.length === 0 && (
-                    <div style={{border:`1.5px dashed ${A.border}`,borderRadius:9,padding:"12px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
-                      <span style={{fontSize:12,color:A.muted,lineHeight:1.5}}>Save photos in <strong>Brand settings</strong> to build your library, or upload one now to use as your cover</span>
-                      <button onClick={()=>coverPhotoRef.current?.click()} style={{background:A.text,color:A.accentText,padding:"6px 12px",borderRadius:7,fontSize:11,fontWeight:700,flexShrink:0}}>Upload ↑</button>
-                    </div>
-                  )}
-                  {activeCoverPhoto && (
+                {activeCoverPhoto&&(()=>{
+                  const previewW=280, scale=previewW/1080;
+                  return (
                     <div>
-                      <div style={{fontSize:11,color:A.muted,marginTop:4,marginBottom:8}}>✓ Cover selected — manage photos in Brand settings</div>
-                      <label style={{...lbl,marginBottom:6}}>Reposition <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(drag)</span></label>
-                      <div
-                        ref={coverDragRef}
-                        onMouseDown={()=>setIsDraggingCover(true)}
-                        onMouseMove={e=>{if(isDraggingCover)handleDrag(e,setCoverImgPos,coverDragRef);}}
-                        onMouseUp={()=>setIsDraggingCover(false)}
-                        onMouseLeave={()=>setIsDraggingCover(false)}
-                        style={{width:"100%",height:100,borderRadius:8,overflow:"hidden",cursor:"crosshair",border:`1.5px solid ${A.border}`,position:"relative",userSelect:"none"}}
-                      >
-                        <img src={activeCoverPhoto} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:`${coverImgPos.x}% ${coverImgPos.y}%`,pointerEvents:"none"}}/>
-                        <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:16,height:16,borderRadius:"50%",border:"2px solid #fff",background:"rgba(0,0,0,0.4)",pointerEvents:"none"}}/>
+                      <label style={{...lbl,marginBottom:8}}>Cover preview</label>
+                      <div style={{width:previewW,height:Math.round(1350*scale),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                        <SlidePreview slide={{headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={0} total={1} opts={{...slideOpts(),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
                       </div>
                     </div>
-                  )}
-                </div>
+                  );
+                })()}
                 <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -1640,12 +1618,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       ))}
                     </div>
                   </div>
-                  {bgMode==="custom"&&templateBgUrl&&(
-                    <div>
-                      <label style={lbl}>Background overlay — {slideOverlays[active]??overlayDark}%</label>
-                      <input type="range" min={0} max={85} value={slideOverlays[active]??overlayDark} onChange={e=>setSlideOverlays(prev=>({...prev,[active]:+e.target.value}))}/>
-                    </div>
-                  )}
+                  <div>
+                    <label style={lbl}>Gradient strength — {slideOverlays[active]??overlayDark}%</label>
+                    <input type="range" min={0} max={85} value={slideOverlays[active]??overlayDark} onChange={e=>setSlideOverlays(prev=>({...prev,[active]:+e.target.value}))}/>
+                  </div>
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18}}>
                   <label style={lbl}>AI Rewrite</label>
