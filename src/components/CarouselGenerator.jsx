@@ -42,9 +42,10 @@ const BUSINESS_TYPES = [
 ];
 
 const BG_MODES = [
-  { id:"dark",   label:"Dark",   desc:"Dark with subtle texture" },
-  { id:"light",  label:"Light",  desc:"Clean light background" },
-  { id:"custom", label:"Custom", desc:"Upload your own image" },
+  { id:"dark",   label:"Dark",   desc:"Dark background" },
+  { id:"light",  label:"Light",  desc:"Light background" },
+  { id:"colour", label:"Colour", desc:"Pick any colour" },
+  { id:"custom", label:"Image",  desc:"Upload your own image" },
 ];
 
 const COVER_POSITIONS = [
@@ -93,14 +94,14 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
     coverImageUrl, coverPosition, badgeArea,
     profileUrl, name, handle, blueTick, websiteUrl, showNums,
-    accentColor, ratio, coverImgPos, templateImgPos,
+    accentColor, ratio, coverImgPos, templateImgPos, bgColour,
   } = opts;
   const coverPos2 = coverImgPos || {x:50,y:50};
   const templatePos = templateImgPos || {x:50,y:50};
 
   const accent = accentColor || GOLD;
   const isDark = bgMode !== "light";
-  const slideBg = bgMode === "light" ? "#F5F3EF" : "#0A0A0A";
+  const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : "#0A0A0A";
   const C = {
     bg: slideBg,
     accent,
@@ -125,6 +126,9 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     : C.dark ? "rgba(0,0,0,0.62)" : "rgba(255,255,255,0.88)";
   const pillText = bgImageUrl || C.dark ? "#fff" : "#111";
   const pillSub = bgImageUrl || C.dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)";
+  const badgeTextColor = C.dark || bgImageUrl ? "#FFFFFF" : "#0A0A0A";
+  const badgeSubColor = C.dark || bgImageUrl ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)";
+  const badgeTextShadow = bgImageUrl ? "text-shadow:0 1px 6px rgba(0,0,0,0.8);" : "";
 
   function esc(s) { return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
@@ -153,30 +157,29 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     @import url('${gFonts}');
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
     html, body { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; }
-    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; }
+    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; outline:1.5px solid ${C.dark?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.12)"}; }
     .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; object-position:${isCover?`${coverPos2.x}% ${coverPos2.y}%`:`${templatePos.x}% ${templatePos.y}%`}; }
     .bg-ov { position:absolute; inset:0; z-index:1; pointer-events:none; }
     .noise { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0.3;
       background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
       background-repeat:repeat; }
     .bk { position:absolute; width:52px; height:52px; z-index:3; }
-    .tl { top:44px; left:52px; border-top:2.5px solid ${C.accent}; border-left:2.5px solid ${C.accent}; opacity:0.4; }
-    .tr { top:44px; right:52px; border-top:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:0.4; }
-    .bl { bottom:44px; left:52px; border-bottom:2.5px solid ${C.accent}; border-left:2.5px solid ${C.accent}; opacity:0.4; }
-    .br { bottom:44px; right:52px; border-bottom:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:0.4; }
+    .tl { top:44px; left:52px; border-top:2.5px solid ${C.accent}; border-left:2.5px solid ${C.accent}; opacity:${C.dark?0.4:0.7}; }
+    .tr { top:44px; right:52px; border-top:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:${C.dark?0.4:0.7}; }
+    .bl { bottom:44px; left:52px; border-bottom:2.5px solid ${C.accent}; border-left:2.5px solid ${C.accent}; opacity:${C.dark?0.4:0.7}; }
+    .br { bottom:44px; right:52px; border-bottom:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:${C.dark?0.4:0.7}; }
     .fade { position:absolute; bottom:0; left:0; right:0; height:45%; z-index:3; pointer-events:none;
       background:linear-gradient(to bottom,transparent,rgba(0,0,0,0.65)); }
-    .badge { position:absolute; top:120px; left:80px; z-index:10;
+    .badge { position:absolute; top:158px; left:80px; z-index:10;
       display:inline-flex; align-items:center; gap:14px;
-      background:${pillBg}; padding:10px 22px 10px 10px; border-radius:60px;
-      backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+      background:transparent; padding:10px 0; }
     .av { width:110px; height:110px; border-radius:50%; border:3px solid ${C.accent};
       overflow:hidden; flex-shrink:0; background:${C.dark?"#1a1a1a":"#ddd"};
       display:flex; align-items:center; justify-content:center; position:relative; }
     .av img { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:100%; height:100%; object-fit:cover; }
     .av-i { font-size:44px; font-weight:900; color:${C.accent}; font-family:'${hlFont}',sans-serif; }
-    .bn { font-size:22px; font-weight:800; color:${pillText}; line-height:1.2; font-family:'${bodyFont}',sans-serif; }
-    .bh { font-size:15px; color:${pillSub}; font-family:'${bodyFont}',sans-serif; }
+    .bn { font-size:22px; font-weight:800; color:${badgeTextColor}; line-height:1.2; font-family:'${bodyFont}',sans-serif; ${badgeTextShadow} }
+    .bh { font-size:15px; color:${badgeSubColor}; font-family:'${bodyFont}',sans-serif; ${badgeTextShadow} }
     .tick { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; background:#1D9BF0; border-radius:50%; font-size:10px; color:#fff; margin-left:5px; vertical-align:middle; }
     .wm { position:absolute; bottom:28px; right:38px; z-index:3;
       font-size:${Math.floor(H*0.18)}px; font-weight:900; line-height:1;
@@ -358,6 +361,17 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   <div class="bk tl"></div><div class="bk tr"></div>
   <div class="bk bl"></div><div class="bk br"></div>
   ${C.dark||hasBg?'<div class="fade"></div>':""}
+  ${isCover ? `<div style="position:absolute;bottom:60px;right:60px;z-index:10;opacity:0.5;">
+    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 8C20 6.9 20.9 6 22 6C23.1 6 24 6.9 24 8V22" stroke="${C.accent}" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M24 14C24 12.9 24.9 12 26 12C27.1 12 28 12.9 28 14V22" stroke="${C.accent}" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M28 16C28 14.9 28.9 14 30 14C31.1 14 32 14.9 32 16V24" stroke="${C.accent}" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M16 18C16 16.9 16.9 16 18 16H20V30C20 30 19 32 16 32C13 32 12 28 14 24L13 22C12 20 12.9 18 14.5 18" stroke="${C.accent}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M32 22V28C32 33 28 36 24 36C20 36 16 33 16 28" stroke="${C.accent}" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M36 28L40 24" stroke="${C.accent}" stroke-width="2" stroke-linecap="round"/>
+      <path d="M34 30L40 30" stroke="${C.accent}" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </div>` : ""}
   ${isCover ? "" : `<div class="badge">
     <div class="av">${avHtml}</div>
     <div>
@@ -479,6 +493,7 @@ export default function App() {
   const [topic, setTopic] = useState("");
   const [inspirationImg, setInspirationImg] = useState(null);
   const [ratio, setRatio] = useState(S?.ratio||"instagram");
+  const [bgColour, setBgColour] = useState(S?.bgColour||"#1a1a2e");
   const [slideCount, setSlideCount] = useState(6);
   const [err, setErr] = useState("");
   const [randomising, setRandomising] = useState(false);
@@ -524,10 +539,10 @@ export default function App() {
   useEffect(() => {
     saveS({profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,fontId,headlineStyle,showNums,
-           bgMode,templateBgUrl,overlayDark,ratio});
+           bgMode,templateBgUrl,overlayDark,ratio,bgColour});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,fontId,headlineStyle,showNums,
-      bgMode,templateBgUrl,overlayDark,ratio]);
+      bgMode,templateBgUrl,overlayDark,ratio,bgColour]);
 
   const readFile = (e, cb) => {
     const f = e.target.files[0]; if (!f) return;
@@ -689,9 +704,9 @@ Return ONLY valid JSON array:
     coverImageUrl: activeCoverPhoto, coverPosition, badgeArea,
     profileUrl, name, handle, blueTick,
     websiteUrl: showWebsite?website:"",
-    showNums, ratio, accentColor,
+    showNums, ratio, accentColor, bgColour,
     coverImgPos, templateImgPos,
-  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos]);
+  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour]);
 
   const downloadOne = async (i) => {
     setDownloading(true);
@@ -1506,6 +1521,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     </button>
                   ))}
                 </div>
+                {bgMode==="colour"&&(
+                  <div style={{marginTop:12}}>
+                    <label style={lbl}>Pick a colour</label>
+                    <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                      <input type="color" value={bgColour} onChange={e=>setBgColour(e.target.value)} style={{width:48,height:48,borderRadius:8,border:`1px solid ${A.border}`,cursor:"pointer",padding:2}}/>
+                      <input value={bgColour} onChange={e=>setBgColour(e.target.value)} placeholder="#1a1a2e" style={{...inp,flex:1,fontSize:13}}/>
+                    </div>
+                  </div>
+                )}
                 {bgMode==="custom"&&(
                   <div>
                     <div onClick={()=>templateBgRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${templateBgUrl?A.text:A.border}`,borderRadius:9,padding:"12px",cursor:"pointer",textAlign:"center",marginBottom:8}}>
