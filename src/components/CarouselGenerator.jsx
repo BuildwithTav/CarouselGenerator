@@ -115,10 +115,9 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const bodyFont = baseFontObj.css;
 
   const isPortrait = ratio === "portrait";
-  const W = 1080, H = isPortrait ? 1920 : 1350; // 4:5 default, 9:16 portrait
+  const W = 1080, H = isPortrait ? 1920 : 1350;
   const layout = slide.layout || "standard";
 
-  // Background for this slide
   const bgImageUrl = isCover ? coverImageUrl : (bgMode === "custom" ? templateBgUrl : null);
 
   const pillBg = bgImageUrl
@@ -146,10 +145,9 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const ts = C.dark || bgImageUrl ? "text-shadow:0 2px 28px rgba(0,0,0,0.95);" : "";
   const ts2 = C.dark || bgImageUrl ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : "";
 
-  // Badge bottom = top(88) + avatar(110) + padding(20) = ~218px. Content starts at 250px min.
   const BADGE_BOTTOM = 230;
-  const topPad = isPortrait ? 280 : BADGE_BOTTOM + 40;
-  const botPad = isPortrait ? 160 : 120;
+  const topPad = isPortrait ? 300 : BADGE_BOTTOM + 40;
+  const botPad = isPortrait ? 300 : 120;
 
   const base = `
     @import url('${gFonts}');
@@ -247,10 +245,8 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     `,
   };
 
-  // Cover slide layout — badge + content move together
   const coverPos = coverPosition || "centre";
 
-  // On cover slide, badge is part of the content flow, not fixed top-left
   const coverBadgeHTML = `
     <div style="display:inline-flex;align-items:center;gap:14px;background:${pillBg};padding:10px 22px 10px 10px;border-radius:60px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);margin-bottom:24px;">
       <div style="width:80px;height:80px;border-radius:50%;border:3px solid ${C.accent};overflow:hidden;flex-shrink:0;background:${C.dark?"#1a1a1a":"#ddd"};display:flex;align-items:center;justify-content:center;position:relative;">
@@ -369,7 +365,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       <div class="bh">${esc(handle||"@yourhandle")}</div>
     </div>
   </div>`}
-  ${showNums?`<div class="wm">${String(idx+1).padStart(2,"0")}</div><div class="cnt">${idx+1} / ${total}</div>`:""}
+  ${showNums===true?`<div class="wm">${String(idx+1).padStart(2,"0")}</div><div class="cnt">${idx+1} / ${total}</div>`:""}
   ${layoutHTML()}
   ${websiteUrl?`<div class="site">${esc(websiteUrl)}</div>`:""}
 </div>
@@ -454,10 +450,8 @@ function QuotePreview({ html, W, H, scale }) {
 export default function App() {
   const S = loadS();
 
-  // Nav
-  const [nav, setNav] = useState("generate"); // generate | history | brand | visual
+  const [nav, setNav] = useState("generate");
 
-  // Brand (saved)
   const [profileUrl, setProfileUrl] = useState(S?.profileUrl||null);
   const [name, setName] = useState(S?.name||"");
   const [handle, setHandle] = useState(S?.handle||"");
@@ -467,12 +461,11 @@ export default function App() {
   const [voiceProfile, setVoiceProfile] = useState(S?.voiceProfile||"");
   const [businessType, setBusinessType] = useState(S?.businessType||"marketer");
   const [otherType, setOtherType] = useState(S?.otherType||"");
-  const [coverPhotos, setCoverPhotos] = useState(S?.coverPhotos||[]); // photo library
+  const [coverPhotos, setCoverPhotos] = useState(S?.coverPhotos||[]);
   const [activeCoverPhoto, setActiveCoverPhoto] = useState(S?.activeCoverPhoto||null);
   const [coverPosition, setCoverPosition] = useState(S?.coverPosition||"bottom");
   const [badgeArea, setBadgeArea] = useState(null);
 
-  // Visual (saved)
   const [accentSwatch, setAccentSwatch] = useState(S?.accentSwatch||"gold");
   const [accentColor, setAccentColor] = useState(S?.accentColor||GOLD);
   const [fontId, setFontId] = useState(S?.fontId||"montserrat");
@@ -482,15 +475,13 @@ export default function App() {
   const [templateBgUrl, setTemplateBgUrl] = useState(S?.templateBgUrl||null);
   const [overlayDark, setOverlayDark] = useState(S?.overlayDark||65);
 
-  // Generate
   const [topic, setTopic] = useState("");
   const [inspirationImg, setInspirationImg] = useState(null);
-  const [ratio, setRatio] = useState(S?.ratio||"instagram"); // instagram (4:5) | portrait (9:16)
+  const [ratio, setRatio] = useState(S?.ratio||"instagram");
   const [slideCount, setSlideCount] = useState(6);
   const [err, setErr] = useState("");
   const [randomising, setRandomising] = useState(false);
 
-  // App state
   const [view, setView] = useState("setup");
   const [slides, setSlides] = useState([]);
   const [active, setActive] = useState(0);
@@ -502,7 +493,7 @@ export default function App() {
   const [lastTopic, setLastTopic] = useState("");
   const [history, setHistory] = useState(loadHistory());
 
-  const [quoteInputs, setQuoteInputs] = useState(["","","","",""]);
+  const [quoteInputs, setQuoteInputs] = useState(["","",""]);
   const [quoteSignature, setQuoteSignature] = useState("");
   const [quoteFont, setQuoteFont] = useState("playfair");
   const [quoteSigFont, setQuoteSigFont] = useState("dancing");
@@ -516,14 +507,9 @@ export default function App() {
   const [generatingQuotes, setGeneratingQuotes] = useState(false);
   const [quoteSlides, setQuoteSlides] = useState([]);
   const [downloadingQuotes, setDownloadingQuotes] = useState(false);
-  const [cropModal, setCropModal] = useState(null);
-  const [cropPos, setCropPos] = useState({x:50,y:50});
-  const [cropZoom, setCropZoom] = useState(100);
-  const [cropDragging, setCropDragging] = useState(false);
-  const [cropDragStart, setCropDragStart] = useState(null);
   const [slideOverlays, setSlideOverlays] = useState({});
-  const [coverImgPos, setCoverImgPos] = useState({x:50,y:50});
-  const [templateImgPos, setTemplateImgPos] = useState({x:50,y:50});
+  const [coverImgPos] = useState({x:50,y:50});
+  const [templateImgPos] = useState({x:50,y:50});
   const profileRef = useRef(null);
   const coverPhotoRef = useRef(null);
   const templateBgRef = useRef(null);
@@ -555,7 +541,11 @@ export default function App() {
   const fetchWithRetry = async (body, tries=4) => {
     for (let i=0; i<=tries; i++) {
       try {
-        const res = await fetch("/api/generate", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(body)
+        });
         if (!res.ok) throw new Error(`${res.status}`);
         return await res.json();
       } catch(e) { if(i===tries) throw e; await new Promise(r=>setTimeout(r, 2000+i*1000)); }
@@ -627,7 +617,7 @@ Return ONLY valid JSON array:
           : buildPrompt(t, null)
       }];
 
-      const d = await fetchWithRetry({ model:"claude-opus-4-7", max_tokens:3000, tools:[{type:"web_search_20250305",name:"web_search"}], messages });
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:3000, messages });
       const raw = d.content?.find(b=>b.type==="text")?.text||"";
       const clean = raw.replace(/<cite[^>]*>/g,"").replace(/<\/cite>/g,"").replace(/<[^>]+>/g,"");
       const m = clean.match(/\[[\s\S]*\]/);
@@ -635,7 +625,6 @@ Return ONLY valid JSON array:
       const newSlides = JSON.parse(m[0]).map(sanitize);
       setSlides(newSlides); setActive(0); setView("preview");
 
-      // Save to history
       const entry = { id: Date.now(), topic: t, slides: newSlides, date: new Date().toLocaleDateString() };
       const newHistory = [entry, ...history].slice(0, 10);
       setHistory(newHistory); saveHistory(newHistory);
@@ -647,7 +636,7 @@ Return ONLY valid JSON array:
     setRandomising(true);
     const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
     try {
-      const d = await fetchWithRetry({ model:"claude-opus-4-7", max_tokens:80, messages:[{ role:"user", content:`Give me ONE punchy Instagram carousel topic idea for a ${btLabel}. Voice profile: ${voiceProfile||"direct, honest, no hype"}. Return ONLY the topic, no explanation, no quotes, max 12 words.` }] });
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:80, messages:[{ role:"user", content:`Give me ONE punchy Instagram carousel topic idea for a ${btLabel}. Voice profile: ${voiceProfile||"direct, honest, no hype"}. Return ONLY the topic, no explanation, no quotes, max 12 words.` }] });
       const idea = d.content?.find(b=>b.type==="text")?.text?.trim()||"";
       if (idea) setTopic(idea);
     } catch {}
@@ -657,7 +646,7 @@ Return ONLY valid JSON array:
   const rewrite = async () => {
     if (!rewritePrompt.trim()) return; setRewriting(true);
     try {
-      const d = await fetchWithRetry({ model:"claude-opus-4-7", max_tokens:600, messages:[{ role:"user", content:`Rewrite this carousel slide: "${rewritePrompt}"\n\nCurrent:\n${JSON.stringify(slides[active],null,2)}\n\nVoice: ${voiceProfile||"Direct, honest, specific."}\n\nReturn ONLY a JSON object with same structure. No markdown, no HTML.` }] });
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:600, messages:[{ role:"user", content:`Rewrite this carousel slide: "${rewritePrompt}"\n\nCurrent:\n${JSON.stringify(slides[active],null,2)}\n\nVoice: ${voiceProfile||"Direct, honest, specific."}\n\nReturn ONLY a JSON object with same structure. No markdown, no HTML.` }] });
       const raw = (d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
       const m = raw.match(/\{[\s\S]*\}/);
       if (m) { const next=[...slides]; next[active]=sanitize(JSON.parse(m[0])); setSlides(next); setRewritePrompt(""); }
@@ -666,6 +655,15 @@ Return ONLY valid JSON array:
   };
 
   const updateSlide = (k,v) => { const next=[...slides]; next[active]={...next[active],[k]:v}; setSlides(next); };
+
+  const handleDrag = (e, setter, containerRef) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+    setter({x: Math.round(x), y: Math.round(y)});
+  };
 
   const slideOpts = useCallback(() => ({
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
@@ -698,9 +696,9 @@ Return ONLY valid JSON array:
     setGeneratingQuotes(true);
     const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
     const emptyCount = quoteInputs.filter(q=>!q.trim()).length;
-    const needed = emptyCount || 5;
+    const needed = emptyCount || 3;
     try {
-      const d = await fetchWithRetry({ model:"claude-opus-4-7", max_tokens:400, messages:[{ role:"user", content:`Generate ${needed} short, powerful quotes for a ${btLabel}. Voice: ${voiceProfile||"direct, honest, real"}. Return ONLY a JSON array of ${needed} strings. No attribution, no author names, max 15 words each.` }] });
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:400, messages:[{ role:"user", content:`Generate ${needed} short, powerful quotes for a ${btLabel}. Voice: ${voiceProfile||"direct, honest, real"}. Return ONLY a JSON array of ${needed} strings. No attribution, no author names, max 15 words each.` }] });
       const raw = (d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
       const m = raw.match(/\[[\s\S]*\]/);
       if (m) {
@@ -738,20 +736,18 @@ Return ONLY valid JSON array:
     const tmpl = hasBgImg ? "custom" : (quoteTemplate || "classic");
     const luxAccent = isDark ? "#C9A84C" : "#8B6914";
 
-    // Scale factors for 4:5 vs 9:16
     const s = isPortrait ? 1.4 : 1;
-    const brd = Math.round(28*s); // border inset
-    const brd2 = Math.round(44*s); // inner border inset
-    const cornerSz = Math.round(90*s); // corner bracket size
-    const dotSz = Math.round(18*s); // corner diamond size
-    const sigSz = Math.round(44*s); // signature font size
-    const quoteSz = Math.round(68*s); // quote font size
+    const brd = Math.round(28*s);
+    const brd2 = Math.round(44*s);
+    const cornerSz = Math.round(90*s);
+    const dotSz = Math.round(18*s);
+    const sigSz = Math.round(44*s);
+    const quoteSz = Math.round(68*s);
     const handleBottom = Math.round(55*s);
     const padX = Math.round(120*s);
     const padTop = Math.round(180*s);
     const padBottom = Math.round(200*s);
 
-    // ── CLASSIC: solid 54px border all 4 edges + corner L-bracket details inside
     const frameBorder = Math.round(54*s);
     const classicHTML = `
       <div style="position:absolute;inset:0;border:${frameBorder}px solid ${accent};z-index:3;pointer-events:none;"></div>
@@ -770,7 +766,6 @@ Return ONLY valid JSON array:
         <span style="color:${subColor};font-size:${Math.round(24*s)}px;font-family:'${sigFont}',cursive,serif;letter-spacing:${Math.round(3*s)}px;opacity:0.7;">${esc(handleStr)}</span>
       </div>` : "";
 
-    // ── LUXURY: warm bg + crosshatch + double border + ornate corners + ornate divider
     const luxuryHTML = `
       <div style="position:absolute;inset:0;opacity:0.05;background-image:repeating-linear-gradient(45deg,${luxAccent} 0px,${luxAccent} 1px,transparent 1px,transparent ${Math.round(16*s)}px),repeating-linear-gradient(-45deg,${luxAccent} 0px,${luxAccent} 1px,transparent 1px,transparent ${Math.round(16*s)}px);pointer-events:none;z-index:1;"></div>
       <div style="position:absolute;inset:${brd}px;border:${Math.round(3*s)}px solid ${luxAccent};opacity:0.8;border-radius:${Math.round(4*s)}px;pointer-events:none;z-index:2;"></div>
@@ -823,7 +818,6 @@ Return ONLY valid JSON array:
         <span style="color:${luxAccent};font-size:${Math.round(24*s)}px;font-family:'${sigFont}',cursive,serif;letter-spacing:${Math.round(4*s)}px;opacity:0.65;">${esc(handleStr)}</span>
       </div>` : "";
 
-    // ── FEMININE: botanical clusters + arch + heart divider + bottom circle
     const femBg = isDark ? "#0e0c0c" : "#FAF6F2";
     const femAccent = accent;
     const femText = isDark ? "#f5ede8" : "#3a2520";
@@ -831,7 +825,7 @@ Return ONLY valid JSON array:
     const leafColor = isDark ? accent : "#b08878";
     const leafFill = isDark ? "#2a2010" : "#e8b4a8";
 
-    const femBorder = Math.round(100*s); // ~1cm inset at full res
+    const femBorder = Math.round(100*s);
     const feminineHTML = `
       <div style="position:absolute;inset:${femBorder}px ${femBorder}px ${Math.round(120*s)}px;border:${Math.round(2*s)}px solid ${femAccent};opacity:0.55;border-radius:${Math.round(4*s)}px;pointer-events:none;z-index:2;"></div>
       <div style="position:absolute;inset:${femBorder+Math.round(12*s)}px ${femBorder+Math.round(12*s)}px ${Math.round(130*s)}px;border:${Math.round(1*s)}px solid ${femAccent};opacity:0.18;border-radius:${Math.round(3*s)}px;pointer-events:none;z-index:2;"></div>
@@ -882,7 +876,6 @@ Return ONLY valid JSON array:
         <span style="color:${femAccent};font-size:${Math.round(24*s)}px;font-family:'${sigFont}',cursive,serif;letter-spacing:${Math.round(2*s)}px;opacity:0.65;">${esc(handleStr)}</span>
       </div>` : "";
 
-    // ── RAW: heavy bars + left accent bar + left-aligned
     const rawTextC = isDark ? "#FFFFFF" : "#0A0A0A";
     const rawHTML = `
       <div style="position:absolute;top:${Math.round(24*s)}px;left:${Math.round(24*s)}px;right:${Math.round(24*s)}px;height:${Math.round(18*s)}px;background:${rawTextC};z-index:3;pointer-events:none;border-radius:${Math.round(2*s)}px;"></div>
@@ -899,7 +892,6 @@ Return ONLY valid JSON array:
         <span style="color:${rawTextC};font-size:${Math.round(22*s)}px;font-family:'${sigFont}',cursive,serif;opacity:0.4;letter-spacing:${Math.round(2*s)}px;">${esc(handleStr)}</span>
       </div>` : "";
 
-    // ── CUSTOM: clean, quote + line + sig only
     const customDivider = `
       <div style="width:${Math.round(100*s)}px;height:${Math.round(2*s)}px;background:${accent};margin:0 auto ${Math.round(52*s)}px;opacity:0.7;"></div>`;
 
@@ -940,6 +932,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 </div>
 </body></html>`;
   };
+
   const downloadQuote = async (quoteText, i) => {
     const isPortrait = quoteFormat === "portrait";
     const W = 1080, H = isPortrait ? 1920 : 1350;
@@ -972,7 +965,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
     setDownloadingQuotes(false);
   };
 
-  // UI constants
   const A = { bg:"#F5F3EF", surface:"#FFF", border:"#E8E5E0", text:"#0A0A0A", muted:"#8A8780", accentText:"#FFF", input:"#FFF" };
   const inp = { width:"100%", background:A.input, border:`1.5px solid ${A.border}`, borderRadius:10, padding:"11px 14px", color:A.text, fontSize:14, fontFamily:"inherit" };
   const lbl = { display:"block", fontSize:10, fontWeight:700, letterSpacing:3, textTransform:"uppercase", color:A.muted, marginBottom:7 };
@@ -998,7 +990,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         ::placeholder{color:${A.muted};opacity:0.65}
       `}</style>
 
-      {/* NAV */}
       <nav style={{borderBottom:`1px solid ${A.border}`,padding:"0 32px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56,position:"sticky",top:0,background:`${A.bg}EE`,backdropFilter:"blur(20px)",zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,#1a1a1a,#2a2a2a)`,border:`1.5px solid ${GOLD}44`,display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -1013,13 +1004,16 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               {label}
             </button>
           ))}
-          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:8}}>Reset</button>
+          {view==="preview"&&<>
+            <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:8}}>↺ Regenerate</button>
+            <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
+          </>}
+          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4}}>Reset</button>
         </div>
       </nav>
 
       <div style={{maxWidth:1200,margin:"0 auto",padding:"28px 24px"}}>
 
-        {/* ── QUOTES ── */}
         {nav==="quotes"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:640,margin:"0 auto"}}>
             <div style={{marginBottom:24}}>
@@ -1027,7 +1021,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <p style={{color:A.muted,fontSize:14,margin:0}}>Create up to 5 branded quote cards. Accent colour pulls from Brand settings.</p>
             </div>
 
-            {/* Format + Background */}
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16,display:"flex",flexDirection:"column",gap:16}}>
               <div>
                 <label style={lbl}>Format</label>
@@ -1060,7 +1053,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     </div>
                     <input ref={quoteBgRef} type="file" accept="image/*" onChange={e=>readFile(e,setQuoteBgCustomUrl)} style={{display:"none"}}/>
                     {quoteBgCustomUrl&&(()=>{
-                      const sampleSlide = {headline:"Your quote will appear here",accent_word:"",tag:"",body:"",layout:"standard"};
                       const isP = quoteFormat==="portrait";
                       const W=1080,H=isP?1920:1350,scale=280/W;
                       const html=buildQuoteHTML("Your quote will appear here");
@@ -1078,7 +1070,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
             </div>
 
-            {/* Persistent live preview */}
             {(()=>{
               const isP = quoteFormat==="portrait";
               const W=1080,H=isP?1920:1350,scale=260/W;
@@ -1093,10 +1084,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               );
             })()}
 
-            {/* Template + Fonts + Handle */}
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16,display:"flex",flexDirection:"column",gap:16}}>
 
-              {/* Template */}
               <div>
                 <label style={lbl}>Template</label>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:quoteTemplate==="luxury"?10:0}}>
@@ -1115,7 +1104,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 )}
               </div>
 
-              {/* Compact font pills */}
               <div>
                 <label style={lbl}>Quote font</label>
                 <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
@@ -1137,13 +1125,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
               </div>
 
-              {/* Signature */}
               <div>
                 <label style={lbl}>Signature <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(leave blank to use brand name)</span></label>
                 <input value={quoteSignature} onChange={e=>setQuoteSignature(e.target.value)} placeholder={name||"Your name"} style={inp}/>
               </div>
 
-              {/* Handle toggle */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div>
                   <div style={{fontWeight:600,fontSize:13}}>Show handle</div>
@@ -1153,12 +1139,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
             </div>
 
-            {/* Quote inputs */}
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
                 <label style={{...lbl,marginBottom:0}}>Your quotes</label>
                 <div style={{display:"flex",gap:6}}>
-                  <button onClick={()=>setQuoteInputs(["","","","",""])} style={{background:"none",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 10px",borderRadius:7,fontSize:11,fontWeight:600}}>Clear all</button>
+                  <button onClick={()=>setQuoteInputs(["","",""])} style={{background:"none",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 10px",borderRadius:7,fontSize:11,fontWeight:600}}>Clear all</button>
                   <button onClick={generateQuotes} disabled={generatingQuotes} style={{background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
                     {generatingQuotes?<><Spin c={A.text}/>Generating...</>:"✦ Generate"}
                   </button>
@@ -1212,7 +1197,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           </div>
         )}
 
-
         {nav==="generate"&&view==="setup"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:640,margin:"0 auto"}}>
             <div style={{marginBottom:24}}>
@@ -1220,7 +1204,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <p style={{color:A.muted,fontSize:14,margin:0}}>One topic. I handle the strategy, layouts, and copy.</p>
             </div>
 
-            {/* Topic */}
             <div style={{marginBottom:16}}>
               <div style={{display:"flex",gap:8,marginBottom:8}}>
                 <input value={topic} onChange={e=>{setTopic(e.target.value);if(err)setErr("");}}
@@ -1234,7 +1217,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               {err&&<p style={{color:"#c0392b",fontSize:12,margin:"4px 0 0",fontWeight:600}}>⚠ {err}</p>}
             </div>
 
-            {/* Inspiration — secondary, tucked away */}
             <div style={{marginBottom:16}}>
               <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:A.surface,border:`1.5px solid ${inspirationImg?GOLD:A.border}`,borderRadius:10,cursor:"pointer"}} onClick={()=>{if(inspirationImg){setInspirationImg(null);if(topic==="Recreating from uploaded screenshot...")setTopic("");}else{inspirationRef.current?.click();}}}>
                 <span style={{fontSize:16}}>📸</span>
@@ -1253,14 +1235,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <input ref={inspirationRef} type="file" accept="image/*" onChange={e=>readFile(e,url=>{setInspirationImg(url);setTopic("Recreating from uploaded screenshot...");setErr("");}) } style={{display:"none"}}/>
             </div>
 
-            {/* Cover photo + format + slides */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
               <div>
                 <label style={lbl}>Cover photo <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional)</span></label>
                 <div>
                   {coverPhotos.length > 0 && (
                     <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
-                      {/* No cover option */}
                       <div onClick={()=>setActiveCoverPhoto(null)} style={{width:48,height:48,borderRadius:6,border:`2px solid ${!activeCoverPhoto?A.text:A.border}`,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:A.bg}}>
                         <span style={{fontSize:9,fontWeight:700,color:!activeCoverPhoto?A.text:A.muted,textAlign:"center",lineHeight:1.2}}>None</span>
                       </div>
@@ -1280,8 +1260,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   )}
                   {activeCoverPhoto && (
                     <div>
-                      <div style={{fontSize:11,color:A.muted,marginTop:4,marginBottom:6}}>✓ Cover selected — manage photos in Brand settings</div>
-                      <button onClick={()=>{setCropPos(coverImgPos);setCropZoom(100);setCropModal({type:"cover",url:activeCoverPhoto});}} style={{background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:7,padding:"5px 12px",fontSize:11,fontWeight:600,color:A.muted}}>⤢ Reposition / Zoom</button>
+                      <div style={{fontSize:11,color:A.muted,marginTop:4,marginBottom:8}}>✓ Cover selected — manage photos in Brand settings</div>
                     </div>
                   )}
                 </div>
@@ -1301,7 +1280,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <div style={{display:"flex",alignItems:"center",gap:10}}>
                     <button onClick={()=>setSlideCount(Math.max(3,slideCount-1))} style={{width:32,height:32,borderRadius:7,background:A.bg,border:`1.5px solid ${A.border}`,color:A.text,fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
                     <span style={{fontSize:22,fontWeight:800,minWidth:24,textAlign:"center"}}>{slideCount}</span>
-                    <button onClick={()=>setSlideCount(Math.min(12,slideCount+1))} style={{width:32,height:32,borderRadius:7,background:A.bg,border:`1.5px solid ${A.border}`,color:A.text,fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+                    <button onClick={()=>setSlideCount(Math.min(8,slideCount+1))} style={{width:32,height:32,borderRadius:7,background:A.bg,border:`1.5px solid ${A.border}`,color:A.text,fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
                   </div>
                 </div>
               </div>
@@ -1314,7 +1293,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           </div>
         )}
 
-        {/* ── HISTORY ── */}
         {nav==="history"&&(
           <div style={{animation:"fadeUp 0.3s ease"}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>History</h2>
@@ -1337,13 +1315,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           </div>
         )}
 
-        {/* ── BRAND ── */}
         {nav==="brand"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:640}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Brand</h2>
             <div style={{display:"flex",flexDirection:"column",gap:20}}>
 
-              {/* Profile photo */}
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Profile photo</label>
                 <div style={{display:"flex",alignItems:"center",gap:14}}>
@@ -1357,7 +1333,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
               </div>
 
-              {/* Name/handle/tick/website */}
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",flexDirection:"column",gap:14}}>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                   <div><label style={lbl}>Display name</label><input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name or brand" style={inp}/></div>
@@ -1376,7 +1351,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
               </div>
 
-              {/* Business type */}
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>I am a...</label>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
@@ -1387,7 +1361,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 {businessType==="other"&&<input value={otherType} onChange={e=>setOtherType(e.target.value)} placeholder="e.g. Tattoo artist, PT..." style={{...inp,marginTop:10}}/>}
               </div>
 
-              {/* Cover photos library */}
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Cover photo library</label>
                 <p style={{color:A.muted,fontSize:12,margin:"0 0 12px",lineHeight:1.6}}>Save up to 8 photos. Pick one per generation. Used on cover slide only.</p>
@@ -1406,7 +1379,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
                 <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
 
-                {/* Cover position */}
                 <label style={{...lbl,marginTop:14}}>Badge & hook position on cover</label>
                 <div style={{display:"flex",gap:8,marginBottom:14}}>
                   {COVER_POSITIONS.map(p=>(
@@ -1417,15 +1389,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   ))}
                 </div>
 
-                {/* Live cover preview */}
                 {activeCoverPhoto&&(()=>{
                   const coverSlide = {headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null};
-                  const W=1080,H=1350,scale=280/W;
-                  const html=buildSlideHTML(coverSlide,0,1,{...slideOpts(),ratio:"instagram"},true);
                   return (
                     <div>
                       <label style={{...lbl,marginBottom:8}}>Cover preview</label>
-                      <div style={{width:280,height:H*scale,borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                      <div style={{width:280,height:280*(1350/1080),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
                         <SlidePreview slide={coverSlide} idx={0} total={1} opts={{...slideOpts(),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
                       </div>
                       <p style={{color:A.muted,fontSize:11,marginTop:8}}>Switch position above to see how badge and headline sit on your photo.</p>
@@ -1434,7 +1403,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 })()}
               </div>
 
-              {/* Voice profile */}
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Voice profile <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(sent with every prompt)</span></label>
                 <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.6}}>Describe your tone, audience, what to avoid, CTA style. More specific = better output.</p>
@@ -1444,13 +1412,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           </div>
         )}
 
-        {/* ── VISUAL ── */}
         {nav==="visual"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:640}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Visual</h2>
             <div style={{display:"flex",flexDirection:"column",gap:20}}>
 
-              {/* Headline style */}
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Headline style</label>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
@@ -1466,7 +1432,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
               </div>
 
-              {/* Accent colour */}
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Brand accent colour</label>
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:accentSwatch==="custom"?14:0}}>
@@ -1487,7 +1452,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 )}
               </div>
 
-              {/* Template background (slides 2+) */}
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Slide background (slides 2 onwards)</label>
                 <div style={{display:"flex",gap:8,marginBottom:bgMode==="custom"?14:0}}>
@@ -1508,8 +1472,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     {templateBgUrl&&(
                       <div style={{marginTop:12}}>
                         <label style={lbl}>Overlay — {overlayDark}%</label>
-                        <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{marginBottom:10}}/>
-                        <button onClick={()=>{setCropPos(templateImgPos);setCropZoom(100);setCropModal({type:"template",url:templateBgUrl});}} style={{background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:7,padding:"5px 12px",fontSize:11,fontWeight:600,color:A.muted,marginBottom:14}}>⤢ Reposition / Zoom</button>
+                        <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{marginBottom:14}}/>
+
                         <label style={{...lbl,marginBottom:8}}>Preview — check safe zone</label>
                         <div style={{width:280,height:280*(1350/1080),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
                           <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts()} onClick={()=>{}} isActive={false} isCover={false}/>
@@ -1520,7 +1484,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 )}
               </div>
 
-              {/* Font */}
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Body font</label>
                 <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
@@ -1532,7 +1495,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
               </div>
 
-              {/* Slide numbers */}
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div><div style={{fontWeight:600,fontSize:13}}>Slide numbers</div><div style={{color:A.muted,fontSize:12}}>Watermark number on each slide</div></div>
                 {tog(showNums,setShowNums)}
@@ -1542,7 +1504,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           </div>
         )}
 
-        {/* ── GENERATING ── */}
         {nav==="generate"&&view==="generating"&&(
           <div style={{textAlign:"center",padding:"100px 0",animation:"fadeUp 0.3s ease"}}>
             <div style={{width:44,height:44,borderRadius:"50%",border:`3px solid ${A.border}`,borderTop:`3px solid ${GOLD}`,animation:"spin 0.8s linear infinite",margin:"0 auto 22px"}}/>
@@ -1552,7 +1513,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           </div>
         )}
 
-        {/* ── PREVIEW ── */}
         {nav==="generate"&&view==="preview"&&slides.length>0&&(
           <div style={{animation:"fadeUp 0.3s ease"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
@@ -1568,10 +1528,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <SlidePreview key={i} slide={slide} idx={i} total={slides.length} opts={slideOpts()} onClick={()=>setActive(i)} isActive={active===i} isCover={i===0}/>
                   ))}
                 </div>
-                <div style={{display:"flex",gap:8,marginBottom:12}}>
-                  <button onClick={()=>generate(lastTopic)} style={{background:A.surface,border:`1.5px solid ${A.border}`,color:A.muted,padding:"7px 14px",borderRadius:7,fontSize:12,fontWeight:600}}>↺ Regenerate</button>
-                  <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:A.surface,border:`1.5px solid ${A.border}`,color:A.muted,padding:"7px 14px",borderRadius:7,fontSize:12,fontWeight:600}}>← New carousel</button>
-                </div>
                 <div style={{display:"flex",gap:8}}>
                   <button onClick={()=>downloadOne(active)} disabled={downloading} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                     {downloading?<><Spin c={A.text}/>Processing...</>:downloadDone?"✓ Downloaded":`↓ Slide ${active+1}`}
@@ -1582,7 +1538,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
               </div>
 
-              {/* Editor */}
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
                 <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted}}>Edit Slide {active+1}</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
@@ -1608,6 +1563,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       style={inp}
                     />
                   </div>
+
                   <div>
                     <label style={lbl}>Format</label>
                     <div style={{display:"flex",gap:6}}>
@@ -1618,14 +1574,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   </div>
                   {bgMode==="custom"&&templateBgUrl&&(
                     <div>
-                      <label style={lbl}>Overlay — {slideOverlays[active]??overlayDark}%</label>
+                      <label style={lbl}>Background overlay — {slideOverlays[active]??overlayDark}%</label>
                       <input type="range" min={0} max={85} value={slideOverlays[active]??overlayDark} onChange={e=>setSlideOverlays(prev=>({...prev,[active]:+e.target.value}))}/>
                     </div>
                   )}
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18}}>
                   <label style={lbl}>AI Rewrite</label>
-                  <textarea value={rewritePrompt} onChange={e=>setRewritePrompt(e.target.value)} placeholder={`Try:\n"Make the headline punchier"\n"Change to a split comparing X vs Y"\n"Rewrite as a numbered list of 5 tips"\n"Add a specific stat or example"\n"Make the tone more direct"`} rows={4} style={{...inp,resize:"vertical",lineHeight:1.5,marginBottom:10}}/>
+                  <textarea value={rewritePrompt} onChange={e=>setRewritePrompt(e.target.value)} placeholder={`e.g. Make the headline more direct\nAdd a stat about income\nRewrite as a 3-point list`} rows={3} style={{...inp,resize:"vertical",lineHeight:1.5,marginBottom:10}}/>
                   <button onClick={rewrite} disabled={rewriting||!rewritePrompt.trim()} style={{width:"100%",background:rewritePrompt.trim()?A.text:A.border,color:rewritePrompt.trim()?A.accentText:A.muted,padding:"9px",borderRadius:8,fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
                     {rewriting?<><Spin/>Rewriting...</>:"Rewrite This Slide →"}
                   </button>
@@ -1634,54 +1590,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </div>
           </div>
         )}
-      {cropModal&&cropModal.url&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={e=>{if(e.target===e.currentTarget)setCropModal(null);}}>
-          <div style={{background:A.surface,borderRadius:16,padding:28,width:600,maxWidth:"95vw"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-              <div>
-                <div style={{fontSize:16,fontWeight:800}}>Reposition & Zoom</div>
-                <div style={{color:A.muted,fontSize:13,marginTop:2}}>Drag to pan · Use slider to zoom</div>
-              </div>
-              <button onClick={()=>setCropModal(null)} style={{background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,padding:"6px 14px",fontSize:13,fontWeight:600,color:A.text}}>Done ✓</button>
-            </div>
-            {/* Preview area */}
-            <div
-              ref={cropRef}
-              onMouseDown={e=>{setCropDragging(true);setCropDragStart({x:e.clientX,y:e.clientY,px:cropPos.x,py:cropPos.y});}}
-              onMouseMove={e=>{
-                if(!cropDragging||!cropDragStart) return;
-                const el=cropRef.current; if(!el) return;
-                const rect=el.getBoundingClientRect();
-                const dx=(e.clientX-cropDragStart.x)/rect.width*100;
-                const dy=(e.clientY-cropDragStart.y)/rect.height*100;
-                setCropPos({
-                  x:Math.max(0,Math.min(100,cropDragStart.px-dx)),
-                  y:Math.max(0,Math.min(100,cropDragStart.py-dy)),
-                });
-              }}
-              onMouseUp={()=>{setCropDragging(false);setCropDragStart(null);}}
-              onMouseLeave={()=>{setCropDragging(false);setCropDragStart(null);}}
-              style={{width:"100%",height:340,borderRadius:12,overflow:"hidden",cursor:cropDragging?"grabbing":"grab",border:`2px solid ${A.border}`,position:"relative",userSelect:"none",marginBottom:16}}
-            >
-              <img src={cropModal.url} style={{width:`${cropZoom}%`,height:`${cropZoom}%`,objectFit:"cover",objectPosition:`${cropPos.x}% ${cropPos.y}%`,pointerEvents:"none",minWidth:"100%",minHeight:"100%",position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}/>
-              <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:24,height:24,borderRadius:"50%",border:"3px solid rgba(255,255,255,0.9)",background:"rgba(0,0,0,0.3)",pointerEvents:"none",boxShadow:"0 0 0 1px rgba(0,0,0,0.3)"}}/>
-            </div>
-            {/* Zoom slider */}
-            <div style={{marginBottom:16}}>
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:8}}>Zoom — {cropZoom}%</div>
-              <input type="range" min={100} max={300} value={cropZoom} onChange={e=>setCropZoom(+e.target.value)}/>
-            </div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>{setCropPos({x:50,y:50});setCropZoom(100);}} style={{background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,padding:"8px 16px",fontSize:12,color:A.muted}}>Reset</button>
-              <button onClick={()=>{
-                if(cropModal.type==="cover") setCoverImgPos(cropPos);
-                else setTemplateImgPos(cropPos);
-                setCropModal(null);
-              }} style={{flex:1,background:A.text,color:A.accentText,borderRadius:8,padding:"8px",fontSize:13,fontWeight:700}}>Apply & Close</button>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
 
       <footer style={{borderTop:`1px solid ${A.border}`,padding:"14px 32px",textAlign:"center",marginTop:60}}>
         <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,fontWeight:700,textDecoration:"none",fontSize:12}}>Build with Tav</a>
