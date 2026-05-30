@@ -146,8 +146,8 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const ts2 = C.dark || bgImageUrl ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : "";
 
   const BADGE_BOTTOM = 230;
-  const topPad = isPortrait ? 300 : BADGE_BOTTOM + 40;
-  const botPad = isPortrait ? 300 : 120;
+  const topPad = BADGE_BOTTOM + 40;
+  const botPad = BADGE_BOTTOM + 40;
 
   const base = `
     @import url('${gFonts}');
@@ -670,7 +670,7 @@ Return ONLY valid JSON array:
     coverImageUrl: activeCoverPhoto, coverPosition, badgeArea,
     profileUrl, name, handle, blueTick,
     websiteUrl: showWebsite?website:"",
-    showNums, ratio, accentColor,
+    showNums: showNums===true, ratio, accentColor,
     coverImgPos, templateImgPos,
   }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos]);
 
@@ -990,25 +990,25 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         ::placeholder{color:${A.muted};opacity:0.65}
       `}</style>
 
-      <nav style={{borderBottom:`1px solid ${A.border}`,padding:"0 32px",display:"flex",alignItems:"center",justifyContent:"space-between",height:56,position:"sticky",top:0,background:`${A.bg}EE`,backdropFilter:"blur(20px)",zIndex:100}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
+      <nav style={{borderBottom:`1px solid ${A.border}`,padding:"0 32px",display:"flex",alignItems:"stretch",justifyContent:"space-between",height:56,position:"sticky",top:0,background:`${A.bg}EE`,backdropFilter:"blur(20px)",zIndex:100}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
           <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,#1a1a1a,#2a2a2a)`,border:`1.5px solid ${GOLD}44`,display:"flex",alignItems:"center",justifyContent:"center"}}>
             <span style={{color:GOLD,fontSize:12,fontWeight:900}}>C</span>
           </div>
           <span style={{fontSize:13,fontWeight:800,letterSpacing:-0.3}}>Carousel Studio</span>
           <span style={{fontSize:11,color:A.muted}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
         </div>
-        <div style={{display:"flex",alignItems:"stretch",gap:2,height:56}}>
+        <div style={{display:"flex",alignItems:"stretch",gap:0,height:56,flexWrap:"nowrap",overflow:"visible"}}>
           {NAV_ITEMS.map(([id,label])=>(
-            <button key={id} onClick={()=>setNav(id)} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 16px",fontSize:13,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
+            <button key={id} onClick={()=>setNav(id)} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 14px",fontSize:13,fontWeight:nav===id?700:500,height:"100%",display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0,boxSizing:"border-box"}}>
               {label}
             </button>
           ))}
           {view==="preview"&&<>
-            <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:8}}>↺ Regenerate</button>
-            <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
+            <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"0 12px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:8,height:36,alignSelf:"center"}}>↺ Regenerate</button>
+            <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"0 12px",borderRadius:7,fontSize:12,fontWeight:600,height:36,alignSelf:"center"}}>← New</button>
           </>}
-          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4}}>Reset</button>
+          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"0 12px",borderRadius:7,fontSize:12,marginLeft:4,height:36,alignSelf:"center"}}>Reset</button>
         </div>
       </nav>
 
