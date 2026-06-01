@@ -95,7 +95,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
     coverImageUrl, coverPosition, badgeArea,
     profileUrl, name, handle, blueTick, websiteUrl, showNums,
-    accentColor, ratio, coverImgPos, templateImgPos, bgColour, aiBgUrl,
+    accentColor, ratio, coverImgPos, templateImgPos, bgColour,
   } = opts;
   const coverPos2 = coverImgPos || {x:50,y:50};
   const templatePos = templateImgPos || {x:50,y:50};
@@ -120,7 +120,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const W = 1080, H = isPortrait ? 1920 : 1350;
   const layout = slide.layout || "standard";
 
-  const bgImageUrl = isCover ? coverImageUrl : (bgMode === "custom" ? templateBgUrl : null) || (!isCover ? aiBgUrl : null);
+  const bgImageUrl = isCover ? coverImageUrl : (bgMode === "custom" ? templateBgUrl : null);
 
   const pillBg = bgImageUrl
     ? badgeArea === "light" ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.58)"
@@ -509,9 +509,6 @@ export default function App() {
   const [slideCount, setSlideCount] = useState(6);
   const [err, setErr] = useState("");
   const [randomising, setRandomising] = useState(false);
-  const [aiBg, setAiBg] = useState(false);
-  const [generatingBgs, setGeneratingBgs] = useState(false);
-  const [slideBgs, setSlideBgs] = useState({});
   const [audienceType, setAudienceType] = useState("customers");
   const [angle, setAngle] = useState("");
 
@@ -680,7 +677,6 @@ Return ONLY valid JSON array:
         layout: i === 0 ? "statement" : i === parsed.length - 1 ? "hero" : "standard"
       }));
       setSlides(newSlides); setActive(0); setView("preview");
-      if (aiBg) generateBackgrounds(newSlides, businessType);
 
       const entry = { id: Date.now(), topic: t, slides: newSlides, date: new Date().toLocaleDateString() };
       const newHistory = [entry, ...history].slice(0, 10);
@@ -705,61 +701,8 @@ Return ONLY valid JSON array:
   };
 
   
-  const INDUSTRY_THEMES = {
-    marketer:   { palette:"deep navy #0a0f1e, electric blue #1a4bff, gold #C9A84C", gradient:"deep navy to midnight blue radial gradient", accent:"electric blue geometric light rays, gold bokeh particles" },
-    coach:      { palette:"rich charcoal #111111, warm gold #C9A84C, soft cream #f5f0e8", gradient:"deep charcoal to dark warm grey gradient", accent:"gold diagonal light streak, subtle cream vignette edges" },
-    fitness:    { palette:"pure black #080808, electric blue #00a8ff, silver #c0c0c0", gradient:"black to deep charcoal linear gradient", accent:"blue energy arc, silver geometric lines, dramatic corner lighting" },
-    beauty:     { palette:"soft blush #f7e8e8, rose gold #c4956a, pearl white #faf7f5", gradient:"soft blush to warm cream radial gradient", accent:"rose gold bokeh circles, pearl shimmer overlay, delicate light diffusion" },
-    restaurant: { palette:"deep burgundy #1a0a0a, warm amber #c97c2a, rich gold #C9A84C", gradient:"deep burgundy to warm black radial gradient", accent:"warm amber bokeh glow, gold light particles, candlelight vignette" },
-    realestate: { palette:"clean white #fafafa, warm stone #c8b89a, deep charcoal #1a1a1a", gradient:"warm white to soft stone linear gradient", accent:"subtle geometric grid lines, clean shadow depth, minimal luxury spacing" },
-    ecommerce:  { palette:"pure white #ffffff, soft grey #e8e8e8, gold #C9A84C", gradient:"clean white to soft grey radial gradient", accent:"gold accent line, subtle dot grid, clean minimal depth" },
-    other:      { palette:"deep charcoal #111827, slate blue #1e3a5f, warm gold #C9A84C", gradient:"deep charcoal to dark slate radial gradient", accent:"gold geometric accent, blue ambient glow, professional depth layers" },
-  };
 
-  const SLIDE_PURPOSES = [
-    "centred radial gradient, darkest at edges, subtle light bloom at centre",
-    "diagonal gradient sweep, geometric accent lines in upper third",
-    "soft bokeh circles scattered across dark background, depth of field effect",
-    "linear gradient from bottom left to top right, clean minimal",
-    "layered gradient with subtle noise texture, premium depth",
-    "strong vignette edges, bright focal centre, dramatic spotlight effect",
-    "geometric shape in background — circle or triangle outline, very subtle opacity",
-    "horizontal light streak across middle third, gradient above and below",
-  ];
 
-  const generateBackgrounds = async (slides, businessType) => {
-    setGeneratingBgs(true);
-    const theme = INDUSTRY_THEMES[businessType] || INDUSTRY_THEMES.other;
-    const carouselTopic = slides[0]?.headline || slides.find(s=>s.headline)?.headline || "professional topic";
-
-    // Pure graphic design backgrounds — no photography, no objects, no people
-    const masterStyle = `Premium graphic design background. Colours: ${theme.palette}. Base: ${theme.gradient}. Accents: ${theme.accent}. ABSOLUTE RULES: no humans, no faces, no hands, no objects, no laptops, no furniture, no buildings, no food, no text, no words, no letters, no numbers, no logos. ONLY: smooth colour gradients, soft bokeh light circles, subtle geometric lines, premium depth layers, luxury colour transitions. Style: Canva Pro premium template, Adobe Express, luxury brand design system. Dark enough for white text overlay to remain fully readable.`;
-
-    try {
-      const results = await Promise.all(slides.map(async (slide, i) => {
-        if (i === 0) return null;
-
-        const purpose = SLIDE_PURPOSES[(i-1) % SLIDE_PURPOSES.length];
-
-        const prompt = `${masterStyle} Composition: ${purpose}. Maintain exact same colour palette across all slides. Only composition and gradient direction changes. Ultra premium quality.`;
-
-        try {
-          const res = await fetch("/api/generate-bg", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt })
-          });
-          const data = await res.json();
-          return data.imageUrl || null;
-        } catch(e) { console.error("BG error slide", i, e); return null; }
-      }));
-
-      const bgMap = {};
-      results.forEach((url, i) => { if (url) bgMap[i] = url; });
-      setSlideBgs(bgMap);
-    } catch(e) { console.error("BG gen failed", e); }
-    setGeneratingBgs(false);
-  };
 
   const extractTopicFromImage = async (imgBase64) => {
     try {
@@ -810,8 +753,7 @@ Return ONLY valid JSON array:
     websiteUrl: showWebsite?website:"",
     showNums, ratio, accentColor, bgColour,
     coverImgPos, templateImgPos,
-    aiBgUrl: slideBgs[slideIdx]||null,
-  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays,slideBgs]);
+  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays]);
 
   const downloadOne = async (i) => {
     setDownloading(true);
@@ -1451,14 +1393,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
             </div>
 
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:A.surface,border:`1.5px solid ${aiBg?GOLD:A.border}`,borderRadius:10,marginBottom:12}}>
-              <div>
-                <div style={{fontWeight:700,fontSize:13}}>AI Backgrounds <span style={{fontSize:10,background:GOLD,color:"#000",padding:"2px 7px",borderRadius:20,fontWeight:800,marginLeft:6}}>PRO</span></div>
-                <div style={{color:A.muted,fontSize:12}}>Generate unique images behind each slide</div>
-              </div>
-              {tog(aiBg,setAiBg)}
-            </div>
-            <button onClick={()=>generate()} style={{width:"100%",padding:"15px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:15,fontWeight:800,border:`1px solid ${GOLD}33`,boxShadow:`0 0 0 1px ${GOLD}22`}}>
+<button onClick={()=>generate()} style={{width:"100%",padding:"15px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:15,fontWeight:800,border:`1px solid ${GOLD}33`,boxShadow:`0 0 0 1px ${GOLD}22`}}>
               Generate Carousel →
             </button>
             <p style={{textAlign:"center",color:A.muted,fontSize:11,marginTop:10}}>⌘ + Enter · ~15–25 seconds</p>
@@ -1699,7 +1634,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         {nav==="generate"&&view==="generating"&&(
           <div style={{textAlign:"center",padding:"100px 0",animation:"fadeUp 0.3s ease"}}>
             <div style={{width:44,height:44,borderRadius:"50%",border:`3px solid ${A.border}`,borderTop:`3px solid ${GOLD}`,animation:"spin 0.8s linear infinite",margin:"0 auto 22px"}}/>
-            <div style={{fontSize:11,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:GOLD,marginBottom:8}}>{generatingBgs?"Adding Backgrounds":"Creating"}</div>
+            <div style={{fontSize:11,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:GOLD,marginBottom:8}}>Creating</div>
             <div style={{fontSize:22,fontWeight:800,marginBottom:6}}>Writing and designing {slideCount} slides</div>
             <div style={{color:A.muted,fontSize:14}}>"{lastTopic}"</div>
           </div>
