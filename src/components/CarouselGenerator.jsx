@@ -715,29 +715,45 @@ Return ONLY valid JSON array:
     other:      { world:"professional business environment, modern office, clean workspace, premium setting", style:"professional premium, clean modern aesthetic" },
   };
 
+  const INDUSTRY_THEMES = {
+    marketer:   { world:"entrepreneur workspace photography", style:"moody warm tones, depth of field, ambient light, cinematic", colorGrade:"rich warm shadows, golden highlights, dark backgrounds" },
+    coach:      { world:"premium professional office and consulting environment photography", style:"high-end aspirational, confident lighting, clean lines", colorGrade:"deep navy and charcoal tones, selective warm accent light" },
+    fitness:    { world:"modern gym and athletic training environment photography", style:"dramatic high contrast, powerful energy, motion", colorGrade:"dark blacks, cool steel tones, dramatic rim lighting" },
+    beauty:     { world:"luxury salon and beauty studio photography", style:"soft elegant, premium aesthetic, clean", colorGrade:"soft warm pastels, marble textures, diffused light" },
+    restaurant: { world:"premium restaurant and fine dining environment photography", style:"warm intimate, rich textures, candlelit atmosphere", colorGrade:"warm amber and deep red tones, rich shadows" },
+    realestate: { world:"luxury property interior architecture photography", style:"clean aspirational, natural light flooding in, premium", colorGrade:"clean whites, warm wood tones, natural light" },
+    ecommerce:  { world:"premium product and lifestyle photography studio", style:"clean modern, precise lighting, minimal", colorGrade:"clean studio whites, soft shadows, product-focused" },
+    other:      { world:"premium professional business environment photography", style:"clean modern professional, premium quality", colorGrade:"neutral professional tones, clean light" },
+  };
+
+  const SLIDE_PURPOSES = [
+    "establishing the core problem or hook — show tension, unease, something wrong or missing",
+    "revealing the hidden reality or deeper truth — show contrast or the thing people miss",
+    "the insight or turning point — show a moment of realisation or clarity",
+    "showing the cost or consequence — show what happens without change",
+    "presenting the better approach or shift — show possibility, a cleaner path",
+    "the resolution and call to action — show confidence, success, the outcome achieved",
+    "supporting detail or evidence — show specificity, a close detail that proves the point",
+    "the transformation or before/after — show movement from one state to another",
+  ];
+
   const generateBackgrounds = async (slides, businessType) => {
     setGeneratingBgs(true);
     const theme = INDUSTRY_THEMES[businessType] || INDUSTRY_THEMES.other;
+    const carouselTopic = slides[0]?.headline || slides.find(s=>s.headline)?.headline || "professional topic";
 
-    // Step 1: Generate one master carousel theme for consistency
-    const carouselTopic = slides.find(s=>s.tag)?.tag || slides[0]?.headline || "professional content";
-    const masterTheme = `${theme.world}. Mood: ${theme.style}. Topic feel: ${carouselTopic}. No text, no words, no letters, no people, no faces, no logos.`;
+    // Master style string — keeps all slides in the same visual world
+    const masterStyle = `Photography style: ${theme.style}. Colour grade: ${theme.colorGrade}. Setting: ${theme.world}. All images must share identical colour grading, lighting style, and atmosphere. No text, no words, no letters, no typography, no numbers, no faces, no logos.`;
 
     try {
-      const variations = [
-        "wide establishing shot, full scene",
-        "close detail texture, shallow depth of field",
-        "mid shot, slightly different angle, same world",
-        "abstract detail, extreme close up texture",
-        "environmental wide, different light position",
-        "atmospheric bokeh, same colour palette",
-        "surface texture detail, consistent mood",
-      ];
-
       const results = await Promise.all(slides.map(async (slide, i) => {
         if (i === 0) return null;
-        const variation = variations[(i-1) % variations.length];
-        const prompt = `${masterTheme} Composition: ${variation}. Premium quality, cinematic. Absolutely no text, no words, no letters, no typography, no numbers, no faces.`;
+
+        const purpose = SLIDE_PURPOSES[(i-1) % SLIDE_PURPOSES.length];
+        const slideMessage = slide.headline || slide.tag || "";
+
+        const prompt = `${theme.world}. Topic: "${carouselTopic}". This slide is ${purpose}. Slide message: "${slideMessage}". ${masterStyle} Create a single cinematic scene that visually supports this specific slide message within the carousel story. Different composition from other slides but same visual world.`;
+
         try {
           const res = await fetch("/api/generate-bg", {
             method: "POST",
