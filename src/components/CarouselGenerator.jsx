@@ -95,7 +95,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
     coverImageUrl, coverPosition, badgeArea,
     profileUrl, name, handle, blueTick, websiteUrl, showNums,
-    accentColor, ratio, coverImgPos, templateImgPos, bgColour,
+    accentColor, ratio, coverImgPos, templateImgPos, bgColour, aiBgUrl,
   } = opts;
   const coverPos2 = coverImgPos || {x:50,y:50};
   const templatePos = templateImgPos || {x:50,y:50};
@@ -120,7 +120,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const W = 1080, H = isPortrait ? 1920 : 1350;
   const layout = slide.layout || "standard";
 
-  const bgImageUrl = isCover ? coverImageUrl : (bgMode === "custom" ? templateBgUrl : null);
+  const bgImageUrl = isCover ? coverImageUrl : (bgMode === "custom" ? templateBgUrl : null) || (!isCover ? aiBgUrl : null);
 
   const pillBg = bgImageUrl
     ? badgeArea === "light" ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.58)"
@@ -509,6 +509,9 @@ export default function App() {
   const [slideCount, setSlideCount] = useState(6);
   const [err, setErr] = useState("");
   const [randomising, setRandomising] = useState(false);
+  const [aiBg, setAiBg] = useState(false);
+  const [generatingBgs, setGeneratingBgs] = useState(false);
+  const [slideBgs, setSlideBgs] = useState({});
   const [audienceType, setAudienceType] = useState("customers");
   const [angle, setAngle] = useState("");
 
@@ -677,6 +680,7 @@ Return ONLY valid JSON array:
         layout: i === 0 ? "statement" : i === parsed.length - 1 ? "hero" : "standard"
       }));
       setSlides(newSlides); setActive(0); setView("preview");
+      if (aiBg) generateBackgrounds(newSlides, businessType);
 
       const entry = { id: Date.now(), topic: t, slides: newSlides, date: new Date().toLocaleDateString() };
       const newHistory = [entry, ...history].slice(0, 10);
@@ -698,6 +702,30 @@ Return ONLY valid JSON array:
       if (idea) { const clean = idea.replace(/[*_]/g,'').replace(/^["']+|["']+$/g,'').trim(); setTopic(clean.length>80?clean.slice(0,77)+'...':clean); }
     } catch {}
     setRandomising(false);
+  };
+
+  const generateBackgrounds = async (slides, businessType) => {
+    setGeneratingBgs(true);
+    const btLabel = BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketing";
+    try {
+      const results = await Promise.all(slides.map(async (slide, i) => {
+        if (i === 0) return null; // cover slide uses user's photo
+        const prompt = `Abstract atmospheric background texture for a ${btLabel} social media slide. Theme: ${slide.tag||slide.headline||"professional"}. Dark moody cinematic, subtle bokeh or geometric texture, no text, no people, no logos, no faces. High contrast, rich blacks, suitable as text background.`;
+        try {
+          const res = await fetch("/api/generate-bg", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt })
+          });
+          const data = await res.json();
+          return data.imageUrl || null;
+        } catch { return null; }
+      }));
+      const bgMap = {};
+      results.forEach((url, i) => { if (url) bgMap[i] = url; });
+      setSlideBgs(bgMap);
+    } catch(e) { console.error("BG gen failed", e); }
+    setGeneratingBgs(false);
   };
 
   const extractTopicFromImage = async (imgBase64) => {
@@ -749,7 +777,8 @@ Return ONLY valid JSON array:
     websiteUrl: showWebsite?website:"",
     showNums, ratio, accentColor, bgColour,
     coverImgPos, templateImgPos,
-  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays]);
+    aiBgUrl: slideBgs[slideIdx]||null,
+  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays,slideBgs]);
 
   const downloadOne = async (i) => {
     setDownloading(true);
@@ -1389,6 +1418,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
             </div>
 
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:A.surface,border:`1.5px solid ${aiBg?GOLD:A.border}`,borderRadius:10,marginBottom:12}}>
+              <div>
+                <div style={{fontWeight:700,fontSize:13}}>AI Backgrounds <span style={{fontSize:10,background:GOLD,color:"#000",padding:"2px 7px",borderRadius:20,fontWeight:800,marginLeft:6}}>PRO</span></div>
+                <div style={{color:A.muted,fontSize:12}}>Generate unique images behind each slide</div>
+              </div>
+              {tog(aiBg,setAiBg)}
+            </div>
             <button onClick={()=>generate()} style={{width:"100%",padding:"15px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:15,fontWeight:800,border:`1px solid ${GOLD}33`,boxShadow:`0 0 0 1px ${GOLD}22`}}>
               Generate Carousel →
             </button>
@@ -1630,7 +1666,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         {nav==="generate"&&view==="generating"&&(
           <div style={{textAlign:"center",padding:"100px 0",animation:"fadeUp 0.3s ease"}}>
             <div style={{width:44,height:44,borderRadius:"50%",border:`3px solid ${A.border}`,borderTop:`3px solid ${GOLD}`,animation:"spin 0.8s linear infinite",margin:"0 auto 22px"}}/>
-            <div style={{fontSize:11,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:GOLD,marginBottom:8}}>Creating</div>
+            <div style={{fontSize:11,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:GOLD,marginBottom:8}}>{generatingBgs?"Adding Backgrounds":"Creating"}</div>
             <div style={{fontSize:22,fontWeight:800,marginBottom:6}}>Writing and designing {slideCount} slides</div>
             <div style={{color:A.muted,fontSize:14}}>"{lastTopic}"</div>
           </div>
