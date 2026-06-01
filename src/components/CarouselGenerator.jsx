@@ -712,14 +712,16 @@ Return ONLY valid JSON array:
         if (i === 0) return null; // cover slide uses user's photo
         const prompt = `Abstract atmospheric background texture for a ${btLabel} social media slide. Theme: ${slide.tag||slide.headline||"professional"}. Dark moody cinematic, subtle bokeh or geometric texture, no text, no people, no logos, no faces. High contrast, rich blacks, suitable as text background.`;
         try {
+          console.log("Generating bg for slide", i, "prompt:", prompt.slice(0,60));
           const res = await fetch("/api/generate-bg", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ prompt })
           });
           const data = await res.json();
+          console.log("BG result slide", i, ":", data.imageUrl ? "got image" : "no image", data.error||"");
           return data.imageUrl || null;
-        } catch { return null; }
+        } catch(e) { console.error("BG fetch error slide", i, e); return null; }
       }));
       const bgMap = {};
       results.forEach((url, i) => { if (url) bgMap[i] = url; });
