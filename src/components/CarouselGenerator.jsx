@@ -706,25 +706,25 @@ Return ONLY valid JSON array:
 
   
   const INDUSTRY_THEMES = {
-    marketer:   { world:"entrepreneur workspace photography", style:"moody warm tones, depth of field, ambient light, cinematic", colorGrade:"rich warm shadows, golden highlights, dark backgrounds" },
-    coach:      { world:"premium professional office and consulting environment photography", style:"high-end aspirational, confident lighting, clean lines", colorGrade:"deep navy and charcoal tones, selective warm accent light" },
-    fitness:    { world:"modern gym and athletic training environment photography", style:"dramatic high contrast, powerful energy, motion", colorGrade:"dark blacks, cool steel tones, dramatic rim lighting" },
-    beauty:     { world:"luxury salon and beauty studio photography", style:"soft elegant, premium aesthetic, clean", colorGrade:"soft warm pastels, marble textures, diffused light" },
-    restaurant: { world:"premium restaurant and fine dining environment photography", style:"warm intimate, rich textures, candlelit atmosphere", colorGrade:"warm amber and deep red tones, rich shadows" },
-    realestate: { world:"luxury property interior architecture photography", style:"clean aspirational, natural light flooding in, premium", colorGrade:"clean whites, warm wood tones, natural light" },
-    ecommerce:  { world:"premium product and lifestyle photography studio", style:"clean modern, precise lighting, minimal", colorGrade:"clean studio whites, soft shadows, product-focused" },
-    other:      { world:"premium professional business environment photography", style:"clean modern professional, premium quality", colorGrade:"neutral professional tones, clean light" },
+    marketer:   { palette:"deep navy, electric blue, gold accents", feel:"premium SaaS dashboard aesthetic, data-inspired geometry, modern tech gradients, digital glow", texture:"smooth gradient mesh, subtle grid lines, glowing orbs" },
+    coach:      { palette:"deep charcoal, warm gold, cream white", feel:"luxury consulting brand aesthetic, premium corporate, confident clean lines, aspirational depth", texture:"layered dark gradients, subtle diagonal lines, gold light leak" },
+    fitness:    { palette:"deep black, electric blue, neon green accents", feel:"high energy athletic brand, powerful dark gradients, dynamic motion lines, performance aesthetic", texture:"dark bokeh spheres, energy wave patterns, dramatic light beams" },
+    beauty:     { palette:"blush pink, rose gold, soft cream, marble white", feel:"luxury beauty brand aesthetic, soft feminine premium, spa and wellness", texture:"marble texture blur, soft pastel gradient, pearl shimmer, delicate bokeh" },
+    restaurant: { palette:"deep amber, warm burgundy, candlelight gold", feel:"premium dining ambience, warm luxury restaurant atmosphere, intimate depth", texture:"warm bokeh orbs, candlelight glow, rich dark gradient, velvet texture" },
+    realestate: { palette:"clean white, warm grey, stone beige, gold", feel:"luxury property brand aesthetic, architectural premium, aspirational modern living", texture:"clean architectural shapes blur, marble gradient, glass reflections, premium minimal" },
+    ecommerce:  { palette:"clean white, soft grey, brand accent gold", feel:"premium product brand aesthetic, clean modern commercial, luxury retail", texture:"clean gradient, subtle dot grid, soft shadow depth, premium minimal texture" },
+    other:      { palette:"deep charcoal, slate blue, warm gold", feel:"premium modern business brand aesthetic, professional depth, clean corporate luxury", texture:"smooth dark gradient, subtle geometric shapes, professional glow" },
   };
 
   const SLIDE_PURPOSES = [
-    "establishing the core problem or hook — show tension, unease, something wrong or missing",
-    "revealing the hidden reality or deeper truth — show contrast or the thing people miss",
-    "the insight or turning point — show a moment of realisation or clarity",
-    "showing the cost or consequence — show what happens without change",
-    "presenting the better approach or shift — show possibility, a cleaner path",
-    "the resolution and call to action — show confidence, success, the outcome achieved",
-    "supporting detail or evidence — show specificity, a close detail that proves the point",
-    "the transformation or before/after — show movement from one state to another",
+    "darker moodier gradient, tension and unease in the colour palette, heavy shadow",
+    "layered depth with contrasting tones, complexity and hidden layers in the abstract",
+    "lighter gradient shift, a beam of light or clarity breaking through darker tones",
+    "deep heavy dark tones, weight and consequence in the abstract depth",
+    "cleaner lighter gradient, open space, possibility and clarity emerging",
+    "richest most polished version of the palette, full premium expression, hero moment",
+    "detailed texture close-up, precision and specificity in the abstract pattern",
+    "gradient transition from dark to light, movement and transformation in the abstract",
   ];
 
   const generateBackgrounds = async (slides, businessType) => {
@@ -732,17 +732,16 @@ Return ONLY valid JSON array:
     const theme = INDUSTRY_THEMES[businessType] || INDUSTRY_THEMES.other;
     const carouselTopic = slides[0]?.headline || slides.find(s=>s.headline)?.headline || "professional topic";
 
-    // Master style string — keeps all slides in the same visual world
-    const masterStyle = `Photography style: ${theme.style}. Colour grade: ${theme.colorGrade}. Setting: ${theme.world}. All images must share identical colour grading, lighting style, and atmosphere. No text, no words, no letters, no typography, no numbers, no faces, no logos.`;
+    // Master style — abstract design, no people, no photography
+    const masterStyle = `Premium abstract graphic design background. Colour palette: ${theme.palette}. Design feel: ${theme.feel}. Texture style: ${theme.texture}. STRICT RULES: absolutely no humans, no faces, no hands, no body parts, no text, no words, no letters, no numbers, no logos, no photography. Pure abstract design only — gradients, bokeh, geometric shapes, light leaks, depth layers, premium textures. Must be dark enough for white text overlay to be readable.`;
 
     try {
       const results = await Promise.all(slides.map(async (slide, i) => {
         if (i === 0) return null;
 
         const purpose = SLIDE_PURPOSES[(i-1) % SLIDE_PURPOSES.length];
-        const slideMessage = slide.headline || slide.tag || "";
 
-        const prompt = `${theme.world}. Topic: "${carouselTopic}". This slide is ${purpose}. Slide message: "${slideMessage}". ${masterStyle} Create a single cinematic scene that visually supports this specific slide message within the carousel story. Different composition from other slides but same visual world.`;
+        const prompt = `${masterStyle} Slide variation: ${purpose}. Same colour palette and design language throughout — only the mood and composition shifts. Premium Canva template quality. Ultra high quality abstract graphic design.`;
 
         try {
           const res = await fetch("/api/generate-bg", {
