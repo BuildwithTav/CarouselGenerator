@@ -704,25 +704,51 @@ Return ONLY valid JSON array:
     setRandomising(false);
   };
 
+  const INDUSTRY_THEMES = {
+    marketer:   { world:"entrepreneur workspace, laptop on desk, coffee shop window, city views, travel lifestyle, soft ambient light", style:"moody productive atmosphere, warm tones, depth of field" },
+    coach:      { world:"premium office interior, boardroom, professional consultation setting, clean minimal workspace, leather and wood textures", style:"high-end professional, confident lighting, aspirational" },
+    fitness:    { world:"modern gym interior, training equipment, athletic performance, motion blur, weights, athletic studio", style:"high energy, dramatic lighting, dark and powerful" },
+    beauty:     { world:"luxury salon interior, beauty products, marble surfaces, soft diffused lighting, clean aesthetic, premium skincare", style:"soft elegant, pastel and warm tones, premium feel" },
+    restaurant: { world:"warm restaurant interior, candlelight, food styling on plates, dining tables, chef kitchen, rich textures", style:"warm intimate, rich colours, premium dining atmosphere" },
+    realestate: { world:"luxury property interior, architectural detail, premium living spaces, floor to ceiling windows, modern kitchen", style:"clean aspirational, natural light, premium property" },
+    ecommerce:  { world:"clean product photography studio, lifestyle product shots, premium packaging, minimal surfaces", style:"clean modern, studio lighting, product-focused" },
+    other:      { world:"professional business environment, modern office, clean workspace, premium setting", style:"professional premium, clean modern aesthetic" },
+  };
+
   const generateBackgrounds = async (slides, businessType) => {
     setGeneratingBgs(true);
-    const btLabel = BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketing";
+    const theme = INDUSTRY_THEMES[businessType] || INDUSTRY_THEMES.other;
+
+    // Step 1: Generate one master carousel theme for consistency
+    const carouselTopic = slides.find(s=>s.tag)?.tag || slides[0]?.headline || "professional content";
+    const masterTheme = `${theme.world}. Mood: ${theme.style}. Topic feel: ${carouselTopic}. No text, no words, no letters, no people, no faces, no logos.`;
+
     try {
+      const variations = [
+        "wide establishing shot, full scene",
+        "close detail texture, shallow depth of field",
+        "mid shot, slightly different angle, same world",
+        "abstract detail, extreme close up texture",
+        "environmental wide, different light position",
+        "atmospheric bokeh, same colour palette",
+        "surface texture detail, consistent mood",
+      ];
+
       const results = await Promise.all(slides.map(async (slide, i) => {
-        if (i === 0) return null; // cover slide uses user's photo
-        const prompt = `Abstract atmospheric background texture for a ${btLabel} social media slide. Theme: ${slide.tag||slide.headline||"professional"}. Dark moody cinematic, subtle bokeh or geometric texture, no text, no people, no logos, no faces. High contrast, rich blacks, suitable as text background.`;
+        if (i === 0) return null;
+        const variation = variations[(i-1) % variations.length];
+        const prompt = `${masterTheme} Composition: ${variation}. Premium quality, cinematic. Absolutely no text, no words, no letters, no typography, no numbers, no faces.`;
         try {
-          console.log("Generating bg for slide", i, "prompt:", prompt.slice(0,60));
           const res = await fetch("/api/generate-bg", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ prompt })
           });
           const data = await res.json();
-          console.log("BG result slide", i, ":", data.imageUrl ? "got image" : "no image", data.error||"");
           return data.imageUrl || null;
-        } catch(e) { console.error("BG fetch error slide", i, e); return null; }
+        } catch(e) { console.error("BG error slide", i, e); return null; }
       }));
+
       const bgMap = {};
       results.forEach((url, i) => { if (url) bgMap[i] = url; });
       setSlideBgs(bgMap);
