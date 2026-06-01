@@ -706,25 +706,25 @@ Return ONLY valid JSON array:
 
   
   const INDUSTRY_THEMES = {
-    marketer:   { palette:"deep navy, electric blue, gold accents", feel:"premium SaaS dashboard aesthetic, data-inspired geometry, modern tech gradients, digital glow", texture:"smooth gradient mesh, subtle grid lines, glowing orbs" },
-    coach:      { palette:"deep charcoal, warm gold, cream white", feel:"luxury consulting brand aesthetic, premium corporate, confident clean lines, aspirational depth", texture:"layered dark gradients, subtle diagonal lines, gold light leak" },
-    fitness:    { palette:"deep black, electric blue, neon green accents", feel:"high energy athletic brand, powerful dark gradients, dynamic motion lines, performance aesthetic", texture:"dark bokeh spheres, energy wave patterns, dramatic light beams" },
-    beauty:     { palette:"blush pink, rose gold, soft cream, marble white", feel:"luxury beauty brand aesthetic, soft feminine premium, spa and wellness", texture:"marble texture blur, soft pastel gradient, pearl shimmer, delicate bokeh" },
-    restaurant: { palette:"deep amber, warm burgundy, candlelight gold", feel:"premium dining ambience, warm luxury restaurant atmosphere, intimate depth", texture:"warm bokeh orbs, candlelight glow, rich dark gradient, velvet texture" },
-    realestate: { palette:"clean white, warm grey, stone beige, gold", feel:"luxury property brand aesthetic, architectural premium, aspirational modern living", texture:"clean architectural shapes blur, marble gradient, glass reflections, premium minimal" },
-    ecommerce:  { palette:"clean white, soft grey, brand accent gold", feel:"premium product brand aesthetic, clean modern commercial, luxury retail", texture:"clean gradient, subtle dot grid, soft shadow depth, premium minimal texture" },
-    other:      { palette:"deep charcoal, slate blue, warm gold", feel:"premium modern business brand aesthetic, professional depth, clean corporate luxury", texture:"smooth dark gradient, subtle geometric shapes, professional glow" },
+    marketer:   { palette:"deep navy #0a0f1e, electric blue #1a4bff, gold #C9A84C", gradient:"deep navy to midnight blue radial gradient", accent:"electric blue geometric light rays, gold bokeh particles" },
+    coach:      { palette:"rich charcoal #111111, warm gold #C9A84C, soft cream #f5f0e8", gradient:"deep charcoal to dark warm grey gradient", accent:"gold diagonal light streak, subtle cream vignette edges" },
+    fitness:    { palette:"pure black #080808, electric blue #00a8ff, silver #c0c0c0", gradient:"black to deep charcoal linear gradient", accent:"blue energy arc, silver geometric lines, dramatic corner lighting" },
+    beauty:     { palette:"soft blush #f7e8e8, rose gold #c4956a, pearl white #faf7f5", gradient:"soft blush to warm cream radial gradient", accent:"rose gold bokeh circles, pearl shimmer overlay, delicate light diffusion" },
+    restaurant: { palette:"deep burgundy #1a0a0a, warm amber #c97c2a, rich gold #C9A84C", gradient:"deep burgundy to warm black radial gradient", accent:"warm amber bokeh glow, gold light particles, candlelight vignette" },
+    realestate: { palette:"clean white #fafafa, warm stone #c8b89a, deep charcoal #1a1a1a", gradient:"warm white to soft stone linear gradient", accent:"subtle geometric grid lines, clean shadow depth, minimal luxury spacing" },
+    ecommerce:  { palette:"pure white #ffffff, soft grey #e8e8e8, gold #C9A84C", gradient:"clean white to soft grey radial gradient", accent:"gold accent line, subtle dot grid, clean minimal depth" },
+    other:      { palette:"deep charcoal #111827, slate blue #1e3a5f, warm gold #C9A84C", gradient:"deep charcoal to dark slate radial gradient", accent:"gold geometric accent, blue ambient glow, professional depth layers" },
   };
 
   const SLIDE_PURPOSES = [
-    "darker moodier gradient, tension and unease in the colour palette, heavy shadow",
-    "layered depth with contrasting tones, complexity and hidden layers in the abstract",
-    "lighter gradient shift, a beam of light or clarity breaking through darker tones",
-    "deep heavy dark tones, weight and consequence in the abstract depth",
-    "cleaner lighter gradient, open space, possibility and clarity emerging",
-    "richest most polished version of the palette, full premium expression, hero moment",
-    "detailed texture close-up, precision and specificity in the abstract pattern",
-    "gradient transition from dark to light, movement and transformation in the abstract",
+    "centred radial gradient, darkest at edges, subtle light bloom at centre",
+    "diagonal gradient sweep, geometric accent lines in upper third",
+    "soft bokeh circles scattered across dark background, depth of field effect",
+    "linear gradient from bottom left to top right, clean minimal",
+    "layered gradient with subtle noise texture, premium depth",
+    "strong vignette edges, bright focal centre, dramatic spotlight effect",
+    "geometric shape in background — circle or triangle outline, very subtle opacity",
+    "horizontal light streak across middle third, gradient above and below",
   ];
 
   const generateBackgrounds = async (slides, businessType) => {
@@ -732,8 +732,8 @@ Return ONLY valid JSON array:
     const theme = INDUSTRY_THEMES[businessType] || INDUSTRY_THEMES.other;
     const carouselTopic = slides[0]?.headline || slides.find(s=>s.headline)?.headline || "professional topic";
 
-    // Master style — abstract design, no people, no photography
-    const masterStyle = `Premium abstract graphic design background. Colour palette: ${theme.palette}. Design feel: ${theme.feel}. Texture style: ${theme.texture}. STRICT RULES: absolutely no humans, no faces, no hands, no body parts, no text, no words, no letters, no numbers, no logos, no photography. Pure abstract design only — gradients, bokeh, geometric shapes, light leaks, depth layers, premium textures. Must be dark enough for white text overlay to be readable.`;
+    // Pure graphic design backgrounds — no photography, no objects, no people
+    const masterStyle = `Premium graphic design background. Colours: ${theme.palette}. Base: ${theme.gradient}. Accents: ${theme.accent}. ABSOLUTE RULES: no humans, no faces, no hands, no objects, no laptops, no furniture, no buildings, no food, no text, no words, no letters, no numbers, no logos. ONLY: smooth colour gradients, soft bokeh light circles, subtle geometric lines, premium depth layers, luxury colour transitions. Style: Canva Pro premium template, Adobe Express, luxury brand design system. Dark enough for white text overlay to remain fully readable.`;
 
     try {
       const results = await Promise.all(slides.map(async (slide, i) => {
@@ -741,7 +741,7 @@ Return ONLY valid JSON array:
 
         const purpose = SLIDE_PURPOSES[(i-1) % SLIDE_PURPOSES.length];
 
-        const prompt = `${masterStyle} Slide variation: ${purpose}. Same colour palette and design language throughout — only the mood and composition shifts. Premium Canva template quality. Ultra high quality abstract graphic design.`;
+        const prompt = `${masterStyle} Composition: ${purpose}. Maintain exact same colour palette across all slides. Only composition and gradient direction changes. Ultra premium quality.`;
 
         try {
           const res = await fetch("/api/generate-bg", {
