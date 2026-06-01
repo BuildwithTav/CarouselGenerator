@@ -704,17 +704,7 @@ Return ONLY valid JSON array:
     setRandomising(false);
   };
 
-  const INDUSTRY_THEMES = {
-    marketer:   { world:"entrepreneur workspace, laptop on desk, coffee shop window, city views, travel lifestyle, soft ambient light", style:"moody productive atmosphere, warm tones, depth of field" },
-    coach:      { world:"premium office interior, boardroom, professional consultation setting, clean minimal workspace, leather and wood textures", style:"high-end professional, confident lighting, aspirational" },
-    fitness:    { world:"modern gym interior, training equipment, athletic performance, motion blur, weights, athletic studio", style:"high energy, dramatic lighting, dark and powerful" },
-    beauty:     { world:"luxury salon interior, beauty products, marble surfaces, soft diffused lighting, clean aesthetic, premium skincare", style:"soft elegant, pastel and warm tones, premium feel" },
-    restaurant: { world:"warm restaurant interior, candlelight, food styling on plates, dining tables, chef kitchen, rich textures", style:"warm intimate, rich colours, premium dining atmosphere" },
-    realestate: { world:"luxury property interior, architectural detail, premium living spaces, floor to ceiling windows, modern kitchen", style:"clean aspirational, natural light, premium property" },
-    ecommerce:  { world:"clean product photography studio, lifestyle product shots, premium packaging, minimal surfaces", style:"clean modern, studio lighting, product-focused" },
-    other:      { world:"professional business environment, modern office, clean workspace, premium setting", style:"professional premium, clean modern aesthetic" },
-  };
-
+  
   const INDUSTRY_THEMES = {
     marketer:   { world:"entrepreneur workspace photography", style:"moody warm tones, depth of field, ambient light, cinematic", colorGrade:"rich warm shadows, golden highlights, dark backgrounds" },
     coach:      { world:"premium professional office and consulting environment photography", style:"high-end aspirational, confident lighting, clean lines", colorGrade:"deep navy and charcoal tones, selective warm accent light" },
