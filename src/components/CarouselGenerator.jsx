@@ -5,14 +5,26 @@ const GOLD = "#C9A84C";
 const STORAGE_KEY = "bwt_v11";
 
 const ACCENT_SWATCHES = [
-  { id:"gold",    label:"Gold",    hex:"#C9A84C" },
-  { id:"blue",    label:"Blue",    hex:"#4A9EFF" },
-  { id:"green",   label:"Green",   hex:"#4CAF82" },
-  { id:"purple",  label:"Purple",  hex:"#9B59B6" },
-  { id:"red",     label:"Red",     hex:"#E74C3C" },
-  { id:"coral",   label:"Coral",   hex:"#FF6B6B" },
-  { id:"white",   label:"White",   hex:"#FFFFFF" },
-  { id:"custom",  label:"Custom",  hex:null },
+  { id:"gold",   label:"Gold",   hex:"#C9A84C" },
+  { id:"white",  label:"White",  hex:"#FFFFFF" },
+  { id:"blue",   label:"Blue",   hex:"#3B82F6" },
+  { id:"coral",  label:"Coral",  hex:"#E8553E" },
+  { id:"mint",   label:"Mint",   hex:"#10B981" },
+  { id:"lilac",  label:"Lilac",  hex:"#8B5CF6" },
+  { id:"rose",   label:"Rose",   hex:"#F43F5E" },
+  { id:"orange", label:"Orange", hex:"#F97316" },
+];
+const BG_COLOUR_PRESETS = [
+  { id:"midnight", label:"Midnight", hex:"#0A0A0A" },
+  { id:"royal",    label:"Royal",    hex:"#1a1a6e" },
+  { id:"softblue", label:"Sky",      hex:"#3B82F6" },
+  { id:"sage",     label:"Sage",     hex:"#4CAF7D" },
+  { id:"purple",   label:"Purple",   hex:"#7C3AED" },
+  { id:"coral",    label:"Coral",    hex:"#E8553E" },
+  { id:"orange",   label:"Orange",   hex:"#F97316" },
+  { id:"ivory",    label:"Ivory",    hex:"#F5F3EF" },
+  { id:"cream",    label:"Cream",    hex:"#FAF7F2" },
+  { id:"white",    label:"White",    hex:"#FFFFFF" },
 ];
 
 const FONTS = [
@@ -52,6 +64,13 @@ const BRIEF_PLACEHOLDERS = {
   ecommerce:  "Title: Why your product page is losing sales silently.\nSlides 2-4: one reason each with a fix.\nFinal slide: follow CTA only.",
   other:      "Title: The thing nobody tells you about starting out.\nSlides 2-4: one real insight each, keep it grounded.\nFinal slide: follow CTA only.",
 };
+
+const PRESET_BG_COLOURS = [
+  "#0A0A0A","#1a1a6e","#3B82F6","#4CAF7D","#7C3AED","#E8553E","#F97316","#F5F3EF","#FAF7F2","#FFFFFF"
+];
+const PRESET_ACCENT_COLOURS = [
+  "#C9A84C","#FFFFFF","#3B82F6","#E8553E","#10B981","#8B5CF6","#F43F5E","#F97316"
+];
 
 const BG_MODES = [
   { id:"dark",   label:"Dark",   desc:"Dark background" },
@@ -209,9 +228,9 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       font-size:17px; color:${C.dark?"rgba(255,255,255,0.28)":"rgba(0,0,0,0.25)"}; font-family:'${bodyFont}',sans-serif; }
     .swipe { position:absolute; bottom:85px; left:0; right:0; z-index:10; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; }
     .swipe-dots { display:flex; align-items:center; justify-content:center; gap:6px; }
-    .swipe-dot { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.22); }
-    .swipe-dot-active { width:18px; height:6px; border-radius:3px; background:rgba(255,255,255,0.7); }
-    .swipe-label { font-size:${Math.round(isPortrait?22:18)}px; letter-spacing:3px; text-transform:uppercase; font-weight:700; color:rgba(255,255,255,0.22); font-family:'${bodyFont}',sans-serif; display:flex; align-items:center; gap:6px; }
+    .swipe-dot { width:6px; height:6px; border-radius:50%; background:${C.dark?"rgba(255,255,255,0.22)":"rgba(0,0,0,0.2)"}; }
+    .swipe-dot-active { width:18px; height:6px; border-radius:3px; background:${C.dark?"rgba(255,255,255,0.7)":"rgba(0,0,0,0.5)"}; }
+    .swipe-label { font-size:${Math.round(isPortrait?22:18)}px; letter-spacing:3px; text-transform:uppercase; font-weight:700; color:${C.dark?"rgba(255,255,255,0.22)":"rgba(0,0,0,0.2)"}; font-family:'${bodyFont}',sans-serif; display:flex; align-items:center; gap:6px; }
     .tag { display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"};
       font-size:14px; font-weight:800; letter-spacing:2px;
       padding:8px 24px; border-radius:60px; font-family:'${bodyFont}',sans-serif; }
@@ -303,8 +322,8 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       const hl = accentHL(slide.headline||"");
       const isCentre = coverPos === "centre";
       return `
-        <div style="position:absolute;top:80px;left:80px;z-index:10;">${coverBadgeHTML}</div>
         <div class="cover-content">
+          ${coverBadgeHTML}
           ${slide.tag ? `<div style="margin-bottom:20px"><span class="tag">${esc(slide.tag.toUpperCase())}</span></div>` : ""}
           <div style="font-size:${isPortrait?80:66}px;font-weight:800;line-height:1.1;letter-spacing:${hs.letterSpacing};${ts}font-family:'${hlFont}',sans-serif;color:${C.text};${isCentre?"text-align:center;":""}width:100%;white-space:pre-wrap;">${hl}</div>
           ${slide.body ? `<div style="font-size:${isPortrait?32:26}px;line-height:1.6;color:${C.sub};margin-top:24px;font-family:'${bodyFont}',sans-serif;${ts2}${isCentre?"text-align:center;":""}">${accentHL(slide.body)}</div>` : ""}
@@ -503,17 +522,21 @@ export default function App() {
   const [badgeArea, setBadgeArea] = useState(null);
 
   const [accentSwatch, setAccentSwatch] = useState(S?.accentSwatch||"gold");
+  const [accentCustomSlots, setAccentCustomSlots] = useState(S?.accentCustomSlots||["","",""]);
+  const [bgCustomSlots, setBgCustomSlots] = useState(S?.bgCustomSlots||["","",""]); 
   const [accentColor, setAccentColor] = useState(S?.accentColor||GOLD);
   const [fontId, setFontId] = useState(S?.fontId||"montserrat");
   const [headlineStyle, setHeadlineStyle] = useState(S?.headlineStyle||"bold");
   const [showNums, setShowNums] = useState(S?.showNums??false);
   const [bgMode, setBgMode] = useState(S?.bgMode||"dark");
   const [templateBgUrl, setTemplateBgUrl] = useState(S?.templateBgUrl||null);
-  const [overlayDark, setOverlayDark] = useState(S?.overlayDark||65);
+  const [overlayDark, setOverlayDark] = useState(S?.overlayDark??45);
 
   const [topic, setTopic] = useState("");
   const [inspirationImg, setInspirationImg] = useState(null);
   const [ratio, setRatio] = useState(S?.ratio||"instagram");
+  const [customBgSlots, setCustomBgSlots] = useState(S?.customBgSlots||["","",""]);
+  const [customAccentSlots, setCustomAccentSlots] = useState(S?.customAccentSlots||["","",""]);
   const [bgColour, setBgColour] = useState(S?.bgColour||"#1a1a2e");
   const [slideCount, setSlideCount] = useState(6);
   const [err, setErr] = useState("");
@@ -562,7 +585,7 @@ export default function App() {
 
   useEffect(() => {
     saveS({profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
-           coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,fontId,headlineStyle,showNums,
+           coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
            bgMode,templateBgUrl,overlayDark,ratio,bgColour});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,fontId,headlineStyle,showNums,
@@ -1601,7 +1624,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     </button>
                   ))}
                 </div>
-                {accentSwatch==="custom"&&(
+                <div style={{display:"flex",gap:8,marginTop:8}}>
+                    {accentCustomSlots.map((c,i)=>(
+                      <div key={i} style={{position:"relative"}}>
+                        <div onClick={()=>c&&(setAccentColor(c),setAccentSwatch("custom"))} style={{width:36,height:36,borderRadius:"50%",background:c||A.surface,border:accentColor===c&&c?`3px solid ${A.text}`:`2px dashed ${A.border}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:A.muted}}>{!c&&"+"}</div>
+                        <input type="color" value={c||accentColor} onChange={e=>{const s=[...accentCustomSlots];s[i]=e.target.value;setAccentCustomSlots(s);setAccentColor(e.target.value);setAccentSwatch("custom");}} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
+                      </div>
+                    ))}
+                  </div>
+                  {accentSwatch==="custom"&&(
                   <div style={{display:"flex",gap:10,alignItems:"center",marginTop:4}}>
                     <input type="color" value={accentColor} onChange={e=>setAccentColor(e.target.value)} style={{width:40,height:40,borderRadius:8,border:`1px solid ${A.border}`,cursor:"pointer",padding:2}}/>
                     <input value={accentColor} onChange={e=>setAccentColor(e.target.value)} placeholder="#C9A84C" style={{...inp,flex:1,fontSize:13}}/>
@@ -1622,8 +1653,19 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 {bgMode==="colour"&&(
                   <div style={{marginTop:12}}>
                     <label style={lbl}>Pick a colour</label>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:10}}>
+                      {BG_COLOUR_PRESETS.map(p=>(
+                        <button key={p.id} onClick={()=>setBgColour(p.hex)} title={p.label} style={{width:32,height:32,borderRadius:"50%",background:p.hex,border:bgColour===p.hex?`3px solid ${A.text}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0,boxShadow:["#F5F3EF","#FAF7F2","#FFFFFF"].includes(p.hex)?`inset 0 0 0 1px ${A.border}`:"none"}}/>
+                      ))}
+                      {bgCustomSlots.map((c,i)=>(
+                        <div key={i} style={{position:"relative"}}>
+                          <div onClick={()=>c&&setBgColour(c)} style={{width:32,height:32,borderRadius:"50%",background:c||A.surface,border:bgColour===c&&c?`3px solid ${A.text}`:`2px dashed ${A.border}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:A.muted}}>{!c&&"+"}</div>
+                          <input type="color" value={c||bgColour} onChange={e=>{const s=[...bgCustomSlots];s[i]=e.target.value;setBgCustomSlots(s);setBgColour(e.target.value);}} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
+                        </div>
+                      ))}
+                    </div>
                     <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                      <input type="color" value={bgColour} onChange={e=>setBgColour(e.target.value)} style={{width:48,height:48,borderRadius:8,border:`1px solid ${A.border}`,cursor:"pointer",padding:2}}/>
+                      <input type="color" value={bgColour} onChange={e=>setBgColour(e.target.value)} style={{width:40,height:40,borderRadius:8,border:`1px solid ${A.border}`,cursor:"pointer",padding:2}}/>
                       <input value={bgColour} onChange={e=>setBgColour(e.target.value)} placeholder="#1a1a2e" style={{...inp,flex:1,fontSize:13}}/>
                     </div>
                   </div>
@@ -1637,7 +1679,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <input ref={templateBgRef} type="file" accept="image/*" onChange={e=>readFile(e,setTemplateBgUrl)} style={{display:"none"}}/>
                     {templateBgUrl&&(
                       <div style={{marginTop:12}}>
-                        <label style={lbl}>Overlay — {overlayDark}%</label>
+                        <label style={lbl}>Cover Photo Darkness — {overlayDark}%</label>
                         <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{marginBottom:14}}/>
                         <label style={{...lbl,marginBottom:6}}>Reposition background <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(drag)</span></label>
                         <div
