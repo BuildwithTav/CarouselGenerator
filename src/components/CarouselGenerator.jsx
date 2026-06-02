@@ -439,61 +439,28 @@ function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover }) {
 
 // ─── DOWNLOAD ────────────────────────────────────────────
 
-async function downloadSlideAsPNG(slide, idx, total, opts, filename, isCover) {
+async function downloadSlideAsPNG(slide, idx, total, opts, filename, isCover=false) {
   const isPortrait = opts.ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1350;
   const html = buildSlideHTML(slide, idx, total, opts, isCover);
-  const iframe = document.createElement("iframe");
-  iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
-  document.body.appendChild(iframe);
-  return new Promise((resolve, reject) => {
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    doc.open(); doc.write(html); doc.close();
-    setTimeout(async () => {
-      try {
-        const win = iframe.contentWindow;
-        await new Promise(r => {
-          const s = doc.createElement("script");
-          s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-          s.onload = r; s.onerror = r; doc.head.appendChild(s); setTimeout(r, 4000);
-        });
-        if (!win.html2canvas) throw new Error("html2canvas not loaded");
-        const el = doc.querySelector(".slide") || doc.body;
-        const canvas = await win.html2canvas(el, { useCORS:true, allowTaint:true, scale:1, width:W, height:H, windowWidth:W, windowHeight:H, backgroundColor:null, logging:false });
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        if (isMobile) {
-          const dataUrl = canvas.toDataURL("image/png",1.0);
-          const a = document.createElement("a");
-          a.href = dataUrl; a.download = filename;
-          document.body.appendChild(a); a.click(); document.body.removeChild(a);
-          document.body.removeChild(iframe); resolve();
-        } else {
-          canvas.toBlob(blob => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url; a.download = filename;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-            document.body.removeChild(iframe); resolve();
-          }, "image/png", 1.0);
-        }
-      } catch(e) { document.body.removeChild(iframe); reject(e); }
-    }, 2500);
+  const res = await fetch("/api/render-slide", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ html, width: W, height: H })
   });
+  const data = await res.json();
+  if (!data.image) throw new Error(data.error || "Render failed");
+  const byteChars = atob(data.image);
+  const byteArr = new Uint8Array(byteChars.length);
+  for (let j=0; j<byteChars.length; j++) byteArr[j] = byteChars.charCodeAt(j);
+  const blob = new Blob([byteArr], {type:"image/png"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
-function QuotePreview({ html, W, H, scale }) {
-  const ref = useRef(null);
-  useEffect(() => {
-    const iframe = ref.current; if (!iframe) return;
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!doc) return;
-    doc.open(); doc.write(html); doc.close();
-  }, [html]);
-  return <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin"/>;
-}
-
-// ─── APP ─────────────────────────────────────────────────
 
 function FeedbackForm({ A, inp, GOLD }) {
   const [rating, setRating] = useState(0);
@@ -820,28 +787,28 @@ Return ONLY valid JSON array:
       const zip = new window.JSZip();
       for (let i=0; i<slides.length; i++) {
         try {
-          const blob = await new Promise(async (res,rej) => {
-            const opts = slideOpts(i);
-            const isPortrait = opts.ratio==="portrait";
-            const W=1080, H=isPortrait?1920:1350;
-            const html = buildSlideHTML(slides[i],i,slides.length,opts,i===0);
-            const iframe = document.createElement("iframe");
-            iframe.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
-            document.body.appendChild(iframe);
-            const doc = iframe.contentDocument||iframe.contentWindow?.document;
-            doc.open(); doc.write(html); doc.close();
-            setTimeout(async()=>{
-              try {
-                const win=iframe.contentWindow;
-                await new Promise(r=>{const s=doc.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=r;s.onerror=r;doc.head.appendChild(s);setTimeout(r,4000);});
-                if(!win.html2canvas) throw new Error("no h2c");
-                const canvas=await win.html2canvas(doc.querySelector(".slide")||doc.body,{useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
-                canvas.toBlob(b=>{document.body.removeChild(iframe);res(b);},"image/png",1.0);
-              } catch(e){document.body.removeChild(iframe);rej(e);}
-            },2500);
+          const opts = slideOpts(i);
+          const isPortrait = opts.ratio==="portrait";
+          const W=1080, H=isPortrait?1920:1350;
+          const html = buildSlideHTML(slides[i],i,slides.length,opts,i===0);
+
+          // Use ScreenshotOne for reliable server-side rendering (works on mobile + desktop)
+          const res = await fetch("/api/render-slide", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ html, width: W, height: H })
           });
-          zip.file(`slide-${i+1}.png`,blob);
-        } catch(e){console.error("Slide",i+1,"failed:",e);}
+          const data = await res.json();
+
+          if (data.image) {
+            const byteChars = atob(data.image);
+            const byteArr = new Uint8Array(byteChars.length);
+            for (let j=0; j<byteChars.length; j++) byteArr[j] = byteChars.charCodeAt(j);
+            zip.file(`slide-${i+1}.png`, byteArr);
+          } else {
+            console.error("Slide", i+1, "render failed:", data.error);
+          }
+        } catch(e){ console.error("Slide",i+1,"failed:",e); }
       }
       const zipBlob = await zip.generateAsync({type:"blob"});
       const url = URL.createObjectURL(zipBlob);
@@ -849,7 +816,7 @@ Return ONLY valid JSON array:
       a.href=url; a.download="carousel-slides.zip";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(()=>URL.revokeObjectURL(url),2000);
-    } catch(e){console.error("Zip failed:",e);alert("Download failed — try again.");}
+    } catch(e){ console.error("Zip failed:",e); alert("Download failed — try again."); }
     setDownloadingAll(false); setDownloadDone(true); setTimeout(()=>setDownloadDone(false),2500);
   };
 
