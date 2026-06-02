@@ -87,10 +87,10 @@ const COVER_POSITIONS = [
 
 // ─── HELPERS ─────────────────────────────────────────────
 
-function loadS() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||"null"); } catch { return null; } }
-function saveS(d) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} }
-function loadHistory() { try { return JSON.parse(localStorage.getItem("bwt_history")||"[]"); } catch { return []; } }
-function saveHistory(h) { try { localStorage.setItem("bwt_history", JSON.stringify(h.slice(0,10))); } catch {} }
+function loadS() { try { if (typeof window === "undefined") return null; return JSON.parse(localStorage.getItem(STORAGE_KEY)||"null"); } catch { return null; } }
+function saveS(d) { try { if (typeof window === "undefined") return; localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} }
+function loadHistory() { try { if (typeof window === "undefined") return []; return JSON.parse(localStorage.getItem("bwt_history")||"[]"); } catch { return []; } }
+function saveHistory(h) { try { if (typeof window === "undefined") return; localStorage.setItem("bwt_history", JSON.stringify(h.slice(0,10))); } catch {} }
 function Spin({c="#fff"}) { return <div style={{width:14,height:14,borderRadius:"50%",border:`2px solid rgba(255,255,255,0.15)`,borderTop:`2px solid ${c}`,animation:"spin 0.7s linear infinite",flexShrink:0}}/>; }
 
 async function sampleImageBrightness(imageUrl) {
