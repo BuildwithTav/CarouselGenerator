@@ -42,6 +42,17 @@ const BUSINESS_TYPES = [
   { id:"other",      label:"Other",                   audience:"your target audience" },
 ];
 
+const BRIEF_PLACEHOLDERS = {
+  marketer:   "Title: The reason your content gets views but zero clients.\nSlides 2-4: one specific reason each, keep it direct.\nFinal slide: follow CTA only.",
+  coach:      "Title: The question every client asks me in week one.\nSlides 2-4: break down the answer step by step.\nFinal slide: one soft CTA only.",
+  fitness:    "Title: Why most people quit the gym after 3 weeks.\nSlides 2-4: one real reason each with a fix.\nFinal slide: follow for daily tips.",
+  beauty:     "Title: What nobody tells you about your skincare routine.\nSlides 2-4: one insight per slide, specific.\nFinal slide: follow CTA only.",
+  restaurant: "Title: The one thing that keeps customers coming back.\nSlides 2-4: specific details — food, service, atmosphere.\nFinal slide: follow to see behind the scenes.",
+  realestate: "Title: What nobody tells you before buying your first home.\nSlides 2-4: one honest insight each.\nFinal slide: save this and come back to it.",
+  ecommerce:  "Title: Why your product page is losing sales silently.\nSlides 2-4: one reason each with a fix.\nFinal slide: follow CTA only.",
+  other:      "Title: The thing nobody tells you about starting out.\nSlides 2-4: one real insight each, keep it grounded.\nFinal slide: follow CTA only.",
+};
+
 const BG_MODES = [
   { id:"dark",   label:"Dark",   desc:"Dark background" },
   { id:"light",  label:"Light",  desc:"Light background" },
@@ -135,15 +146,21 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
   function accentHL(text) {
     const aw = (slide.accent_word||"").trim();
-    if (!aw || !text.includes(aw)) {
-      const t = hs.transform === "uppercase" ? (text||"").toUpperCase() : (text||"");
-      return esc(t);
+    if (!aw) {
+      return esc(hs.transform==="uppercase"?(text||"").toUpperCase():(text||""));
     }
-    const i = text.indexOf(aw);
-    const before = hs.transform === "uppercase" ? text.slice(0,i).toUpperCase() : text.slice(0,i);
-    const accent = hs.transform === "uppercase" ? aw.toUpperCase() : aw;
-    const after = hs.transform === "uppercase" ? text.slice(i+aw.length).toUpperCase() : text.slice(i+aw.length);
-    return `${esc(before)}<span style="color:${C.accent}">${esc(accent)}</span>${esc(after)}`;
+    const escaped = aw.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+    const regex = new RegExp(escaped+"[.,!?:;]*");
+    const match = text.match(regex);
+    if (!match) {
+      return esc(hs.transform==="uppercase"?(text||"").toUpperCase():(text||""));
+    }
+    const full = match[0];
+    const i = text.indexOf(full);
+    const before = hs.transform==="uppercase"?text.slice(0,i).toUpperCase():text.slice(0,i);
+    const accentPart = hs.transform==="uppercase"?full.toUpperCase():full;
+    const after = hs.transform==="uppercase"?text.slice(i+full.length).toUpperCase():text.slice(i+full.length);
+    return `${esc(before)}<span style="color:${C.accent}">${esc(accentPart)}</span>${esc(after)}`;
   }
 
   const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&family=Dancing+Script:wght@600;700&display=swap`;
@@ -427,14 +444,23 @@ async function downloadSlideAsPNG(slide, idx, total, opts, filename, isCover) {
         if (!win.html2canvas) throw new Error("html2canvas not loaded");
         const el = doc.querySelector(".slide") || doc.body;
         const canvas = await win.html2canvas(el, { useCORS:true, allowTaint:true, scale:1, width:W, height:H, windowWidth:W, windowHeight:H, backgroundColor:null, logging:false });
-        canvas.toBlob(blob => {
-          const url = URL.createObjectURL(blob);
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          const dataUrl = canvas.toDataURL("image/png",1.0);
           const a = document.createElement("a");
-          a.href = url; a.download = filename;
+          a.href = dataUrl; a.download = filename;
           document.body.appendChild(a); a.click(); document.body.removeChild(a);
-          setTimeout(() => URL.revokeObjectURL(url), 1000);
           document.body.removeChild(iframe); resolve();
-        }, "image/png", 1.0);
+        } else {
+          canvas.toBlob(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            document.body.removeChild(iframe); resolve();
+          }, "image/png", 1.0);
+        }
       } catch(e) { document.body.removeChild(iframe); reject(e); }
     }, 2500);
   });
@@ -605,6 +631,7 @@ export default function App() {
     const btLabel = businessType==="other"?(otherType||"brand"):btObj?.label||"Digital Marketer";
     const audienceDesc = audienceType==="peers" ? `other ${btLabel.toLowerCase()}s and industry professionals` : (btObj?.audience||"your target audience");
     const voice = voiceProfile || `Write for a ${btLabel}. Direct, specific, speak to real problems. No hype.`;
+    const briefSection = angle.trim() ? `\nSPECIFIC BRIEF — follow this exactly: ${angle.trim()}` : "";
     const inspiration = imgBase64 ? `\nINSPIRATION IMAGE: The topic has been extracted from the image and is shown above. Use that exact topic. Write the carousel entirely in my voice with fresh copy — do not reproduce any text from the image.` : "";
     const styles = [
       "myth-busting: challenge a common belief head-on, use data or logic to flip it",
@@ -614,13 +641,14 @@ export default function App() {
       "step-by-step: practical, sequential, each slide one concrete action",
       "empathetic: speak directly to the frustration, validate it, then reframe it",
     ];
-    const style = angle ? `guided by this creative direction: "${angle}"` : styles[Math.floor(Math.random()*styles.length)];
+    const style = angle.trim() ? `guided by this specific brief: "${angle.trim()}"` : styles[Math.floor(Math.random()*styles.length)];
+    const narrativeStyle = angle.trim() ? "" : `\nNARRATIVE STYLE: ${style}`;
     return `You are creating an Instagram carousel for a ${btLabel}.
 You are the copywriter AND creative director. Every slide must earn its place.
 
 VOICE: ${voice}
 AUDIENCE: ${audienceDesc}
-TOPIC: "${topicStr}"${inspiration}
+TOPIC: "${topicStr}"${briefSection}${inspiration}${narrativeStyle}
 SLIDES: ${slideCount}
 NARRATIVE STYLE: ${style}
 
@@ -766,11 +794,47 @@ Return ONLY valid JSON array:
 
   const downloadAll = async () => {
     setDownloadingAll(true);
-    for (let i=0; i<slides.length; i++) {
-      try { await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`, i===0); await new Promise(r=>setTimeout(r,600)); }
-      catch(e) { console.error(e); }
-    }
-    setDownloadingAll(false); setDownloadDone(true); setTimeout(()=>setDownloadDone(false), 2500);
+    try {
+      await new Promise((res,rej) => {
+        if (window.JSZip) return res();
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+        s.onload = res; s.onerror = rej; document.head.appendChild(s); setTimeout(res,5000);
+      });
+      const zip = new window.JSZip();
+      for (let i=0; i<slides.length; i++) {
+        try {
+          const blob = await new Promise(async (res,rej) => {
+            const opts = slideOpts(i);
+            const isPortrait = opts.ratio==="portrait";
+            const W=1080, H=isPortrait?1920:1350;
+            const html = buildSlideHTML(slides[i],i,slides.length,opts,i===0);
+            const iframe = document.createElement("iframe");
+            iframe.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
+            document.body.appendChild(iframe);
+            const doc = iframe.contentDocument||iframe.contentWindow?.document;
+            doc.open(); doc.write(html); doc.close();
+            setTimeout(async()=>{
+              try {
+                const win=iframe.contentWindow;
+                await new Promise(r=>{const s=doc.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=r;s.onerror=r;doc.head.appendChild(s);setTimeout(r,4000);});
+                if(!win.html2canvas) throw new Error("no h2c");
+                const canvas=await win.html2canvas(doc.querySelector(".slide")||doc.body,{useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+                canvas.toBlob(b=>{document.body.removeChild(iframe);res(b);},"image/png",1.0);
+              } catch(e){document.body.removeChild(iframe);rej(e);}
+            },2500);
+          });
+          zip.file(`slide-${i+1}.png`,blob);
+        } catch(e){console.error("Slide",i+1,"failed:",e);}
+      }
+      const zipBlob = await zip.generateAsync({type:"blob"});
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href=url; a.download="carousel-slides.zip";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url),2000);
+    } catch(e){console.error("Zip failed:",e);alert("Download failed — try again.");}
+    setDownloadingAll(false); setDownloadDone(true); setTimeout(()=>setDownloadDone(false),2500);
   };
 
   const generateQuotes = async () => {
@@ -1336,7 +1400,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
             <div style={{marginBottom:16}}>
               <label style={lbl}>Angle <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional — what should this teach, challenge, or make people feel?)</span></label>
-              <input value={angle} onChange={e=>setAngle(e.target.value)} placeholder="e.g. Show the problem first, then give them the answer" style={{...inp,fontSize:13}}/>
+              <div style={{position:"relative"}}>
+                <textarea value={angle} onChange={e=>setAngle(e.target.value.slice(0,280))} placeholder={BRIEF_PLACEHOLDERS[businessType]||BRIEF_PLACEHOLDERS.other} rows={4} style={{...inp,fontSize:13,resize:"none",lineHeight:1.6,paddingBottom:22}}/>
+                <div style={{position:"absolute",bottom:8,right:12,fontSize:10,color:angle.length>240?"#c0392b":"#aaa",fontWeight:600}}>{angle.length}/280</div>
+              </div>
             </div>
 
             <div style={{marginBottom:16}}>
@@ -1660,7 +1727,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     {downloading?<><Spin c={A.text}/>Processing...</>:downloadDone?"✓ Downloaded":`↓ Slide ${active+1}`}
                   </button>
                   <button onClick={downloadAll} disabled={downloadingAll} style={{flex:2,background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,padding:"10px",borderRadius:9,fontSize:13,fontWeight:800,border:`1px solid ${GOLD}33`,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                    {downloadingAll?<><Spin/>Downloading...</>:downloadDone?"✓ All Downloaded":`↓ Download All ${slides.length}`}
+                    {downloadingAll?<><Spin/>Downloading...</>:downloadDone?"✓ All Downloaded":`↓ Download All ${slides.length} (zip)`}
                   </button>
                 </div>
               </div>
