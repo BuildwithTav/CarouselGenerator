@@ -133,12 +133,13 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const accent = accentColor || GOLD;
   const isDark = bgMode !== "light";
   const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : "#0A0A0A";
+  const coverHasImage = isCover && !!coverImageUrl;
   const C = {
     bg: slideBg,
     accent,
-    text: isDark ? "#FFFFFF" : "#0A0A0A",
-    sub: isDark ? "rgba(255,255,255,0.72)" : "rgba(10,10,10,0.62)",
-    dark: isDark,
+    text: coverHasImage ? "#FFFFFF" : (isDark ? "#FFFFFF" : "#0A0A0A"),
+    sub: coverHasImage ? "rgba(255,255,255,0.82)" : (isDark ? "rgba(255,255,255,0.72)" : "rgba(10,10,10,0.62)"),
+    dark: coverHasImage ? true : isDark,
   };
 
   const hs = HEADLINE_STYLES.find(h => h.id === headlineStyle) || HEADLINE_STYLES[0];
@@ -450,14 +451,13 @@ function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover }) {
 
   return (
     <div onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#0A0A0A":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:previewW, height:previewH, flexShrink:0 }}>
-      <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin" title={`slide-${idx+1}`}/>
+      <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin allow-scripts" title={`slide-${idx+1}`}/>
 
     </div>
   );
 }
 
 // ─── DOWNLOAD ────────────────────────────────────────────
-
 async function downloadSlideAsPNG(slide, idx, total, opts, filename, isCover=false) {
   const isPortrait = opts.ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1350;
@@ -465,7 +465,13 @@ async function downloadSlideAsPNG(slide, idx, total, opts, filename, isCover=fal
   const res = await fetch("/api/render-slide", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ html, width: W, height: H })
+    body: JSON.stringify({ 
+      html, 
+      width: W, 
+      height: H,
+      coverImage: isCover ? (opts.coverImageUrl || null) : null,
+      profileImage: opts.profileUrl || null,
+    })
   });
   const data = await res.json();
   if (!data.image) throw new Error(data.error || "Render failed");
@@ -819,7 +825,13 @@ Return ONLY valid JSON array:
           const res = await fetch("/api/render-slide", {
             method: "POST",
             headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({ html, width: W, height: H })
+            body: JSON.stringify({ 
+              html, 
+              width: W, 
+              height: H,
+              coverImage: i===0 ? (opts.coverImageUrl || null) : null,
+              profileImage: opts.profileUrl || null,
+            })
           });
           const data = await res.json();
 
@@ -1765,6 +1777,16 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   ))}
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18,display:"flex",flexDirection:"column",gap:13}}>
+                  {active===0&&coverImageUrl&&(
+                    <div style={{background:A.bg,borderRadius:9,border:`1.5px solid ${A.border}`,padding:"12px 14px",marginBottom:4}}>
+                      <label style={lbl}>Cover Photo Darkness — {overlayDark}%</label>
+                      <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
+                    </div>
+                  )}
+                  <div style={{background:A.bg,borderRadius:9,border:`1.5px solid ${A.border}`,padding:"12px 14px",marginBottom:4}}>
+                    <label style={lbl}>Background Fade — {slideOverlays[active]??overlayDark}%</label>
+                    <input type="range" min={0} max={85} value={slideOverlays[active]??overlayDark} onChange={e=>setSlideOverlays(prev=>({...prev,[active]:+e.target.value}))} style={{width:"100%"}}/>
+                  </div>
                   <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={inp}/></div>
                   <div><label style={lbl}>Headline</label><textarea value={slides[active]?.headline||""} onChange={e=>updateSlide("headline",e.target.value)} rows={2} style={{...inp,resize:"vertical",lineHeight:1.5}}/></div>
                   <div><label style={lbl}>Accent word <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(renders in colour)</span></label><input value={slides[active]?.accent_word||""} onChange={e=>updateSlide("accent_word",e.target.value)} placeholder="exact word from headline" style={inp}/></div>
