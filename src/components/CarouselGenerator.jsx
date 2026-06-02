@@ -459,33 +459,51 @@ function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover }) {
 
 // ─── DOWNLOAD ────────────────────────────────────────────
 async function downloadSlideAsPNG(slide, idx, total, opts, filename, isCover=false) {
-  return new Promise((resolve, reject) => {
-    const isPortrait = opts.ratio === "portrait";
-    const W = 1080, H = isPortrait ? 1920 : 1350;
-    const html = buildSlideHTML(slide, idx, total, opts, isCover);
-    const iframe = document.createElement("iframe");
-    iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
-    document.body.appendChild(iframe);
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    doc.open(); doc.write(html); doc.close();
-    setTimeout(async () => {
-      try {
-        const win = iframe.contentWindow;
-        await new Promise(r => { const s=doc.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"; s.onload=r; s.onerror=r; doc.head.appendChild(s); setTimeout(r,4000); });
-        if (!win.html2canvas) throw new Error("html2canvas not loaded");
-        const canvas = await win.html2canvas(doc.querySelector(".slide")||doc.body, {useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
-        canvas.toBlob(blob => {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url; a.download = filename;
-          document.body.appendChild(a); a.click(); document.body.removeChild(a);
-          setTimeout(() => URL.revokeObjectURL(url), 1000);
-          document.body.removeChild(iframe); resolve();
-        }, "image/png", 1.0);
-      } catch(e) { document.body.removeChild(iframe); reject(e); }
-    }, 2500);
-  });
+  const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  let blob;
+  if (mobile) {
+    const isPortrait = opts.ratio==="portrait";
+    const W=1080, H=isPortrait?1920:1350;
+    const html = buildSlideHTML(slide,idx,total,opts,isCover);
+    const res = await fetch("/api/render-slide", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ html, width:W, height:H })
+    });
+    const data = await res.json();
+    if (!data.image) throw new Error(data.error||"Render failed");
+    const byteChars = atob(data.image);
+    const byteArr = new Uint8Array(byteChars.length);
+    for (let j=0;j<byteChars.length;j++) byteArr[j]=byteChars.charCodeAt(j);
+    blob = new Blob([byteArr],{type:"image/png"});
+  } else {
+    blob = await new Promise((resolve, reject) => {
+      const isPortrait = opts.ratio === "portrait";
+      const W = 1080, H = isPortrait ? 1920 : 1350;
+      const html = buildSlideHTML(slide, idx, total, opts, isCover);
+      const iframe = document.createElement("iframe");
+      iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
+      document.body.appendChild(iframe);
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      doc.open(); doc.write(html); doc.close();
+      setTimeout(async () => {
+        try {
+          const win = iframe.contentWindow;
+          await new Promise(r => { const s=doc.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"; s.onload=r; s.onerror=r; doc.head.appendChild(s); setTimeout(r,4000); });
+          if (!win.html2canvas) throw new Error("html2canvas not loaded");
+          const canvas = await win.html2canvas(doc.querySelector(".slide")||doc.body, {useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+          canvas.toBlob(b => { document.body.removeChild(iframe); resolve(b); }, "image/png", 1.0);
+        } catch(e) { document.body.removeChild(iframe); reject(e); }
+      }, 2500);
+    });
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
+
 
 
 function QuotePreview({ html, W, H, scale }) {
@@ -602,12 +620,13 @@ export default function App() {
   const quoteBgRef = useRef(null);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     saveS({profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
-           bgMode,templateBgUrl,overlayDark,ratio,bgColour});
+           bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
-      coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,fontId,headlineStyle,showNums,
-      bgMode,templateBgUrl,overlayDark,ratio,bgColour]);
+      coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
+      bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType]);
 
   const readFile = (e, cb) => {
     const f = e.target.files[0]; if (!f) return;
@@ -616,11 +635,25 @@ export default function App() {
     r.readAsDataURL(f);
   };
 
-  const addCoverPhoto = (url) => {
+  const addCoverPhoto = async (url) => {
+    // Show immediately as base64 for instant preview
     const next = [url, ...coverPhotos].slice(0, 8);
     setCoverPhotos(next);
     setActiveCoverPhoto(url);
     sampleImageBrightness(url).then(setBadgeArea);
+    // Upload to Blob in background and replace base64 with real URL
+    try {
+      const res = await fetch('/api/upload-photo', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ imageData: url, filename: `cover-${Date.now()}.jpg` })
+      });
+      const data = await res.json();
+      if (data.url) {
+        setCoverPhotos(prev => prev.map(p => p === url ? data.url : p));
+        setActiveCoverPhoto(prev => prev === url ? data.url : prev);
+      }
+    } catch(e) { console.error('Cover upload failed, using base64:', e); }
   };
 
   const fetchWithRetry = async (body, tries=4) => {
@@ -816,8 +849,50 @@ Return ONLY valid JSON array:
     setDownloading(false);
   };
 
+  const isMobileDevice = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  const renderSlideViaServer = async (slide, idx, total, opts, isCover) => {
+    const isPortrait = opts.ratio==="portrait";
+    const W=1080, H=isPortrait?1920:1350;
+    const html = buildSlideHTML(slide,idx,total,opts,isCover);
+    const res = await fetch("/api/render-slide", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ html, width:W, height:H })
+    });
+    const data = await res.json();
+    if (!data.image) throw new Error(data.error||"Render failed");
+    const byteChars = atob(data.image);
+    const byteArr = new Uint8Array(byteChars.length);
+    for (let j=0;j<byteChars.length;j++) byteArr[j]=byteChars.charCodeAt(j);
+    return new Blob([byteArr],{type:"image/png"});
+  };
+
+  const renderSlideViaCanvas = (slide, idx, total, opts, isCover) => {
+    return new Promise((res,rej) => {
+      const isPortrait = opts.ratio==="portrait";
+      const W=1080, H=isPortrait?1920:1350;
+      const html = buildSlideHTML(slide,idx,total,opts,isCover);
+      const iframe = document.createElement("iframe");
+      iframe.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
+      document.body.appendChild(iframe);
+      const doc = iframe.contentDocument||iframe.contentWindow?.document;
+      doc.open(); doc.write(html); doc.close();
+      setTimeout(async()=>{
+        try {
+          const win=iframe.contentWindow;
+          await new Promise(r=>{const s=doc.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=r;s.onerror=r;doc.head.appendChild(s);setTimeout(r,4000);});
+          if(!win.html2canvas) throw new Error("no h2c");
+          const canvas=await win.html2canvas(doc.querySelector(".slide")||doc.body,{useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+          canvas.toBlob(b=>{document.body.removeChild(iframe);res(b);},"image/png",1.0);
+        } catch(e){document.body.removeChild(iframe);rej(e);}
+      },2500);
+    });
+  };
+
   const downloadAll = async () => {
     setDownloadingAll(true);
+    const mobile = isMobileDevice();
     try {
       await new Promise((res,rej) => {
         if (window.JSZip) return res();
@@ -828,26 +903,10 @@ Return ONLY valid JSON array:
       const zip = new window.JSZip();
       for (let i=0; i<slides.length; i++) {
         try {
-          const blob = await new Promise(async (res,rej) => {
-            const opts = slideOpts(i);
-            const isPortrait = opts.ratio==="portrait";
-            const W=1080, H=isPortrait?1920:1350;
-            const html = buildSlideHTML(slides[i],i,slides.length,opts,i===0);
-            const iframe = document.createElement("iframe");
-            iframe.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
-            document.body.appendChild(iframe);
-            const doc = iframe.contentDocument||iframe.contentWindow?.document;
-            doc.open(); doc.write(html); doc.close();
-            setTimeout(async()=>{
-              try {
-                const win=iframe.contentWindow;
-                await new Promise(r=>{const s=doc.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=r;s.onerror=r;doc.head.appendChild(s);setTimeout(r,4000);});
-                if(!win.html2canvas) throw new Error("no h2c");
-                const canvas=await win.html2canvas(doc.querySelector(".slide")||doc.body,{useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
-                canvas.toBlob(b=>{document.body.removeChild(iframe);res(b);},"image/png",1.0);
-              } catch(e){document.body.removeChild(iframe);rej(e);}
-            },2500);
-          });
+          const opts = slideOpts(i);
+          const blob = mobile
+            ? await renderSlideViaServer(slides[i],i,slides.length,opts,i===0)
+            : await renderSlideViaCanvas(slides[i],i,slides.length,opts,i===0);
           zip.file(`slide-${i+1}.png`,blob);
         } catch(e){console.error("Slide",i+1,"failed:",e);}
       }
@@ -1527,7 +1586,24 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <div onClick={()=>profileRef.current?.click()} style={{flex:1,background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:12,cursor:"pointer",textAlign:"center"}}>
                     <span style={{color:A.muted,fontSize:13}}>{profileUrl?"Click to change":"Upload square photo"}</span>
                   </div>
-                  <input ref={profileRef} type="file" accept="image/*" onChange={e=>readFile(e,setProfileUrl)} style={{display:"none"}}/>
+                  <input ref={profileRef} type="file" accept="image/*" onChange={async e=>{
+                    const file = e.target.files[0]; if(!file) return;
+                    const reader = new FileReader();
+                    reader.onload = async ev => {
+                      const base64 = ev.target.result;
+                      setProfileUrl(base64); // show preview immediately
+                      try {
+                        const res = await fetch('/api/upload-photo', {
+                          method:'POST',
+                          headers:{'Content-Type':'application/json'},
+                          body: JSON.stringify({ imageData: base64, filename: `profile-${Date.now()}.jpg` })
+                        });
+                        const data = await res.json();
+                        if (data.url) setProfileUrl(data.url); // replace base64 with real URL
+                      } catch(err) { console.error('Upload failed, using base64:', err); }
+                    };
+                    reader.readAsDataURL(file);
+                  }} style={{display:"none"}}/>
                 </div>
               </div>
 
