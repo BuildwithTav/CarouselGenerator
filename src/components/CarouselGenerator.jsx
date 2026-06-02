@@ -207,6 +207,11 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       font-size:14px; font-weight:700; color:${C.accent}88; font-family:'${bodyFont}',sans-serif; }
     .site { position:absolute; bottom:28px; left:0; right:0; text-align:center; z-index:10;
       font-size:17px; color:${C.dark?"rgba(255,255,255,0.28)":"rgba(0,0,0,0.25)"}; font-family:'${bodyFont}',sans-serif; }
+    .swipe { position:absolute; bottom:85px; left:0; right:0; z-index:10; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; }
+    .swipe-dots { display:flex; align-items:center; justify-content:center; gap:6px; }
+    .swipe-dot { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.22); }
+    .swipe-dot-active { width:18px; height:6px; border-radius:3px; background:rgba(255,255,255,0.7); }
+    .swipe-label { font-size:${Math.round(isPortrait?22:18)}px; letter-spacing:3px; text-transform:uppercase; font-weight:700; color:rgba(255,255,255,0.22); font-family:'${bodyFont}',sans-serif; display:flex; align-items:center; gap:6px; }
     .tag { display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"};
       font-size:14px; font-weight:800; letter-spacing:2px;
       padding:8px 24px; border-radius:60px; font-family:'${bodyFont}',sans-serif; }
@@ -221,9 +226,9 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const layouts = {
     standard: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
-      .hl { font-size:${isPortrait?60:52}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; }
+      .hl { font-size:${isPortrait?60:52}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; }
       .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; ${ts2} font-family:'${bodyFont}',sans-serif; }
-      .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?28:24}px; font-weight:800; color:${C.accent}; font-family:'${bodyFont}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; }
+      .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?28:24}px; font-weight:800; color:${C.accent}; font-family:'${bodyFont}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; white-space:pre-wrap; }
     `,
     statement: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
@@ -246,7 +251,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     `,
     cards: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; overflow:hidden; }
-      .hl { font-size:${isPortrait?56:46}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} text-align:center; margin-bottom:4px; font-family:'${hlFont}',sans-serif; flex-shrink:0; }
+      .hl { font-size:${isPortrait?56:46}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} text-align:center; margin-bottom:4px; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; }
       .cg { width:100%; display:flex; flex-direction:column; gap:${isPortrait?14:9}px; margin-top:20px; overflow:hidden; }
       .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:10px; padding:${isPortrait?22:14}px 24px; display:flex; align-items:flex-start; gap:16px; flex-shrink:0; }
       .cn { font-size:${isPortrait?28:20}px; font-weight:900; color:${C.accent}; font-family:'${bodyFont}',sans-serif; flex-shrink:0; width:36px; line-height:1; }
@@ -301,15 +306,16 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
         <div class="cover-content">
           ${coverBadgeHTML}
           ${slide.tag ? `<div style="margin-bottom:20px"><span class="tag">${esc(slide.tag.toUpperCase())}</span></div>` : ""}
-          <div style="font-size:${isPortrait?80:66}px;font-weight:800;line-height:1.1;letter-spacing:${hs.letterSpacing};${ts}font-family:'${hlFont}',sans-serif;color:${C.text};${isCentre?"text-align:center;":""}width:100%;">${hl}</div>
-          ${slide.body ? `<div style="font-size:${isPortrait?32:26}px;line-height:1.6;color:${C.sub};margin-top:24px;font-family:'${bodyFont}',sans-serif;${ts2}${isCentre?"text-align:center;":""}">${esc(slide.body)}</div>` : ""}
+          <div style="font-size:${isPortrait?80:66}px;font-weight:800;line-height:1.1;letter-spacing:${hs.letterSpacing};${ts}font-family:'${hlFont}',sans-serif;color:${C.text};${isCentre?"text-align:center;":""}width:100%;white-space:pre-wrap;">${hl}</div>
+          ${slide.body ? `<div style="font-size:${isPortrait?32:26}px;line-height:1.6;color:${C.sub};margin-top:24px;font-family:'${bodyFont}',sans-serif;${ts2}${isCentre?"text-align:center;":""}">${accentHL(slide.body)}</div>` : ""}
         </div>`;
     }
 
     const hl = accentHL(slide.headline||"");
     const tag = slide.tag ? `<div style="margin-bottom:28px"><span class="tag">${esc(slide.tag.toUpperCase())}</span></div>` : "";
     const divider = `<div class="div" style="margin:28px auto"></div>`;
-    const body = slide.body ? `<div class="body">${esc(slide.body)}</div>` : "";
+    const bodyText = (slide.body||"").replace(/\n/g,"<br>");
+    const body = slide.body ? `<div class="body">${accentHL(bodyText)}</div>` : "";
 
     if (layout==="split" && slide.items?.length >= 2) {
       const [a,b] = slide.items;
@@ -391,6 +397,16 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   ${layoutHTML()}
   ${isCover?'':`<div class="deco"><div class="deco-line"></div><div class="deco-diamond"></div><div class="deco-line"></div></div>`}
   ${websiteUrl?`<div class="site">${esc(websiteUrl)}</div>`:""}
+  ${(()=>{
+    if (idx === total - 1) return ""; // no indicator on last slide
+    const dots = Array.from({length: total}, (_,di) => 
+      di === idx
+        ? `<div class="swipe-dot-active"></div>`
+        : `<div class="swipe-dot"></div>`
+    ).join("");
+    const label = isCover ? `<div class="swipe-label"><span>Swipe for more</span><span style="font-size:${Math.round(isPortrait?22:18)}px;opacity:0.6;">→</span></div>` : "";
+    return `<div class="swipe"><div class="swipe-dots">${dots}</div>${label}</div>`;
+  })()}
 </div>
 </body></html>`;
 }
@@ -668,7 +684,7 @@ RULES:
 - Pick ONE accent word per headline — exact match — put in "accent_word"
 - Tags: editorial and specific. NOT "HOOK", "SLIDE 1", "CTA"
 - Headlines: max 10 words. A clear statement, question, or insight. Think subheading not billboard.
-- Body: REQUIRED on every slide except hero. 1-2 sentences MAX. One sharp insight, specific stat, or actionable point. Make them think "I didn't know that" or "I'll try that." No fluff.
+- Body: REQUIRED on standard slides. 1-2 sentences MAX. Every sentence must be self-contained and immediately understandable without context. Use plain everyday language — no metaphors, no abstract concepts, no aphorisms. One specific insight or one actionable point. Ask yourself: would someone reading this on a phone at 9am understand it instantly? If not, rewrite it.
 - Final slide (hero) CTA: MUST have body text (1-2 sentences reinforcing why they should act — e.g. "If this made you think differently, there is more where that came from." or "Most people scroll past. The ones who save it are the ones who act on it."). Then cta_items with ONE of: "Follow for more like this", "Save this so you can come back to it", "Share this with someone who needs to hear it", "Comment below — does this match your experience?", "Follow if this made you think differently". Never invent a download, product, or link.
 - Only final slide gets cta. All others cta is null.
 - No HTML, no cite tags, plain text only
@@ -794,46 +810,59 @@ Return ONLY valid JSON array:
 
   const downloadAll = async () => {
     setDownloadingAll(true);
-    try {
-      await new Promise((res,rej) => {
-        if (window.JSZip) return res();
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
-        s.onload = res; s.onerror = rej; document.head.appendChild(s); setTimeout(res,5000);
-      });
-      const zip = new window.JSZip();
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // Mobile: download each slide individually as PNG to camera roll
       for (let i=0; i<slides.length; i++) {
         try {
-          const blob = await new Promise(async (res,rej) => {
-            const opts = slideOpts(i);
-            const isPortrait = opts.ratio==="portrait";
-            const W=1080, H=isPortrait?1920:1350;
-            const html = buildSlideHTML(slides[i],i,slides.length,opts,i===0);
-            const iframe = document.createElement("iframe");
-            iframe.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
-            document.body.appendChild(iframe);
-            const doc = iframe.contentDocument||iframe.contentWindow?.document;
-            doc.open(); doc.write(html); doc.close();
-            setTimeout(async()=>{
-              try {
-                const win=iframe.contentWindow;
-                await new Promise(r=>{const s=doc.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=r;s.onerror=r;doc.head.appendChild(s);setTimeout(r,4000);});
-                if(!win.html2canvas) throw new Error("no h2c");
-                const canvas=await win.html2canvas(doc.querySelector(".slide")||doc.body,{useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
-                canvas.toBlob(b=>{document.body.removeChild(iframe);res(b);},"image/png",1.0);
-              } catch(e){document.body.removeChild(iframe);rej(e);}
-            },2500);
-          });
-          zip.file(`slide-${i+1}.png`,blob);
-        } catch(e){console.error("Slide",i+1,"failed:",e);}
+          await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`, i===0);
+          await new Promise(r=>setTimeout(r,800));
+        } catch(e) { console.error("Slide",i+1,"failed:",e); }
       }
-      const zipBlob = await zip.generateAsync({type:"blob"});
-      const url = URL.createObjectURL(zipBlob);
-      const a = document.createElement("a");
-      a.href=url; a.download="carousel-slides.zip";
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(()=>URL.revokeObjectURL(url),2000);
-    } catch(e){console.error("Zip failed:",e);alert("Download failed — try again.");}
+    } else {
+      // Desktop: zip all slides
+      try {
+        await new Promise((res,rej) => {
+          if (window.JSZip) return res();
+          const s = document.createElement("script");
+          s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+          s.onload = res; s.onerror = rej; document.head.appendChild(s); setTimeout(res,5000);
+        });
+        const zip = new window.JSZip();
+        for (let i=0; i<slides.length; i++) {
+          try {
+            const blob = await new Promise(async (res,rej) => {
+              const opts = slideOpts(i);
+              const isPortrait = opts.ratio==="portrait";
+              const W=1080, H=isPortrait?1920:1350;
+              const html = buildSlideHTML(slides[i],i,slides.length,opts,i===0);
+              const iframe = document.createElement("iframe");
+              iframe.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
+              document.body.appendChild(iframe);
+              const doc = iframe.contentDocument||iframe.contentWindow?.document;
+              doc.open(); doc.write(html); doc.close();
+              setTimeout(async()=>{
+                try {
+                  const win=iframe.contentWindow;
+                  await new Promise(r=>{const s=doc.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=r;s.onerror=r;doc.head.appendChild(s);setTimeout(r,4000);});
+                  if(!win.html2canvas) throw new Error("no h2c");
+                  const canvas=await win.html2canvas(doc.querySelector(".slide")||doc.body,{useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+                  canvas.toBlob(b=>{document.body.removeChild(iframe);res(b);},"image/png",1.0);
+                } catch(e){document.body.removeChild(iframe);rej(e);}
+              },2500);
+            });
+            zip.file(`slide-${i+1}.png`,blob);
+          } catch(e){console.error("Slide",i+1,"failed:",e);}
+        }
+        const zipBlob = await zip.generateAsync({type:"blob"});
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement("a");
+        a.href=url; a.download="carousel-slides.zip";
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(()=>URL.revokeObjectURL(url),2000);
+      } catch(e){console.error("Zip failed:",e);alert("Download failed — try again.");}
+    }
     setDownloadingAll(false); setDownloadDone(true); setTimeout(()=>setDownloadDone(false),2500);
   };
 
@@ -1727,7 +1756,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     {downloading?<><Spin c={A.text}/>Processing...</>:downloadDone?"✓ Downloaded":`↓ Slide ${active+1}`}
                   </button>
                   <button onClick={downloadAll} disabled={downloadingAll} style={{flex:2,background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,padding:"10px",borderRadius:9,fontSize:13,fontWeight:800,border:`1px solid ${GOLD}33`,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                    {downloadingAll?<><Spin/>Downloading...</>:downloadDone?"✓ All Downloaded":`↓ Download All ${slides.length} (zip)`}
+                    {downloadingAll?<><Spin/>Downloading...</>:downloadDone?"✓ All Downloaded":`↓ Download All ${slides.length}${/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)?"":" (zip)"}`}
                   </button>
                 </div>
               </div>
