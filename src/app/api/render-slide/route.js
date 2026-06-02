@@ -1,4 +1,3 @@
-
 export const maxDuration = 30;
  
 export async function POST(req) {
@@ -14,28 +13,33 @@ export async function POST(req) {
       return Response.json({ error: "ScreenshotOne key not configured" }, { status: 500 });
     }
  
-    const params = new URLSearchParams({
-      access_key: accessKey,
-      html: html,
-      format: "png",
-      viewport_width: String(width || 1080),
-      viewport_height: String(height || 1350),
-      device_scale_factor: "1",
-      image_quality: "100",
-      block_ads: "true",
-      block_trackers: "true",
-      cache: "false",
-      delay: "1",
-    });
+    // Strip base64 images to reduce payload size — replace with placeholder colour
+    const cleanHtml = html.replace(/src="data:image\/[^"]+"/g, 'src="" style="background:#333"');
  
-    const response = await fetch(`https://api.screenshotone.com/take?${params.toString()}`, {
-      method: "GET",
+    const body = {
+      access_key: accessKey,
+      html: cleanHtml,
+      format: "png",
+      viewport_width: width || 1080,
+      viewport_height: height || 1350,
+      device_scale_factor: 1,
+      image_quality: 95,
+      block_ads: true,
+      block_trackers: true,
+      cache: false,
+      delay: 1,
+    };
+ 
+    const response = await fetch("https://api.screenshotone.com/take", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
  
     if (!response.ok) {
       const text = await response.text();
-      console.error("ScreenshotOne error:", text);
-      return Response.json({ error: "ScreenshotOne failed", detail: text }, { status: 500 });
+      console.error("ScreenshotOne error:", response.status, text);
+      return Response.json({ error: "ScreenshotOne failed", status: response.status, detail: text }, { status: 500 });
     }
  
     const imageBuffer = await response.arrayBuffer();
@@ -48,3 +52,4 @@ export async function POST(req) {
     return Response.json({ error: e.message }, { status: 500 });
   }
 }
+ 
