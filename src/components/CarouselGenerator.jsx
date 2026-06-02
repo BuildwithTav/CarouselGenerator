@@ -488,6 +488,17 @@ async function downloadSlideAsPNG(slide, idx, total, opts, filename, isCover=fal
 }
 
 
+function QuotePreview({ html, W, H, scale }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const iframe = ref.current; if (!iframe) return;
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) return;
+    doc.open(); doc.write(html); doc.close();
+  }, [html]);
+  return <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin allow-scripts"/>;
+}
+
 function FeedbackForm({ A, inp, GOLD }) {
   const [rating, setRating] = useState(0);
   const [hovered, setHovered] = useState(0);
