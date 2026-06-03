@@ -1,4 +1,3 @@
-Render slide route · JS
 export const maxDuration = 30;
 export const dynamic = 'force-dynamic';
  
