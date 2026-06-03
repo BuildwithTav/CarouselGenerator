@@ -1,3 +1,4 @@
+Render slide route · JS
 export const maxDuration = 30;
 export const dynamic = 'force-dynamic';
  
@@ -25,10 +26,12 @@ export async function POST(req) {
       viewport_height: height || 1350,
       device_scale_factor: 1,
       image_quality: 95,
-      block_ads: true,
-      block_trackers: true,
+      block_ads: false,
+      block_trackers: false,
+      block_cookie_banners: false,
       cache: false,
-      delay: 1,
+      delay: 2,
+      timeout: 25,
     };
  
     const response = await fetch("https://api.screenshotone.com/take", {
