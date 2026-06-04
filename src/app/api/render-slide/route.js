@@ -31,6 +31,7 @@ export async function POST(req) {
       cache: false,
       delay: 2,
       timeout: 25,
+      wait_until: "network_idle",
     };
  
     const response = await fetch("https://api.screenshotone.com/take", {
@@ -54,3 +55,4 @@ export async function POST(req) {
     return Response.json({ error: e.message }, { status: 500 });
   }
 }
+ 
