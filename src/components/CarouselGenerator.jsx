@@ -227,7 +227,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       font-size:14px; font-weight:700; color:${C.accent}88; font-family:'${bodyFont}',sans-serif; }
     .site { position:absolute; bottom:48px; left:0; right:0; text-align:center; z-index:10;
       font-size:26px; color:${C.accent}88; font-family:'${bodyFont}',sans-serif; }
-    .swipe { position:absolute; bottom:110px; left:0; right:0; z-index:10; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; }
+    .swipe { position:absolute; bottom:88px; left:0; right:0; z-index:10; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; }
     .swipe-dots { display:flex; align-items:center; justify-content:center; gap:6px; }
     .swipe-dot { width:6px; height:6px; border-radius:50%; background:${C.accent}44; }
     .swipe-dot-active { width:18px; height:6px; border-radius:3px; background:${C.accent}; }
