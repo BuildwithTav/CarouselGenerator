@@ -1,4 +1,3 @@
-
 export const maxDuration = 30;
 export const dynamic = 'force-dynamic';
  
@@ -15,15 +14,7 @@ export async function POST(req) {
       return Response.json({ error: "ScreenshotOne key not configured" }, { status: 500 });
     }
  
-    // Log all src attributes including blob URLs
-    const allSrcs = (html.match(/src="([^"]+)"/g) || []);
-    const blobSrcs = allSrcs.filter(s => s.includes('blob.vercel'));
-    const base64Srcs = allSrcs.filter(s => s.includes('data:'));
-    console.log("Total src attrs:", allSrcs.length);
-    console.log("Blob URLs:", blobSrcs.length, blobSrcs[0]?.slice(0,80));
-    console.log("Base64 srcs:", base64Srcs.length);
- 
-    // Strip base64 images only
+    // Strip any remaining base64 images (safety net — photos should now be real URLs)
     const cleanHtml = html.replace(/src="data:image\/[^"]{100,}"/g, 'src=""');
  
     const body = {
