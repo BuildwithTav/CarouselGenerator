@@ -226,12 +226,12 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     .cnt { position:absolute; top:52px; right:60px; z-index:10;
       font-size:14px; font-weight:700; color:${C.accent}88; font-family:'${bodyFont}',sans-serif; }
     .site { position:absolute; bottom:28px; left:0; right:0; text-align:center; z-index:10;
-      font-size:17px; color:${C.dark?"rgba(255,255,255,0.28)":"rgba(0,0,0,0.25)"}; font-family:'${bodyFont}',sans-serif; }
+      font-size:17px; color:${C.accent}88; font-family:'${bodyFont}',sans-serif; }
     .swipe { position:absolute; bottom:85px; left:0; right:0; z-index:10; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; }
     .swipe-dots { display:flex; align-items:center; justify-content:center; gap:6px; }
-    .swipe-dot { width:6px; height:6px; border-radius:50%; background:${(C.dark||overlayDark>0)?"rgba(255,255,255,0.22)":"rgba(0,0,0,0.2)"}; }
-    .swipe-dot-active { width:18px; height:6px; border-radius:3px; background:${(C.dark||overlayDark>0)?"rgba(255,255,255,0.7)":"rgba(0,0,0,0.5)"}; }
-    .swipe-label { font-size:${Math.round(isPortrait?22:18)}px; letter-spacing:3px; text-transform:uppercase; font-weight:700; color:${(C.dark||overlayDark>0)?"rgba(255,255,255,0.22)":"rgba(0,0,0,0.2)"}; font-family:'${bodyFont}',sans-serif; display:flex; align-items:center; gap:6px; }
+    .swipe-dot { width:6px; height:6px; border-radius:50%; background:${C.accent}44; }
+    .swipe-dot-active { width:18px; height:6px; border-radius:3px; background:${C.accent}; }
+    .swipe-label { font-size:${Math.round(isPortrait?22:18)}px; letter-spacing:3px; text-transform:uppercase; font-weight:700; color:${C.accent}88; font-family:'${bodyFont}',sans-serif; display:flex; align-items:center; gap:6px; }
     .tag { display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"};
       font-size:14px; font-weight:800; letter-spacing:2px;
       padding:8px 24px; border-radius:60px; font-family:'${bodyFont}',sans-serif; }
@@ -1955,10 +1955,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       ))}
                     </div>
                   </div>
-                  <div>
-                    <label style={lbl}>Gradient strength — {slideOverlays[active]??overlayDark}%</label>
-                    <input type="range" min={0} max={85} value={slideOverlays[active]??overlayDark} onChange={e=>setSlideOverlays(prev=>({...prev,[active]:+e.target.value}))}/>
-                  </div>
+
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18}}>
                   <label style={lbl}>AI Rewrite</label>
