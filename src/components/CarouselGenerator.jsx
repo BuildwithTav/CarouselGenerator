@@ -298,7 +298,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const coverBadgeHTML = `
     <div style="display:inline-flex;align-items:center;gap:14px;background:${pillBg};padding:10px 22px 10px 10px;border-radius:60px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);margin-bottom:24px;">
       <div style="width:80px;height:80px;border-radius:50%;border:3px solid ${C.accent};overflow:hidden;flex-shrink:0;background:${C.dark?"#1a1a1a":"#ddd"};display:flex;align-items:center;justify-content:center;position:relative;">
-        ${profileUrl?`<img src="${profileUrl}" crossorigin="anonymous" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;object-fit:cover;"/>`:`<span style="font-size:32px;font-weight:900;color:${C.accent};font-family:'${hlFont}',sans-serif;">${esc((name||"?")[0].toUpperCase())}</span>`}
+        ${profileUrl?`<img src="${profileUrl}"  style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;object-fit:cover;"/>`:`<span style="font-size:32px;font-weight:900;color:${C.accent};font-family:'${hlFont}',sans-serif;">${esc((name||"?")[0].toUpperCase())}</span>`}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-start;">
         <div style="font-size:20px;font-weight:800;color:${pillText};line-height:1.2;font-family:'${bodyFont}',sans-serif;">${esc(name||"Your Brand")}${blueTick?` <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:#1D9BF0;border-radius:50%;font-size:10px;color:#fff;margin-left:5px;">✓</span>`:""}</div>
@@ -388,11 +388,11 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const overlayAlpha = (overlayDark||65)/100;
   const coverOverlayAlpha = isCover ? Math.max(overlayAlpha, 0.55) : overlayAlpha;
   const bgHtml = hasBg ? `
-    <img class="bg-img" src="${bgImageUrl}" crossorigin="anonymous"/>
+    <img class="bg-img" src="${bgImageUrl}" />
     <div class="bg-ov" style="background:linear-gradient(to bottom,rgba(0,0,0,${Math.min((isCover?coverOverlayAlpha:overlayAlpha)*0.92,0.92)}) 0%,rgba(0,0,0,${Math.min((isCover?coverOverlayAlpha:overlayAlpha)*0.42,0.55)}) 40%,rgba(0,0,0,${Math.min((isCover?coverOverlayAlpha:overlayAlpha)*0.95,0.92)}) 100%)"></div>` : "";
 
   const avHtml = profileUrl
-    ? `<img src="${profileUrl}" crossorigin="anonymous"/>`
+    ? `<img src="${profileUrl}" />`
     : `<div class="av-i">${esc((name||"?")[0].toUpperCase())}</div>`;
 
   const coverStyle = isCover ? coverLayouts[coverPos] || coverLayouts.centre : "";
@@ -621,8 +621,13 @@ export default function App() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    saveS({profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
-           coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
+    if (typeof window === "undefined") return;
+    // Never save base64 images to localStorage — only save real Blob URLs
+    const safeProfileUrl = profileUrl?.startsWith('data:') ? '' : profileUrl;
+    const safeCoverPhotos = coverPhotos.filter(p => !p?.startsWith('data:'));
+    const safeActiveCover = activeCoverPhoto?.startsWith('data:') ? '' : activeCoverPhoto;
+    saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
+           coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
            bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
@@ -636,12 +641,9 @@ export default function App() {
   };
 
   const addCoverPhoto = async (url) => {
-    // Show immediately as base64 for instant preview
-    const next = [url, ...coverPhotos].slice(0, 8);
-    setCoverPhotos(next);
-    setActiveCoverPhoto(url);
+    // Show immediately as base64 for instant preview (don't save to localStorage yet)
     sampleImageBrightness(url).then(setBadgeArea);
-    // Upload to Blob in background and replace base64 with real URL
+    // Upload to Blob first, then update state with real URL
     try {
       const res = await fetch('/api/upload-photo', {
         method: 'POST',
@@ -650,10 +652,22 @@ export default function App() {
       });
       const data = await res.json();
       if (data.url) {
-        setCoverPhotos(prev => prev.map(p => p === url ? data.url : p));
-        setActiveCoverPhoto(prev => prev === url ? data.url : prev);
+        // Only save real Blob URL to state (and therefore localStorage)
+        const next = [data.url, ...coverPhotos.filter(p => !p.startsWith('data:'))].slice(0, 8);
+        setCoverPhotos(next);
+        setActiveCoverPhoto(data.url);
+      } else {
+        // Fallback - use base64 in state but it won't persist properly
+        const next = [url, ...coverPhotos].slice(0, 8);
+        setCoverPhotos(next);
+        setActiveCoverPhoto(url);
       }
-    } catch(e) { console.error('Cover upload failed, using base64:', e); }
+    } catch(e) {
+      console.error('Cover upload failed:', e);
+      const next = [url, ...coverPhotos].slice(0, 8);
+      setCoverPhotos(next);
+      setActiveCoverPhoto(url);
+    }
   };
 
   const fetchWithRetry = async (body, tries=4) => {
@@ -1168,7 +1182,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 </style>
 </head><body>
 <div class="slide">
-  ${hasBgImg?`<img class="bg-img" src="${quoteBgCustomUrl}" crossorigin="anonymous"/><div class="bg-ov"></div>`:""}
+  ${hasBgImg?`<img class="bg-img" src="${quoteBgCustomUrl}" /><div class="bg-ov"></div>`:""}
   ${tExtras}
   <div class="content">
     ${tmpl==="raw"?rawLabel:""}
@@ -1591,7 +1605,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     const reader = new FileReader();
                     reader.onload = async ev => {
                       const base64 = ev.target.result;
-                      setProfileUrl(base64); // show preview immediately
+                      setProfileUrl(base64); // show preview immediately (base64 not saved to localStorage yet)
                       try {
                         const res = await fetch('/api/upload-photo', {
                           method:'POST',
@@ -1599,7 +1613,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                           body: JSON.stringify({ imageData: base64, filename: `profile-${Date.now()}.jpg` })
                         });
                         const data = await res.json();
-                        if (data.url) setProfileUrl(data.url); // replace base64 with real URL
+                        if (data.url) setProfileUrl(data.url); // replace with real Blob URL — this triggers localStorage save
                       } catch(err) { console.error('Upload failed, using base64:', err); }
                     };
                     reader.readAsDataURL(file);
