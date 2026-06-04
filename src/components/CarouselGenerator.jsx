@@ -1199,10 +1199,26 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
     const isPortrait = quoteFormat === "portrait";
     const W = 1080, H = isPortrait ? 1920 : 1350;
     const html = buildQuoteHTML(quoteText);
-    const iframe = document.createElement("iframe");
-    iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
-    document.body.appendChild(iframe);
+    const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (mobile) {
+      const res = await fetch("/api/render-slide", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ html, width: W, height: H })
+      });
+      const data = await res.json();
+      if (!data.image) throw new Error(data.error || "Render failed");
+      const byteChars = atob(data.image);
+      const byteArr = new Uint8Array(byteChars.length);
+      for (let j=0; j<byteChars.length; j++) byteArr[j] = byteChars.charCodeAt(j);
+      return new Blob([byteArr], {type:"image/png"});
+    }
+
     return new Promise((resolve, reject) => {
+      const iframe = document.createElement("iframe");
+      iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
+      document.body.appendChild(iframe);
       const doc = iframe.contentDocument || iframe.contentWindow?.document;
       doc.open(); doc.write(html); doc.close();
       setTimeout(async () => {
@@ -1211,7 +1227,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           await new Promise(r => { const s=doc.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"; s.onload=r; s.onerror=r; doc.head.appendChild(s); setTimeout(r,4000); });
           if (!win.html2canvas) throw new Error("no h2c");
           const canvas = await win.html2canvas(doc.querySelector(".slide")||doc.body, {useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
-          canvas.toBlob(blob => { const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`quote-${i+1}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),1000); document.body.removeChild(iframe); resolve(); }, "image/png", 1.0);
+          canvas.toBlob(blob => { document.body.removeChild(iframe); resolve(blob); }, "image/png", 1.0);
         } catch(e) { document.body.removeChild(iframe); reject(e); }
       }, 2000);
     });
@@ -1220,10 +1236,27 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
   const downloadAllQuotes = async () => {
     setDownloadingQuotes(true);
     const filled = quoteInputs.filter(q => q.trim());
-    for (let i=0; i<filled.length; i++) {
-      try { await downloadQuote(filled[i], i); await new Promise(r=>setTimeout(r,600)); }
-      catch(e) { console.error(e); }
-    }
+    try {
+      await new Promise((res,rej) => {
+        if (window.JSZip) return res();
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+        s.onload = res; s.onerror = rej; document.head.appendChild(s); setTimeout(res,5000);
+      });
+      const zip = new window.JSZip();
+      for (let i=0; i<filled.length; i++) {
+        try {
+          const blob = await downloadQuote(filled[i], i);
+          if (blob) zip.file(`quote-${i+1}.png`, blob);
+        } catch(e) { console.error("Quote", i+1, "failed:", e); }
+      }
+      const zipBlob = await zip.generateAsync({type:"blob"});
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href=url; a.download="quote-cards.zip";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url),2000);
+    } catch(e) { console.error("Quote zip failed:", e); alert("Download failed — try again."); }
     setDownloadingQuotes(false);
   };
 
@@ -1873,15 +1906,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   ))}
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18,display:"flex",flexDirection:"column",gap:13}}>
-                  {active===0&&activeCoverPhoto&&(
-                    <div style={{background:A.bg,borderRadius:9,border:`1.5px solid ${A.border}`,padding:"12px 14px",marginBottom:4}}>
-                      <label style={lbl}>Cover Photo Darkness — {overlayDark}%</label>
-                      <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
-                    </div>
-                  )}
                   <div style={{background:A.bg,borderRadius:9,border:`1.5px solid ${A.border}`,padding:"12px 14px",marginBottom:4}}>
-                    <label style={lbl}>Background Fade — {slideOverlays[active]??overlayDark}%</label>
-                    <input type="range" min={0} max={85} value={slideOverlays[active]??overlayDark} onChange={e=>setSlideOverlays(prev=>({...prev,[active]:+e.target.value}))} style={{width:"100%"}}/>
+                    <label style={lbl}>Background Gradient — {slideOverlays[active]??overlayDark}%</label>
+                    <input type="range" min={0} max={85} value={slideOverlays[active]??overlayDark} onChange={e=>{setSlideOverlays(prev=>({...prev,[active]:+e.target.value}));setOverlayDark(+e.target.value);}} style={{width:"100%"}}/>
                   </div>
                   <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={inp}/></div>
                   <div><label style={lbl}>Headline</label><textarea value={slides[active]?.headline||""} onChange={e=>updateSlide("headline",e.target.value)} rows={2} style={{...inp,resize:"vertical",lineHeight:1.5}}/></div>
