@@ -229,9 +229,9 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       font-size:17px; color:${C.dark?"rgba(255,255,255,0.28)":"rgba(0,0,0,0.25)"}; font-family:'${bodyFont}',sans-serif; }
     .swipe { position:absolute; bottom:85px; left:0; right:0; z-index:10; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; }
     .swipe-dots { display:flex; align-items:center; justify-content:center; gap:6px; }
-    .swipe-dot { width:6px; height:6px; border-radius:50%; background:${C.dark?"rgba(255,255,255,0.22)":"rgba(0,0,0,0.2)"}; }
-    .swipe-dot-active { width:18px; height:6px; border-radius:3px; background:${C.dark?"rgba(255,255,255,0.7)":"rgba(0,0,0,0.5)"}; }
-    .swipe-label { font-size:${Math.round(isPortrait?22:18)}px; letter-spacing:3px; text-transform:uppercase; font-weight:700; color:${C.dark?"rgba(255,255,255,0.22)":"rgba(0,0,0,0.2)"}; font-family:'${bodyFont}',sans-serif; display:flex; align-items:center; gap:6px; }
+    .swipe-dot { width:6px; height:6px; border-radius:50%; background:${(C.dark||overlayDark>0)?"rgba(255,255,255,0.22)":"rgba(0,0,0,0.2)"}; }
+    .swipe-dot-active { width:18px; height:6px; border-radius:3px; background:${(C.dark||overlayDark>0)?"rgba(255,255,255,0.7)":"rgba(0,0,0,0.5)"}; }
+    .swipe-label { font-size:${Math.round(isPortrait?22:18)}px; letter-spacing:3px; text-transform:uppercase; font-weight:700; color:${(C.dark||overlayDark>0)?"rgba(255,255,255,0.22)":"rgba(0,0,0,0.2)"}; font-family:'${bodyFont}',sans-serif; display:flex; align-items:center; gap:6px; }
     .tag { display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"};
       font-size:14px; font-weight:800; letter-spacing:2px;
       padding:8px 24px; border-radius:60px; font-family:'${bodyFont}',sans-serif; }
@@ -1926,8 +1926,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18,display:"flex",flexDirection:"column",gap:13}}>
                   <div style={{background:A.bg,borderRadius:9,border:`1.5px solid ${A.border}`,padding:"12px 14px",marginBottom:4}}>
-                    <label style={lbl}>Background Gradient — {slideOverlays[active]??overlayDark}%</label>
-                    <input type="range" min={0} max={85} value={slideOverlays[active]??overlayDark} onChange={e=>{setSlideOverlays(prev=>({...prev,[active]:+e.target.value}));setOverlayDark(+e.target.value);}} style={{width:"100%"}}/>
+                    <label style={lbl}>Background Gradient — {overlayDark}%</label>
+                    <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
                   </div>
                   <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={inp}/></div>
                   <div><label style={lbl}>Headline</label><textarea value={slides[active]?.headline||""} onChange={e=>updateSlide("headline",e.target.value)} rows={2} style={{...inp,resize:"vertical",lineHeight:1.5}}/></div>
