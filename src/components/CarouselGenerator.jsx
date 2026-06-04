@@ -624,10 +624,11 @@ export default function App() {
     if (typeof window === "undefined") return;
     // Never save base64 images to localStorage — only save real Blob URLs
     const safeProfileUrl = profileUrl?.startsWith('data:') ? '' : profileUrl;
+    const safeQuoteBg = quoteBgCustomUrl?.startsWith('data:') ? null : quoteBgCustomUrl;
     const safeCoverPhotos = coverPhotos.filter(p => !p?.startsWith('data:'));
     const safeActiveCover = activeCoverPhoto?.startsWith('data:') ? '' : activeCoverPhoto;
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
-           coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
+           coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
            bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
@@ -1353,7 +1354,24 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       <label style={lbl}>Overlay darkness — {quoteOverlay}% <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(0% = no overlay)</span></label>
                       <input type="range" min={0} max={80} value={quoteOverlay} onChange={e=>setQuoteOverlay(+e.target.value)}/>
                     </div>
-                    <input ref={quoteBgRef} type="file" accept="image/*" onChange={e=>readFile(e,setQuoteBgCustomUrl)} style={{display:"none"}}/>
+                    <input ref={quoteBgRef} type="file" accept="image/*" onChange={async e=>{
+                    const file = e.target.files[0]; if(!file) return;
+                    const reader = new FileReader();
+                    reader.onload = async ev => {
+                      const base64 = ev.target.result;
+                      setQuoteBgCustomUrl(base64);
+                      try {
+                        const res = await fetch('/api/upload-photo', {
+                          method:'POST',
+                          headers:{'Content-Type':'application/json'},
+                          body: JSON.stringify({ imageData: base64, filename: `quotebg-${Date.now()}.jpg` })
+                        });
+                        const data = await res.json();
+                        if (data.url) setQuoteBgCustomUrl(data.url);
+                      } catch(err) { console.error('Quote BG upload failed:', err); }
+                    };
+                    reader.readAsDataURL(file);
+                  }} style={{display:"none"}}/>
                     {quoteBgCustomUrl&&(()=>{
                       const isP = quoteFormat==="portrait";
                       const W=1080,H=isP?1920:1350,scale=280/W;
