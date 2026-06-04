@@ -385,11 +385,12 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   }
 
   const hasBg = !!bgImageUrl;
-  const overlayAlpha = (overlayDark||65)/100;
-  const coverOverlayAlpha = isCover ? Math.max(overlayAlpha, 0.55) : overlayAlpha;
-  const bgHtml = hasBg ? `
-    <img class="bg-img" src="${bgImageUrl}" />
-    <div class="bg-ov" style="background:linear-gradient(to bottom,rgba(0,0,0,${Math.min((isCover?coverOverlayAlpha:overlayAlpha)*0.92,0.92)}) 0%,rgba(0,0,0,${Math.min((isCover?coverOverlayAlpha:overlayAlpha)*0.42,0.55)}) 40%,rgba(0,0,0,${Math.min((isCover?coverOverlayAlpha:overlayAlpha)*0.95,0.92)}) 100%)"></div>` : "";
+  const overlayAlpha = (overlayDark||0)/100;
+  const coverOverlayAlpha = isCover ? Math.max(overlayAlpha, hasBg?0.55:0) : overlayAlpha;
+  const activeAlpha = isCover ? coverOverlayAlpha : overlayAlpha;
+  const bgHtml = `
+    ${hasBg ? `<img class="bg-img" src="${bgImageUrl}" />` : ""}
+    ${activeAlpha > 0 ? `<div class="bg-ov" style="background:linear-gradient(to top,rgba(0,0,0,${Math.min(activeAlpha*0.95,0.92)}) 0%,rgba(0,0,0,${Math.min(activeAlpha*0.4,0.5)}) 50%,rgba(0,0,0,0) 100%)"></div>` : ""}`;
 
   const avHtml = profileUrl
     ? `<img src="${profileUrl}" />`
