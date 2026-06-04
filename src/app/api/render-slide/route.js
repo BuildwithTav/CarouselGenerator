@@ -29,7 +29,7 @@ export async function POST(req) {
       block_trackers: false,
       block_cookie_banners: false,
       cache: false,
-      delay: 2,
+      delay: 6,
       timeout: 25,
     };
  
