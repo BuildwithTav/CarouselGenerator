@@ -628,11 +628,12 @@ export default function App() {
     // Never save base64 images to localStorage — only save real Blob URLs
     const safeProfileUrl = profileUrl?.startsWith('data:') ? '' : profileUrl;
     const safeQuoteBg = quoteBgCustomUrl?.startsWith('data:') ? null : quoteBgCustomUrl;
+    const safeTemplateBg = templateBgUrl?.startsWith('data:') ? null : templateBgUrl;
     const safeCoverPhotos = coverPhotos.filter(p => !p?.startsWith('data:'));
     const safeActiveCover = activeCoverPhoto?.startsWith('data:') ? '' : activeCoverPhoto;
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
-           bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType});
+           bgMode,templateBgUrl:safeTemplateBg,overlayDark,ratio,bgColour,audienceType});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
       bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType]);
@@ -925,7 +926,8 @@ Return ONLY valid JSON array:
           const blob = mobile
             ? await renderSlideViaServer(slides[i],i,slides.length,opts,i===0)
             : await renderSlideViaCanvas(slides[i],i,slides.length,opts,i===0);
-          zip.file(`slide-${i+1}.png`,blob);
+          if (blob) zip.file(`slide-${i+1}.png`,blob);
+          if (mobile) await new Promise(r=>setTimeout(r,500));
         } catch(e){console.error("Slide",i+1,"failed:",e);}
       }
       const zipBlob = await zip.generateAsync({type:"blob"});
@@ -1295,6 +1297,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           .mobile-edit-btn{display:flex!important}
           .mobile-drawer{display:block!important}
           .preview-scroll-area{padding-bottom:120px!important}
+          .desktop-only{display:none!important}
           .cover-format-grid{grid-template-columns:1fr!important}
           .cmd-hint{display:none!important}
           .desktop-edit-panel{display:none!important}
@@ -1625,7 +1628,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <div className="cover-format-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
               <div>
                 <label style={lbl}>Cover photo <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional)</span></label>
-                {activeCoverPhoto&&(()=>{
+                {(()=>{
                   const previewW=280, scale=previewW/1080;
                   return (
                     <div>
@@ -1885,29 +1888,34 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       <span style={{fontSize:12,fontWeight:600,color:templateBgUrl?A.text:A.muted}}>{templateBgUrl?"✓ Template image set — click to change":"Upload template background image"}</span>
                     </div>
                     <p style={{color:A.muted,fontSize:11,margin:0,lineHeight:1.6}}>Safe zone: keep important elements within 80px from each edge. Recommended size: 1080×1350px.</p>
-                    <input ref={templateBgRef} type="file" accept="image/*" onChange={e=>readFile(e,setTemplateBgUrl)} style={{display:"none"}}/>
-                    {templateBgUrl&&(
-                      <div style={{marginTop:12}}>
+                    <input ref={templateBgRef} type="file" accept="image/*" onChange={async e=>{
+                    const file = e.target.files[0]; if(!file) return;
+                    const reader = new FileReader();
+                    reader.onload = async ev => {
+                      const base64 = ev.target.result;
+                      setTemplateBgUrl(base64);
+                      try {
+                        const res = await fetch('/api/upload-photo', {
+                          method:'POST',
+                          headers:{'Content-Type':'application/json'},
+                          body: JSON.stringify({ imageData: base64, filename: `template-${Date.now()}.jpg` })
+                        });
+                        const data = await res.json();
+                        if (data.url) setTemplateBgUrl(data.url);
+                      } catch(err) { console.error('Template upload failed:', err); }
+                    };
+                    reader.readAsDataURL(file);
+                  }} style={{display:"none"}}/>
+                    <div style={{marginTop:12}}>
+                      {templateBgUrl&&<>
                         <label style={lbl}>Cover Photo Darkness — {overlayDark}%</label>
                         <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{marginBottom:14}}/>
-                        <label style={{...lbl,marginBottom:6}}>Reposition background <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(drag)</span></label>
-                        <div
-                          ref={templateDragRef}
-                          onMouseDown={()=>setIsDraggingTemplate(true)}
-                          onMouseMove={e=>{if(isDraggingTemplate)handleDrag(e,setTemplateImgPos,templateDragRef);}}
-                          onMouseUp={()=>setIsDraggingTemplate(false)}
-                          onMouseLeave={()=>setIsDraggingTemplate(false)}
-                          style={{width:"100%",height:140,borderRadius:10,overflow:"hidden",cursor:"crosshair",border:`1.5px solid ${A.border}`,position:"relative",userSelect:"none",marginBottom:8}}
-                        >
-                          <img src={templateBgUrl} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:`${templateImgPos.x}% ${templateImgPos.y}%`,pointerEvents:"none"}}/>
-                          <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:16,height:16,borderRadius:"50%",border:"2px solid #fff",background:"rgba(0,0,0,0.4)",pointerEvents:"none"}}/>
-                        </div>
-                        <label style={{...lbl,marginBottom:8}}>Preview — check safe zone</label>
-                        <div style={{width:280,height:280*(1350/1080),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                          <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
-                        </div>
+                      </>}
+                      <label style={{...lbl,marginBottom:8}}>Preview — check safe zone</label>
+                      <div style={{width:280,height:280*(1350/1080),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                        <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1929,6 +1937,20 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
 
             </div>
+
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={lbl}>Live Preview</label>
+                <p style={{fontSize:12,color:A.muted,marginBottom:12}}>See how your slides look with current settings</p>
+                <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                  <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                    <SlidePreview slide={{headline:"Your hook headline goes here",accent_word:"headline",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={0} total={6} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
+                  </div>
+                  <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                    <SlidePreview slide={{headline:"Your slide headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting body text appears here to show how it looks.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={{...slideOpts(1),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={false}/>
+                  </div>
+                </div>
+              </div>
+
           </div>
         )}
 
