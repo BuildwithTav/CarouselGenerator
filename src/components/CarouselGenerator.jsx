@@ -1283,9 +1283,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         @keyframes spin{to{transform:rotate(360deg)}}
         .desktop-nav{display:flex!important}
         .mobile-nav{display:none!important}
+        .desktop-reset{display:inline-flex}
         @media(max-width:768px){
           .desktop-nav{display:none!important}
           .mobile-nav{display:flex!important}
+          .desktop-reset{display:none!important}
+          .logo-byline{display:none!important}
+          body,html,#__next{width:100%!important;max-width:100vw!important;overflow-x:hidden!important}
+          nav{width:100%!important;max-width:100vw!important}
         }
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         *{box-sizing:border-box}input,textarea,select{outline:none!important;font-family:inherit}
@@ -1302,7 +1307,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <span style={{color:GOLD,fontSize:12,fontWeight:900}}>C</span>
           </div>
           <span style={{fontSize:13,fontWeight:800,letterSpacing:-0.3}}>Carousel Studio</span>
-          <span style={{fontSize:11,color:A.muted}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
+          <span className="logo-byline" style={{fontSize:11,color:A.muted}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
         </div>
         <div style={{display:"flex",alignItems:"stretch",gap:0,marginLeft:"auto"}}>
           {/* Desktop nav - all items */}
@@ -1328,7 +1333,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:8}}>↺ Regenerate</button>
             <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
           </>}
-          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4}}>Reset</button>
+          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} className="desktop-reset" style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4}}>Reset</button>
         </div>
       </nav>
       {menuOpen&&(
@@ -1344,7 +1349,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         </div>
       )}
 
-      <div style={{maxWidth:1200,margin:"0 auto",padding:"28px 24px"}}>
+      <div style={{maxWidth:1200,margin:"0 auto",padding:"20px 16px"}}>
 
         {nav==="quotes"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:640,margin:"0 auto"}}>
