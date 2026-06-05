@@ -567,6 +567,7 @@ export default function App() {
   const [showNums, setShowNums] = useState(S?.showNums??false);
   const [bgMode, setBgMode] = useState(S?.bgMode||"dark");
   const [templateBgUrl, setTemplateBgUrl] = useState(S?.templateBgUrl||null);
+  const [templatePhotos, setTemplatePhotos] = useState(S?.templatePhotos||[]);
   const [overlayDark, setOverlayDark] = useState(S?.overlayDark??45);
 
   const [topic, setTopic] = useState("");
@@ -634,7 +635,7 @@ export default function App() {
     const safeActiveCover = activeCoverPhoto?.startsWith('data:') ? '' : activeCoverPhoto;
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
-           bgMode,templateBgUrl:safeTemplateBg,overlayDark,ratio,bgColour,audienceType});
+           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,ratio,bgColour,audienceType});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
       bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType]);
@@ -1313,7 +1314,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           .desktop-nav{display:none!important}
           .mobile-nav{display:flex!important}
           .desktop-reset{display:none!important}
-          .logo-byline{display:none!important}
           body,html,#__next{width:100%!important;max-width:100vw!important;overflow-x:hidden!important}
           nav{width:100%!important;max-width:100vw!important}
           .mobile-edit-btn{display:flex!important}
@@ -1340,7 +1340,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <span style={{color:GOLD,fontSize:12,fontWeight:900}}>C</span>
           </div>
           <span style={{fontSize:13,fontWeight:800,letterSpacing:-0.3}}>Carousel Studio</span>
-          <span className="logo-byline" style={{fontSize:11,color:A.muted}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
+          <span className="logo-byline" style={{fontSize:9,color:A.muted,letterSpacing:0.3}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
         </div>
         <div style={{display:"flex",alignItems:"stretch",gap:0,marginLeft:"auto"}}>
           {/* Desktop nav - all items */}
@@ -1921,9 +1921,22 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 )}
                 {bgMode==="custom"&&(
                   <div>
-                    <div onClick={()=>templateBgRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${templateBgUrl?A.text:A.border}`,borderRadius:9,padding:"12px",cursor:"pointer",textAlign:"center",marginBottom:8}}>
-                      <span style={{fontSize:12,fontWeight:600,color:templateBgUrl?A.text:A.muted}}>{templateBgUrl?"✓ Template image set — click to change":"Upload template background image"}</span>
-                    </div>
+                    {templatePhotos.length > 0 ? (
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
+                        {templatePhotos.map((photo,i)=>(
+                          <div key={i} onClick={()=>setTemplateBgUrl(photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:templateBgUrl===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0}}>
+                            <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                          </div>
+                        ))}
+                        {templatePhotos.length < 8 && (
+                          <div onClick={()=>templateBgRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
+                        )}
+                      </div>
+                    ) : (
+                      <div onClick={()=>templateBgRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:"12px",cursor:"pointer",textAlign:"center",marginBottom:8}}>
+                        <span style={{fontSize:12,fontWeight:600,color:A.muted}}>Upload background images (up to 8)</span>
+                      </div>
+                    )}
                     <p style={{color:A.muted,fontSize:11,margin:0,lineHeight:1.6}}>Safe zone: keep important elements within 80px from each edge. Recommended size: 1080×1350px.</p>
                     <input ref={templateBgRef} type="file" accept="image/*" onChange={async e=>{
                     const file = e.target.files[0]; if(!file) return;
@@ -1938,7 +1951,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                           body: JSON.stringify({ imageData: base64, filename: `template-${Date.now()}.jpg` })
                         });
                         const data = await res.json();
-                        if (data.url) setTemplateBgUrl(data.url);
+                        if (data.url) {
+                          setTemplateBgUrl(data.url);
+                          setTemplatePhotos(prev => [data.url, ...prev.filter(p=>p!==data.url)].slice(0,8));
+                        }
                       } catch(err) { console.error('Template upload failed:', err); }
                     };
                     reader.readAsDataURL(file);
