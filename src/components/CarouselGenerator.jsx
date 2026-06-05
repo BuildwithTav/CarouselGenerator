@@ -582,7 +582,7 @@ export default function App() {
   const [slideCount, setSlideCount] = useState(6);
   const [err, setErr] = useState("");
   const [randomising, setRandomising] = useState(false);
-  const [audienceType, setAudienceType] = useState("customers");
+  const [audienceType, setAudienceType] = useState(S?.audienceType||"customers");
   const [angle, setAngle] = useState("");
 
   const [view, setView] = useState("setup");
@@ -890,24 +890,6 @@ Return ONLY valid JSON array:
     } catch(e) { console.error(e); alert("Download failed — try again."); }
     setDownloading(false);
   };
-
-  const topicPlaceholder = audienceType === "peers"
-    ? (businessType==="fitness" ? "e.g. Why most PTs price themselves out of business"
-      : businessType==="beauty" ? "e.g. Why most salons lose money on their best service"
-      : businessType==="restaurant" ? "e.g. Why most restaurants fail in year two"
-      : businessType==="realestate" ? "e.g. The mistake most agents make with new listings"
-      : businessType==="ecommerce" ? "e.g. Why most product brands waste their ad budget"
-      : businessType==="coach" ? "e.g. Why most coaches struggle to retain clients"
-      : businessType==="other" ? (otherType ? "e.g. A hard truth about "+otherType : "e.g. A hard truth most in your industry ignore")
-      : "e.g. Why your content gets views but zero clients")
-    : (businessType==="fitness" ? "e.g. Why most people quit the gym after 3 weeks"
-      : businessType==="beauty" ? "e.g. Why your skin actually needs less, not more"
-      : businessType==="restaurant" ? "e.g. What really goes into your favourite dish"
-      : businessType==="realestate" ? "e.g. What nobody tells you before buying your first home"
-      : businessType==="ecommerce" ? "e.g. Why fast shipping matters more than price"
-      : businessType==="coach" ? "e.g. Why mindset alone won't get you results"
-      : businessType==="other" ? (otherType ? "e.g. Something surprising about "+otherType : "e.g. Something your audience doesn't know yet")
-      : "e.g. Why your content gets views but zero clients");
 
   const isMobileDevice = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
@@ -1626,13 +1608,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </div>
 
             <div style={{marginBottom:16}}>
-              <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"flex-start"}}>
-                <textarea value={topic} onChange={e=>{setTopic(e.target.value);if(err)setErr("");}}
-                  rows={2}
-                  placeholder={topicPlaceholder}
-                  style={{...inp,fontSize:15,fontWeight:500,flex:1,borderColor:err?"#c0392b":A.border,resize:"none",lineHeight:1.5}}
+              <div style={{display:"flex",gap:8,marginBottom:8}}>
+                <input value={topic} onChange={e=>{setTopic(e.target.value);if(err)setErr("");}}
+                  placeholder={audienceType==="peers"?(businessType==="marketer"?"e.g. Why most digital marketers price themselves out of good clients":businessType==="fitness"?"e.g. Why most PTs price themselves out of business":businessType==="beauty"?"e.g. Why most salons lose money on their best service":businessType==="restaurant"?"e.g. Why most restaurants fail in year two":businessType==="realestate"?"e.g. The mistake most agents make with new listings":businessType==="ecommerce"?"e.g. Why most product brands waste their ad budget":businessType==="coach"?"e.g. Why most coaches struggle to retain clients":businessType==="other"?(otherType?"e.g. A hard truth about "+otherType:"e.g. A hard truth most in your industry ignore"):"e.g. Why your content gets views but zero clients"):(businessType==="fitness"?"e.g. Why most people quit the gym after 3 weeks":businessType==="beauty"?"e.g. Why your skin actually needs less, not more":businessType==="restaurant"?"e.g. What really goes into your favourite dish":businessType==="realestate"?"e.g. What nobody tells you before buying your first home":businessType==="ecommerce"?"e.g. Why fast shipping matters more than price":businessType==="coach"?"e.g. Why mindset alone won't get you results":businessType==="other"?(otherType?"e.g. Something surprising about "+otherType:"e.g. Something your audience doesn't know yet"):"e.g. Why your content gets views but zero clients")}
+                  style={{...inp,fontSize:15,fontWeight:500,flex:1,borderColor:err?"#c0392b":A.border}}
                   onKeyDown={e=>{if(e.key==="Enter"&&e.metaKey)generate();}}/>
-                <button onClick={randomiseTopic} disabled={randomising} title="Randomise topic" style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"0 16px",fontSize:18,color:A.muted,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:48,height:48}}>
+                <button onClick={randomiseTopic} disabled={randomising} title="Randomise topic" style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"0 16px",fontSize:18,color:A.muted,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:48}}>
                   {randomising?<Spin c={A.muted}/>:"🎲"}
                 </button>
               </div>
