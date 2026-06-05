@@ -1294,6 +1294,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           nav{width:100%!important;max-width:100vw!important}
           .mobile-edit-btn{display:flex!important}
           .mobile-drawer{display:block!important}
+          .preview-scroll-area{padding-bottom:120px!important}
           .cover-format-grid{grid-template-columns:1fr!important}
           .cmd-hint{display:none!important}
           .desktop-edit-panel{display:none!important}
@@ -1949,7 +1950,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               ))}
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 360px",gap:28,alignItems:"start"}}>
-              <div>
+              <div style={{paddingBottom:140}}>
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
                   {slides.map((slide,i)=>(
                     <div key={i} data-slide-index={i}>
@@ -2111,7 +2112,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <div><label style={lbl}>Headline</label><textarea value={slides[active]?.headline||""} onChange={e=>updateSlide("headline",e.target.value)} rows={3} style={{...inp,resize:"vertical",lineHeight:1.5}}/></div>
             <div><label style={lbl}>Accent Word</label><input value={slides[active]?.accent_word||""} onChange={e=>updateSlide("accent_word",e.target.value)} style={inp}/></div>
             <div><label style={lbl}>Body</label><textarea value={slides[active]?.body||""} onChange={e=>updateSlide("body",e.target.value)} rows={4} style={{...inp,resize:"vertical",lineHeight:1.6}}/></div>
-            <div><label style={lbl}>CTA <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(leave blank to hide)</span></label><input value={slides[active]?.cta||""} onChange={e=>updateSlide("cta",e.target.value)} style={inp} placeholder="e.g. Free preview → bio"/></div>
+            <div><label style={lbl}>CTA <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(leave blank to hide)</span></label><input value={slides[active]?.cta_items?.[0]||""} onChange={e=>updateSlide("cta_items",e.target.value?[e.target.value]:[])} style={inp} placeholder="e.g. Save this so you can come back to it"/></div>
             <div>
               <label style={lbl}>AI Rewrite</label>
               <div style={{display:"flex",gap:8}}>
