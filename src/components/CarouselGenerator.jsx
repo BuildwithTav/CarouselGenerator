@@ -1295,6 +1295,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           .mobile-edit-btn{display:flex!important}
           .mobile-drawer{display:block!important}
           .cover-format-grid{grid-template-columns:1fr!important}
+          .cmd-hint{display:none!important}
+          .desktop-edit-panel{display:none!important}
+          .topic-row input{width:100%!important;flex:unset!important}
         }
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         *{box-sizing:border-box}input,textarea,select{outline:none!important;font-family:inherit}
@@ -1579,7 +1582,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </div>
 
             <div style={{marginBottom:16}}>
-              <div style={{display:"flex",gap:8,marginBottom:8}}>
+              <div className="topic-row" style={{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap"}}>
                 <input value={topic} onChange={e=>{setTopic(e.target.value);if(err)setErr("");}}
                   placeholder={audienceType==="peers"?(businessType==="fitness"?"e.g. Why most PTs price themselves out of business":businessType==="beauty"?"e.g. Why most salons lose money on their best service":businessType==="restaurant"?"e.g. Why most restaurants fail in year two":businessType==="realestate"?"e.g. The mistake most agents make with new listings":businessType==="ecommerce"?"e.g. Why most product brands waste their ad budget":businessType==="coach"?"e.g. Why most coaches struggle to retain clients":businessType==="other"?(otherType?"e.g. A hard truth about "+otherType:"e.g. A hard truth most in your industry ignore"):"e.g. Why your content gets views but zero clients"):(businessType==="fitness"?"e.g. Why most people quit the gym after 3 weeks":businessType==="beauty"?"e.g. Why your skin actually needs less, not more":businessType==="restaurant"?"e.g. What really goes into your favourite dish":businessType==="realestate"?"e.g. What nobody tells you before buying your first home":businessType==="ecommerce"?"e.g. Why fast shipping matters more than price":businessType==="coach"?"e.g. Why mindset alone won't get you results":businessType==="other"?(otherType?"e.g. Something surprising about "+otherType:"e.g. Something your audience doesn't know yet"):"e.g. Why your content gets views but zero clients")}
                   style={{...inp,fontSize:15,fontWeight:500,flex:1,borderColor:err?"#c0392b":A.border}}
@@ -1656,7 +1659,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 <button onClick={()=>generate()} style={{width:"100%",padding:"15px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:15,fontWeight:800,border:`1px solid ${GOLD}33`,boxShadow:`0 0 0 1px ${GOLD}22`}}>
               Generate Carousel →
             </button>
-            <p style={{textAlign:"center",color:A.muted,fontSize:11,marginTop:10}}>⌘ + Enter · ~15–25 seconds</p>
+            <p className="cmd-hint" style={{textAlign:"center",color:A.muted,fontSize:11,marginTop:10}}>⌘ + Enter · ~15–25 seconds</p>
           </div>
         )}
 
@@ -1962,7 +1965,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
               </div>
 
-              <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              <div className="desktop-edit-panel" style={{display:"flex",flexDirection:"column",gap:12}}>
                 <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted}}>Edit Slide {active+1}</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
                   {slides.map((s,i)=>(
@@ -2084,7 +2087,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
       {/* Mobile edit drawer */}
       {editDrawerOpen&&(
-        <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1000,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0",maxHeight:"70vh",overflowY:"auto",padding:"20px 16px 40px"}}>
+        <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1000,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0",maxHeight:"55vh",overflowY:"auto",padding:"20px 16px 40px"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
             <div style={{fontWeight:800,fontSize:16}}>Edit Slide {active+1}</div>
             <button onClick={()=>setEditDrawerOpen(false)} style={{background:"none",border:"none",fontSize:22,color:A.muted,cursor:"pointer"}}>✕</button>
@@ -2092,7 +2095,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           {/* Slide number buttons */}
           <div style={{display:"flex",gap:4,marginBottom:16,flexWrap:"wrap"}}>
             {slides.map((_,i)=>(
-              <button key={i} onClick={()=>setActive(i)} style={{width:36,height:36,borderRadius:8,background:active===i?A.text:A.surface,border:`1.5px solid ${active===i?GOLD:A.border}`,color:active===i?A.accentText:A.muted,fontSize:13,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
+              <button key={i} onClick={()=>{setActive(i);setTimeout(()=>{const el=document.querySelectorAll('.slide-preview-item')[i];if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},100);}} style={{width:36,height:36,borderRadius:8,background:active===i?A.text:A.surface,border:`1.5px solid ${active===i?GOLD:A.border}`,color:active===i?A.accentText:A.muted,fontSize:13,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
             ))}
           </div>
           {/* Edit fields */}
