@@ -573,6 +573,7 @@ export default function App() {
   const [inspirationImg, setInspirationImg] = useState(null);
   const [ratio, setRatio] = useState(S?.ratio||"instagram");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [customBgSlots, setCustomBgSlots] = useState(S?.customBgSlots||["","",""]);
   const [customAccentSlots, setCustomAccentSlots] = useState(S?.customAccentSlots||["","",""]);
   const [bgColour, setBgColour] = useState(S?.bgColour||"#1a1a2e");
@@ -1291,6 +1292,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           .logo-byline{display:none!important}
           body,html,#__next{width:100%!important;max-width:100vw!important;overflow-x:hidden!important}
           nav{width:100%!important;max-width:100vw!important}
+          .mobile-edit-btn{display:flex!important}
+          .mobile-drawer{display:block!important}
+          .cover-format-grid{grid-template-columns:1fr!important}
         }
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         *{box-sizing:border-box}input,textarea,select{outline:none!important;font-family:inherit}
@@ -1613,7 +1617,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <input ref={inspirationRef} type="file" accept="image/*" onChange={e=>readFile(e,url=>{setInspirationImg(url);setTopic("Reading screenshot...");setErr("");extractTopicFromImage(url);}) } style={{display:"none"}}/>
             </div>
 
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
+            <div className="cover-format-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
               <div>
                 <label style={lbl}>Cover photo <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional)</span></label>
                 {activeCoverPhoto&&(()=>{
@@ -1947,6 +1951,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <SlidePreview key={i} slide={slide} idx={i} total={slides.length} opts={slideOpts(i)} onClick={()=>setActive(i)} isActive={active===i} isCover={i===0}/>
                   ))}
                 </div>
+                <button onClick={()=>setEditDrawerOpen(true)} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontSize:14,fontWeight:700,color:A.text,cursor:"pointer",marginBottom:8,textAlign:"center"}}>✏️ Edit Slide {active+1}</button>
                 <div style={{display:"flex",gap:8}}>
                   <button onClick={()=>downloadOne(active)} disabled={downloading} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                     {downloading?<><Spin c={A.text}/>Processing...</>:downloadDone?"✓ Downloaded":`↓ Slide ${active+1}`}
@@ -2076,6 +2081,42 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </div>
           </div>
         )}
+
+      {/* Mobile edit drawer */}
+      {editDrawerOpen&&(
+        <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1000,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0",maxHeight:"70vh",overflowY:"auto",padding:"20px 16px 40px"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+            <div style={{fontWeight:800,fontSize:16}}>Edit Slide {active+1}</div>
+            <button onClick={()=>setEditDrawerOpen(false)} style={{background:"none",border:"none",fontSize:22,color:A.muted,cursor:"pointer"}}>✕</button>
+          </div>
+          {/* Slide number buttons */}
+          <div style={{display:"flex",gap:4,marginBottom:16,flexWrap:"wrap"}}>
+            {slides.map((_,i)=>(
+              <button key={i} onClick={()=>setActive(i)} style={{width:36,height:36,borderRadius:8,background:active===i?A.text:A.surface,border:`1.5px solid ${active===i?GOLD:A.border}`,color:active===i?A.accentText:A.muted,fontSize:13,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
+            ))}
+          </div>
+          {/* Edit fields */}
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div>
+              <label style={lbl}>Background Gradient — {overlayDark}%</label>
+              <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
+            </div>
+            <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={inp}/></div>
+            <div><label style={lbl}>Headline</label><textarea value={slides[active]?.headline||""} onChange={e=>updateSlide("headline",e.target.value)} rows={3} style={{...inp,resize:"vertical",lineHeight:1.5}}/></div>
+            <div><label style={lbl}>Accent Word</label><input value={slides[active]?.accent_word||""} onChange={e=>updateSlide("accent_word",e.target.value)} style={inp}/></div>
+            <div><label style={lbl}>Body</label><textarea value={slides[active]?.body||""} onChange={e=>updateSlide("body",e.target.value)} rows={4} style={{...inp,resize:"vertical",lineHeight:1.6}}/></div>
+            <div><label style={lbl}>CTA <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(leave blank to hide)</span></label><input value={slides[active]?.cta||""} onChange={e=>updateSlide("cta",e.target.value)} style={inp} placeholder="e.g. Free preview → bio"/></div>
+            <div>
+              <label style={lbl}>AI Rewrite</label>
+              <div style={{display:"flex",gap:8}}>
+                <input value={rewritePrompt} onChange={e=>setRewritePrompt(e.target.value)} placeholder='"Make this punchier"' style={{...inp,flex:1,fontSize:13}}/>
+                <button onClick={()=>rewriteSlide(active)} disabled={rewriting} style={{background:A.text,color:A.accentText,border:"none",borderRadius:9,padding:"0 14px",fontWeight:700,fontSize:13,cursor:"pointer",flexShrink:0}}>{rewriting?<Spin/>:"↺"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {editDrawerOpen&&<div onClick={()=>setEditDrawerOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:999}}/>}
 
       <footer style={{borderTop:`1px solid ${A.border}`,padding:"14px 32px",textAlign:"center",marginTop:60}}>
         <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,fontWeight:700,textDecoration:"none",fontSize:12}}>Build with Tav</a>
