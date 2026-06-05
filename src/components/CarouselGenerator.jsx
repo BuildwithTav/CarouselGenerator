@@ -891,6 +891,24 @@ Return ONLY valid JSON array:
     setDownloading(false);
   };
 
+  const topicPlaceholder = audienceType === "peers"
+    ? (businessType==="fitness" ? "e.g. Why most PTs price themselves out of business"
+      : businessType==="beauty" ? "e.g. Why most salons lose money on their best service"
+      : businessType==="restaurant" ? "e.g. Why most restaurants fail in year two"
+      : businessType==="realestate" ? "e.g. The mistake most agents make with new listings"
+      : businessType==="ecommerce" ? "e.g. Why most product brands waste their ad budget"
+      : businessType==="coach" ? "e.g. Why most coaches struggle to retain clients"
+      : businessType==="other" ? (otherType ? "e.g. A hard truth about "+otherType : "e.g. A hard truth most in your industry ignore")
+      : "e.g. Why your content gets views but zero clients")
+    : (businessType==="fitness" ? "e.g. Why most people quit the gym after 3 weeks"
+      : businessType==="beauty" ? "e.g. Why your skin actually needs less, not more"
+      : businessType==="restaurant" ? "e.g. What really goes into your favourite dish"
+      : businessType==="realestate" ? "e.g. What nobody tells you before buying your first home"
+      : businessType==="ecommerce" ? "e.g. Why fast shipping matters more than price"
+      : businessType==="coach" ? "e.g. Why mindset alone won't get you results"
+      : businessType==="other" ? (otherType ? "e.g. Something surprising about "+otherType : "e.g. Something your audience doesn't know yet")
+      : "e.g. Why your content gets views but zero clients");
+
   const isMobileDevice = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   const renderSlideViaServer = async (slide, idx, total, opts, isCover) => {
@@ -1611,7 +1629,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"flex-start"}}>
                 <textarea value={topic} onChange={e=>{setTopic(e.target.value);if(err)setErr("");}}
                   rows={2}
-                  placeholder={audienceType==="peers"?(businessType==="fitness"?"e.g. Why most PTs price themselves out of business":businessType==="beauty"?"e.g. Why most salons lose money on their best service":businessType==="restaurant"?"e.g. Why most restaurants fail in year two":businessType==="realestate"?"e.g. The mistake most agents make with new listings":businessType==="ecommerce"?"e.g. Why most product brands waste their ad budget":businessType==="coach"?"e.g. Why most coaches struggle to retain clients":businessType==="other"?(otherType?"e.g. A hard truth about "+otherType:"e.g. A hard truth most in your industry ignore"):"e.g. Why your content gets views but zero clients"):(businessType==="fitness"?"e.g. Why most people quit the gym after 3 weeks":businessType==="beauty"?"e.g. Why your skin actually needs less, not more":businessType==="restaurant"?"e.g. What really goes into your favourite dish":businessType==="realestate"?"e.g. What nobody tells you before buying your first home":businessType==="ecommerce"?"e.g. Why fast shipping matters more than price":businessType==="coach"?"e.g. Why mindset alone won't get you results":businessType==="other"?(otherType?"e.g. Something surprising about "+otherType:"e.g. Something your audience doesn't know yet"):"e.g. Why your content gets views but zero clients")}
+                  placeholder={topicPlaceholder}
                   style={{...inp,fontSize:15,fontWeight:500,flex:1,borderColor:err?"#c0392b":A.border,resize:"none",lineHeight:1.5}}
                   onKeyDown={e=>{if(e.key==="Enter"&&e.metaKey)generate();}}/>
                 <button onClick={randomiseTopic} disabled={randomising} title="Randomise topic" style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"0 16px",fontSize:18,color:A.muted,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:48,height:48}}>
@@ -1622,7 +1640,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </div>
 
             <div style={{marginBottom:16}}>
-              <label style={lbl}>Angle <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional — what should this teach, challenge, or make people feel?)</span></label>
+              <label style={lbl}>Brief <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional — exact title, slide structure, tone, anything specific)</span></label>
               <div style={{position:"relative"}}>
                 <textarea value={angle} onChange={e=>setAngle(e.target.value.slice(0,280))} placeholder={BRIEF_PLACEHOLDERS[businessType]||BRIEF_PLACEHOLDERS.other} rows={4} style={{...inp,fontSize:13,resize:"none",lineHeight:1.6,paddingBottom:22}}/>
                 <div style={{position:"absolute",bottom:8,right:12,fontSize:10,color:angle.length>240?"#c0392b":"#aaa",fontWeight:600}}>{angle.length}/280</div>
