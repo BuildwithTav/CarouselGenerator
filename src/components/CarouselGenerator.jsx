@@ -246,14 +246,14 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const layouts = {
     standard: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
-      .hl { font-size:${isPortrait?60:52}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; }
-      .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; ${ts2} font-family:'${bodyFont}',sans-serif; }
+      .hl { font-size:${isPortrait?60:52}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; text-shadow:${C.dark?"0 2px 12px rgba(0,0,0,0.6)":"0 2px 8px rgba(255,255,255,0.5)"}; }
+      .body { text-shadow:${C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; ${ts2} font-family:'${bodyFont}',sans-serif; }
       .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?28:24}px; font-weight:800; color:${C.accent}; font-family:'${bodyFont}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; white-space:pre-wrap; }
     `,
     statement: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
       .hl { font-size:${isPortrait?72:60}px; font-weight:800; line-height:1.1; letter-spacing:${hs.id==="upper"?"2px":"-2px"}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; }
-      .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
+      .body { text-shadow:${C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
     `,
     split: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; overflow:hidden; }
@@ -282,13 +282,13 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
 
       .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-style:italic; font-family:'${hlFont}',sans-serif; }
-      .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
+      .body { text-shadow:${C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
     `,
     hero: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; gap:24px; text-align:center; overflow:hidden; }
 
       .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; }
-      .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; }
+      .body { text-shadow:${C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; }
       .cb { width:100%; max-width:860px; padding:${isPortrait?30:24}px 50px; border-radius:12px; font-size:${isPortrait?28:24}px; font-weight:800; font-family:'${bodyFont}',sans-serif; text-align:center; background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
     `,
   };
@@ -741,11 +741,11 @@ RULES:
 - No two consecutive slides same layout
 - Slide 1 always "statement"
 - Final slide always "hero" with exactly one cta_items string
-- Pick ONE accent word per headline — exact match — put in "accent_word"
-- Tags: editorial and specific. Like a magazine subheading. E.g. "THE UNCOMFORTABLE TRUTH", "WHY THIS MATTERS", "THE REAL COST", "WHAT ACTUALLY WORKS". NOT "HOOK", "SLIDE 1", "CTA", "THE PROBLEM", "THE SOLUTION"
+- Pick ONE accent word per headline — must be the single most emotionally charged, surprising, or powerful word in that headline. The word that makes someone stop. Exact match to how it appears in the headline. Put in "accent_word".
+- Tags: must be editorially specific to what THAT slide is actually saying — like a magazine would label it. Unique per slide. E.g. "THE UNCOMFORTABLE TRUTH", "WHAT THE DATA SHOWS", "THE SILENT KILLER", "WHY MOST FAIL HERE", "THE TURNING POINT". Never generic: NOT "THE HOOK", "SLIDE 1", "THE PROBLEM", "THE SOLUTION", "THE CTA". Write each tag as if it is the headline of a newspaper column about that specific point.
 - Headlines: max 10 words. A clear statement, question, or insight. Think subheading not billboard.
 - Body: REQUIRED on standard slides. 1-2 sentences MAX. Every sentence must be self-contained and immediately understandable without context. Use plain everyday language — no metaphors, no abstract concepts, no aphorisms. One specific insight or one actionable point. Ask yourself: would someone reading this on a phone at 9am understand it instantly? If not, rewrite it.
-- Final slide (hero) CTA: MUST have body text (1-2 sentences reinforcing why they should act — e.g. "If this made you think differently, there is more where that came from." or "Most people scroll past. The ones who save it are the ones who act on it."). Then cta_items with ONE of: "Follow for more like this", "Save this so you can come back to it", "Share this with someone who needs to hear it", "Comment below — does this match your experience?", "Follow if this made you think differently". Never invent a download, product, or link.
+- Final slide (hero) CTA: MUST have body text (1-2 sentences reinforcing why they should act — make it specific to the topic, not generic). Then cta_items with ONE fresh, specific call to action written for this exact carousel. Never repeat the same CTA twice. Never invent a download, product, or link. Keep it to follow, save, share, or comment — but write the wording fresh every time.
 - Only final slide gets cta. All others cta is null.
 - No HTML, no cite tags, plain text only
 - NO invented statistics or fabricated data. Only use facts you are confident are accurate and well-established. If uncertain, frame as a principle, observation, or opinion — never as a stated fact. Every body text must be specific and genuinely useful, not a generic statement dressed as insight.
@@ -1649,19 +1649,34 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
             <div className="cover-format-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
               <div>
-                <label style={lbl}>Cover photo <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional)</span></label>
+                <label style={lbl}>Cover <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional)</span></label>
+                {coverPhotos.length > 0 && (
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12,marginTop:8}}>
+                    {coverPhotos.map((photo,i)=>(
+                      <div key={i} onClick={()=>setActiveCoverPhoto(photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:activeCoverPhoto===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0}}>
+                        <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      </div>
+                    ))}
+                    <div onClick={()=>coverPhotoRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
+                  </div>
+                )}
+                {coverPhotos.length === 0 && (
+                  <div onClick={()=>coverPhotoRef.current?.click()} style={{marginTop:8,marginBottom:12,padding:"12px",border:`2px dashed ${A.border}`,borderRadius:10,textAlign:"center",cursor:"pointer",color:A.muted,fontSize:13}}>
+                    + Upload cover photo
+                  </div>
+                )}
+                <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
                 {(()=>{
                   const previewW=280, scale=previewW/1080;
                   return (
                     <div>
-                      <label style={{...lbl,marginBottom:8}}>Cover preview</label>
+                      <label style={{...lbl,marginBottom:8}}>Preview</label>
                       <div style={{width:previewW,height:Math.round(1350*scale),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
                         <SlidePreview slide={{headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
                       </div>
                     </div>
                   );
                 })()}
-                <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
                 <div>
@@ -1807,7 +1822,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   const coverSlide = {headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null};
                   return (
                     <div>
-                      <label style={{...lbl,marginBottom:8}}>Cover preview</label>
+                      <label style={{...lbl,marginBottom:8}}>Preview</label>
                       <div style={{width:280,height:280*(1350/1080),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
                         <SlidePreview slide={coverSlide} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
                       </div>
@@ -1929,10 +1944,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     reader.readAsDataURL(file);
                   }} style={{display:"none"}}/>
                     <div style={{marginTop:12}}>
-                      {templateBgUrl&&<>
-                        <label style={lbl}>Cover Photo Darkness — {overlayDark}%</label>
-                        <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{marginBottom:14}}/>
-                      </>}
+                
                       <label style={{...lbl,marginBottom:8}}>Preview — check safe zone</label>
                       <div style={{width:280,height:280*(1350/1080),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
                         <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
@@ -2019,14 +2031,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18,display:"flex",flexDirection:"column",gap:13}}>
                   <div style={{background:A.bg,borderRadius:9,border:`1.5px solid ${A.border}`,padding:"12px 14px",marginBottom:4}}>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                      <label style={{...lbl,marginBottom:0}}>Background Gradient — {overlayDark}%</label>
-                      <div style={{display:"flex",gap:4}}>
-                        {[["dark","⬛"],["white","⬜"]].map(([mode,icon])=>(
-                          <button key={mode} onClick={()=>setGradientMode(mode)} style={{background:gradientMode===mode?A.text:A.surface,border:`1.5px solid ${gradientMode===mode?A.text:A.border}`,borderRadius:6,padding:"3px 8px",fontSize:11,fontWeight:700,color:gradientMode===mode?A.accentText:A.muted,cursor:"pointer"}}>{icon} {mode}</button>
-                        ))}
-                      </div>
-                    </div>
+                    <label style={{...lbl,marginBottom:8}}>Background Gradient — {overlayDark}%</label>
                     <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
                   </div>
                   <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={inp}/></div>
