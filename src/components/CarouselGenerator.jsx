@@ -572,6 +572,7 @@ export default function App() {
   const [topic, setTopic] = useState("");
   const [inspirationImg, setInspirationImg] = useState(null);
   const [ratio, setRatio] = useState(S?.ratio||"instagram");
+  const [menuOpen, setMenuOpen] = useState(false);
   const [customBgSlots, setCustomBgSlots] = useState(S?.customBgSlots||["","",""]);
   const [customAccentSlots, setCustomAccentSlots] = useState(S?.customAccentSlots||["","",""]);
   const [bgColour, setBgColour] = useState(S?.bgColour||"#1a1a2e");
@@ -1272,12 +1273,20 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
   );
 
   const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"]];
+  const BURGER_ITEMS = [["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"]];
+  const MAIN_NAV = [["generate","Generate"],["quotes","Quotes"]];
 
   return (
     <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
         @keyframes spin{to{transform:rotate(360deg)}}
+        .desktop-nav{display:flex!important}
+        .mobile-nav{display:none!important}
+        @media(max-width:768px){
+          .desktop-nav{display:none!important}
+          .mobile-nav{display:flex!important}
+        }
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         *{box-sizing:border-box}input,textarea,select{outline:none!important;font-family:inherit}
         button{cursor:pointer;font-family:inherit;border:none;transition:all 0.15s}
@@ -1296,11 +1305,25 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           <span style={{fontSize:11,color:A.muted}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
         </div>
         <div style={{display:"flex",alignItems:"stretch",gap:0,marginLeft:"auto"}}>
-          {NAV_ITEMS.map(([id,label])=>(
-            <button key={id} onClick={()=>setNav(id)} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 14px",fontSize:13,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
-              {label}
+          {/* Desktop nav - all items */}
+          <div style={{display:"none"}} className="desktop-nav">
+            {NAV_ITEMS.map(([id,label])=>(
+              <button key={id} onClick={()=>setNav(id)} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 14px",fontSize:13,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {/* Mobile nav - Generate + Quotes + Burger */}
+          <div style={{display:"flex",alignItems:"stretch"}} className="mobile-nav">
+            {MAIN_NAV.map(([id,label])=>(
+              <button key={id} onClick={()=>{setNav(id);setMenuOpen(false);}} style={{background:"none",border:"none",borderBottom:nav===id?`3px solid ${GOLD}`:"3px solid transparent",color:nav===id?A.text:A.muted,padding:"0 20px",fontSize:15,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
+                {label}
+              </button>
+            ))}
+            <button onClick={()=>setMenuOpen(o=>!o)} style={{background:"none",border:"none",color:menuOpen?A.text:A.muted,padding:"0 16px",fontSize:22,height:56,display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
+              {menuOpen ? "✕" : "☰"}
             </button>
-          ))}
+          </div>
           {view==="preview"&&<>
             <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:8}}>↺ Regenerate</button>
             <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
@@ -1308,6 +1331,18 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4}}>Reset</button>
         </div>
       </nav>
+      {menuOpen&&(
+        <div style={{position:"fixed",top:56,left:0,right:0,background:A.bg,borderBottom:`1px solid ${A.border}`,zIndex:999,padding:"8px 0",boxShadow:"0 4px 20px rgba(0,0,0,0.1)"}}>
+          {BURGER_ITEMS.map(([id,label])=>(
+            <button key={id} onClick={()=>{setNav(id);setMenuOpen(false);}} style={{display:"flex",alignItems:"center",width:"100%",padding:"16px 24px",background:nav===id?A.surface:"none",border:"none",borderLeft:nav===id?`3px solid ${GOLD}`:"3px solid transparent",color:nav===id?A.text:A.muted,fontSize:16,fontWeight:nav===id?700:500,cursor:"pointer",textAlign:"left"}}>
+              {label}
+            </button>
+          ))}
+          <button onClick={()=>{setMenuOpen(false);localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{display:"flex",alignItems:"center",width:"100%",padding:"16px 24px",background:"none",border:"none",borderLeft:"3px solid transparent",color:"#c0392b",fontSize:16,fontWeight:500,cursor:"pointer",textAlign:"left"}}>
+            Reset
+          </button>
+        </div>
+      )}
 
       <div style={{maxWidth:1200,margin:"0 auto",padding:"28px 24px"}}>
 
