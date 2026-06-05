@@ -125,7 +125,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
     coverImageUrl, coverPosition, badgeArea,
     profileUrl, name, handle, blueTick, websiteUrl, showNums,
-    accentColor, ratio, coverImgPos, templateImgPos, bgColour,
+    accentColor, ratio, coverImgPos, templateImgPos, bgColour, gradientMode,
   } = opts;
   const coverPos2 = coverImgPos || {x:50,y:50};
   const templatePos = templateImgPos || {x:50,y:50};
@@ -390,7 +390,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const activeAlpha = isCover ? coverOverlayAlpha : overlayAlpha;
   const bgHtml = `
     ${hasBg ? `<img class="bg-img" src="${bgImageUrl}" />` : ""}
-    ${activeAlpha > 0 ? `<div class="bg-ov" style="background:linear-gradient(to top,rgba(0,0,0,${Math.min(activeAlpha*0.95,0.92)}) 0%,rgba(0,0,0,${Math.min(activeAlpha*0.4,0.5)}) 50%,rgba(0,0,0,0) 100%)"></div>` : ""}`;
+    ${activeAlpha > 0 ? `<div class="bg-ov" style="background:linear-gradient(to top,${gradientMode==="white"?`rgba(255,255,255,${Math.min(activeAlpha*0.95,0.95)}) 0%,rgba(255,255,255,${Math.min(activeAlpha*0.4,0.5)}) 50%,rgba(255,255,255,0) 100%`:`rgba(0,0,0,${Math.min(activeAlpha*0.95,0.92)}) 0%,rgba(0,0,0,${Math.min(activeAlpha*0.4,0.5)}) 50%,rgba(0,0,0,0) 100%`})"></div>` : ""}`;
 
   const avHtml = profileUrl
     ? `<img src="${profileUrl}" />`
@@ -574,6 +574,7 @@ export default function App() {
   const [ratio, setRatio] = useState(S?.ratio||"instagram");
   const [menuOpen, setMenuOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [gradientMode, setGradientMode] = useState("dark");
   const [customBgSlots, setCustomBgSlots] = useState(S?.customBgSlots||["","",""]);
   const [customAccentSlots, setCustomAccentSlots] = useState(S?.customAccentSlots||["","",""]);
   const [bgColour, setBgColour] = useState(S?.bgColour||"#1a1a2e");
@@ -724,9 +725,8 @@ You are the copywriter AND creative director. Every slide must earn its place.
 
 VOICE: ${voice}
 AUDIENCE: ${audienceDesc}
-TOPIC: "${topicStr}"${briefSection}${inspiration}${narrativeStyle}
-SLIDES: ${slideCount}
-NARRATIVE STYLE: ${style}
+TOPIC: "${topicStr}"${briefSection}${inspiration}
+SLIDES: ${slideCount}${narrativeStyle}
 
 NARRATIVE ARC: hook → reality → insight → shift → advice → CTA
 
@@ -742,7 +742,7 @@ RULES:
 - Slide 1 always "statement"
 - Final slide always "hero" with exactly one cta_items string
 - Pick ONE accent word per headline — exact match — put in "accent_word"
-- Tags: editorial and specific. NOT "HOOK", "SLIDE 1", "CTA"
+- Tags: editorial and specific. Like a magazine subheading. E.g. "THE UNCOMFORTABLE TRUTH", "WHY THIS MATTERS", "THE REAL COST", "WHAT ACTUALLY WORKS". NOT "HOOK", "SLIDE 1", "CTA", "THE PROBLEM", "THE SOLUTION"
 - Headlines: max 10 words. A clear statement, question, or insight. Think subheading not billboard.
 - Body: REQUIRED on standard slides. 1-2 sentences MAX. Every sentence must be self-contained and immediately understandable without context. Use plain everyday language — no metaphors, no abstract concepts, no aphorisms. One specific insight or one actionable point. Ask yourself: would someone reading this on a phone at 9am understand it instantly? If not, rewrite it.
 - Final slide (hero) CTA: MUST have body text (1-2 sentences reinforcing why they should act — e.g. "If this made you think differently, there is more where that came from." or "Most people scroll past. The ones who save it are the ones who act on it."). Then cta_items with ONE of: "Follow for more like this", "Save this so you can come back to it", "Share this with someone who needs to hear it", "Comment below — does this match your experience?", "Follow if this made you think differently". Never invent a download, product, or link.
@@ -786,7 +786,7 @@ Return ONLY valid JSON array:
       const newHistory = [entry, ...history].slice(0, 10);
       setHistory(newHistory); saveHistory(newHistory);
 
-    } catch { setErr("Generation failed — please try again."); setView("setup"); }
+    } catch { setErr("Generation failed — check your connection and try again. If the problem persists, try a shorter topic."); setView("setup"); }
   };
 
   const randomiseTopic = async () => {
@@ -795,7 +795,26 @@ Return ONLY valid JSON array:
     const btLabel = businessType==="other"?(otherType||"brand"):btObj2?.label||"Digital Marketer";
     const audDesc = audienceType==="peers" ? `other ${btLabel.toLowerCase()}s and industry professionals` : (btObj2?.audience||"your target audience");
     try {
-      const angles = ["a surprising myth to bust","a counterintuitive truth most people get wrong","a specific mistake that costs people money or time","a data point that would shock most people","a common belief that is completely backwards","a simple shift that changes everything","something everyone does that quietly holds them back","a question nobody is asking but should be"];
+      const angles = [
+        "a surprising myth to bust in this industry",
+        "a counterintuitive truth most people get wrong",
+        "a specific mistake that quietly costs people money or time",
+        "a common belief that is completely backwards",
+        "a simple mindset shift that changes everything",
+        "something everyone does that quietly holds them back",
+        "a question nobody is asking but everyone should be",
+        "the real reason most people fail at this",
+        "what the top performers do differently",
+        "an unpopular opinion that happens to be true",
+        "a warning most people ignore until it is too late",
+        "the thing nobody tells beginners but should",
+        "a hidden cost that most people never account for",
+        "why the conventional advice is wrong",
+        "a small habit that compounds into a big result",
+        "what success actually looks like vs what people expect",
+        "the fastest way to improve at this",
+        "a skill most people undervalue that changes everything",
+      ];
       const angle = angles[Math.floor(Math.random()*angles.length)];
       const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:80, messages:[{ role:"user", content:`You are a creative director for social media. Give me ONE punchy Instagram carousel topic for a ${btLabel} whose audience is ${audDesc} — specifically about ${angle}. Voice: ${voiceProfile||"direct, honest, no hype"}. Make it specific, not generic. Never use asterisks or quotes. Return ONLY the topic, max 12 words.` }] });
       const idea = d.content?.find(b=>b.type==="text")?.text?.trim()||"";
@@ -830,7 +849,10 @@ Return ONLY valid JSON array:
   const rewrite = async () => {
     if (!rewritePrompt.trim()) return; setRewriting(true);
     try {
-      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:600, messages:[{ role:"user", content:`Rewrite this carousel slide: "${rewritePrompt}"\n\nCurrent:\n${JSON.stringify(slides[active],null,2)}\n\nVoice: ${voiceProfile||"Direct, honest, specific."}\n\nReturn ONLY a JSON object with same structure. No markdown, no HTML.` }] });
+      const btObj3 = BUSINESS_TYPES.find(b=>b.id===businessType);
+      const btLabel3 = businessType==="other"?(otherType||"brand"):btObj3?.label||"Digital Marketer";
+      const audDesc3 = audienceType==="peers" ? `other ${btLabel3.toLowerCase()}s` : (btObj3?.audience||"your target audience");
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:600, messages:[{ role:"user", content:`Rewrite this carousel slide for a ${btLabel3} whose audience is ${audDesc3}.\n\nInstruction: "${rewritePrompt}"\n\nCurrent slide:\n${JSON.stringify(slides[active],null,2)}\n\nVoice: ${voiceProfile||"Direct, honest, specific. No hype."}\n\nKeep same JSON structure. Improve only what the instruction asks. Return ONLY valid JSON object. No markdown.` }] });
       const raw = (d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
       const m = raw.match(/\{[\s\S]*\}/);
       if (m) { const next=[...slides]; next[active]=sanitize(JSON.parse(m[0])); setSlides(next); setRewritePrompt(""); }
@@ -856,8 +878,8 @@ Return ONLY valid JSON array:
     profileUrl, name, handle, blueTick,
     websiteUrl: showWebsite?website:"",
     showNums, ratio, accentColor, bgColour,
-    coverImgPos, templateImgPos,
-  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays]);
+    coverImgPos, templateImgPos, gradientMode,
+  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays,gradientMode]);
 
   const downloadOne = async (i) => {
     setDownloading(true);
@@ -1829,7 +1851,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:accentSwatch==="custom"?14:0}}>
                   {ACCENT_SWATCHES.map(sw=>(
                     <button key={sw.id} onClick={()=>{setAccentSwatch(sw.id);if(sw.hex)setAccentColor(sw.hex);}} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,background:"none",border:"none",padding:4}}>
-                      <div style={{width:36,height:36,borderRadius:"50%",background:sw.hex||(accentSwatch==="custom"?accentColor:"#C9A84C"),border:`3px solid ${accentSwatch===sw.id?A.text:"transparent"}`,boxShadow:accentSwatch===sw.id?`0 0 0 1px ${A.text}`:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <div style={{width:36,height:36,borderRadius:"50%",background:sw.hex||(accentSwatch==="custom"?accentColor:"#C9A84C"),border:`3px solid ${accentSwatch===sw.id?A.text:"transparent"}`,boxShadow:accentSwatch===sw.id?`0 0 0 1px ${A.text}`:["#FFFFFF","#F5F3EF","#FAF7F2"].includes(sw.hex)?`inset 0 0 0 1px ${A.border}`:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
                         {sw.id==="custom"&&<span style={{fontSize:14}}>+</span>}
                       </div>
                       <span style={{fontSize:9,fontWeight:600,color:accentSwatch===sw.id?A.text:A.muted,textTransform:"uppercase",letterSpacing:1}}>{sw.label}</span>
@@ -1943,9 +1965,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <p style={{fontSize:12,color:A.muted,marginBottom:12}}>See how your slides look with current settings</p>
                 <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
                   <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                    <SlidePreview slide={{headline:"Your hook headline goes here",accent_word:"headline",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={0} total={6} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
-                  </div>
-                  <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
                     <SlidePreview slide={{headline:"Your slide headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting body text appears here to show how it looks.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={{...slideOpts(1),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={false}/>
                   </div>
                 </div>
@@ -2000,8 +2019,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18,display:"flex",flexDirection:"column",gap:13}}>
                   <div style={{background:A.bg,borderRadius:9,border:`1.5px solid ${A.border}`,padding:"12px 14px",marginBottom:4}}>
-                    <label style={lbl}>Background Gradient — {overlayDark}%</label>
-                    <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                      <label style={{...lbl,marginBottom:0}}>Background Gradient — {overlayDark}%</label>
+                      <div style={{display:"flex",gap:4}}>
+                        {[["dark","⬛"],["white","⬜"]].map(([mode,icon])=>(
+                          <button key={mode} onClick={()=>setGradientMode(mode)} style={{background:gradientMode===mode?A.text:A.surface,border:`1.5px solid ${gradientMode===mode?A.text:A.border}`,borderRadius:6,padding:"3px 8px",fontSize:11,fontWeight:700,color:gradientMode===mode?A.accentText:A.muted,cursor:"pointer"}}>{icon} {mode}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
                   </div>
                   <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={inp}/></div>
                   <div><label style={lbl}>Headline</label><textarea value={slides[active]?.headline||""} onChange={e=>updateSlide("headline",e.target.value)} rows={2} style={{...inp,resize:"vertical",lineHeight:1.5}}/></div>
@@ -2128,7 +2154,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             <div>
               <label style={lbl}>Background Gradient — {overlayDark}%</label>
-              <input type="range" min={0} max={85} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
+              <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
             </div>
             <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={inp}/></div>
             <div><label style={lbl}>Headline</label><textarea value={slides[active]?.headline||""} onChange={e=>updateSlide("headline",e.target.value)} rows={3} style={{...inp,resize:"vertical",lineHeight:1.5}}/></div>
