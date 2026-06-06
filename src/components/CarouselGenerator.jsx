@@ -472,6 +472,7 @@ async function downloadSlideAsPNG(slide, idx, total, opts, filename, isCover=fal
       body: JSON.stringify({ html, width:W, height:H })
     });
     const data = await res.json();
+    console.log("Slide render response:", res.status, data.error||"ok", "hasImage:", !!data.image);
     if (!data.image) throw new Error(data.error||"Render failed");
     const byteChars = atob(data.image);
     const byteArr = new Uint8Array(byteChars.length);
@@ -744,7 +745,7 @@ RULES:
 - Final slide always "hero" with exactly one cta_items string
 - Pick ONE accent word per headline — must be the single most emotionally charged, surprising, or powerful word in that headline. The word that makes someone stop. Exact match to how it appears in the headline. Put in "accent_word".
 - Tags: must be editorially specific to what THAT slide is actually saying — like a magazine would label it. Unique per slide. E.g. "THE UNCOMFORTABLE TRUTH", "WHAT THE DATA SHOWS", "THE SILENT KILLER", "WHY MOST FAIL HERE", "THE TURNING POINT". Never generic: NOT "THE HOOK", "SLIDE 1", "THE PROBLEM", "THE SOLUTION", "THE CTA". Write each tag as if it is the headline of a newspaper column about that specific point.
-- Headlines: max 10 words. A clear statement, question, or insight. Think subheading not billboard.
+- Headlines: max 10 words. Must be immediately clear on first read — no lines that can be misread as the opposite of what you mean. Contrarian is good. Ambiguous is not.. A clear statement, question, or insight. Think subheading not billboard.
 - Body: REQUIRED on standard slides. 1-2 sentences MAX. Every sentence must be self-contained and immediately understandable without context. Use plain everyday language — no metaphors, no abstract concepts, no aphorisms. One specific insight or one actionable point. Ask yourself: would someone reading this on a phone at 9am understand it instantly? If not, rewrite it.
 - Final slide (hero) CTA: MUST have body text (1-2 sentences reinforcing why they should act — make it specific to the topic, not generic). Then cta_items with ONE fresh, specific call to action written for this exact carousel. Never repeat the same CTA twice. Never invent a download, product, or link. Keep it to follow, save, share, or comment — but write the wording fresh every time.
 - Only final slide gets cta. All others cta is null.
@@ -904,6 +905,7 @@ Return ONLY valid JSON array:
       body: JSON.stringify({ html, width:W, height:H })
     });
     const data = await res.json();
+    console.log("Slide render response:", res.status, data.error||"ok", "hasImage:", !!data.image);
     if (!data.image) throw new Error(data.error||"Render failed");
     const byteChars = atob(data.image);
     const byteArr = new Uint8Array(byteChars.length);
@@ -968,9 +970,9 @@ Return ONLY valid JSON array:
       a.href=url; a.download="carousel-slides.zip";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(()=>URL.revokeObjectURL(url),2000);
+      if (isMobileDevice()) setTimeout(()=>alert("✓ Zip downloaded — open the Files app to find your slides."),1500);
     } catch(e){console.error("Zip failed:",e);alert("Download failed — try again.");}
     setDownloadingAll(false); setDownloadDone(true); setTimeout(()=>setDownloadDone(false),4000);
-    if (isMobileDevice()) alert("✓ Downloaded — open Files app to find your slides.");
   };
 
   const generateQuotes = async () => {
@@ -1323,6 +1325,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         @media(max-width:768px){
           .desktop-nav{display:none!important}
           .mobile-nav{display:flex!important}
+          nav{padding:0 12px!important}
           .desktop-reset{display:none!important}
           body,html,#__next{width:100%!important;max-width:100vw!important;overflow-x:hidden!important}
           nav{width:100%!important;max-width:100vw!important}
@@ -1345,13 +1348,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       `}</style>
 
       <nav style={{borderBottom:`1px solid ${A.border}`,padding:"0 32px",display:"flex",alignItems:"center",justifyContent:"flex-start",height:56,position:"sticky",top:0,background:`${A.bg}EE`,backdropFilter:"blur(20px)",zIndex:100}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,paddingRight:4}}>
           <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,#1a1a1a,#2a2a2a)`,border:`1.5px solid ${GOLD}44`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
             <span style={{color:GOLD,fontSize:12,fontWeight:900}}>C</span>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:1,lineHeight:1}}>
             <span style={{fontSize:13,fontWeight:800,letterSpacing:-0.3,lineHeight:1.1}}>Carousel Studio</span>
-            <span style={{fontSize:9,color:A.muted,letterSpacing:0.3,lineHeight:1}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
+            <span style={{fontSize:9,color:A.muted,letterSpacing:0.3,lineHeight:1}}>by <span style={{color:GOLD,fontWeight:700}}>BuildWithTav</span></span>
           </div>
         </div>
         <div style={{display:"flex",alignItems:"stretch",gap:0,marginLeft:"auto"}}>
@@ -2207,7 +2210,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       {editDrawerOpen&&<div onClick={()=>setEditDrawerOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.15)",zIndex:999}}/>}
 
       <footer style={{borderTop:`1px solid ${A.border}`,padding:"14px 32px",textAlign:"center",marginTop:60}}>
-        <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,fontWeight:700,textDecoration:"none",fontSize:12}}>Build with Tav</a>
+        <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,fontWeight:700,textDecoration:"none",fontSize:12}}>BuildWithTav</a>
         <span style={{color:A.muted,fontSize:12}}> · buildwithtav.co</span>
       </footer>
     </div>
