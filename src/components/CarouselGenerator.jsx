@@ -578,7 +578,6 @@ export default function App() {
   const [ratio, setRatio] = useState(S?.ratio||"instagram");
   const [menuOpen, setMenuOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
-  const slideCache = useRef({});
   const [gradientMode, setGradientMode] = useState("dark");
   const [customBgSlots, setCustomBgSlots] = useState(S?.customBgSlots||["","",""]);
   const [customAccentSlots, setCustomAccentSlots] = useState(S?.customAccentSlots||["","",""]);
@@ -866,7 +865,7 @@ Return ONLY valid JSON array:
     setRewriting(false);
   };
 
-  const updateSlide = (k,v) => { const next=[...slides]; next[active]={...next[active],[k]:v}; setSlides(next); slideCache.current={}; };
+  const updateSlide = (k,v) => { const next=[...slides]; next[active]={...next[active],[k]:v}; setSlides(next); };
 
   const handleDrag = (e, setter, containerRef) => {
     const el = containerRef.current;
@@ -923,51 +922,6 @@ Return ONLY valid JSON array:
     return new Blob([byteArr],{type:"image/png"});
   };
 
-  const renderSlideToCanvasCached = (slide, idx, total, opts, isCover) => {
-    const cacheKey = `slide-${idx}-${JSON.stringify(slide).slice(0,50)}`;
-    if (slideCache.current[cacheKey]) return Promise.resolve(slideCache.current[cacheKey]);
-
-    return new Promise((resolve, reject) => {
-      const isPortrait = opts.ratio === "portrait";
-      const W = 1080, H = isPortrait ? 1920 : 1350;
-      const html = buildSlideHTML(slide, idx, total, opts, isCover);
-
-      // Use a visible iframe briefly — iOS Safari renders visible elements correctly
-      const container = document.createElement("div");
-      container.style.cssText = `position:fixed;top:0;left:0;width:${W}px;height:${H}px;z-index:-1;opacity:0.01;pointer-events:none;overflow:hidden;`;
-      document.body.appendChild(container);
-
-      const iframe = document.createElement("iframe");
-      iframe.style.cssText = `width:${W}px;height:${H}px;border:none;`;
-      container.appendChild(iframe);
-
-      const doc = iframe.contentDocument || iframe.contentWindow?.document;
-      doc.open(); doc.write(html); doc.close();
-
-      setTimeout(async () => {
-        try {
-          const win = iframe.contentWindow;
-          await new Promise(r => {
-            const s = doc.createElement("script");
-            s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-            s.onload = r; s.onerror = r; doc.head.appendChild(s); setTimeout(r, 4000);
-          });
-          if (!win.html2canvas) throw new Error("html2canvas not loaded");
-          const canvas = await win.html2canvas(doc.querySelector(".slide") || doc.body, {
-            useCORS: true, allowTaint: true, scale: 1,
-            width: W, height: H, windowWidth: W, windowHeight: H,
-            backgroundColor: null, logging: false
-          });
-          canvas.toBlob(blob => {
-            document.body.removeChild(container);
-            slideCache.current[cacheKey] = blob;
-            resolve(blob);
-          }, "image/png", 1.0);
-        } catch(e) { document.body.removeChild(container); reject(e); }
-      }, 3000);
-    });
-  };
-
   const renderSlideViaCanvas = (slide, idx, total, opts, isCover) => {
     return new Promise((res,rej) => {
       const isPortrait = opts.ratio==="portrait";
@@ -1007,7 +961,7 @@ Return ONLY valid JSON array:
           try {
             const opts = slideOpts(i);
             blob = mobile
-            ? await renderSlideToCanvasCached(slides[i],i,slides.length,opts,i===0)
+            ? await renderSlideViaServer(slides[i],i,slides.length,opts,i===0)
             : await renderSlideViaCanvas(slides[i],i,slides.length,opts,i===0);
             if (blob) break;
           } catch(e) {
