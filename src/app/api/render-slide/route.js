@@ -1,6 +1,10 @@
 export const maxDuration = 30;
 export const dynamic = 'force-dynamic';
  
+export async function GET() {
+  return Response.json({ error: "Method not allowed" }, { status: 405 });
+}
+ 
 export async function POST(req) {
   try {
     const { html, width, height } = await req.json();
@@ -29,8 +33,8 @@ export async function POST(req) {
       block_trackers: false,
       block_cookie_banners: false,
       cache: false,
-      delay: 2,
-      timeout: 25,
+      delay: 3,
+      timeout: 30,
     };
  
     const response = await fetch("https://api.screenshotone.com/take", {
