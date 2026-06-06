@@ -945,14 +945,22 @@ Return ONLY valid JSON array:
       });
       const zip = new window.JSZip();
       for (let i=0; i<slides.length; i++) {
-        try {
-          const opts = slideOpts(i);
-          const blob = mobile
-            ? await renderSlideViaServer(slides[i],i,slides.length,opts,i===0)
-            : await renderSlideViaCanvas(slides[i],i,slides.length,opts,i===0);
-          if (blob) zip.file(`slide-${i+1}.png`,blob);
-          if (mobile) await new Promise(r=>setTimeout(r,500));
-        } catch(e){console.error("Slide",i+1,"failed:",e);}
+        let blob = null;
+        for (let attempt=0; attempt<2; attempt++) {
+          try {
+            const opts = slideOpts(i);
+            blob = mobile
+              ? await renderSlideViaServer(slides[i],i,slides.length,opts,i===0)
+              : await renderSlideViaCanvas(slides[i],i,slides.length,opts,i===0);
+            if (blob) break;
+          } catch(e) {
+            console.error("Slide",i+1,"attempt",attempt+1,"failed:",e);
+            if (attempt===0) await new Promise(r=>setTimeout(r,1000));
+          }
+        }
+        if (blob) zip.file(`slide-${i+1}.png`,blob);
+        else console.error("Slide",i+1,"failed after 2 attempts");
+        if (mobile) await new Promise(r=>setTimeout(r,300));
       }
       const zipBlob = await zip.generateAsync({type:"blob"});
       const url = URL.createObjectURL(zipBlob);
@@ -961,7 +969,8 @@ Return ONLY valid JSON array:
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(()=>URL.revokeObjectURL(url),2000);
     } catch(e){console.error("Zip failed:",e);alert("Download failed — try again.");}
-    setDownloadingAll(false); setDownloadDone(true); setTimeout(()=>setDownloadDone(false),2500);
+    setDownloadingAll(false); setDownloadDone(true); setTimeout(()=>setDownloadDone(false),4000);
+    if (isMobileDevice()) alert("✓ Downloaded — open Files app to find your slides.");
   };
 
   const generateQuotes = async () => {
@@ -1337,11 +1346,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
       <nav style={{borderBottom:`1px solid ${A.border}`,padding:"0 32px",display:"flex",alignItems:"center",justifyContent:"flex-start",height:56,position:"sticky",top:0,background:`${A.bg}EE`,backdropFilter:"blur(20px)",zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,#1a1a1a,#2a2a2a)`,border:`1.5px solid ${GOLD}44`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,#1a1a1a,#2a2a2a)`,border:`1.5px solid ${GOLD}44`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
             <span style={{color:GOLD,fontSize:12,fontWeight:900}}>C</span>
           </div>
-          <span style={{fontSize:13,fontWeight:800,letterSpacing:-0.3}}>Carousel Studio</span>
-          <span className="logo-byline" style={{fontSize:9,color:A.muted,letterSpacing:0.3}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
+          <div style={{display:"flex",flexDirection:"column",gap:1,lineHeight:1}}>
+            <span style={{fontSize:13,fontWeight:800,letterSpacing:-0.3,lineHeight:1.1}}>Carousel Studio</span>
+            <span style={{fontSize:9,color:A.muted,letterSpacing:0.3,lineHeight:1}}>by <span style={{color:GOLD,fontWeight:700}}>Build with Tav</span></span>
+          </div>
         </div>
         <div style={{display:"flex",alignItems:"stretch",gap:0,marginLeft:"auto"}}>
           {/* Desktop nav - all items */}
@@ -1610,9 +1621,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
             <div style={{marginBottom:16}}>
               <div style={{display:"flex",gap:8,marginBottom:8}}>
-                <input value={topic} onChange={e=>{setTopic(e.target.value);if(err)setErr("");}}
+                <textarea value={topic} onChange={e=>{setTopic(e.target.value);if(err)setErr("");}}
+                  rows={2}
                   placeholder={audienceType==="peers"?(businessType==="marketer"?"e.g. Why most digital marketers price themselves out of good clients":businessType==="fitness"?"e.g. Why most PTs price themselves out of business":businessType==="beauty"?"e.g. Why most salons lose money on their best service":businessType==="restaurant"?"e.g. Why most restaurants fail in year two":businessType==="realestate"?"e.g. The mistake most agents make with new listings":businessType==="ecommerce"?"e.g. Why most product brands waste their ad budget":businessType==="coach"?"e.g. Why most coaches struggle to retain clients":businessType==="other"?(otherType?"e.g. A hard truth about "+otherType:"e.g. A hard truth most in your industry ignore"):"e.g. Why your content gets views but zero clients"):(businessType==="fitness"?"e.g. Why most people quit the gym after 3 weeks":businessType==="beauty"?"e.g. Why your skin actually needs less, not more":businessType==="restaurant"?"e.g. What really goes into your favourite dish":businessType==="realestate"?"e.g. What nobody tells you before buying your first home":businessType==="ecommerce"?"e.g. Why fast shipping matters more than price":businessType==="coach"?"e.g. Why mindset alone won't get you results":businessType==="other"?(otherType?"e.g. Something surprising about "+otherType:"e.g. Something your audience doesn't know yet"):"e.g. Why your content gets views but zero clients")}
-                  style={{...inp,fontSize:15,fontWeight:500,flex:1,borderColor:err?"#c0392b":A.border}}
+                  style={{...inp,fontSize:15,fontWeight:500,flex:1,borderColor:err?"#c0392b":A.border,resize:"none",lineHeight:1.5}}
                   onKeyDown={e=>{if(e.key==="Enter"&&e.metaKey)generate();}}/>
                 <button onClick={randomiseTopic} disabled={randomising} title="Randomise topic" style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"0 16px",fontSize:18,color:A.muted,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:48}}>
                   {randomising?<Spin c={A.muted}/>:"🎲"}
