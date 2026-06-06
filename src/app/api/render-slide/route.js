@@ -18,28 +18,33 @@ export async function POST(req) {
  
     let browser;
     try {
-      if (process.env.NODE_ENV === 'production') {
-        const [chromiumModule, puppeteerModule] = await Promise.all([
-          import('@sparticuz/chromium'),
-          import('puppeteer-core')
-        ]);
-        const chromium = chromiumModule.default;
-        const puppeteer = puppeteerModule.default;
-        browser = await puppeteer.launch({
-          args: chromium.args,
-          defaultViewport: { width: width || 1080, height: height || 1350 },
-          executablePath: await chromium.executablePath(),
-          headless: true,
-          ignoreHTTPSErrors: true,
-        });
-      } else {
-        const puppeteer = await import('puppeteer');
-        browser = await puppeteer.default.launch({
-          headless: true,
-          args: ['--no-sandbox', '--disable-setuid-sandbox'],
-          defaultViewport: { width: width || 1080, height: height || 1350 },
-        });
-      }
+      const chromiumModule = await import('@sparticuz/chromium');
+      const puppeteerModule = await import('puppeteer-core');
+      const chromium = chromiumModule.default;
+      const puppeteer = puppeteerModule.default;
+ 
+      const executablePath = await chromium.executablePath();
+ 
+      // Set library path so Chromium can find system libraries on Vercel
+      process.env.LD_LIBRARY_PATH = [
+        executablePath.replace('/chromium', ''),
+        process.env.LD_LIBRARY_PATH,
+      ].filter(Boolean).join(':');
+ 
+      browser = await puppeteer.launch({
+        args: [
+          ...chromium.args,
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--single-process',
+        ],
+        defaultViewport: { width: width || 1080, height: height || 1350 },
+        executablePath,
+        headless: true,
+        ignoreHTTPSErrors: true,
+      });
  
       const page = await browser.newPage();
       await page.setViewport({ width: width || 1080, height: height || 1350 });
@@ -62,7 +67,7 @@ export async function POST(req) {
     }
  
   } catch (e) {
-    console.error("Render slide error:", e);
+    console.error("Render slide error:", e.message);
     return Response.json({ error: e.message }, { status: 500 });
   }
 }
