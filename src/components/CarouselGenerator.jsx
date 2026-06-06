@@ -857,7 +857,8 @@ Return ONLY valid JSON array:
       const raw = (d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
       const m = raw.match(/\{[\s\S]*\}/);
       if (m) { const next=[...slides]; next[active]=sanitize(JSON.parse(m[0])); setSlides(next); setRewritePrompt(""); }
-    } catch {}
+      else { alert("Rewrite failed — try again."); }
+    } catch(e) { console.error("Rewrite error:", e); alert("Rewrite failed — check your connection and try again."); }
     setRewriting(false);
   };
 
@@ -2185,7 +2186,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <label style={lbl}>AI Rewrite</label>
               <div style={{display:"flex",gap:8}}>
                 <input value={rewritePrompt} onChange={e=>setRewritePrompt(e.target.value)} placeholder='"Make this punchier"' style={{...inp,flex:1,fontSize:13}}/>
-                <button onClick={()=>rewriteSlide(active)} disabled={rewriting} style={{background:A.text,color:A.accentText,border:"none",borderRadius:9,padding:"0 14px",fontWeight:700,fontSize:13,cursor:"pointer",flexShrink:0}}>{rewriting?<Spin/>:"↺"}</button>
+                <button onClick={()=>rewrite()} disabled={rewriting} style={{background:A.text,color:A.accentText,border:"none",borderRadius:9,padding:"0 14px",fontWeight:700,fontSize:13,cursor:"pointer",flexShrink:0}}>{rewriting?<Spin/>:"↺"}</button>
               </div>
             </div>
           </div>
