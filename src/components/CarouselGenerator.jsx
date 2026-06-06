@@ -461,8 +461,10 @@ function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover }) {
 // ─── DOWNLOAD ────────────────────────────────────────────
 async function downloadSlideAsPNG(slide, idx, total, opts, filename, isCover=false) {
   const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const hasCustomImage = (isCover && opts.coverImageUrl) || (!isCover && opts.templateBgUrl && opts.bgMode === "custom");
+  const needsServer = mobile && hasCustomImage;
   let blob;
-  if (mobile) {
+  if (needsServer) {
     const isPortrait = opts.ratio==="portrait";
     const W=1080, H=isPortrait?1920:1350;
     const html = buildSlideHTML(slide,idx,total,opts,isCover);
@@ -895,6 +897,14 @@ Return ONLY valid JSON array:
 
   const isMobileDevice = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
+  const slideHasCustomImage = (opts, isCover) => {
+    // Cover photo only applies to slide 1 (isCover)
+    if (isCover && opts.coverImageUrl) return true;
+    // Template image applies to all non-cover slides
+    if (!isCover && opts.templateBgUrl && opts.bgMode === "custom") return true;
+    return false;
+  };
+
   const renderSlideViaServer = async (slide, idx, total, opts, isCover) => {
     const isPortrait = opts.ratio==="portrait";
     const W=1080, H=isPortrait?1920:1350;
@@ -905,7 +915,6 @@ Return ONLY valid JSON array:
       body: JSON.stringify({ html, width:W, height:H })
     });
     const data = await res.json();
-    console.log("Slide render response:", res.status, data.error||"ok", "hasImage:", !!data.image);
     if (!data.image) throw new Error(data.error||"Render failed");
     const byteChars = atob(data.image);
     const byteArr = new Uint8Array(byteChars.length);
@@ -951,9 +960,10 @@ Return ONLY valid JSON array:
         for (let attempt=0; attempt<2; attempt++) {
           try {
             const opts = slideOpts(i);
-            blob = mobile
-              ? await renderSlideViaServer(slides[i],i,slides.length,opts,i===0)
-              : await renderSlideViaCanvas(slides[i],i,slides.length,opts,i===0);
+            const needsServer = mobile && slideHasCustomImage(opts, i===0);
+          blob = needsServer
+            ? await renderSlideViaServer(slides[i],i,slides.length,opts,i===0)
+            : await renderSlideViaCanvas(slides[i],i,slides.length,opts,i===0);
             if (blob) break;
           } catch(e) {
             console.error("Slide",i+1,"attempt",attempt+1,"failed:",e);
@@ -1241,8 +1251,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
     const W = 1080, H = isPortrait ? 1920 : 1350;
     const html = buildQuoteHTML(quoteText);
     const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const needsServer = mobile && !!quoteBgCustomUrl;
 
-    if (mobile) {
+    if (needsServer) {
       const res = await fetch("/api/render-slide", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
