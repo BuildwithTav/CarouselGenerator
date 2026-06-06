@@ -13,45 +13,53 @@ export async function POST(req) {
       return Response.json({ error: "No HTML provided" }, { status: 400 });
     }
  
-    const accessKey = process.env.SCREENSHOT_ONE_KEY;
-    if (!accessKey) {
-      return Response.json({ error: "ScreenshotOne key not configured" }, { status: 500 });
-    }
- 
-    // Strip any remaining base64 images (safety net — photos should now be real URLs)
+    // Strip any remaining base64 images
     const cleanHtml = html.replace(/src="data:image\/[^"]{100,}"/g, 'src=""');
  
-    const body = {
-      access_key: accessKey,
-      html: cleanHtml,
-      format: "png",
-      viewport_width: width || 1080,
-      viewport_height: height || 1350,
-      device_scale_factor: 1,
-      image_quality: 95,
-      block_ads: false,
-      block_trackers: false,
-      block_cookie_banners: false,
-      cache: false,
-      delay: 3,
-      timeout: 30,
-    };
+    let browser;
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        const [chromiumModule, puppeteerModule] = await Promise.all([
+          import('@sparticuz/chromium'),
+          import('puppeteer-core')
+        ]);
+        const chromium = chromiumModule.default;
+        const puppeteer = puppeteerModule.default;
+        browser = await puppeteer.launch({
+          args: chromium.args,
+          defaultViewport: { width: width || 1080, height: height || 1350 },
+          executablePath: await chromium.executablePath(),
+          headless: true,
+          ignoreHTTPSErrors: true,
+        });
+      } else {
+        const puppeteer = await import('puppeteer');
+        browser = await puppeteer.default.launch({
+          headless: true,
+          args: ['--no-sandbox', '--disable-setuid-sandbox'],
+          defaultViewport: { width: width || 1080, height: height || 1350 },
+        });
+      }
  
-    const response = await fetch("https://api.screenshotone.com/take", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+      const page = await browser.newPage();
+      await page.setViewport({ width: width || 1080, height: height || 1350 });
+      await page.setContent(cleanHtml, { waitUntil: 'networkidle0', timeout: 20000 });
  
-    if (!response.ok) {
-      const text = await response.text();
-      console.error("ScreenshotOne error:", response.status, text);
-      return Response.json({ error: "ScreenshotOne failed", detail: text }, { status: 500 });
+      const screenshot = await page.screenshot({
+        type: 'png',
+        clip: { x: 0, y: 0, width: width || 1080, height: height || 1350 },
+        omitBackground: false,
+      });
+ 
+      await browser.close();
+ 
+      const base64 = Buffer.from(screenshot).toString('base64');
+      return Response.json({ image: base64 });
+ 
+    } catch (e) {
+      if (browser) await browser.close().catch(() => {});
+      throw e;
     }
- 
-    const imageBuffer = await response.arrayBuffer();
-    const base64 = Buffer.from(imageBuffer).toString("base64");
-    return Response.json({ image: base64 });
  
   } catch (e) {
     console.error("Render slide error:", e);
