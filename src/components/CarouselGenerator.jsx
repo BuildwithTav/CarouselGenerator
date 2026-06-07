@@ -1385,6 +1385,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           .preview-scroll-area{padding-bottom:120px!important}
           .desktop-only{display:none!important}
           .cover-format-grid{grid-template-columns:1fr!important}
+          .quotes-layout{grid-template-columns:1fr!important}
+          .quotes-preview-col{display:none!important}
+          .quotes-mobile-preview{display:flex!important}
           .cmd-hint{display:none!important}
           .desktop-edit-panel{display:none!important}
           .topic-row input{width:100%!important;flex:unset!important}
@@ -1452,11 +1455,27 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       <div style={{maxWidth:1200,margin:"0 auto",padding:"20px 16px"}}>
 
         {nav==="quotes"&&(
-          <div style={{animation:"fadeUp 0.3s ease",maxWidth:640,margin:"0 auto"}}>
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:960,margin:"0 auto"}}>
             <div style={{marginBottom:24}}>
               <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px"}}>Quote Cards</h2>
               <p style={{color:A.muted,fontSize:14,margin:0}}>Create up to 3 branded quote cards. Accent colour pulls from Brand settings.</p>
             </div>
+            {/* Mobile only - format + preview at top */}
+            <div className="quotes-mobile-preview" style={{display:"none",flexDirection:"column",gap:12,marginBottom:16}}>
+              <div style={{display:"flex",gap:8}}>
+                {[["instagram","Instagram & LinkedIn 4:5"],["portrait","Stories, Reels & TikTok 9:16"]].map(([id,label])=>(
+                  <button key={id} onClick={()=>setQuoteFormat(id)} style={{flex:1,background:quoteFormat===id?A.text:A.bg,border:`1.5px solid ${quoteFormat===id?A.text:A.border}`,color:quoteFormat===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
+                ))}
+              </div>
+              {(()=>{
+                const isP=quoteFormat==="portrait";
+                const W=1080,H=isP?1920:1350,pw=160,scale=pw/W;
+                const html=buildQuoteHTML("Your quote will appear here",null,quoteTextColor);
+                return <div style={{width:pw,height:Math.round(H*scale),borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,margin:"0 auto"}}><QuotePreview key={html} html={html} W={W} H={H} scale={scale}/></div>;
+              })()}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24,marginBottom:24,alignItems:"start"}} className="quotes-layout">
+            <div>
             <div style={{display:"flex",gap:8,marginBottom:20}}>
               {[["brand","On Brand"],["life","Life & Mindset"]].map(([id,label])=>(
                 <button key={id} onClick={()=>setQuoteMode(id)} style={{flex:1,padding:"10px",borderRadius:9,border:`1.5px solid ${quoteMode===id?GOLD:A.border}`,background:quoteMode===id?A.text:A.surface,color:quoteMode===id?A.accentText:A.muted,fontSize:13,fontWeight:700}}>
@@ -1611,9 +1630,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
             </div>
 
-            {(()=>{
+            </div>
+            {/* Right column - live preview (desktop only) */}
+            <div className="quotes-preview-col" style={{position:"sticky",top:76}}>
+              <label style={{...lbl,marginBottom:8}}>Live Preview</label>
+              {(()=>{
               const isP = quoteFormat==="portrait";
-              const W=1080,H=isP?1920:1350,scale=240/W;
+              const W=1080,H=isP?1920:1350,scale=Math.min(280,300)/W;
               const html=buildQuoteHTML("Your quote will appear here", null, quoteTextColor);
               return (
                 <div style={{marginBottom:16,display:"flex",justifyContent:"center"}}>
@@ -1623,6 +1646,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
               );
             })()}
+            </div>
+            </div>
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
                 <label style={{...lbl,marginBottom:0}}>Your quotes</label>
@@ -1708,7 +1733,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         )}
 
         {nav==="generate"&&view==="setup"&&(
-          <div style={{animation:"fadeUp 0.3s ease",maxWidth:640,margin:"0 auto"}}>
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:960,margin:"0 auto"}}>
             <div style={{marginBottom:24}}>
               <h1 style={{fontSize:28,fontWeight:800,lineHeight:1.2,margin:"0 0 8px",letterSpacing:-0.8}}>What's today's carousel about?</h1>
               <p style={{color:A.muted,fontSize:14,margin:0}}>One topic. I handle the strategy, layouts, and copy.</p>
