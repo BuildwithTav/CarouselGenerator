@@ -434,13 +434,13 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
 // ─── PREVIEW ─────────────────────────────────────────────
 
-function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover, width }) {
+function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover, previewSize }) {
   const ref = useRef(null);
   const isPortrait = opts.ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1350;
-  const previewW = width || (isPortrait ? 180 : 280);
+  const previewW = previewSize || (isPortrait ? 180 : 280);
   const scale = previewW / W;
-  const previewH = H * scale;
+  const previewH = Math.round(H * scale);
   const html = buildSlideHTML(slide, idx, total, opts, isCover);
 
   useEffect(() => {
@@ -579,12 +579,18 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   useEffect(()=>{
+    const prevent = e => { if(editDrawerOpen) e.preventDefault(); };
     if(editDrawerOpen){
       document.body.style.overflow='hidden';
+      document.addEventListener('touchmove', prevent, {passive:false});
     } else {
       document.body.style.overflow='';
+      document.removeEventListener('touchmove', prevent);
     }
-    return()=>{document.body.style.overflow='';};
+    return()=>{
+      document.body.style.overflow='';
+      document.removeEventListener('touchmove', prevent);
+    };
   },[editDrawerOpen]);
   const [gradientMode, setGradientMode] = useState("dark");
   const [customBgSlots, setCustomBgSlots] = useState(S?.customBgSlots||["","",""]);
@@ -2215,9 +2221,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <button key={i} onClick={()=>{setActive(i);setTimeout(()=>{const el=document.querySelector(`[data-slide-index='${i}']`);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},100);}} style={{width:36,height:36,borderRadius:8,background:active===i?A.text:A.surface,border:`1.5px solid ${active===i?GOLD:A.border}`,color:active===i?A.accentText:A.muted,fontSize:13,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
             ))}
             </div>
-            {/* Pinned slide preview - full slide visible */}
-            <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
-              <SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={false} isCover={active===0}/>
+            {/* Pinned slide preview - fixed thumbnail, full slide scaled to fit */}
+            <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
+              <SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={false} isCover={active===0} previewSize={120}/>
             </div>
           </div>
           {/* Scrollable edit fields */}
