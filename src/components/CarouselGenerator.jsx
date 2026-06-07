@@ -1385,14 +1385,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           .preview-scroll-area{padding-bottom:120px!important}
           .desktop-only{display:none!important}
           .cover-format-grid{grid-template-columns:1fr!important}
+          .topic-textarea{min-height:unset!important}
           .quotes-layout{grid-template-columns:1fr!important}
           .quotes-preview-col{display:none!important}
           .quotes-mobile-preview{display:flex!important}
+          .quotes-format-card{display:none!important}
           .cmd-hint{display:none!important}
           .desktop-edit-panel{display:none!important}
           .topic-row input{width:100%!important;flex:unset!important}
         }
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .topic-textarea{min-height:42px}
         body.drawer-open{overflow:hidden!important;}
         *{box-sizing:border-box}input,textarea,select{outline:none!important;font-family:inherit}
         button{cursor:pointer;font-family:inherit;border:none;transition:all 0.15s}
@@ -1460,17 +1463,25 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px"}}>Quote Cards</h2>
               <p style={{color:A.muted,fontSize:14,margin:0}}>Create up to 3 branded quote cards. Accent colour pulls from Brand settings.</p>
             </div>
-            {/* Mobile only - format + background + preview at top */}
+            {/* Mobile only - format + background in white card, then preview */}
             <div className="quotes-mobile-preview" style={{display:"none",flexDirection:"column",gap:12,marginBottom:16}}>
-              <div style={{display:"flex",gap:8}}>
-                {[["instagram","Instagram & LinkedIn 4:5"],["portrait","Stories, Reels & TikTok 9:16"]].map(([id,label])=>(
-                  <button key={id} onClick={()=>setQuoteFormat(id)} style={{flex:1,background:quoteFormat===id?A.text:A.bg,border:`1.5px solid ${quoteFormat===id?A.text:A.border}`,color:quoteFormat===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
-                ))}
-              </div>
-              <div style={{display:"flex",gap:8}}>
-                {[["dark","Dark"],["light","Light"],["custom","Custom"]].map(([id,label])=>(
-                  <button key={id} onClick={()=>setQuoteBgMode(id)} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
-                ))}
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:16,display:"flex",flexDirection:"column",gap:10}}>
+                <div>
+                  <label style={lbl}>Format</label>
+                  <div style={{display:"flex",gap:8}}>
+                    {[["instagram","Instagram & LinkedIn 4:5"],["portrait","Stories, Reels & TikTok 9:16"]].map(([id,label])=>(
+                      <button key={id} onClick={()=>setQuoteFormat(id)} style={{flex:1,background:quoteFormat===id?A.text:A.bg,border:`1.5px solid ${quoteFormat===id?A.text:A.border}`,color:quoteFormat===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label style={lbl}>Background</label>
+                  <div style={{display:"flex",gap:8}}>
+                    {[["dark","Dark"],["light","Light"],["custom","Custom"]].map(([id,label])=>(
+                      <button key={id} onClick={()=>setQuoteBgMode(id)} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
+                    ))}
+                  </div>
+                </div>
               </div>
               {(()=>{
                 const isP=quoteFormat==="portrait";
@@ -1483,7 +1494,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <div>
 
 
-            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16,display:"flex",flexDirection:"column",gap:16}}>
+            <div className="quotes-format-card" style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16,display:"flex",flexDirection:"column",gap:16}}>
               <div>
                 <label style={lbl}>Format</label>
                 <div style={{display:"flex",gap:8}}>
@@ -1631,11 +1642,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
             </div>
             {/* Right column - live preview (desktop only) */}
-            <div className="quotes-preview-col" style={{position:"sticky",top:76}}>
+            <div className="quotes-preview-col" style={{position:"sticky",top:76,overflow:"hidden"}}>
               <label style={{...lbl,marginBottom:8}}>Live Preview</label>
               {(()=>{
               const isP = quoteFormat==="portrait";
-              const W=1080,H=isP?1920:1350,scale=320/W;
+              const W=1080,H=isP?1920:1350,scale=280/W;
               const html=buildQuoteHTML("Your quote will appear here", null, quoteTextColor);
               return (
                 <div style={{marginBottom:16,display:"flex",justifyContent:"center"}}>
@@ -1757,7 +1768,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <div style={{marginBottom:16}}>
               <div style={{display:"flex",gap:8,marginBottom:8}}>
                 <textarea value={topic} onChange={e=>{setTopic(e.target.value);if(err)setErr("");}}
-                  rows={1}
+                  rows={2}
+                  className="topic-textarea"
                   placeholder={audienceType==="peers"?(businessType==="marketer"?"e.g. Why most digital marketers price themselves out of good clients":businessType==="fitness"?"e.g. Why most PTs price themselves out of business":businessType==="beauty"?"e.g. Why most salons lose money on their best service":businessType==="restaurant"?"e.g. Why most restaurants fail in year two":businessType==="realestate"?"e.g. The mistake most agents make with new listings":businessType==="ecommerce"?"e.g. Why most product brands waste their ad budget":businessType==="coach"?"e.g. Why most coaches struggle to retain clients":businessType==="other"?(otherType?"e.g. A hard truth about "+otherType:"e.g. A hard truth most in your industry ignore"):"e.g. Why your content gets views but zero clients"):(businessType==="fitness"?"e.g. Why most people quit the gym after 3 weeks":businessType==="beauty"?"e.g. Why your skin actually needs less, not more":businessType==="restaurant"?"e.g. What really goes into your favourite dish":businessType==="realestate"?"e.g. What nobody tells you before buying your first home":businessType==="ecommerce"?"e.g. Why fast shipping matters more than price":businessType==="coach"?"e.g. Why mindset alone won't get you results":businessType==="other"?(otherType?"e.g. Something surprising about "+otherType:"e.g. Something your audience doesn't know yet"):"e.g. Why your content gets views but zero clients")}
                   style={{...inp,fontSize:15,fontWeight:500,flex:1,borderColor:err?"#c0392b":A.border,resize:"none",lineHeight:1.5}}
                   onKeyDown={e=>{if(e.key==="Enter"&&e.metaKey)generate();}}/>
