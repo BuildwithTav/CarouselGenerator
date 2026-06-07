@@ -2227,7 +2227,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </div>
           </div>
         </div>
-      )}
       </>
       )}
       {editDrawerOpen&&<div onClick={()=>setEditDrawerOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:998}}/>}
