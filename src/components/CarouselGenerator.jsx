@@ -2191,23 +2191,35 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       {/* Mobile edit drawer */}
       {editDrawerOpen&&slides[active]&&(
         <>
-        <div className="mobile-drawer" style={{display:"none",position:"fixed",top:56,left:0,right:0,zIndex:999,padding:"6px 12px",background:A.bg,borderBottom:`1px solid ${A.border}`}}>
-          <div style={{borderRadius:8,overflow:"hidden",height:100,pointerEvents:"none"}}>
-            <SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={false} isCover={active===0}/>
-          </div>
-        </div>
-        <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1000,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0",maxHeight:"55vh",overflowY:"auto",padding:"20px 16px 40px"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-            <div style={{fontWeight:800,fontSize:16}}>Edit Slide {active+1}</div>
-            <button onClick={()=>setEditDrawerOpen(false)} style={{background:"none",border:"none",fontSize:22,color:A.muted,cursor:"pointer"}}>✕</button>
-          </div>
-          {/* Slide number buttons */}
-          <div style={{display:"flex",gap:4,marginBottom:16,flexWrap:"wrap"}}>
+
+        <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1001,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0",maxHeight:"75vh",display:"flex",flexDirection:"column"}}>
+          {/* Fixed header with preview */}
+          <div style={{flexShrink:0,padding:"12px 16px 0",borderRadius:"20px 20px 0 0",background:A.bg}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+              <div style={{fontWeight:800,fontSize:16}}>Edit Slide {active+1}</div>
+              <button onClick={()=>setEditDrawerOpen(false)} style={{background:"none",border:"none",fontSize:22,color:A.muted,cursor:"pointer"}}>✕</button>
+            </div>
+            {/* Slide number buttons */}
+            <div style={{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap"}}>
             {slides.map((_,i)=>(
               <button key={i} onClick={()=>{setActive(i);setTimeout(()=>{const el=document.querySelector(`[data-slide-index='${i}']`);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},100);}} style={{width:36,height:36,borderRadius:8,background:active===i?A.text:A.surface,border:`1.5px solid ${active===i?GOLD:A.border}`,color:active===i?A.accentText:A.muted,fontSize:13,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
             ))}
+            </div>
+            {/* Pinned slide preview */}
+            {(()=>{
+              const pw=120, scale=pw/1080;
+              const ph=Math.round(1350*scale);
+              return (
+                <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
+                  <div style={{width:pw,height:ph,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,pointerEvents:"none",flexShrink:0}}>
+                    <SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={false} isCover={active===0}/>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
-          {/* Edit fields */}
+          {/* Scrollable edit fields */}
+          <div style={{overflowY:"auto",padding:"0 16px 40px",flex:1}}>
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             <div>
               <label style={lbl}>Background Gradient — {overlayDark}%</label>
@@ -2226,10 +2238,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
             </div>
           </div>
+          </div>
         </div>
       </>
       )}
-      {editDrawerOpen&&<div onClick={()=>setEditDrawerOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:998}}/>}
+      {editDrawerOpen&&<div onClick={()=>setEditDrawerOpen(false)} style={{position:"fixed",top:56,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:998}}/>}
 
       <footer style={{borderTop:`1px solid ${A.border}`,padding:"14px 32px",textAlign:"center",marginTop:60}}>
         <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,fontWeight:700,textDecoration:"none",fontSize:12}}>BuildWithTav</a>
