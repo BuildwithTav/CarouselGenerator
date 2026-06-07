@@ -912,6 +912,16 @@ Return ONLY valid JSON array:
     setDownloading(false);
   };
 
+  // Auto-restore custom slot selection when accentColor matches a saved slot
+  useEffect(()=>{
+    if(accentSwatch==="custom" && customActiveSlot !== null) return; // already set
+    const matchIdx = accentCustomSlots.findIndex(c=>c&&c===accentColor);
+    if(matchIdx >= 0) {
+      setAccentSwatch("custom");
+      setCustomActiveSlot(matchIdx);
+    }
+  },[]);
+
   const isMobileDevice = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   const slideHasCustomImage = (opts, isCover) => {
@@ -1214,7 +1224,7 @@ Return ONLY a JSON array of ${needed} strings.`;
       <div style="width:100%;height:${Math.round(2*s)}px;background:${rawTextC};opacity:0.12;margin-bottom:${Math.round(52*s)}px;"></div>`;
     const rawLabel = `
       <div style="margin-bottom:${Math.round(32*s)}px;width:100%;padding-left:${Math.round(20*s)}px;">
-        <span style="font-size:${Math.round(22*s)}px;letter-spacing:${Math.round(10*s)}px;text-transform:uppercase;font-family:'${font}',sans-serif;font-weight:700;color:${rawTextC};opacity:0.4;">Truth</span>
+        <span style="font-size:${Math.round(22*s)}px;letter-spacing:${Math.round(10*s)}px;text-transform:uppercase;font-family:'${font}',sans-serif;font-weight:700;color:${rawTextC};opacity:0.4;">${luxuryLabel||"Truth"}</span>
       </div>`;
     const rawHandle = showHandle&&handleStr ? `
       <div style="position:absolute;bottom:${Math.round(100*s)}px;left:${Math.round(60*s)}px;z-index:6;">
