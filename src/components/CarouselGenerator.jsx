@@ -2198,7 +2198,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       {editDrawerOpen&&slides[active]&&(
         <>
 
-        <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1001,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0",maxHeight:"80vh",display:"flex",flexDirection:"column"}}>
+        <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1001,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0",maxHeight:"80vh"}}>
+          <div style={{display:"flex",flexDirection:"column",height:"100%",maxHeight:"80vh"}}>
           {/* Fixed header with preview - does not scroll */}
           <div style={{flexShrink:0,padding:"12px 16px 0",borderRadius:"20px 20px 0 0",background:A.bg}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
@@ -2213,7 +2214,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </div>
             {/* Pinned slide preview - full slide visible */}
             {(()=>{
-              const pw=160, scale=pw/1080;
+              const pw=Math.min(160, window.innerWidth-64), scale=pw/1080;
               const ph=Math.round(1350*scale);
               return (
                 <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
@@ -2243,6 +2244,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <button onClick={()=>rewrite()} disabled={rewriting} style={{background:A.text,color:A.accentText,border:"none",borderRadius:9,padding:"0 14px",fontWeight:700,fontSize:13,cursor:"pointer",flexShrink:0}}>{rewriting?<Spin/>:"↺"}</button>
               </div>
             </div>
+          </div>
           </div>
           </div>
         </div>
