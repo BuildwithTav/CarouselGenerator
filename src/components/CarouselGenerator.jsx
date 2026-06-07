@@ -564,7 +564,7 @@ export default function App() {
   const [accentCustomSlots, setAccentCustomSlots] = useState(S?.accentCustomSlots||["","",""]);
   const [bgCustomSlots, setBgCustomSlots] = useState(S?.bgCustomSlots||["","",""]); 
   const [accentColor, setAccentColor] = useState(S?.accentColor||GOLD);
-  const [customActiveSlot, setCustomActiveSlot] = useState(null);
+  const [customActiveSlot, setCustomActiveSlot] = useState(S?.customActiveSlot??null);
   const [fontId, setFontId] = useState(S?.fontId||"montserrat");
   const [headlineStyle, setHeadlineStyle] = useState(S?.headlineStyle||"bold");
   const [showNums, setShowNums] = useState(S?.showNums??false);
@@ -655,10 +655,10 @@ export default function App() {
     const safeActiveCover = activeCoverPhoto?.startsWith('data:') ? '' : activeCoverPhoto;
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
-           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,ratio,bgColour,audienceType});
+           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,ratio,bgColour,audienceType,customActiveSlot});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
-      bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType]);
+      bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType,customActiveSlot]);
 
   const readFile = (e, cb) => {
     const f = e.target.files[0]; if (!f) return;
@@ -1521,10 +1521,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     </button>
                   ))}
                 </div>
-                {quoteTemplate==="luxury"&&(
+                {quoteTemplate==="raw"&&(
                   <div>
-                    <label style={{...lbl,marginBottom:6}}>Label word <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(shown above quote)</span></label>
-                    <input value={luxuryLabel} onChange={e=>setLuxuryLabel(e.target.value)} placeholder="wisdom" style={inp}/>
+                    <label style={{...lbl,marginBottom:6}}>Label word <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(shown above quote in Raw template)</span></label>
+                    <input value={luxuryLabel} onChange={e=>setLuxuryLabel(e.target.value)} placeholder="Truth" style={inp}/>
                   </div>
                 )}
               </div>
@@ -1979,7 +1979,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     {accentCustomSlots.map((c,i)=>(
                       <div key={i} style={{position:"relative"}}>
                         <div onClick={()=>{if(c){setAccentColor(c);setAccentSwatch("custom");setCustomActiveSlot(i);}}} style={{width:36,height:36,borderRadius:"50%",background:c||A.surface,border:accentSwatch==="custom"&&customActiveSlot===i&&c?`3px solid ${A.text}`:`2px dashed ${A.border}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:A.muted,boxShadow:c==="#FFFFFF"?`inset 0 0 0 1px ${A.border}`:"none"}}>{!c&&"+"}</div>
-                        <input type="color" value={c||accentColor} onChange={e=>{const s=[...accentCustomSlots];s[i]=e.target.value;setAccentCustomSlots(s);setAccentColor(e.target.value);setAccentSwatch("custom");setCustomActiveSlot(i);}} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
+                        <input type="color" value={c||accentColor} onFocus={()=>{if(c){setAccentColor(c);setAccentSwatch("custom");setCustomActiveSlot(i);}}} onChange={e=>{const s=[...accentCustomSlots];s[i]=e.target.value;setAccentCustomSlots(s);setAccentColor(e.target.value);setAccentSwatch("custom");setCustomActiveSlot(i);}} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
                       </div>
                     ))}
                   </div>
