@@ -1611,6 +1611,18 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
             </div>
 
+            {(()=>{
+              const isP = quoteFormat==="portrait";
+              const W=1080,H=isP?1920:1350,scale=240/W;
+              const html=buildQuoteHTML("Your quote will appear here", null, quoteTextColor);
+              return (
+                <div style={{marginBottom:16,display:"flex",justifyContent:"center"}}>
+                  <div style={{width:240,height:Math.round(H*scale),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                    <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
+                  </div>
+                </div>
+              );
+            })()}
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
                 <label style={{...lbl,marginBottom:0}}>Your quotes</label>
@@ -1774,12 +1786,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 )}
                 <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
                 {(()=>{
-                  const previewW=280, scale=previewW/1080;
+                  const isPortraitPrev = ratio==="portrait";
+                  const previewW = isPortraitPrev ? 180 : 280;
+                  const previewH = Math.round((isPortraitPrev?1920:1350)*(previewW/1080));
                   return (
                     <div>
                       <label style={{...lbl,marginBottom:8}}>Preview</label>
-                      <div style={{width:previewW,height:Math.round(1350*scale),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                        <SlidePreview slide={{headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
+                      <div style={{width:previewW,height:previewH,borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                        <SlidePreview slide={{headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={0} total={1} opts={{...slideOpts(0),ratio}} onClick={()=>{}} isActive={false} isCover={true}/>
                       </div>
                     </div>
                   );
@@ -2141,6 +2155,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Background Gradient — {overlayDark}%</label>
                 <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>Applies to all slides. Can be adjusted per-slide in the edit panel after generation.</p>
+                <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
+              </div>
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={lbl}>Background Gradient — {overlayDark}%</label>
+                <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>Applies to all slides. Adjust per-slide after generation.</p>
                 <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
               </div>
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
