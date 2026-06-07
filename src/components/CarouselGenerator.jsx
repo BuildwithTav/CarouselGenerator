@@ -627,6 +627,8 @@ export default function App() {
   const [quoteMode, setQuoteMode] = useState("brand");
   const [quoteSlides, setQuoteSlides] = useState([]);
   const [downloadingQuotes, setDownloadingQuotes] = useState(false);
+  const [expandedQuote, setExpandedQuote] = useState(null);
+  const [quoteHistory, setQuoteHistory] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_quote_history")||"[]");}catch{return [];}});
   const [slideOverlays, setSlideOverlays] = useState({});
   const [coverImgPos, setCoverImgPos] = useState({x:50,y:50});
   const [templateImgPos, setTemplateImgPos] = useState({x:50,y:50});
@@ -1405,7 +1407,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:8}}>↺ Regenerate</button>
             <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
           </>}
-          <button onClick={()=>{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} className="desktop-reset" style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4}}>Reset</button>
+          <button onClick={()=>{if(window.confirm("Reset app? This will clear all brand settings and history.")){{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}}}} className="desktop-reset" style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4}}>Reset app</button>
         </div>
       </nav>
       {menuOpen&&(
@@ -1415,8 +1417,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               {label}
             </button>
           ))}
-          <button onClick={()=>{setMenuOpen(false);localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}} style={{display:"flex",alignItems:"center",width:"100%",padding:"16px 24px",background:"none",border:"none",borderLeft:"3px solid transparent",color:"#c0392b",fontSize:16,fontWeight:500,cursor:"pointer",textAlign:"left"}}>
-            Reset
+          <button onClick={()=>{setMenuOpen(false);if(window.confirm("Reset app? This will clear all brand settings and history.")){localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");localStorage.removeItem("bwt_quote_history");window.location.reload();}}} style={{display:"flex",alignItems:"center",width:"100%",padding:"16px 24px",background:"none",border:"none",borderLeft:"3px solid transparent",color:"#c0392b",fontSize:16,fontWeight:500,cursor:"pointer",textAlign:"left"}}>
+            Reset app
           </button>
         </div>
       )}
@@ -1447,6 +1449,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
               </div>
 
+              <div>
+                <label style={lbl}>Accent colour</label>
+                <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:4}}>
+                  {["#C9A84C","#FFFFFF","#3B82F6","#E8553E","#10B981","#8B5CF6","#F43F5E","#F97316"].map(c=>(
+                    <button key={c} onClick={()=>setAccentColor(c)} style={{width:28,height:28,borderRadius:"50%",background:c,border:accentColor===c?`3px solid ${A.text}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0,boxShadow:c==="#FFFFFF"?`inset 0 0 0 1px ${A.border}`:"none"}}/>
+                  ))}
+                </div>
+              </div>
               <div>
                 <label style={lbl}>Background</label>
                 <div style={{display:"flex",gap:8,marginBottom:quoteBgMode==="custom"?14:0}}>
@@ -1503,19 +1513,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
             </div>
 
-            {(()=>{
-              const isP = quoteFormat==="portrait";
-              const W=1080,H=isP?1920:1350,scale=260/W;
-              const html=buildQuoteHTML("Your quote will appear here");
-              return (
-                <div style={{marginBottom:16}}>
-                  <label style={{...lbl,marginBottom:8}}>Live preview</label>
-                  <div style={{width:260,height:H*scale,borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`,margin:"0 auto"}}>
-                    <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
-                  </div>
-                </div>
-              );
-            })()}
+
 
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16,display:"flex",flexDirection:"column",gap:16}}>
 
@@ -1577,12 +1575,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <label style={{...lbl,marginBottom:0}}>Your quotes</label>
                 <div style={{display:"flex",gap:6}}>
                   <button onClick={()=>setQuoteInputs(["","",""])} style={{background:"none",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 10px",borderRadius:7,fontSize:11,fontWeight:600}}>Clear all</button>
-                  <button onClick={generateQuotes} disabled={generatingQuotes} style={{background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
+                  <button onClick={generateQuotes} disabled={generatingQuotes||quoteInputs.every(q=>q.trim())} style={{background:quoteInputs.every(q=>q.trim())?A.border:A.surface,border:`1.5px solid ${A.border}`,color:quoteInputs.every(q=>q.trim())?A.muted:A.text,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
                     {generatingQuotes?<><Spin c={A.text}/>Generating...</>:"✦ Generate"}
                   </button>
                 </div>
               </div>
               <p style={{color:A.muted,fontSize:12,margin:"0 0 14px",lineHeight:1.5}}>Enter your favourite quotes, or hit Generate to fill empty slots based on your brand.</p>
+              {quoteInputs.every(q=>q.trim())&&<p style={{color:"#c0392b",fontSize:12,margin:"-10px 0 14px",fontWeight:600}}>All slots full — clear one or more to generate new quotes.</p>}
               <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 {quoteInputs.map((q,i)=>(
                   <div key={i} style={{display:"flex",alignItems:"flex-start",gap:10}}>
@@ -1612,13 +1611,40 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     const W=1080,H=isP?1920:1350,scale=180/W;
                     const html=buildQuoteHTML(q);
                     return (
-                      <div key={i} style={{width:180,height:H*scale,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,flexShrink:0}}>
+                      <div key={i} onClick={()=>setExpandedQuote(html)} style={{width:180,height:H*scale,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,flexShrink:0,cursor:"pointer"}}>
                         <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
                       </div>
                     );
                   })}
                 </div>
-                <button onClick={downloadAllQuotes} disabled={downloadingQuotes} style={{width:"100%",padding:"13px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:14,fontWeight:800,border:`1px solid ${GOLD}33`,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                {expandedQuote&&(
+                  <div onClick={()=>setExpandedQuote(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.9)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+                    <div style={{width:"min(340px,90vw)",height:"min(450px,80vh)",borderRadius:12,overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+                      <QuotePreview html={expandedQuote} W={1080} H={1350} scale={340/1080}/>
+                    </div>
+                  </div>
+                )}
+                <div style={{display:"flex",gap:8,marginTop:8}}>
+                  {quoteInputs.filter(q=>q.trim()).map((q,i)=>(
+                    <button key={i} onClick={async()=>{
+                      try {
+                        const blob = await downloadQuote(q, i);
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href=url; a.download=`quote-${i+1}.png`;
+                        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                        setTimeout(()=>URL.revokeObjectURL(url),1000);
+                        const entry={id:Date.now(),text:q,date:new Date().toLocaleDateString(),font:quoteFont,bgMode:quoteBgMode};
+                        const next=[entry,...quoteHistory].slice(0,20);
+                        setQuoteHistory(next);
+                        try{localStorage.setItem("bwt_quote_history",JSON.stringify(next));}catch{}
+                      } catch(e) { alert("Download failed — try again."); }
+                    }} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:700}}>
+                      ↓ {i+1}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={downloadAllQuotes} disabled={downloadingQuotes} style={{width:"100%",padding:"13px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:14,fontWeight:800,border:`1px solid ${GOLD}33`,display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:8}}>
                   {downloadingQuotes?<><Spin/>Downloading...</>:`↓ Download All ${quoteInputs.filter(q=>q.trim()).length} Quote Cards`}
                 </button>
               </div>
@@ -1750,22 +1776,52 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         {nav==="history"&&(
           <div style={{animation:"fadeUp 0.3s ease"}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>History</h2>
-            {history.length===0
-              ? <div style={{textAlign:"center",padding:"60px 0",color:A.muted}}>No carousels yet. Generate your first one.</div>
-              : <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                  {history.map(entry=>(
-                    <div key={entry.id} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:"18px 22px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16}}>
-                      <div>
-                        <div style={{fontWeight:700,fontSize:15,marginBottom:4}}>{entry.topic}</div>
-                        <div style={{color:A.muted,fontSize:12}}>{entry.slides.length} slides · {entry.date}</div>
+
+            <div style={{marginBottom:24}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                <div style={{fontSize:14,fontWeight:700}}>Carousels</div>
+                {history.length>0&&<button onClick={()=>{if(window.confirm("Clear carousel history?")){{setHistory([]);saveHistory([]);}}}} style={{background:"none",border:`1.5px solid ${A.border}`,borderRadius:7,padding:"4px 10px",fontSize:11,color:"#c0392b",fontWeight:600,cursor:"pointer"}}>Clear</button>}
+              </div>
+              {history.length===0
+                ? <div style={{textAlign:"center",padding:"30px 0",color:A.muted,fontSize:13}}>No carousels yet.</div>
+                : <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                    {history.map(entry=>(
+                      <div key={entry.id} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:"16px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16}}>
+                        <div>
+                          <div style={{fontWeight:700,fontSize:14,marginBottom:3}}>{entry.topic}</div>
+                          <div style={{color:A.muted,fontSize:12}}>{entry.slides.length} slides · {entry.date}</div>
+                        </div>
+                        <button onClick={()=>{setSlides(entry.slides);setActive(0);setView("preview");setLastTopic(entry.topic);setNav("generate");}} style={{background:A.text,color:A.accentText,padding:"7px 16px",borderRadius:8,fontSize:13,fontWeight:700,flexShrink:0}}>
+                          Load →
+                        </button>
                       </div>
-                      <button onClick={()=>{setSlides(entry.slides);setActive(0);setView("preview");setLastTopic(entry.topic);setNav("generate");}} style={{background:A.text,color:A.accentText,padding:"8px 18px",borderRadius:8,fontSize:13,fontWeight:700,flexShrink:0}}>
-                        Load →
-                      </button>
-                    </div>
-                  ))}
-                </div>
-            }
+                    ))}
+                  </div>
+              }
+            </div>
+
+            <div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                <div style={{fontSize:14,fontWeight:700}}>Quote Cards</div>
+                {quoteHistory.length>0&&<button onClick={()=>{if(window.confirm("Clear quote history?")){const next=[];setQuoteHistory(next);try{localStorage.setItem("bwt_quote_history",JSON.stringify(next));}catch{}}}} style={{background:"none",border:`1.5px solid ${A.border}`,borderRadius:7,padding:"4px 10px",fontSize:11,color:"#c0392b",fontWeight:600,cursor:"pointer"}}>Clear</button>}
+              </div>
+              {quoteHistory.length===0
+                ? <div style={{textAlign:"center",padding:"30px 0",color:A.muted,fontSize:13}}>No quotes downloaded yet.</div>
+                : <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                    {quoteHistory.map(entry=>(
+                      <div key={entry.id} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:"16px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16}}>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontWeight:600,fontSize:13,marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>"{entry.text}"</div>
+                          <div style={{color:A.muted,fontSize:12}}>{entry.font} · {entry.bgMode} · {entry.date}</div>
+                        </div>
+                        <button onClick={()=>{setQuoteInputs([entry.text,"",""]);setQuoteFont(entry.font);setQuoteBgMode(entry.bgMode);setNav("quotes");}} style={{background:A.text,color:A.accentText,padding:"7px 16px",borderRadius:8,fontSize:13,fontWeight:700,flexShrink:0}}>
+                          Load →
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+              }
+            </div>
           </div>
         )}
 
@@ -1831,6 +1887,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
                 {businessType==="other"&&<input value={otherType} onChange={e=>setOtherType(e.target.value)} placeholder="e.g. Tattoo artist, PT..." style={{...inp,marginTop:10}}/>}
               </div>
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={lbl}>Voice profile <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(sent with every prompt)</span></label>
+                <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.6}}>Describe your tone, audience, what to avoid, CTA style. More specific = better output.</p>
+                <textarea value={voiceProfile} onChange={e=>setVoiceProfile(e.target.value)} placeholder="e.g. Direct and honest. Short punchy sentences. Speak to people tired of the hype. Never overpromise. CTA is always soft — 'free preview in bio'." rows={5} style={{...inp,resize:"vertical",lineHeight:1.7}}/>
+              </div>
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Cover photo library</label>
@@ -1874,11 +1935,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 })()}
               </div>
 
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
-                <label style={lbl}>Voice profile <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(sent with every prompt)</span></label>
-                <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.6}}>Describe your tone, audience, what to avoid, CTA style. More specific = better output.</p>
-                <textarea value={voiceProfile} onChange={e=>setVoiceProfile(e.target.value)} placeholder="e.g. Direct and honest. Short punchy sentences. Speak to people tired of the hype. Never overpromise. CTA is always soft — 'free preview in bio'." rows={5} style={{...inp,resize:"vertical",lineHeight:1.7}}/>
-              </div>
             </div>
           </div>
         )}
@@ -1918,8 +1974,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <div style={{display:"flex",gap:8,marginTop:8}}>
                     {accentCustomSlots.map((c,i)=>(
                       <div key={i} style={{position:"relative"}}>
-                        <div onClick={()=>c&&(setAccentColor(c),setAccentSwatch("custom"))} style={{width:36,height:36,borderRadius:"50%",background:c||A.surface,border:accentColor===c&&c?`3px solid ${A.text}`:`2px dashed ${A.border}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:A.muted}}>{!c&&"+"}</div>
-                        <input type="color" value={c||accentColor} onChange={e=>{const s=[...accentCustomSlots];s[i]=e.target.value;setAccentCustomSlots(s);setAccentColor(e.target.value);setAccentSwatch("custom");}} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
+                        <div onClick={()=>{if(c){setAccentColor(c);setAccentSwatch(`custom-${i}`);}}} style={{width:36,height:36,borderRadius:"50%",background:c||A.surface,border:accentSwatch===`custom-${i}`&&c?`3px solid ${A.text}`:`2px dashed ${A.border}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:A.muted,boxShadow:c==="#FFFFFF"?`inset 0 0 0 1px ${A.border}`:"none"}}>{!c&&"+"}</div>
+                        <input type="color" value={c||accentColor} onChange={e=>{const s=[...accentCustomSlots];s[i]=e.target.value;setAccentCustomSlots(s);setAccentColor(e.target.value);setAccentSwatch(`custom-${i}`);}} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
                       </div>
                     ))}
                   </div>
@@ -2023,6 +2079,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
               </div>
 
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={lbl}>Background Gradient — {overlayDark}%</label>
+                <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>Applies to all slides. Can be adjusted per-slide in the edit panel after generation.</p>
+                <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
+              </div>
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div><div style={{fontWeight:600,fontSize:13}}>Slide numbers</div><div style={{color:A.muted,fontSize:12}}>Watermark number on each slide</div></div>
                 {tog(showNums,setShowNums)}
