@@ -434,11 +434,11 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
 // ─── PREVIEW ─────────────────────────────────────────────
 
-function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover }) {
+function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover, width }) {
   const ref = useRef(null);
   const isPortrait = opts.ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1350;
-  const previewW = isPortrait ? 180 : 280;
+  const previewW = width || (isPortrait ? 180 : 280);
   const scale = previewW / W;
   const previewH = H * scale;
   const html = buildSlideHTML(slide, idx, total, opts, isCover);
@@ -2216,19 +2216,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             ))}
             </div>
             {/* Pinned slide preview - full slide visible */}
-            {(()=>{
-              const screenW = typeof window !== "undefined" ? window.innerWidth : 390;
-              const pw = Math.round(screenW * 0.38);
-              const scale = pw / 1080;
-              const ph = Math.round(1350 * scale);
-              return (
-                <div style={{display:"flex",justifyContent:"center",marginBottom:12,overflow:"hidden"}}>
-                  <div style={{width:pw,height:ph,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,pointerEvents:"none",flexShrink:0,maxWidth:"100%"}}>
-                    <SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={false} isCover={active===0}/>
-                  </div>
-                </div>
-              );
-            })()}
+            <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
+              <SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={false} isCover={active===0}/>
+            </div>
           </div>
           {/* Scrollable edit fields */}
           <div style={{overflowY:"auto",padding:"0 16px 40px",flex:1}}>
