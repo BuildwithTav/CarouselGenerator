@@ -564,6 +564,7 @@ export default function App() {
   const [accentCustomSlots, setAccentCustomSlots] = useState(S?.accentCustomSlots||["","",""]);
   const [bgCustomSlots, setBgCustomSlots] = useState(S?.bgCustomSlots||["","",""]); 
   const [accentColor, setAccentColor] = useState(S?.accentColor||GOLD);
+  const [customActiveSlot, setCustomActiveSlot] = useState(null);
   const [fontId, setFontId] = useState(S?.fontId||"montserrat");
   const [headlineStyle, setHeadlineStyle] = useState(S?.headlineStyle||"bold");
   const [showNums, setShowNums] = useState(S?.showNums??false);
@@ -627,6 +628,7 @@ export default function App() {
   const [quoteMode, setQuoteMode] = useState("brand");
   const [quoteSlides, setQuoteSlides] = useState([]);
   const [downloadingQuotes, setDownloadingQuotes] = useState(false);
+  const [quoteTextColor, setQuoteTextColor] = useState("#FFFFFF");
   const [expandedQuote, setExpandedQuote] = useState(null);
   const [quoteHistory, setQuoteHistory] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_quote_history")||"[]");}catch{return [];}});
   const [slideOverlays, setSlideOverlays] = useState({});
@@ -1041,12 +1043,12 @@ Return ONLY a JSON array of ${needed} strings.`;
     setGeneratingQuotes(false);
   };
 
-  const buildQuoteHTML = (quoteText, sig) => {
+  const buildQuoteHTML = (quoteText, sig, textColorOverride) => {
     const accent = accentColor || GOLD;
     const isDark = quoteBgMode !== "light";
     const hasBgImg = quoteBgMode === "custom" && quoteBgCustomUrl;
     const bg = isDark ? "#0d0b08" : "#F8F4EE";
-    const textColor = hasBgImg ? "#FFFFFF" : (isDark ? "#F5EDE0" : "#1a1208");
+    const textColor = textColorOverride || (hasBgImg ? "#FFFFFF" : (isDark ? "#F5EDE0" : "#1a1208"));
     const subColor = hasBgImg ? "rgba(255,255,255,0.85)" : (isDark ? "rgba(245,237,224,0.7)" : "rgba(26,18,8,0.55)");
     const textShadow = hasBgImg ? "text-shadow:0 2px 24px rgba(0,0,0,0.95),0 1px 8px rgba(0,0,0,0.8);" : "";
     const fontObj = FONTS.find(f => f.id === quoteFont) || FONTS[1];
@@ -1263,7 +1265,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
   const downloadQuote = async (quoteText, i) => {
     const isPortrait = quoteFormat === "portrait";
     const W = 1080, H = isPortrait ? 1920 : 1350;
-    const html = buildQuoteHTML(quoteText);
+    const html = buildQuoteHTML(quoteText, null, quoteTextColor);
     const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const needsServer = mobile && !!quoteBgCustomUrl;
 
@@ -1450,14 +1452,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
 
               <div>
-                <label style={lbl}>Accent colour</label>
-                <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:4}}>
-                  {["#C9A84C","#FFFFFF","#3B82F6","#E8553E","#10B981","#8B5CF6","#F43F5E","#F97316"].map(c=>(
-                    <button key={c} onClick={()=>setAccentColor(c)} style={{width:28,height:28,borderRadius:"50%",background:c,border:accentColor===c?`3px solid ${A.text}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0,boxShadow:c==="#FFFFFF"?`inset 0 0 0 1px ${A.border}`:"none"}}/>
-                  ))}
-                </div>
-              </div>
-              <div>
                 <label style={lbl}>Background</label>
                 <div style={{display:"flex",gap:8,marginBottom:quoteBgMode==="custom"?14:0}}>
                   {[["dark","Dark"],["light","Light"],["custom","Custom"]].map(([id,label])=>(
@@ -1560,6 +1554,18 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <label style={lbl}>Signature <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(leave blank to use brand name)</span></label>
                 <input value={quoteSignature} onChange={e=>setQuoteSignature(e.target.value)} placeholder={name||"Your name"} style={inp}/>
               </div>
+              <div>
+                <label style={lbl}>Quote text colour</label>
+                <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                  {["#FFFFFF","#0A0A0A","#C9A84C","#3B82F6","#E8553E","#10B981","#8B5CF6","#F97316"].map(c=>(
+                    <button key={c} onClick={()=>setQuoteTextColor(c)} style={{width:28,height:28,borderRadius:"50%",background:c,border:quoteTextColor===c?`3px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0,boxShadow:c==="#FFFFFF"?`inset 0 0 0 1px ${A.border}`:"none"}}/>
+                  ))}
+                  <div style={{position:"relative"}}>
+                    <div style={{width:28,height:28,borderRadius:"50%",background:quoteTextColor,border:`2px dashed ${A.border}`,cursor:"pointer",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",color:A.muted}}>+</div>
+                    <input type="color" value={quoteTextColor} onChange={e=>setQuoteTextColor(e.target.value)} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
+                  </div>
+                </div>
+              </div>
 
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div>
@@ -1605,14 +1611,32 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     ))}
                   </div>
                 </div>
-                <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
+                <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:12}}>
                   {quoteInputs.filter(q=>q.trim()).map((q,i)=>{
                     const isP=quoteFormat==="portrait";
-                    const W=1080,H=isP?1920:1350,scale=180/W;
-                    const html=buildQuoteHTML(q);
+                    const W=1080,H=isP?1920:1350,scale=220/W;
+                    const html=buildQuoteHTML(q, null, quoteTextColor);
                     return (
-                      <div key={i} onClick={()=>setExpandedQuote(html)} style={{width:180,height:H*scale,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,flexShrink:0,cursor:"pointer"}}>
-                        <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
+                      <div key={i} style={{display:"flex",flexDirection:"column",gap:6,alignItems:"center"}}>
+                        <div onClick={()=>setExpandedQuote(html)} style={{width:220,height:Math.round(H*scale),borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,flexShrink:0,cursor:"pointer"}}>
+                          <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
+                        </div>
+                        <button onClick={async()=>{
+                          try {
+                            const blob = await downloadQuote(q, i);
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href=url; a.download=`quote-${i+1}.png`;
+                            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                            setTimeout(()=>URL.revokeObjectURL(url),1000);
+                            const entry={id:Date.now(),text:q,date:new Date().toLocaleDateString(),font:quoteFont,bgMode:quoteBgMode};
+                            const next=[entry,...quoteHistory].slice(0,20);
+                            setQuoteHistory(next);
+                            try{localStorage.setItem("bwt_quote_history",JSON.stringify(next));}catch{}
+                          } catch(e) { alert("Download failed — try again."); }
+                        }} style={{width:220,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:700,cursor:"pointer"}}>
+                          ↓ {i+1}
+                        </button>
                       </div>
                     );
                   })}
@@ -1624,26 +1648,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     </div>
                   </div>
                 )}
-                <div style={{display:"flex",gap:8,marginTop:8}}>
-                  {quoteInputs.filter(q=>q.trim()).map((q,i)=>(
-                    <button key={i} onClick={async()=>{
-                      try {
-                        const blob = await downloadQuote(q, i);
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement("a");
-                        a.href=url; a.download=`quote-${i+1}.png`;
-                        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                        setTimeout(()=>URL.revokeObjectURL(url),1000);
-                        const entry={id:Date.now(),text:q,date:new Date().toLocaleDateString(),font:quoteFont,bgMode:quoteBgMode};
-                        const next=[entry,...quoteHistory].slice(0,20);
-                        setQuoteHistory(next);
-                        try{localStorage.setItem("bwt_quote_history",JSON.stringify(next));}catch{}
-                      } catch(e) { alert("Download failed — try again."); }
-                    }} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:700}}>
-                      ↓ {i+1}
-                    </button>
-                  ))}
-                </div>
                 <button onClick={downloadAllQuotes} disabled={downloadingQuotes} style={{width:"100%",padding:"13px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:14,fontWeight:800,border:`1px solid ${GOLD}33`,display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:8}}>
                   {downloadingQuotes?<><Spin/>Downloading...</>:`↓ Download All ${quoteInputs.filter(q=>q.trim()).length} Quote Cards`}
                 </button>
@@ -1974,8 +1978,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <div style={{display:"flex",gap:8,marginTop:8}}>
                     {accentCustomSlots.map((c,i)=>(
                       <div key={i} style={{position:"relative"}}>
-                        <div onClick={()=>{if(c){setAccentColor(c);setAccentSwatch(`custom-${i}`);}}} style={{width:36,height:36,borderRadius:"50%",background:c||A.surface,border:accentSwatch===`custom-${i}`&&c?`3px solid ${A.text}`:`2px dashed ${A.border}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:A.muted,boxShadow:c==="#FFFFFF"?`inset 0 0 0 1px ${A.border}`:"none"}}>{!c&&"+"}</div>
-                        <input type="color" value={c||accentColor} onChange={e=>{const s=[...accentCustomSlots];s[i]=e.target.value;setAccentCustomSlots(s);setAccentColor(e.target.value);setAccentSwatch(`custom-${i}`);}} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
+                        <div onClick={()=>{if(c){setAccentColor(c);setAccentSwatch("custom");setCustomActiveSlot(i);}}} style={{width:36,height:36,borderRadius:"50%",background:c||A.surface,border:accentSwatch==="custom"&&customActiveSlot===i&&c?`3px solid ${A.text}`:`2px dashed ${A.border}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:A.muted,boxShadow:c==="#FFFFFF"?`inset 0 0 0 1px ${A.border}`:"none"}}>{!c&&"+"}</div>
+                        <input type="color" value={c||accentColor} onChange={e=>{const s=[...accentCustomSlots];s[i]=e.target.value;setAccentCustomSlots(s);setAccentColor(e.target.value);setAccentSwatch("custom");setCustomActiveSlot(i);}} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
                       </div>
                     ))}
                   </div>
