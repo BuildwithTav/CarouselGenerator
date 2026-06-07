@@ -2214,7 +2214,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </div>
             {/* Pinned slide preview - full slide visible */}
             {(()=>{
-              const pw=Math.min(160, window.innerWidth-64), scale=pw/1080;
+              const pw=Math.round((window.innerWidth||390)*0.45);
+              const scale=pw/1080;
               const ph=Math.round(1350*scale);
               return (
                 <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
@@ -2250,7 +2251,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         </div>
       </>
       )}
-      {editDrawerOpen&&<div onClick={()=>setEditDrawerOpen(false)} style={{position:"fixed",top:56,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",zIndex:998}}/>}
+
 
       <footer style={{borderTop:`1px solid ${A.border}`,padding:"14px 32px",textAlign:"center",marginTop:60}}>
         <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,fontWeight:700,textDecoration:"none",fontSize:12}}>BuildWithTav</a>
