@@ -579,18 +579,18 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   useEffect(()=>{
-    const prevent = e => { if(editDrawerOpen) e.preventDefault(); };
+    const prevent = e => {
+      // Allow scroll inside the drawer scrollable area
+      const drawerScroll = document.querySelector('.drawer-scroll');
+      if(drawerScroll && drawerScroll.contains(e.target)) return;
+      e.preventDefault();
+    };
     if(editDrawerOpen){
-      document.body.style.overflow='hidden';
       document.addEventListener('touchmove', prevent, {passive:false});
     } else {
-      document.body.style.overflow='';
       document.removeEventListener('touchmove', prevent);
     }
-    return()=>{
-      document.body.style.overflow='';
-      document.removeEventListener('touchmove', prevent);
-    };
+    return()=>{ document.removeEventListener('touchmove', prevent); };
   },[editDrawerOpen]);
   const [gradientMode, setGradientMode] = useState("dark");
   const [customBgSlots, setCustomBgSlots] = useState(S?.customBgSlots||["","",""]);
@@ -2227,7 +2227,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </div>
           </div>
           {/* Scrollable edit fields */}
-          <div style={{overflowY:"auto",padding:"0 16px 40px",flex:1}}>
+          <div className="drawer-scroll" style={{overflowY:"auto",padding:"0 16px 40px",flex:1,WebkitOverflowScrolling:"touch"}}>
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             <div>
               <label style={lbl}>Background Gradient — {overlayDark}%</label>
