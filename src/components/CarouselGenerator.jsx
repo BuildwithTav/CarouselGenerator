@@ -461,8 +461,7 @@ function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover, pre
 // ─── DOWNLOAD ────────────────────────────────────────────
 async function downloadSlideAsPNG(slide, idx, total, opts, filename, isCover=false) {
   const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const hasCustomImage = (isCover && opts.coverImageUrl) || (!isCover && opts.templateBgUrl && opts.bgMode === "custom");
-  const needsServer = mobile && hasCustomImage;
+  const needsServer = mobile;
   let blob;
   if (needsServer) {
     const isPortrait = opts.ratio==="portrait";
