@@ -1455,7 +1455,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <div>
                 <label style={lbl}>Format</label>
                 <div style={{display:"flex",gap:8}}>
-                  {[["instagram","Instagram 4:5"],["portrait","Stories 9:16"]].map(([id,label])=>(
+                  {[["instagram","Instagram & LinkedIn"],["portrait","Stories, Reels & TikTok"]].map(([id,label])=>(
                     <button key={id} onClick={()=>setQuoteFormat(id)} style={{flex:1,background:quoteFormat===id?A.text:A.bg,border:`1.5px solid ${quoteFormat===id?A.text:A.border}`,color:quoteFormat===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                   ))}
                 </div>
@@ -1764,7 +1764,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <div>
                   <label style={lbl}>Format</label>
                   <div style={{display:"flex",gap:6}}>
-                    {[["instagram","Instagram 4:5"],["portrait","Stories 9:16"]].map(([id,label])=>(
+                    {[["instagram","Instagram & LinkedIn"],["portrait","Stories, Reels & TikTok"]].map(([id,label])=>(
                       <button key={id} onClick={()=>setRatio(id)} style={{flex:1,background:ratio===id?A.text:A.bg,border:`1.5px solid ${ratio===id?A.text:A.border}`,color:ratio===id?A.accentText:A.muted,padding:"7px 4px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                     ))}
                   </div>
@@ -1988,8 +1988,19 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <div style={{display:"flex",gap:8,marginTop:8}}>
                     {accentCustomSlots.map((c,i)=>(
                       <div key={i} style={{position:"relative"}}>
-                        <div onClick={()=>{if(c){setAccentColor(c);setAccentSwatch("custom");setCustomActiveSlot(i);}}} style={{width:36,height:36,borderRadius:"50%",background:c||A.surface,border:accentSwatch==="custom"&&customActiveSlot===i&&c?`3px solid ${A.text}`:`2px dashed ${A.border}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:A.muted,boxShadow:c==="#FFFFFF"?`inset 0 0 0 1px ${A.border}`:"none"}}>{!c&&"+"}</div>
-                        <input type="color" value={c||accentColor} onFocus={()=>{if(c){setAccentColor(c);setAccentSwatch("custom");setCustomActiveSlot(i);}}} onChange={e=>{const s=[...accentCustomSlots];s[i]=e.target.value;setAccentCustomSlots(s);setAccentColor(e.target.value);setAccentSwatch("custom");setCustomActiveSlot(i);}} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
+                        {/* Filled slot - click to select, X to clear */}
+                        {c ? (
+                          <>
+                            <div onClick={()=>{setAccentColor(c);setAccentSwatch("custom");setCustomActiveSlot(i);}} style={{width:36,height:36,borderRadius:"50%",background:c,border:accentSwatch==="custom"&&customActiveSlot===i?`3px solid ${A.text}`:`2px solid ${A.border}`,cursor:"pointer",boxShadow:c==="#FFFFFF"?`inset 0 0 0 1px ${A.border}`:"none"}}/>
+                            <div onClick={()=>{const s=[...accentCustomSlots];s[i]="";setAccentCustomSlots(s);if(customActiveSlot===i){setAccentSwatch("gold");setAccentColor(GOLD);setCustomActiveSlot(null);}}} style={{position:"absolute",top:-4,right:-4,width:14,height:14,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,lineHeight:1}}>×</div>
+                          </>
+                        ) : (
+                          /* Empty slot - click to open colour picker */
+                          <>
+                            <div style={{width:36,height:36,borderRadius:"50%",background:A.surface,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:A.muted,cursor:"pointer"}}>+</div>
+                            <input type="color" defaultValue={accentColor} onChange={e=>{const s=[...accentCustomSlots];s[i]=e.target.value;setAccentCustomSlots(s);setAccentColor(e.target.value);setAccentSwatch("custom");setCustomActiveSlot(i);}} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -2131,7 +2142,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           <div style={{animation:"fadeUp 0.3s ease"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
               <span style={{fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:A.muted}}>Format:</span>
-              {[["instagram","Instagram 4:5"],["portrait","Stories 9:16"]].map(([id,label])=>(
+              {[["instagram","Instagram & LinkedIn"],["portrait","Stories, Reels & TikTok"]].map(([id,label])=>(
                 <button key={id} onClick={()=>setRatio(id)} style={{background:ratio===id?A.text:A.surface,border:`1.5px solid ${ratio===id?A.text:A.border}`,color:ratio===id?A.accentText:A.muted,padding:"5px 14px",borderRadius:7,fontSize:12,fontWeight:700}}>{label}</button>
               ))}
               <button onClick={()=>{setSlides([]);setView("setup");setActive(0);setDownloadDone(false);}} style={{marginLeft:"auto",padding:"5px 14px",borderRadius:7,border:`1.5px solid ${A.border}`,background:A.surface,color:A.text,fontSize:12,fontWeight:700,cursor:"pointer"}}>+ New</button>
