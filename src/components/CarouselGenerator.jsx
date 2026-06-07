@@ -210,7 +210,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       background:linear-gradient(to bottom,transparent,rgba(0,0,0,0.65)); }
     .badge { position:absolute; top:158px; left:80px; z-index:10;
       display:inline-flex; align-items:center; gap:14px;
-      background:transparent; padding:10px 0; }
+      background:transparent; padding:10px 0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif!important; }
     .av { width:110px; height:110px; border-radius:50%; border:3px solid ${C.accent};
       overflow:hidden; flex-shrink:0; background:${C.dark?"#1a1a1a":"#ddd"};
       display:flex; align-items:center; justify-content:center; position:relative; }
@@ -761,7 +761,7 @@ Return ONLY valid JSON array:
   const generate = async (topicOverride) => {
     const t = topicOverride || topic;
     if (!t.trim()) { setErr("Add a topic first."); return; }
-    setErr(""); setView("generating"); setLastTopic(t);
+    setErr(""); setAngle(""); setView("generating"); setLastTopic(t);
 
     try {
       const messages = [{
@@ -1669,7 +1669,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   : <span style={{fontSize:11,fontWeight:700,color:A.muted,background:A.bg,padding:"4px 10px",borderRadius:6,flexShrink:0}}>Upload ↑</span>
                 }
               </div>
-              <input ref={inspirationRef} type="file" accept="image/*" onChange={e=>readFile(e,url=>{setInspirationImg(url);setTopic("Reading screenshot...");setErr("");extractTopicFromImage(url);}) } style={{display:"none"}}/>
+              <input ref={inspirationRef} type="file" accept="image/*" onChange={e=>readFile(e,url=>{setInspirationImg(url);setTopic("Reading screenshot...");setAngle("");setErr("");extractTopicFromImage(url);}) } style={{display:"none"}}/>
             </div>
 
             <div className="cover-format-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
@@ -1678,8 +1678,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 {coverPhotos.length > 0 && (
                   <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12,marginTop:8}}>
                     {coverPhotos.map((photo,i)=>(
-                      <div key={i} onClick={()=>setActiveCoverPhoto(photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:activeCoverPhoto===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0}}>
-                        <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      <div key={i} style={{position:"relative",flexShrink:0}}>
+                        <div onClick={()=>setActiveCoverPhoto(activeCoverPhoto===photo?null:photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:activeCoverPhoto===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
+                          <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                        </div>
+                        {activeCoverPhoto===photo&&<div onClick={()=>setActiveCoverPhoto(null)} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700}}>×</div>}
                       </div>
                     ))}
                     <div onClick={()=>coverPhotoRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
@@ -2042,6 +2045,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               {[["instagram","Instagram 4:5"],["portrait","Stories 9:16"]].map(([id,label])=>(
                 <button key={id} onClick={()=>setRatio(id)} style={{background:ratio===id?A.text:A.surface,border:`1.5px solid ${ratio===id?A.text:A.border}`,color:ratio===id?A.accentText:A.muted,padding:"5px 14px",borderRadius:7,fontSize:12,fontWeight:700}}>{label}</button>
               ))}
+              <button onClick={()=>{setSlides([]);setView("setup");setActive(0);setDownloadDone(false);}} style={{marginLeft:"auto",padding:"5px 14px",borderRadius:7,border:`1.5px solid ${A.border}`,background:A.surface,color:A.text,fontSize:12,fontWeight:700,cursor:"pointer"}}>+ New</button>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 360px",gap:28,alignItems:"start"}}>
               <div style={{paddingBottom:140}}>
@@ -2111,6 +2115,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   </button>
                 </div>
               </div>
+              <button onClick={()=>setEditDrawerOpen(true)} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:14,marginTop:8,cursor:"pointer",color:A.text,textAlign:"center"}}>✏️ Edit Slide {active+1}</button>
             </div>
           </div>
         )}
@@ -2184,7 +2189,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         )}
 
       {/* Mobile edit drawer */}
-      {editDrawerOpen&&(
+      {editDrawerOpen&&slides[active]&&(
+        <>
+        <div className="mobile-drawer" style={{display:"none",position:"fixed",top:56,left:0,right:0,zIndex:999,padding:"6px 12px",background:A.bg,borderBottom:`1px solid ${A.border}`}}>
+          <div style={{borderRadius:8,overflow:"hidden",height:100,pointerEvents:"none"}}>
+            <SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={false} isCover={active===0}/>
+          </div>
+        </div>
         <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1000,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0",maxHeight:"55vh",overflowY:"auto",padding:"20px 16px 40px"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
             <div style={{fontWeight:800,fontSize:16}}>Edit Slide {active+1}</div>
@@ -2217,7 +2228,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           </div>
         </div>
       )}
-      {editDrawerOpen&&<div onClick={()=>setEditDrawerOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.15)",zIndex:999}}/>}
+      </>
+      )}
+      {editDrawerOpen&&<div onClick={()=>setEditDrawerOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:998}}/>}
 
       <footer style={{borderTop:`1px solid ${A.border}`,padding:"14px 32px",textAlign:"center",marginTop:60}}>
         <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,fontWeight:700,textDecoration:"none",fontSize:12}}>BuildWithTav</a>
