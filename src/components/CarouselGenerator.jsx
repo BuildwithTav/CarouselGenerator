@@ -69,7 +69,7 @@ const PRESET_BG_COLOURS = [
   "#0A0A0A","#1B1F5E","#0D4F4F","#3D5A47","#3D1A3D","#8B3A2A","#C4623A","#E8C4B8","#FAF7F2","#FFFFFF"
 ];
 const PRESET_ACCENT_COLOURS = [
-  "#C9A84C","#E8D5A3","#E8553E","#C4756A","#60A5FA","#6BAA8E","#A78BFA","#F5EDE0"
+  "#C9A84C","#E8D5A3","#E8553E","#C4756A","#60A5FA","#6BAA8E","#A78BFA","#F5EDE0","#0A0A0A"
 ];
 
 const BG_MODES = [
@@ -1581,7 +1581,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <div>
                 <label style={lbl}>Quote text colour</label>
                 <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                  {["#C9A84C","#E8D5A3","#E8553E","#C4756A","#60A5FA","#6BAA8E","#A78BFA","#F5EDE0"].map(c=>(
+                  {["#C9A84C","#E8D5A3","#E8553E","#C4756A","#60A5FA","#6BAA8E","#A78BFA","#F5EDE0","#0A0A0A"].map(c=>(
                     <button key={c} onClick={()=>setQuoteTextColor(c)} style={{width:28,height:28,borderRadius:"50%",background:c,border:quoteTextColor===c?`3px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0,boxShadow:c==="#FFFFFF"?`inset 0 0 0 1px ${A.border}`:"none"}}/>
                   ))}
                   {quoteTextCustomSlots.map((c,i)=>(
