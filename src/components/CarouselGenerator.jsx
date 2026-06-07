@@ -15,16 +15,16 @@ const ACCENT_SWATCHES = [
   { id:"orange", label:"Orange", hex:"#F97316" },
 ];
 const BG_COLOUR_PRESETS = [
-  { id:"midnight", label:"Midnight", hex:"#0A0A0A" },
-  { id:"royal",    label:"Royal",    hex:"#1a1a6e" },
-  { id:"softblue", label:"Sky",      hex:"#3B82F6" },
-  { id:"sage",     label:"Sage",     hex:"#4CAF7D" },
-  { id:"purple",   label:"Purple",   hex:"#7C3AED" },
-  { id:"coral",    label:"Coral",    hex:"#E8553E" },
-  { id:"orange",   label:"Orange",   hex:"#F97316" },
-  { id:"ivory",    label:"Ivory",    hex:"#F5F3EF" },
-  { id:"cream",    label:"Cream",    hex:"#FAF7F2" },
-  { id:"white",    label:"White",    hex:"#FFFFFF" },
+  { id:"obsidian",   label:"Obsidian",   hex:"#0A0A0A" },
+  { id:"indigo",     label:"Indigo",     hex:"#1B1F5E" },
+  { id:"teal",       label:"Teal",       hex:"#0D4F4F" },
+  { id:"sage",       label:"Sage",       hex:"#3D5A47" },
+  { id:"plum",       label:"Plum",       hex:"#3D1A3D" },
+  { id:"rust",       label:"Rust",       hex:"#8B3A2A" },
+  { id:"terracotta", label:"Terracotta", hex:"#C4623A" },
+  { id:"blush",      label:"Blush",      hex:"#E8C4B8" },
+  { id:"cream",      label:"Cream",      hex:"#FAF7F2" },
+  { id:"white",      label:"White",      hex:"#FFFFFF" },
 ];
 
 const FONTS = [
@@ -66,7 +66,7 @@ const BRIEF_PLACEHOLDERS = {
 };
 
 const PRESET_BG_COLOURS = [
-  "#0A0A0A","#1a1a6e","#3B82F6","#4CAF7D","#7C3AED","#E8553E","#F97316","#F5F3EF","#FAF7F2","#FFFFFF"
+  "#0A0A0A","#1B1F5E","#0D4F4F","#3D5A47","#3D1A3D","#8B3A2A","#C4623A","#E8C4B8","#FAF7F2","#FFFFFF"
 ];
 const PRESET_ACCENT_COLOURS = [
   "#C9A84C","#FFFFFF","#3B82F6","#E8553E","#10B981","#8B5CF6","#F43F5E","#F97316"
@@ -629,6 +629,7 @@ export default function App() {
   const [quoteSlides, setQuoteSlides] = useState([]);
   const [downloadingQuotes, setDownloadingQuotes] = useState(false);
   const [quoteTextColor, setQuoteTextColor] = useState("#FFFFFF");
+  const [quoteTextCustomSlots, setQuoteTextCustomSlots] = useState(["","",""]);
   const [expandedQuote, setExpandedQuote] = useState(null);
   const [quoteHistory, setQuoteHistory] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_quote_history")||"[]");}catch{return [];}});
   const [slideOverlays, setSlideOverlays] = useState({});
@@ -853,17 +854,30 @@ Return ONLY valid JSON array:
       const mediaType = imgBase64.match(/data:(image\/[a-z]+);/)?.[1] || "image/jpeg";
       const d = await fetchWithRetry({
         model: "claude-sonnet-4-6",
-        max_tokens: 60,
+        max_tokens: 200,
         messages: [{
           role: "user",
           content: [
             { type: "image", source: { type: "base64", media_type: mediaType, data: imgBase64.split(",")[1] }},
-            { type: "text", text: "Read the text in this image. Extract the main topic or headline in 10 words or less. Return ONLY the topic, nothing else." }
+            { type: "text", text: `Analyse this carousel image. Return a JSON object with exactly two fields:
+1. "topic": the main topic or headline in 10 words or less
+2. "brief": a 1-2 line brief describing the structure, tone, and angle of this carousel (e.g. "Title: X. Slides cover A, B, C. Tone is direct and punchy. Final slide has follow CTA.")
+Return ONLY valid JSON, nothing else.` }
           ]
         }]
       });
-      const extracted = d.content?.find(b => b.type === "text")?.text?.replace(/[*_"]/g,"").trim() || "";
-      if (extracted) { setTopic(extracted); setInspirationImg(null); }
+      const raw = d.content?.find(b => b.type === "text")?.text?.replace(/[*_]/g,"").trim() || "";
+      try {
+        const parsed = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0]||"{}");
+        if (parsed.topic) setTopic(parsed.topic);
+        if (parsed.brief) setAngle(parsed.brief);
+        setInspirationImg(null);
+      } catch {
+        // fallback - just set topic
+        const clean = raw.replace(/[*_"{}]/g,"").trim();
+        if (clean) setTopic(clean);
+        setInspirationImg(null);
+      }
     } catch(e) { console.error("Extract failed", e); }
   };
 
@@ -1570,10 +1584,21 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   {["#FFFFFF","#0A0A0A","#C9A84C","#3B82F6","#E8553E","#10B981","#8B5CF6","#F97316"].map(c=>(
                     <button key={c} onClick={()=>setQuoteTextColor(c)} style={{width:28,height:28,borderRadius:"50%",background:c,border:quoteTextColor===c?`3px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0,boxShadow:c==="#FFFFFF"?`inset 0 0 0 1px ${A.border}`:"none"}}/>
                   ))}
-                  <div style={{position:"relative"}}>
-                    <div style={{width:28,height:28,borderRadius:"50%",background:quoteTextColor,border:`2px dashed ${A.border}`,cursor:"pointer",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",color:A.muted}}>+</div>
-                    <input type="color" value={quoteTextColor} onChange={e=>setQuoteTextColor(e.target.value)} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
-                  </div>
+                  {quoteTextCustomSlots.map((c,i)=>(
+                    <div key={i} style={{position:"relative"}}>
+                      {c ? (
+                        <>
+                          <div onClick={()=>setQuoteTextColor(c)} style={{width:28,height:28,borderRadius:"50%",background:c,border:quoteTextColor===c?`3px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer",boxShadow:c==="#FFFFFF"?`inset 0 0 0 1px ${A.border}`:"none"}}/>
+                          <div onClick={()=>{const s=[...quoteTextCustomSlots];s[i]="";setQuoteTextCustomSlots(s);if(quoteTextColor===c)setQuoteTextColor("#FFFFFF");}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900}}>×</div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{width:28,height:28,borderRadius:"50%",background:A.surface,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:A.muted,cursor:"pointer"}}>+</div>
+                          <input type="color" defaultValue={quoteTextColor} onChange={e=>{const s=[...quoteTextCustomSlots];s[i]=e.target.value;setQuoteTextCustomSlots(s);setQuoteTextColor(e.target.value);}} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
+                        </>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
 
