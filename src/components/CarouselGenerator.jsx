@@ -2207,8 +2207,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       {editDrawerOpen&&slides[active]&&(
         <>
 
-        <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1001,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0",maxHeight:"80vh"}}>
-          <div style={{display:"flex",flexDirection:"column",height:"100%",maxHeight:"80vh"}}>
+        <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1001,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0"}}>
+          <div style={{display:"flex",flexDirection:"column",maxHeight:"70svh"}}>
           {/* Fixed header with preview - does not scroll */}
           <div style={{flexShrink:0,padding:"12px 16px 0",borderRadius:"20px 20px 0 0",background:A.bg}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
