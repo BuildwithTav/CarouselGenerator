@@ -578,6 +578,11 @@ export default function App() {
   const [ratio, setRatio] = useState(S?.ratio||"instagram");
   const [menuOpen, setMenuOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  useEffect(()=>{
+    if(editDrawerOpen){document.body.classList.add('drawer-open');}
+    else{document.body.classList.remove('drawer-open');}
+    return()=>document.body.classList.remove('drawer-open');
+  },[editDrawerOpen]);
   const [gradientMode, setGradientMode] = useState("dark");
   const [customBgSlots, setCustomBgSlots] = useState(S?.customBgSlots||["","",""]);
   const [customAccentSlots, setCustomAccentSlots] = useState(S?.customAccentSlots||["","",""]);
@@ -1349,6 +1354,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           .topic-row input{width:100%!important;flex:unset!important}
         }
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        body.drawer-open{overflow:hidden!important;position:fixed!important;width:100%!important;}
         *{box-sizing:border-box}input,textarea,select{outline:none!important;font-family:inherit}
         button{cursor:pointer;font-family:inherit;border:none;transition:all 0.15s}
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:${A.border};border-radius:2px}
@@ -2049,6 +2055,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 360px",gap:28,alignItems:"start"}}>
               <div style={{paddingBottom:140}}>
+                <button onClick={()=>setEditDrawerOpen(true)} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontSize:14,fontWeight:700,color:A.text,cursor:"pointer",marginBottom:8,textAlign:"center"}}>✏️ Edit Slide {active+1}</button>
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
                   {slides.map((slide,i)=>(
                     <div key={i} data-slide-index={i}>
@@ -2056,7 +2063,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     </div>
                   ))}
                 </div>
-                <button onClick={()=>setEditDrawerOpen(true)} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontSize:14,fontWeight:700,color:A.text,cursor:"pointer",marginBottom:8,textAlign:"center"}}>✏️ Edit Slide {active+1}</button>
                 <div style={{display:"flex",gap:8}}>
                   <button onClick={()=>downloadOne(active)} disabled={downloading} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                     {downloading?<><Spin c={A.text}/>Processing...</>:downloadDone?"✓ Downloaded":`↓ Slide ${active+1}`}
@@ -2079,7 +2085,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <label style={{...lbl,marginBottom:8}}>Background Gradient — {overlayDark}%</label>
                     <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
                   </div>
-                  <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={inp}/></div>
+                  <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={{...inp,fontSize:16}}/></div>
                   <div><label style={lbl}>Headline</label><textarea value={slides[active]?.headline||""} onChange={e=>updateSlide("headline",e.target.value)} rows={2} style={{...inp,resize:"vertical",lineHeight:1.5}}/></div>
                   <div><label style={lbl}>Accent word <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(renders in colour)</span></label><input value={slides[active]?.accent_word||""} onChange={e=>updateSlide("accent_word",e.target.value)} placeholder="exact word from headline" style={inp}/></div>
                   <div><label style={lbl}>Body</label><textarea value={slides[active]?.body||""} onChange={e=>updateSlide("body",e.target.value)} rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}/></div>
@@ -2115,7 +2121,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   </button>
                 </div>
               </div>
-              <button onClick={()=>setEditDrawerOpen(true)} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:14,marginTop:8,cursor:"pointer",color:A.text,textAlign:"center"}}>✏️ Edit Slide {active+1}</button>
+
             </div>
           </div>
         )}
@@ -2192,8 +2198,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       {editDrawerOpen&&slides[active]&&(
         <>
 
-        <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1001,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0",maxHeight:"75vh",display:"flex",flexDirection:"column"}}>
-          {/* Fixed header with preview */}
+        <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1001,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0",maxHeight:"80vh",display:"flex",flexDirection:"column"}}>
+          {/* Fixed header with preview - does not scroll */}
           <div style={{flexShrink:0,padding:"12px 16px 0",borderRadius:"20px 20px 0 0",background:A.bg}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
               <div style={{fontWeight:800,fontSize:16}}>Edit Slide {active+1}</div>
@@ -2205,12 +2211,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <button key={i} onClick={()=>{setActive(i);setTimeout(()=>{const el=document.querySelector(`[data-slide-index='${i}']`);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},100);}} style={{width:36,height:36,borderRadius:8,background:active===i?A.text:A.surface,border:`1.5px solid ${active===i?GOLD:A.border}`,color:active===i?A.accentText:A.muted,fontSize:13,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
             ))}
             </div>
-            {/* Pinned slide preview */}
+            {/* Pinned slide preview - full slide visible */}
             {(()=>{
-              const pw=120, scale=pw/1080;
+              const pw=160, scale=pw/1080;
               const ph=Math.round(1350*scale);
               return (
-                <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
                   <div style={{width:pw,height:ph,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,pointerEvents:"none",flexShrink:0}}>
                     <SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={false} isCover={active===0}/>
                   </div>
@@ -2225,11 +2231,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <label style={lbl}>Background Gradient — {overlayDark}%</label>
               <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
             </div>
-            <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={inp}/></div>
-            <div><label style={lbl}>Headline</label><textarea value={slides[active]?.headline||""} onChange={e=>updateSlide("headline",e.target.value)} rows={3} style={{...inp,resize:"vertical",lineHeight:1.5}}/></div>
-            <div><label style={lbl}>Accent Word</label><input value={slides[active]?.accent_word||""} onChange={e=>updateSlide("accent_word",e.target.value)} style={inp}/></div>
-            <div><label style={lbl}>Body</label><textarea value={slides[active]?.body||""} onChange={e=>updateSlide("body",e.target.value)} rows={4} style={{...inp,resize:"vertical",lineHeight:1.6}}/></div>
-            <div><label style={lbl}>CTA <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(leave blank to hide)</span></label><input value={slides[active]?.cta_items?.[0]||""} onChange={e=>updateSlide("cta_items",e.target.value?[e.target.value]:[])} style={inp} placeholder="e.g. Save this so you can come back to it"/></div>
+            <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={{...inp,fontSize:16}}/></div>
+            <div><label style={lbl}>Headline</label><textarea value={slides[active]?.headline||""} onChange={e=>updateSlide("headline",e.target.value)} rows={3} style={{...inp,fontSize:16,resize:"none",lineHeight:1.5}}/></div>
+            <div><label style={lbl}>Accent Word</label><input value={slides[active]?.accent_word||""} onChange={e=>updateSlide("accent_word",e.target.value)} style={{...inp,fontSize:16}}/></div>
+            <div><label style={lbl}>Body</label><textarea value={slides[active]?.body||""} onChange={e=>updateSlide("body",e.target.value)} rows={4} style={{...inp,fontSize:16,resize:"none",lineHeight:1.6}}/></div>
+            <div><label style={lbl}>CTA <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(leave blank to hide)</span></label><input value={slides[active]?.cta_items?.[0]||""} onChange={e=>updateSlide("cta_items",e.target.value?[e.target.value]:[])} style={{...inp,fontSize:16}} placeholder="e.g. Save this so you can come back to it"/></div>
             <div>
               <label style={lbl}>AI Rewrite</label>
               <div style={{display:"flex",gap:8}}>
