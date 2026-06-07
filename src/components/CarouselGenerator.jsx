@@ -1455,7 +1455,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <div>
                 <label style={lbl}>Format</label>
                 <div style={{display:"flex",gap:8}}>
-                  {[["instagram","Instagram & LinkedIn"],["portrait","Stories, Reels & TikTok"]].map(([id,label])=>(
+                  {[["instagram","Instagram & LinkedIn 4:5"],["portrait","Stories, Reels & TikTok 9:16"]].map(([id,label])=>(
                     <button key={id} onClick={()=>setQuoteFormat(id)} style={{flex:1,background:quoteFormat===id?A.text:A.bg,border:`1.5px solid ${quoteFormat===id?A.text:A.border}`,color:quoteFormat===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                   ))}
                 </div>
@@ -1764,7 +1764,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <div>
                   <label style={lbl}>Format</label>
                   <div style={{display:"flex",gap:6}}>
-                    {[["instagram","Instagram & LinkedIn"],["portrait","Stories, Reels & TikTok"]].map(([id,label])=>(
+                    {[["instagram","Instagram & LinkedIn 4:5"],["portrait","Stories, Reels & TikTok 9:16"]].map(([id,label])=>(
                       <button key={id} onClick={()=>setRatio(id)} style={{flex:1,background:ratio===id?A.text:A.bg,border:`1.5px solid ${ratio===id?A.text:A.border}`,color:ratio===id?A.accentText:A.muted,padding:"7px 4px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                     ))}
                   </div>
@@ -2151,7 +2151,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           <div style={{animation:"fadeUp 0.3s ease"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
               <span style={{fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:A.muted}}>Format:</span>
-              {[["instagram","Instagram & LinkedIn"],["portrait","Stories, Reels & TikTok"]].map(([id,label])=>(
+              {[["instagram","Instagram & LinkedIn 4:5"],["portrait","Stories, Reels & TikTok 9:16"]].map(([id,label])=>(
                 <button key={id} onClick={()=>setRatio(id)} style={{background:ratio===id?A.text:A.surface,border:`1.5px solid ${ratio===id?A.text:A.border}`,color:ratio===id?A.accentText:A.muted,padding:"5px 14px",borderRadius:7,fontSize:12,fontWeight:700}}>{label}</button>
               ))}
               <button onClick={()=>{setSlides([]);setView("setup");setActive(0);setDownloadDone(false);}} style={{marginLeft:"auto",padding:"5px 14px",borderRadius:7,border:`1.5px solid ${A.border}`,background:A.surface,color:A.text,fontSize:12,fontWeight:700,cursor:"pointer"}}>+ New</button>
