@@ -579,9 +579,12 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   useEffect(()=>{
-    if(editDrawerOpen){document.body.classList.add('drawer-open');}
-    else{document.body.classList.remove('drawer-open');}
-    return()=>document.body.classList.remove('drawer-open');
+    if(editDrawerOpen){
+      document.body.style.overflow='hidden';
+    } else {
+      document.body.style.overflow='';
+    }
+    return()=>{document.body.style.overflow='';};
   },[editDrawerOpen]);
   const [gradientMode, setGradientMode] = useState("dark");
   const [customBgSlots, setCustomBgSlots] = useState(S?.customBgSlots||["","",""]);
@@ -1354,7 +1357,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           .topic-row input{width:100%!important;flex:unset!important}
         }
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        body.drawer-open{overflow:hidden!important;position:fixed!important;width:100%!important;}
+        body.drawer-open{overflow:hidden!important;}
         *{box-sizing:border-box}input,textarea,select{outline:none!important;font-family:inherit}
         button{cursor:pointer;font-family:inherit;border:none;transition:all 0.15s}
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:${A.border};border-radius:2px}
@@ -2214,12 +2217,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </div>
             {/* Pinned slide preview - full slide visible */}
             {(()=>{
-              const pw=Math.round((window.innerWidth||390)*0.45);
-              const scale=pw/1080;
-              const ph=Math.round(1350*scale);
+              const screenW = typeof window !== "undefined" ? window.innerWidth : 390;
+              const pw = Math.round(screenW * 0.38);
+              const scale = pw / 1080;
+              const ph = Math.round(1350 * scale);
               return (
-                <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
-                  <div style={{width:pw,height:ph,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,pointerEvents:"none",flexShrink:0}}>
+                <div style={{display:"flex",justifyContent:"center",marginBottom:12,overflow:"hidden"}}>
+                  <div style={{width:pw,height:ph,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,pointerEvents:"none",flexShrink:0,maxWidth:"100%"}}>
                     <SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={false} isCover={active===0}/>
                   </div>
                 </div>
