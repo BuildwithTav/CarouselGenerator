@@ -5,14 +5,14 @@ const GOLD = "#C9A84C";
 const STORAGE_KEY = "bwt_v11";
 
 const ACCENT_SWATCHES = [
-  { id:"gold",   label:"Gold",   hex:"#C9A84C" },
-  { id:"white",  label:"White",  hex:"#FFFFFF" },
-  { id:"blue",   label:"Blue",   hex:"#3B82F6" },
-  { id:"coral",  label:"Coral",  hex:"#E8553E" },
-  { id:"mint",   label:"Mint",   hex:"#10B981" },
-  { id:"lilac",  label:"Lilac",  hex:"#8B5CF6" },
-  { id:"rose",   label:"Rose",   hex:"#F43F5E" },
-  { id:"orange", label:"Orange", hex:"#F97316" },
+  { id:"gold",      label:"Gold",      hex:"#C9A84C" },
+  { id:"champagne", label:"Champagne", hex:"#E8D5A3" },
+  { id:"coral",     label:"Coral",     hex:"#E8553E" },
+  { id:"dustyrose", label:"Dusty Rose",hex:"#C4756A" },
+  { id:"sky",       label:"Sky",       hex:"#60A5FA" },
+  { id:"sage",      label:"Sage",      hex:"#6BAA8E" },
+  { id:"lilac",     label:"Lilac",     hex:"#A78BFA" },
+  { id:"warmwhite", label:"Warm White",hex:"#F5EDE0" },
 ];
 const BG_COLOUR_PRESETS = [
   { id:"obsidian",   label:"Obsidian",   hex:"#0A0A0A" },
@@ -69,7 +69,7 @@ const PRESET_BG_COLOURS = [
   "#0A0A0A","#1B1F5E","#0D4F4F","#3D5A47","#3D1A3D","#8B3A2A","#C4623A","#E8C4B8","#FAF7F2","#FFFFFF"
 ];
 const PRESET_ACCENT_COLOURS = [
-  "#C9A84C","#FFFFFF","#3B82F6","#E8553E","#10B981","#8B5CF6","#F43F5E","#F97316"
+  "#C9A84C","#E8D5A3","#E8553E","#C4756A","#60A5FA","#6BAA8E","#A78BFA","#F5EDE0"
 ];
 
 const BG_MODES = [
@@ -1581,7 +1581,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <div>
                 <label style={lbl}>Quote text colour</label>
                 <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                  {["#FFFFFF","#0A0A0A","#C9A84C","#3B82F6","#E8553E","#10B981","#8B5CF6","#F97316"].map(c=>(
+                  {["#C9A84C","#E8D5A3","#E8553E","#C4756A","#60A5FA","#6BAA8E","#A78BFA","#F5EDE0"].map(c=>(
                     <button key={c} onClick={()=>setQuoteTextColor(c)} style={{width:28,height:28,borderRadius:"50%",background:c,border:quoteTextColor===c?`3px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0,boxShadow:c==="#FFFFFF"?`inset 0 0 0 1px ${A.border}`:"none"}}/>
                   ))}
                   {quoteTextCustomSlots.map((c,i)=>(
