@@ -546,6 +546,81 @@ export default function App() {
 
   const [nav, setNav] = useState("generate");
 
+  // ─── AUTH STATE ───────────────────────────────────────────
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authEmail, setAuthEmail] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authSubmitting, setAuthSubmitting] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [upgradePrompt, setUpgradePrompt] = useState(false);
+
+  const getToken = () => { try { return localStorage.getItem("cs_token")||null; } catch { return null; } };
+  const setToken = (t) => { try { localStorage.setItem("cs_token",t); } catch {} };
+  const clearToken = () => { try { localStorage.removeItem("cs_token"); } catch {} };
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token) { setAuthLoading(false); setShowAuthModal(true); return; }
+    fetch("/api/auth", {
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body: JSON.stringify({ action:"me" })
+    }).then(r=>r.json()).then(d=>{
+      if (d.user) { setCurrentUser(d.user); setShowAuthModal(false); }
+      else { clearToken(); setShowAuthModal(true); }
+    }).catch(()=>{ clearToken(); setShowAuthModal(true); })
+    .finally(()=>setAuthLoading(false));
+  }, []);
+
+  const sendOtp = async () => {
+    if (!authEmail.trim()) { setAuthError("Enter your email address."); return; }
+    setAuthSubmitting(true); setAuthError("");
+    try {
+      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"send-otp", email: authEmail.trim().toLowerCase() }) });
+      const d = await r.json();
+      if (d.error) { setAuthError(d.error); }
+      else { setOtpSent(true); }
+    } catch { setAuthError("Something went wrong — try again."); }
+    setAuthSubmitting(false);
+  };
+
+  const verifyOtp = async () => {
+    if (!otpCode.trim()) { setAuthError("Enter the 6 digit code."); return; }
+    setAuthSubmitting(true); setAuthError("");
+    try {
+      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"verify-otp", email: authEmail.trim().toLowerCase(), token: otpCode.trim() }) });
+      const d = await r.json();
+      if (d.error) { setAuthError("Invalid code — check your email and try again."); }
+      else { setToken(d.access_token); setCurrentUser(d.user||{ email: d.email, plan:"free", credits_used:0, credits_limit:3 }); setShowAuthModal(false); }
+    } catch { setAuthError("Something went wrong — try again."); }
+    setAuthSubmitting(false);
+  };
+
+  const logout = () => { clearToken(); setCurrentUser(null); setOtpSent(false); setOtpCode(""); setAuthEmail(""); setShowAuthModal(true); };
+
+  const creditsRemaining = () => {
+    if (!currentUser) return 0;
+    if (currentUser.plan === "pro" || currentUser.is_admin) return "∞";
+    return Math.max(0, (currentUser.credits_limit||3) - (currentUser.credits_used||0));
+  };
+
+  const canGenerate = () => {
+    if (!currentUser) return false;
+    if (currentUser.plan === "pro" || currentUser.is_admin) return true;
+    return (currentUser.credits_used||0) < (currentUser.credits_limit||3);
+  };
+
+  const handleUpgrade = async (priceId) => {
+    try {
+      const r = await fetch("/api/checkout", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email: currentUser.email, priceId }) });
+      const d = await r.json();
+      if (d.url) window.location.href = d.url;
+    } catch { alert("Something went wrong — try again."); }
+  };
+
   const [profileUrl, setProfileUrl] = useState(S?.profileUrl||null);
   const [name, setName] = useState(S?.name||"");
   const [handle, setHandle] = useState(S?.handle||"");
@@ -702,16 +777,28 @@ export default function App() {
     }
   };
 
-  const fetchWithRetry = async (body, tries=4) => {
+  const fetchWithRetry = async (body, tries=4, countCredit=false) => {
     for (let i=0; i<=tries; i++) {
       try {
+        const payload = countCredit && currentUser ? { ...body, userEmail: currentUser.email } : body;
         const res = await fetch("/api/generate", {
           method:"POST",
           headers:{"Content-Type":"application/json"},
-          body:JSON.stringify(body)
+          body:JSON.stringify(payload)
         });
+        if (res.status === 429) {
+          const d = await res.json();
+          if (d.error === "credits_exhausted" || d.error === "fair_use_limit") {
+            setUpgradePrompt(true);
+            throw new Error("credits_exhausted");
+          }
+        }
         if (!res.ok) throw new Error(`${res.status}`);
-        return await res.json();
+        const data = await res.json();
+        if (countCredit && currentUser) {
+          setCurrentUser(u => u ? ({ ...u, credits_used: (u.credits_used||0) + 1 }) : u);
+        }
+        return data;
       } catch(e) { if(i===tries) throw e; await new Promise(r=>setTimeout(r, 2000+i*1000)); }
     }
   };
@@ -783,6 +870,7 @@ Return ONLY valid JSON array:
   const generate = async (topicOverride) => {
     const t = topicOverride || topic;
     if (!t.trim()) { setErr("Add a topic first."); return; }
+    if (!canGenerate()) { setUpgradePrompt(true); return; }
     setErr(""); setAngle(""); setView("generating"); setLastTopic(t);
 
     try {
@@ -796,7 +884,7 @@ Return ONLY valid JSON array:
           : buildPrompt(t, null)
       }];
 
-      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:3000, messages });
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:3000, messages }, 4, true);
       const raw = d.content?.find(b=>b.type==="text")?.text||"";
       const clean = raw.replace(/<cite[^>]*>/g,"").replace(/<\/cite>/g,"").replace(/<[^>]+>/g,"");
       const m = clean.match(/\[[\s\S]*\]/);
@@ -886,6 +974,8 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const generateCaption = async () => {
+    if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (currentUser?.plan === "free") { setUpgradePrompt(true); return; }
     setGeneratingCaption(true);
     setShowCaption(false);
     try {
@@ -893,7 +983,7 @@ Return ONLY valid JSON, nothing else.` }
       const btLabel = businessType==="other"?(otherType||"brand"):btObj?.label||"Digital Marketer";
       const audienceDesc = audienceType==="peers" ? `other ${btLabel.toLowerCase()}s` : (btObj?.audience||"your target audience");
       const slidesSummary = slides.map((s,i)=>`Slide ${i+1}: ${s.headline}`).join("\n");
-      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:400, messages:[{ role:"user", content:`Write an Instagram/LinkedIn caption for a carousel post about "${lastTopic}" for a ${btLabel} targeting ${audienceDesc}.\n\nThe carousel covers:\n${slidesSummary}\n\nVoice: ${voiceProfile||"Direct, honest, no hype. Short punchy sentences."}\n\nRules:\n- Hook in first line — make them stop scrolling\n- 3-5 sentences max\n- Tell them to swipe\n- Soft CTA at end (save, follow, comment — pick the most relevant)\n- Max 5 relevant hashtags at the end\n- No emojis unless they feel natural\n- Sign off as — ${name||"Tav"}\n\nReturn ONLY the caption text, nothing else.` }] });
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:400, messages:[{ role:"user", content:`Write an Instagram/LinkedIn caption for a carousel post about "${lastTopic}" for a ${btLabel} targeting ${audienceDesc}.\n\nThe carousel covers:\n${slidesSummary}\n\nVoice: ${voiceProfile||"Direct, honest, no hype. Short punchy sentences."}\n\nRules:\n- Hook in first line — make them stop scrolling\n- 3-5 sentences max\n- Tell them to swipe\n- Soft CTA at end (save, follow, comment — pick the most relevant)\n- Max 5 relevant hashtags at the end\n- No emojis unless they feel natural\n- Sign off as — ${name||"Tav"}\n\nReturn ONLY the caption text, nothing else.` }] }, 4, true);
       const text = d.content?.find(b=>b.type==="text")?.text?.trim()||"";
       if (text) { setCaption(text); setShowCaption(true); }
     } catch(e) { console.error("Caption failed:", e); alert("Caption generation failed — try again."); }
@@ -901,12 +991,14 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const rewrite = async () => {
-    if (!rewritePrompt.trim()) return; setRewriting(true);
+    if (!rewritePrompt.trim()) return;
+    if (!canGenerate()) { setUpgradePrompt(true); return; }
+    setRewriting(true);
     try {
       const btObj3 = BUSINESS_TYPES.find(b=>b.id===businessType);
       const btLabel3 = businessType==="other"?(otherType||"brand"):btObj3?.label||"Digital Marketer";
       const audDesc3 = audienceType==="peers" ? `other ${btLabel3.toLowerCase()}s` : (btObj3?.audience||"your target audience");
-      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:600, messages:[{ role:"user", content:`Rewrite this carousel slide for a ${btLabel3} whose audience is ${audDesc3}.\n\nInstruction: "${rewritePrompt}"\n\nCurrent slide:\n${JSON.stringify(slides[active],null,2)}\n\nVoice: ${voiceProfile||"Direct, honest, specific. No hype."}\n\nKeep same JSON structure. Improve only what the instruction asks. Return ONLY valid JSON object. No markdown.` }] });
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:600, messages:[{ role:"user", content:`Rewrite this carousel slide for a ${btLabel3} whose audience is ${audDesc3}.\n\nInstruction: "${rewritePrompt}"\n\nCurrent slide:\n${JSON.stringify(slides[active],null,2)}\n\nVoice: ${voiceProfile||"Direct, honest, specific. No hype."}\n\nKeep same JSON structure. Improve only what the instruction asks. Return ONLY valid JSON object. No markdown.` }] }, 4, true);
       const raw = (d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
       const m = raw.match(/\{[\s\S]*\}/);
       if (m) { const next=[...slides]; next[active]=sanitize(JSON.parse(m[0])); setSlides(next); setRewritePrompt(""); }
@@ -937,6 +1029,7 @@ Return ONLY valid JSON, nothing else.` }
   }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays,gradientMode]);
 
   const downloadOne = async (i) => {
+    if (currentUser?.plan === "free") { setUpgradePrompt(true); return; }
     setDownloading(true);
     try {
       await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`, i===0);
@@ -1005,6 +1098,7 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const downloadAll = async () => {
+    if (currentUser?.plan === "free") { setUpgradePrompt(true); return; }
     setDownloadingAll(true);
     const mobile = isMobileDevice();
     try {
@@ -1045,6 +1139,8 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const generateQuotes = async () => {
+    if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (currentUser?.plan === "free") { setUpgradePrompt(true); return; }
     setGeneratingQuotes(true);
     const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
     const emptyCount = quoteInputs.filter(q=>!q.trim()).length;
@@ -1070,7 +1166,7 @@ RULES:
 - Max 12 words each. No attribution, no author names.
 
 Return ONLY a JSON array of ${needed} strings.`;
-      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:400, messages:[{ role:"user", content:prompt }] });
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:400, messages:[{ role:"user", content:prompt }] }, 4, true);
       const raw = (d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
       const m = raw.match(/\[[\s\S]*\]/);
       if (m) {
@@ -1380,8 +1476,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
     </div>
   );
 
-  const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"]];
-  const BURGER_ITEMS = [["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"]];
+  const planLabel = currentUser?.plan === "pro" ? "pro" : currentUser?.plan === "starter" ? "starter" : "free";
+  const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],planLabel==="pro"?["account","Account"]:["upgrade","Upgrade"]];
+  const BURGER_ITEMS = [["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],planLabel==="pro"?["account","Account"]:["upgrade","Upgrade"]];
   const MAIN_NAV = [["generate","Generate"],["quotes","Quotes"]];
 
   return (
@@ -1424,6 +1521,87 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         ::placeholder{color:${A.muted};opacity:0.65}
       `}</style>
 
+      {/* AUTH LOADING */}
+      {authLoading&&(
+        <div style={{position:"fixed",inset:0,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:16}}>
+            <div style={{width:32,height:32,borderRadius:"50%",border:`3px solid ${A.border}`,borderTop:`3px solid ${GOLD}`,animation:"spin 0.7s linear infinite"}}/>
+            <span style={{color:A.muted,fontSize:13}}>Loading...</span>
+          </div>
+        </div>
+      )}
+
+      {/* AUTH MODAL */}
+      {showAuthModal&&!authLoading&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9998,padding:16}}>
+          <div style={{background:A.surface,borderRadius:16,padding:32,width:"100%",maxWidth:400,boxShadow:"0 20px 60px rgba(0,0,0,0.15)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:24}}>
+              <div style={{width:32,height:32,borderRadius:8,background:"linear-gradient(135deg,#1a1a1a,#2a2a2a)",border:`1.5px solid ${GOLD}44`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <span style={{color:GOLD,fontSize:13,fontWeight:900}}>C</span>
+              </div>
+              <div>
+                <div style={{fontSize:15,fontWeight:800}}>Carousel Studio</div>
+                <div style={{fontSize:10,color:A.muted}}>by <span style={{color:GOLD,fontWeight:700}}>BuildWithTav</span></div>
+              </div>
+            </div>
+            {!otpSent ? (
+              <>
+                <h2 style={{fontSize:20,fontWeight:800,margin:"0 0 6px"}}>Sign in to continue</h2>
+                <p style={{fontSize:13,color:A.muted,margin:"0 0 20px",lineHeight:1.6}}>Enter your email and we'll send you a 6 digit code. No password needed.</p>
+                <label style={lbl}>Email address</label>
+                <input value={authEmail} onChange={e=>setAuthEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendOtp()} placeholder="you@example.com" type="email" style={{...inp,marginBottom:12,fontSize:15}}/>
+                {authError&&<p style={{color:"#c0392b",fontSize:12,margin:"0 0 10px"}}>{authError}</p>}
+                <button onClick={sendOtp} disabled={authSubmitting} style={{width:"100%",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:15,border:"none"}}>
+                  {authSubmitting?<span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><Spin/>Sending...</span>:"Send Code"}
+                </button>
+                <p style={{fontSize:11,color:A.muted,textAlign:"center",margin:"14px 0 0",lineHeight:1.6}}>By signing in you agree to our <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,textDecoration:"none"}}>Terms of Service</a>.</p>
+              </>
+            ) : (
+              <>
+                <h2 style={{fontSize:20,fontWeight:800,margin:"0 0 6px"}}>Check your email</h2>
+                <p style={{fontSize:13,color:A.muted,margin:"0 0 20px",lineHeight:1.6}}>We sent a 6 digit code to <strong>{authEmail}</strong>. Enter it below.</p>
+                <label style={lbl}>6 digit code</label>
+                <input value={otpCode} onChange={e=>setOtpCode(e.target.value.replace(/\D/g,"").slice(0,6))} onKeyDown={e=>e.key==="Enter"&&verifyOtp()} placeholder="000000" type="text" inputMode="numeric" maxLength={6} style={{...inp,marginBottom:12,fontSize:22,letterSpacing:8,textAlign:"center"}}/>
+                {authError&&<p style={{color:"#c0392b",fontSize:12,margin:"0 0 10px"}}>{authError}</p>}
+                <button onClick={verifyOtp} disabled={authSubmitting||otpCode.length!==6} style={{width:"100%",padding:"13px",background:otpCode.length===6?A.text:A.border,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:15,border:"none"}}>
+                  {authSubmitting?<span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><Spin/>Verifying...</span>:"Confirm"}
+                </button>
+                <button onClick={()=>{setOtpSent(false);setOtpCode("");setAuthError("");}} style={{width:"100%",padding:"10px",background:"none",color:A.muted,border:"none",fontSize:13,marginTop:8}}>← Use a different email</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* UPGRADE MODAL */}
+      {upgradePrompt&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9997,padding:16}}>
+          <div style={{background:A.surface,borderRadius:16,padding:32,width:"100%",maxWidth:420,boxShadow:"0 20px 60px rgba(0,0,0,0.15)"}}>
+            <button onClick={()=>setUpgradePrompt(false)} style={{position:"absolute",top:16,right:16,background:"none",border:"none",fontSize:20,color:A.muted,cursor:"pointer"}}>✕</button>
+            <div style={{fontSize:32,marginBottom:12}}>⚡</div>
+            <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 8px"}}>
+              {currentUser?.plan==="free" ? "You've used your free credits" : "Upgrade to keep going"}
+            </h2>
+            <p style={{fontSize:13,color:A.muted,margin:"0 0 24px",lineHeight:1.6}}>
+              {currentUser?.plan==="free"
+                ? "Free accounts get 3 credits to try the tool. Upgrade to unlock downloads, captions, quote cards and more."
+                : "You've hit your monthly limit. Upgrade to Pro for unlimited generations."}
+            </p>
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              {currentUser?.plan==="free"&&(
+                <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID)} style={{padding:"14px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:15,border:"none",textAlign:"center"}}>
+                  Starter — £39/month · 30 credits
+                </button>
+              )}
+              <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{padding:"14px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:15,border:"none",textAlign:"center"}}>
+                Pro — £79/month · Unlimited + Affiliate Access
+              </button>
+              <button onClick={()=>setUpgradePrompt(false)} style={{padding:"10px",background:"none",color:A.muted,border:"none",fontSize:13}}>Maybe later</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <nav style={{borderBottom:`1px solid ${A.border}`,padding:"0 32px",display:"flex",alignItems:"center",justifyContent:"flex-start",height:56,position:"sticky",top:0,background:`${A.bg}EE`,backdropFilter:"blur(20px)",zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:8,paddingRight:4}}>
           <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,#1a1a1a,#2a2a2a)`,border:`1.5px solid ${GOLD}44`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -1458,7 +1636,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:8}}>↺ Regenerate</button>
             <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
           </>}
+          {/* Credit counter */}
+          {currentUser&&(
+            <div style={{display:"flex",alignItems:"center",gap:6,padding:"0 10px",borderLeft:`1px solid ${A.border}`,marginLeft:4}}>
+              <span style={{fontSize:11,fontWeight:700,color:currentUser.plan==="free"&&creditsRemaining()===0?"#c0392b":currentUser.plan==="pro"?GOLD:A.muted}}>
+                {currentUser.plan==="pro"?"Pro ∞":currentUser.plan==="starter"?`${creditsRemaining()} left`:`${creditsRemaining()} free`}
+              </span>
+              {currentUser.plan!=="pro"&&<button onClick={()=>setUpgradePrompt(true)} style={{fontSize:10,fontWeight:700,padding:"3px 8px",background:GOLD,color:"#000",border:"none",borderRadius:5}}>Upgrade</button>}
+            </div>
+          )}
           <button onClick={()=>{if(window.confirm("Reset app? This will clear all brand settings and history.")){{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}}}} className="desktop-reset" style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center"}}>Reset app</button>
+          {currentUser&&<button onClick={logout} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4}}>Sign out</button>}
         </div>
       </nav>
       {menuOpen&&(
@@ -2427,6 +2615,124 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 Report a Bug
               </a>
             </div>
+          </div>
+        )}
+
+        {/* UPGRADE TAB */}
+        {nav==="upgrade"&&(
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:600,margin:"0 auto"}}>
+            <div style={{marginBottom:28}}>
+              <h2 style={{fontSize:24,fontWeight:800,margin:"0 0 6px"}}>Upgrade your plan</h2>
+              <p style={{color:A.muted,fontSize:14,margin:0}}>More credits. More features. Cancel anytime.</p>
+            </div>
+
+            {/* Free plan - current */}
+            {planLabel==="free"&&(
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                  <span style={{fontSize:16,fontWeight:800}}>Free</span>
+                  <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",background:A.bg,border:`1px solid ${A.border}`,borderRadius:20,color:A.muted}}>Current plan</span>
+                </div>
+                <div style={{fontSize:28,fontWeight:800,margin:"8px 0 4px"}}>£0</div>
+                <p style={{fontSize:13,color:A.muted,margin:"0 0 16px"}}>3 credits total. Try the tool, no card required.</p>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {["1 carousel generation","1 quote batch","1 rewrite","No downloads","No captions"].map(f=>(
+                    <div key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:A.muted}}>
+                      <span>•</span>{f}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Starter plan */}
+            {planLabel!=="starter"&&planLabel!=="pro"&&(
+              <div style={{background:A.surface,border:`1.5px solid ${A.text}`,borderRadius:14,padding:24,marginBottom:16}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                  <span style={{fontSize:16,fontWeight:800}}>Starter</span>
+                  <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",background:A.text,borderRadius:20,color:A.accentText}}>Most popular</span>
+                </div>
+                <div style={{fontSize:28,fontWeight:800,margin:"8px 0 4px"}}>£39<span style={{fontSize:14,fontWeight:500,color:A.muted}}>/month</span></div>
+                <p style={{fontSize:13,color:A.muted,margin:"0 0 16px"}}>30 credits/month — potentially 30 carousels.</p>
+                <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
+                  {["30 credits per month","Carousel generation","Quote cards","Caption generation","AI rewrites","Downloads included","All fonts and styles"].map(f=>(
+                    <div key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:A.text}}>
+                      <span style={{color:GOLD,fontWeight:700}}>✓</span>{f}
+                    </div>
+                  ))}
+                </div>
+                <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID)} style={{width:"100%",padding:"14px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:15,border:"none"}}>
+                  Get Starter — £39/month
+                </button>
+              </div>
+            )}
+
+            {/* Pro plan */}
+            {planLabel!=="pro"&&(
+              <div style={{background:"linear-gradient(135deg,#1a1a1a,#2a2a2a)",border:`1.5px solid ${GOLD}`,borderRadius:14,padding:24,marginBottom:16}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                  <span style={{fontSize:16,fontWeight:800,color:"#fff"}}>Pro</span>
+                  <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",background:GOLD,borderRadius:20,color:"#000"}}>Best value</span>
+                </div>
+                <div style={{fontSize:28,fontWeight:800,margin:"8px 0 4px",color:"#fff"}}>£79<span style={{fontSize:14,fontWeight:500,color:"rgba(255,255,255,0.5)"}}>/month</span></div>
+                <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"0 0 16px"}}>Unlimited credits. Fair usage policy applies.</p>
+                <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
+                  {["Unlimited credits","Everything in Starter","Affiliate programme access","Early access to new features","Priority support"].map(f=>(
+                    <div key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:"#fff"}}>
+                      <span style={{color:GOLD,fontWeight:700}}>✓</span>{f}
+                    </div>
+                  ))}
+                </div>
+                <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"14px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:15,border:"none"}}>
+                  Get Pro — £79/month
+                </button>
+              </div>
+            )}
+
+            <p style={{fontSize:11,color:A.muted,textAlign:"center",lineHeight:1.6}}>Secure payment via Stripe. Cancel anytime. Questions? <a href="mailto:tav@buildwithtav.co" style={{color:GOLD,textDecoration:"none"}}>tav@buildwithtav.co</a></p>
+          </div>
+        )}
+
+        {/* ACCOUNT TAB — Pro and Starter users */}
+        {nav==="account"&&(
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:500,margin:"0 auto"}}>
+            <div style={{marginBottom:28}}>
+              <h2 style={{fontSize:24,fontWeight:800,margin:"0 0 6px"}}>Your account</h2>
+              <p style={{color:A.muted,fontSize:14,margin:0}}>{currentUser?.email}</p>
+            </div>
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+              <label style={lbl}>Current plan</label>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:8}}>
+                <div>
+                  <div style={{fontSize:20,fontWeight:800,textTransform:"capitalize"}}>{currentUser?.plan}</div>
+                  <div style={{fontSize:13,color:A.muted,marginTop:2}}>
+                    {currentUser?.plan==="pro"
+                      ? `${currentUser?.credits_used||0} credits used this month (unlimited)`
+                      : `${currentUser?.credits_used||0} of ${currentUser?.credits_limit||30} credits used`}
+                  </div>
+                </div>
+                <span style={{fontSize:11,fontWeight:700,padding:"4px 12px",background:currentUser?.plan==="pro"?GOLD:A.text,color:currentUser?.plan==="pro"?"#000":A.accentText,borderRadius:20}}>{currentUser?.plan?.toUpperCase()}</span>
+              </div>
+            </div>
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+              <label style={lbl}>Subscription</label>
+              <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Manage your subscription, update your payment method, download invoices, or cancel — all from the Stripe portal.</p>
+              <a href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL} target="_blank" rel="noopener noreferrer" style={{display:"block",textAlign:"center",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:14,textDecoration:"none"}}>
+                Manage Subscription
+              </a>
+            </div>
+            {currentUser?.plan==="starter"&&(
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+                <label style={lbl}>Want more?</label>
+                <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Upgrade to Pro for unlimited credits and affiliate programme access.</p>
+                <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"13px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:14,border:"none"}}>
+                  Upgrade to Pro — £79/month
+                </button>
+              </div>
+            )}
+            <button onClick={logout} style={{width:"100%",padding:"13px",background:"none",border:`1.5px solid ${A.border}`,color:A.muted,borderRadius:10,fontWeight:600,fontSize:14}}>
+              Sign out
+            </button>
           </div>
         )}
 
