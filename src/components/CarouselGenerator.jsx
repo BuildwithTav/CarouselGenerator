@@ -561,7 +561,7 @@ export default function App() {
   const setToken = (t) => { try { localStorage.setItem("cs_token",t); } catch {} };
   const clearToken = () => { try { localStorage.removeItem("cs_token"); } catch {} };
 
-  useEffect(() => {
+useEffect(() => {
     const token = getToken();
     if (!token) { setAuthLoading(false); setShowAuthModal(true); return; }
     fetch("/api/auth", {
@@ -573,6 +573,25 @@ export default function App() {
       else { clearToken(); setShowAuthModal(true); }
     }).catch(()=>{ clearToken(); setShowAuthModal(true); })
     .finally(()=>setAuthLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("upgraded")) {
+      const token = getToken();
+      if (!token) return;
+      setTimeout(() => {
+        fetch("/api/auth", {
+          method:"POST",
+          headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+          body: JSON.stringify({ action:"me" })
+        }).then(r=>r.json()).then(d=>{
+          if (d.user) setCurrentUser(d.user);
+        });
+        window.history.replaceState({}, "", "/");
+      }, 2000);
+    }
   }, []);
 
   const sendOtp = async () => {
