@@ -26,15 +26,18 @@ export async function POST(req) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const email = session.customer_details?.email;
-    const priceId = session.line_items?.data?.[0]?.price?.id;
-
     if (!email) return NextResponse.json({ received: true });
 
+    // Retrieve full session with line items expanded
+    const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+      expand: ["line_items"]
+    });
+
+    const priceId = fullSession.line_items?.data?.[0]?.price?.id;
     const isStarter = priceId === process.env.STRIPE_STARTER_PRICE_ID;
     const isPro = priceId === process.env.STRIPE_PRO_PRICE_ID;
-
     const plan = isPro ? "pro" : isStarter ? "starter" : "free";
-    const credits_limit = isPro ? 999999 : 30;
+    const credits_limit = isPro ? 999999 : isStarter ? 30 : 3;
 
     await supabase.from("users").upsert({
       email,
