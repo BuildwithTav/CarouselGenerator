@@ -611,6 +611,9 @@ export default function App() {
   const [downloadingAll, setDownloadingAll] = useState(false);
   const [downloadDone, setDownloadDone] = useState(false);
   const [lastTopic, setLastTopic] = useState("");
+  const [caption, setCaption] = useState("");
+  const [generatingCaption, setGeneratingCaption] = useState(false);
+  const [showCaption, setShowCaption] = useState(false);
   const [history, setHistory] = useState(loadHistory());
 
   const [quoteInputs, setQuoteInputs] = useState(["","",""]);
@@ -802,7 +805,7 @@ Return ONLY valid JSON array:
         ...s,
         layout: i === 0 ? "statement" : i === parsed.length - 1 ? "hero" : "standard"
       }));
-      setSlides(newSlides); setActive(0); setView("preview");
+      setSlides(newSlides); setActive(0); setView("preview"); setCaption(""); setShowCaption(false);
 
       const entry = { id: Date.now(), topic: t, slides: newSlides, date: new Date().toLocaleDateString() };
       const newHistory = [entry, ...history].slice(0, 10);
@@ -879,6 +882,38 @@ Return ONLY valid JSON, nothing else.` }
         setInspirationImg(null);
       }
     } catch(e) { console.error("Extract failed", e); }
+  };
+
+  const generateCaption = async () => {
+    setGeneratingCaption(true);
+    setShowCaption(false);
+    try {
+      const btObj = BUSINESS_TYPES.find(b=>b.id===businessType);
+      const btLabel = businessType==="other"?(otherType||"brand"):btObj?.label||"Digital Marketer";
+      const audienceDesc = audienceType==="peers" ? `other ${btLabel.toLowerCase()}s` : (btObj?.audience||"your target audience");
+      const slidesSummary = slides.map((s,i)=>`Slide ${i+1}: ${s.headline}`).join("
+");
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:400, messages:[{ role:"user", content:`Write an Instagram/LinkedIn caption for a carousel post about "${lastTopic}" for a ${btLabel} targeting ${audienceDesc}.
+
+The carousel covers:
+${slidesSummary}
+
+Voice: ${voiceProfile||"Direct, honest, no hype. Short punchy sentences."}
+
+Rules:
+- Hook in first line — make them stop scrolling
+- 3-5 sentences max
+- Tell them to swipe
+- Soft CTA at end (save, follow, comment — pick the most relevant)
+- Max 5 relevant hashtags at the end
+- No emojis unless they feel natural
+- Sign off as — ${name||"Tav"}
+
+Return ONLY the caption text, nothing else.` }] });
+      const text = d.content?.find(b=>b.type==="text")?.text?.trim()||"";
+      if (text) { setCaption(text); setShowCaption(true); }
+    } catch(e) { console.error("Caption failed:", e); alert("Caption generation failed — try again."); }
+    setGeneratingCaption(false);
   };
 
   const rewrite = async () => {
@@ -2243,7 +2278,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 360px",gap:28,alignItems:"start"}}>
               <div style={{paddingBottom:140}}>
-                <button onClick={()=>setEditDrawerOpen(true)} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontSize:14,fontWeight:700,color:A.text,cursor:"pointer",marginBottom:8,textAlign:"center"}}>✏️ Edit Slide {active+1}</button>
+                <button onClick={()=>setEditDrawerOpen(true)} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontSize:14,fontWeight:700,color:A.text,cursor:"pointer",marginBottom:8,textAlign:"center"}}>Edit Slide {active+1}</button>
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
                   {slides.map((slide,i)=>(
                     <div key={i} data-slide-index={i}>
@@ -2259,6 +2294,19 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     {downloadingAll?<><Spin/>Downloading...</>:downloadDone?"✓ All Downloaded":`↓ Download All ${slides.length} (zip)`}
                   </button>
                 </div>
+                <button onClick={()=>setEditDrawerOpen(true)} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:14,color:A.text,cursor:"pointer",marginTop:8,textAlign:"center"}}>Edit Slide {active+1}</button>
+                <button onClick={generateCaption} disabled={generatingCaption} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:14,color:A.text,cursor:"pointer",marginTop:8,textAlign:"center"}}>
+                  {generatingCaption?"Writing caption...":"Generate Caption"}
+                </button>
+                {showCaption&&caption&&(
+                  <div className="mobile-edit-btn" style={{display:"none",marginTop:8,background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:16}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                      <label style={lbl}>Caption</label>
+                      <button onClick={()=>navigator.clipboard.writeText(caption)} style={{background:A.text,color:A.accentText,border:"none",borderRadius:7,padding:"4px 12px",fontSize:11,fontWeight:700,cursor:"pointer"}}>Copy</button>
+                    </div>
+                    <p style={{fontSize:13,lineHeight:1.7,color:A.text,whiteSpace:"pre-wrap",margin:0}}>{caption}</p>
+                  </div>
+                )}
               </div>
 
               <div className="desktop-edit-panel" style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -2300,6 +2348,22 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     </div>
                   </div>
 
+                </div>
+                <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18}}>
+                  <label style={lbl}>Caption Generator</label>
+                  <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>Ready-to-post caption based on your carousel.</p>
+                  <button onClick={generateCaption} disabled={generatingCaption} style={{width:"100%",background:generatingCaption?A.border:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"9px",borderRadius:8,fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:10,cursor:"pointer"}}>
+                    {generatingCaption?"Writing...":"Generate Caption"}
+                  </button>
+                  {showCaption&&caption&&(
+                    <div style={{background:A.bg,borderRadius:8,padding:12,marginBottom:10}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                        <label style={{...lbl,marginBottom:0}}>Caption</label>
+                        <button onClick={()=>navigator.clipboard.writeText(caption)} style={{background:A.text,color:A.accentText,border:"none",borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>Copy</button>
+                      </div>
+                      <p style={{fontSize:12,lineHeight:1.7,color:A.text,whiteSpace:"pre-wrap",margin:0}}>{caption}</p>
+                    </div>
+                  )}
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18}}>
                   <label style={lbl}>AI Rewrite</label>
