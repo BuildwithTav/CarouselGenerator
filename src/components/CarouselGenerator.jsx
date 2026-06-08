@@ -2283,11 +2283,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </button>
                 {showCaption&&caption&&(
                   <div className="mobile-edit-btn" style={{display:"none",marginTop:8,background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:16}}>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                      <label style={lbl}>Caption</label>
-                      <button onClick={()=>navigator.clipboard.writeText(caption)} style={{background:A.text,color:A.accentText,border:"none",borderRadius:7,padding:"4px 12px",fontSize:11,fontWeight:700,cursor:"pointer"}}>Copy</button>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                      <label style={{...lbl,marginBottom:0}}>Caption</label>
+                      <button onClick={()=>navigator.clipboard.writeText(caption)} style={{background:A.text,color:A.accentText,border:"none",borderRadius:7,padding:"6px 16px",fontSize:12,fontWeight:700,cursor:"pointer"}}>Copy</button>
                     </div>
-                    <p style={{fontSize:13,lineHeight:1.7,color:A.text,whiteSpace:"pre-wrap",margin:0}}>{caption}</p>
+                    <p style={{fontSize:14,lineHeight:1.7,color:A.text,whiteSpace:"pre-wrap",margin:0,width:"100%"}}>{caption}</p>
                   </div>
                 )}
               </div>
