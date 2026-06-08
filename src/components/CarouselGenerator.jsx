@@ -2282,7 +2282,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   {generatingCaption?"Writing caption...":"Generate Caption"}
                 </button>
                 {showCaption&&caption&&(
-                  <div className="mobile-edit-btn" style={{display:"none",marginTop:8,background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:16}}>
+                  <div className="mobile-edit-btn" style={{display:"none",marginTop:8,background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:16,flexDirection:"column"}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                       <label style={{...lbl,marginBottom:0}}>Caption</label>
                       <button onClick={()=>navigator.clipboard.writeText(caption)} style={{background:A.text,color:A.accentText,border:"none",borderRadius:7,padding:"6px 16px",fontSize:12,fontWeight:700,cursor:"pointer"}}>Copy</button>
