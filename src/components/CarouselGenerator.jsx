@@ -1366,7 +1366,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
   const MAIN_NAV = [["generate","Generate"],["quotes","Quotes"]];
 
   return (
-    <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
+    <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"Plus Jakarta Sans,system-ui,sans-serif"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
         @keyframes spin{to{transform:rotate(360deg)}}
@@ -1558,9 +1558,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   </div>
                 )}
               </div>
+              <div>
+                <label style={lbl}>Signature <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(leave blank to use brand name)</span></label>
+                <input value={quoteSignature} onChange={e=>setQuoteSignature(e.target.value)} placeholder={name||"Your name"} style={inp}/>
+              </div>
             </div>
-
-
 
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:18,marginBottom:16,display:"flex",flexDirection:"column",gap:16}}>
 
@@ -1584,9 +1586,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
               <div>
                 <label style={lbl}>Quote font</label>
-                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                  {FONTS.map(f=>(
-                    <button key={f.id} onClick={()=>setQuoteFont(f.id)} style={{background:quoteFont===f.id?A.text:"none",border:`1.5px solid ${quoteFont===f.id?A.text:A.border}`,borderRadius:20,padding:"4px 12px"}}>
+                <div style={{display:"flex",gap:5,flexWrap:"nowrap"}}>
+                  {[{id:"playfair",label:"Playfair",css:"Playfair Display"},{id:"montserrat",label:"Montserrat",css:"Montserrat"},{id:"poppins",label:"Poppins",css:"Poppins"},{id:"oswald",label:"Oswald",css:"Oswald"}].map(f=>(
+                    <button key={f.id} onClick={()=>setQuoteFont(f.id)} style={{background:quoteFont===f.id?A.text:"none",border:`1.5px solid ${quoteFont===f.id?A.text:A.border}`,borderRadius:20,padding:"4px 12px",flexShrink:0}}>
                       <span style={{fontFamily:`"${f.css}",serif`,fontSize:12,fontWeight:600,fontStyle:"italic",color:quoteFont===f.id?A.accentText:A.muted}}>{f.label}</span>
                     </button>
                   ))}
@@ -1594,19 +1596,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
               <div>
                 <label style={lbl}>Signature font</label>
-                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                  {FONTS.map(f=>(
-                    <button key={f.id} onClick={()=>setQuoteSigFont(f.id)} style={{background:quoteSigFont===f.id?A.text:"none",border:`1.5px solid ${quoteSigFont===f.id?A.text:A.border}`,borderRadius:20,padding:"4px 12px"}}>
+                <div style={{display:"flex",gap:5,flexWrap:"nowrap"}}>
+                  {[{id:"montserrat",label:"Plain",css:"Montserrat"},{id:"playfair",label:"Elegant",css:"Playfair Display"},{id:"dancing",label:"Script",css:"Dancing Script"}].map(f=>(
+                    <button key={f.id} onClick={()=>setQuoteSigFont(f.id)} style={{background:quoteSigFont===f.id?A.text:"none",border:`1.5px solid ${quoteSigFont===f.id?A.text:A.border}`,borderRadius:20,padding:"4px 12px",flexShrink:0}}>
                       <span style={{fontFamily:`"${f.css}",serif`,fontSize:12,fontWeight:600,color:quoteSigFont===f.id?A.accentText:A.muted}}>{f.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div>
-                <label style={lbl}>Signature <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(leave blank to use brand name)</span></label>
-                <input value={quoteSignature} onChange={e=>setQuoteSignature(e.target.value)} placeholder={name||"Your name"} style={inp}/>
-              </div>
               <div>
                 <label style={lbl}>Quote text colour</label>
                 <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
@@ -1646,11 +1644,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <label style={{...lbl,marginBottom:8}}>Live Preview</label>
               {(()=>{
               const isP = quoteFormat==="portrait";
-              const W=1080,H=isP?1920:1350,scale=280/W;
+              const W=1080,H=isP?1920:1350,pw=240,scale=pw/W;
               const html=buildQuoteHTML("Your quote will appear here", null, quoteTextColor);
               return (
                 <div style={{marginBottom:16,display:"flex",justifyContent:"center"}}>
-                  <div style={{width:240,height:Math.round(H*scale),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                  <div style={{width:pw,height:Math.round(H*scale),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
                     <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
                   </div>
                 </div>
@@ -2436,7 +2434,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
       <footer style={{borderTop:`1px solid ${A.border}`,padding:"14px 32px",textAlign:"center",marginTop:60}}>
         <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,fontWeight:700,textDecoration:"none",fontSize:12}}>BuildWithTav</a>
-        <span style={{color:A.muted,fontSize:12}}> · buildwithtav.co</span>
+        <span style={{color:A.muted,fontSize:12}}> · </span>
+        <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:A.muted,fontSize:12,textDecoration:"none"}}>buildwithtav.co</a>
       </footer>
     </div>
   );
