@@ -891,25 +891,8 @@ Return ONLY valid JSON, nothing else.` }
       const btObj = BUSINESS_TYPES.find(b=>b.id===businessType);
       const btLabel = businessType==="other"?(otherType||"brand"):btObj?.label||"Digital Marketer";
       const audienceDesc = audienceType==="peers" ? `other ${btLabel.toLowerCase()}s` : (btObj?.audience||"your target audience");
-      const slidesSummary = slides.map((s,i)=>`Slide ${i+1}: ${s.headline}`).join("
-");
-      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:400, messages:[{ role:"user", content:`Write an Instagram/LinkedIn caption for a carousel post about "${lastTopic}" for a ${btLabel} targeting ${audienceDesc}.
-
-The carousel covers:
-${slidesSummary}
-
-Voice: ${voiceProfile||"Direct, honest, no hype. Short punchy sentences."}
-
-Rules:
-- Hook in first line — make them stop scrolling
-- 3-5 sentences max
-- Tell them to swipe
-- Soft CTA at end (save, follow, comment — pick the most relevant)
-- Max 5 relevant hashtags at the end
-- No emojis unless they feel natural
-- Sign off as — ${name||"Tav"}
-
-Return ONLY the caption text, nothing else.` }] });
+      const slidesSummary = slides.map((s,i)=>`Slide ${i+1}: ${s.headline}`).join("\n");
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:400, messages:[{ role:"user", content:`Write an Instagram/LinkedIn caption for a carousel post about "${lastTopic}" for a ${btLabel} targeting ${audienceDesc}.\n\nThe carousel covers:\n${slidesSummary}\n\nVoice: ${voiceProfile||"Direct, honest, no hype. Short punchy sentences."}\n\nRules:\n- Hook in first line — make them stop scrolling\n- 3-5 sentences max\n- Tell them to swipe\n- Soft CTA at end (save, follow, comment — pick the most relevant)\n- Max 5 relevant hashtags at the end\n- No emojis unless they feel natural\n- Sign off as — ${name||"Tav"}\n\nReturn ONLY the caption text, nothing else.` }] });
       const text = d.content?.find(b=>b.type==="text")?.text?.trim()||"";
       if (text) { setCaption(text); setShowCaption(true); }
     } catch(e) { console.error("Caption failed:", e); alert("Caption generation failed — try again."); }
