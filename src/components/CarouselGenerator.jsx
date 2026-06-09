@@ -407,13 +407,13 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   <div class="bk tl"></div><div class="bk tr"></div>
   <div class="bk bl"></div><div class="bk br"></div>
   ${C.dark||hasBg||bgMode==="colour"?'<div class="fade"></div>':""}
-  ${isCover ? "" : `<div class="badge">
+  ${isCover ? "" : profileUrl ? `<div class="badge">
     <div class="av">${avHtml}</div>
     <div>
       <div class="bn">${esc(name||"Your Brand")}${blueTick?` <span class="tick">✓</span>`:""}</div>
       <div class="bh">${esc(handle||"@yourhandle")}</div>
     </div>
-  </div>`}
+  </div>` : ""}
   ${showNums===true?`<div class="wm">${String(idx+1).padStart(2,"0")}</div><div class="cnt">${idx+1} / ${total}</div>`:""}
   ${layoutHTML()}
   ${isCover?'':`<div class="deco"><div class="deco-line"></div><div class="deco-diamond"></div><div class="deco-line"></div></div>`}
@@ -979,7 +979,6 @@ Return ONLY valid JSON, nothing else.` }
 
   const generateCaption = async () => {
     if (!canGenerate()) { setUpgradePrompt(true); return; }
-    if (currentUser?.plan === "free") { setUpgradePrompt(true); return; }
     setGeneratingCaption(true);
     setShowCaption(false);
     try {
@@ -1152,7 +1151,6 @@ Return ONLY valid JSON, nothing else.` }
 
   const generateQuotes = async () => {
     if (!canGenerate()) { setUpgradePrompt(true); return; }
-    if (currentUser?.plan === "free") { setUpgradePrompt(true); return; }
     setGeneratingQuotes(true);
     const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
     const emptyCount = quoteInputs.filter(q=>!q.trim()).length;
