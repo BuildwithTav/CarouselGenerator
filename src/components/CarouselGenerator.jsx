@@ -1886,7 +1886,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <label style={{...lbl,marginBottom:0}}>Your quotes</label>
                 <div style={{display:"flex",gap:6}}>
                   <button onClick={()=>setQuoteInputs(["","",""])} style={{background:"none",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 10px",borderRadius:7,fontSize:11,fontWeight:600}}>Clear all</button>
-                  <button onClick={generateQuotes} disabled={generatingQuotes||quoteInputs.every(q=>q.trim())} style={{background:quoteInputs.every(q=>q.trim())?A.border:A.surface,border:`1.5px solid ${A.border}`,color:quoteInputs.every(q=>q.trim())?A.muted:A.text,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
+                  <button onClick={generateQuotes} disabled={generatingQuotes} style={{background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
                     {generatingQuotes?<><Spin c={A.text}/>Generating...</>:"✦ Generate"}
                   </button>
                 </div>
