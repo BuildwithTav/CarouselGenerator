@@ -1150,7 +1150,6 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const generateQuotes = async () => {
-    if (!canGenerate()) { setUpgradePrompt(true); return; }
     setGeneratingQuotes(true);
     const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
     const emptyCount = quoteInputs.filter(q=>!q.trim()).length;
