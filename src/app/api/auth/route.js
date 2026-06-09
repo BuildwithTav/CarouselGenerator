@@ -40,7 +40,7 @@ export async function POST(req) {
           email: user.email,
           plan: "free",
           credits_used: 0,
-          credits_limit: 10,
+          credits_limit: 6,
           downloads_used: 0
         });
       }
