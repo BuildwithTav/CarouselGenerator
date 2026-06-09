@@ -682,6 +682,7 @@ export default function App() {
   const [fontId, setFontId] = useState(S?.fontId||"montserrat");
   const [headlineStyle, setHeadlineStyle] = useState(S?.headlineStyle||"bold");
   const [showNums, setShowNums] = useState(S?.showNums??false);
+  const [showAllUpdates, setShowAllUpdates] = useState(false);
   const [bgMode, setBgMode] = useState(S?.bgMode||"dark");
   const [templateBgUrl, setTemplateBgUrl] = useState(S?.templateBgUrl||null);
   const [templatePhotos, setTemplatePhotos] = useState(S?.templatePhotos||[]);
@@ -2608,21 +2609,26 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       </div>
 
         {nav==="help"&&(
-          <div style={{animation:"fadeUp 0.3s ease",maxWidth:560,margin:"0 auto"}}>
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:960,margin:"0 auto"}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Help & Support</h2>
 
-            {/* LIVE UPDATES */}
-            <div style={{background:A.surface,border:`1.5px solid ${GOLD}44`,borderRadius:12,padding:24,marginBottom:16}}>
-              <label style={{...lbl,color:GOLD}}>⚡ Updates</label>
-              <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:12}}>
+            {/* LIVE UPDATES — full width */}
+            <div style={{background:A.surface,border:`1.5px solid ${GOLD}44`,borderRadius:12,padding:24,marginBottom:20}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                <label style={{...lbl,color:GOLD,marginBottom:0}}>⚡ Updates</label>
+                <button onClick={()=>setShowAllUpdates(v=>!v)} style={{background:"none",border:"none",color:GOLD,fontSize:12,fontWeight:700,cursor:"pointer"}}>{showAllUpdates?"Show less":"View all"}</button>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:12}}>
                 {[
-                  { date:"09 Jun 2026", tag:"Update", msg:"Brand settings currently save to this device only. Cross-device sync is coming soon — logging in on a new device will require setting up your brand again for now." },
+                  { date:"09 Jun 2026", tag:"Update", msg:"Brand settings currently save to this device only. Cross-device sync is coming soon." },
                   { date:"09 Jun 2026", tag:"New", msg:"Monetisation live — Free, Starter and Pro plans now available. 6 credits per month on free tier." },
                   { date:"08 Jun 2026", tag:"New", msg:"OTP email login added. Sign in with your email and a 6 digit code — no password needed." },
-                ].map((u,i)=>(
-                  <div key={i} style={{borderBottom:i<2?`1px solid ${A.border}`:"none",paddingBottom:i<2?12:0}}>
+                  { date:"07 Jun 2026", tag:"Fix", msg:"Safari download issue resolved. Downloads now work across all browsers." },
+                  { date:"06 Jun 2026", tag:"New", msg:"Caption generator added — write ready-to-post captions in your voice with hashtags." },
+                ].filter((_,i)=>showAllUpdates||i<3).map((u,i,arr)=>(
+                  <div key={i} style={{borderBottom:i<arr.length-1?`1px solid ${A.border}`:"none",paddingBottom:i<arr.length-1?12:0}}>
                     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                      <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",background:u.tag==="New"?GOLD:u.tag==="Fix"?"#c0392b":A.border,color:u.tag==="New"?"#000":u.tag==="Fix"?"#fff":A.muted,borderRadius:4}}>{u.tag}</span>
+                      <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",background:u.tag==="New"?GOLD:u.tag==="Fix"?"#2ecc71":A.border,color:u.tag==="New"?"#000":u.tag==="Fix"?"#000":A.muted,borderRadius:4}}>{u.tag}</span>
                       <span style={{fontSize:11,color:A.muted}}>{u.date}</span>
                     </div>
                     <p style={{fontSize:13,color:A.text,margin:0,lineHeight:1.6}}>{u.msg}</p>
@@ -2631,65 +2637,76 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
             </div>
 
-            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24,marginBottom:16}}>
-              <p style={{fontSize:14,lineHeight:1.8,color:A.text,margin:"0 0 12px"}}>
-                Carousel Studio was built to make quality content creation faster and more consistent.
-              </p>
-              <p style={{fontSize:14,fontWeight:700,color:A.text,margin:0}}>— Tav</p>
-            </div>
+            {/* TWO COLUMN LAYOUT */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}} className="help-grid">
+              <style>{`.help-grid { @media (max-width: 768px) { grid-template-columns: 1fr !important; } }`}</style>
 
-            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24,marginBottom:16}}>
-              <label style={lbl}>Find me here</label>
-              <div style={{display:"flex",flexDirection:"column",gap:10,marginTop:8}}>
-                {[
-                  ["Website","www.buildwithtav.co","https://www.buildwithtav.co"],
-                  ["Instagram","@buildwithtav","https://www.instagram.com/buildwithtav"],
-                  ["TikTok","@buildwithtav","https://www.tiktok.com/@buildwithtav"],
-                  ["YouTube","@buildwithtav","https://www.youtube.com/@buildwithtav"],
-                ].map(([platform,handle,url])=>(
-                  <a key={platform} href={url} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:A.bg,borderRadius:9,border:`1.5px solid ${A.border}`,textDecoration:"none"}}>
-                    <span style={{fontWeight:700,fontSize:13,color:A.text}}>{platform}</span>
-                    <span style={{color:GOLD,fontSize:12,fontWeight:700}}>{handle}</span>
-                  </a>
-                ))}
-                <a href="mailto:tav@buildwithtav.co" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:A.bg,borderRadius:9,border:`1.5px solid ${A.border}`,textDecoration:"none"}}>
-                  <span style={{fontWeight:700,fontSize:13,color:A.text}}>Email</span>
-                  <span style={{color:GOLD,fontSize:12,fontWeight:700}}>tav@buildwithtav.co</span>
-                </a>
-              </div>
-            </div>
+              {/* LEFT COLUMN */}
+              <div style={{display:"flex",flexDirection:"column",gap:16}}>
+                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24}}>
+                  <p style={{fontSize:14,lineHeight:1.8,color:A.text,margin:"0 0 12px"}}>
+                    Carousel Studio was built to make quality content creation faster and more consistent.
+                  </p>
+                  <p style={{fontSize:14,fontWeight:700,color:A.text,margin:0}}>— Tav</p>
+                </div>
 
-            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24,marginBottom:16}}>
-              <label style={lbl}>What people are saying</label>
-              <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:10}}>
-                {[
-                  ["Sarah M.","Saves me at least 2 hours per carousel. The content quality is genuinely better than what I was writing myself.",5],
-                  ["James K.","Finally a tool that understands what actually works on Instagram. Generated 6 slides in under a minute that I actually posted.",5],
-                  ["Priya D.","The variety in topics and styles keeps surprising me. Nothing I've generated has felt generic.",4],
-                ].map(([name,comment,stars])=>(
-                  <div key={name} style={{background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"14px 16px"}}>
-                    <div style={{color:GOLD,fontSize:14,marginBottom:4}}>{"★".repeat(stars)+"☆".repeat(5-stars)}</div>
-                    <p style={{fontSize:13,lineHeight:1.6,color:A.text,margin:"0 0 6px"}}>"{comment}"</p>
-                    <span style={{fontSize:11,fontWeight:700,color:A.muted}}>— {name}</span>
+                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24}}>
+                  <label style={lbl}>Find me here</label>
+                  <div style={{display:"flex",flexDirection:"column",gap:10,marginTop:8}}>
+                    {[
+                      ["Website","www.buildwithtav.co","https://www.buildwithtav.co"],
+                      ["Instagram","@buildwithtav","https://www.instagram.com/buildwithtav"],
+                      ["TikTok","@buildwithtav","https://www.tiktok.com/@buildwithtav"],
+                      ["YouTube","@buildwithtav","https://www.youtube.com/@buildwithtav"],
+                    ].map(([platform,handle,url])=>(
+                      <a key={platform} href={url} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:A.bg,borderRadius:9,border:`1.5px solid ${A.border}`,textDecoration:"none"}}>
+                        <span style={{fontWeight:700,fontSize:13,color:A.text}}>{platform}</span>
+                        <span style={{color:GOLD,fontSize:12,fontWeight:700}}>{handle}</span>
+                      </a>
+                    ))}
+                    <a href="mailto:tav@buildwithtav.co" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:A.bg,borderRadius:9,border:`1.5px solid ${A.border}`,textDecoration:"none"}}>
+                      <span style={{fontWeight:700,fontSize:13,color:A.text}}>Email</span>
+                      <span style={{color:GOLD,fontSize:12,fontWeight:700}}>tav@buildwithtav.co</span>
+                    </a>
                   </div>
-                ))}
+                </div>
+
+                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24}}>
+                  <label style={lbl}>Found a bug?</label>
+                  <p style={{fontSize:13,lineHeight:1.7,color:A.muted,margin:"8px 0 14px"}}>
+                    Email me a screenshot and description at <a href="mailto:tav@buildwithtav.co" style={{color:GOLD,fontWeight:700,textDecoration:"none"}}>tav@buildwithtav.co</a> — I read every one.
+                  </p>
+                  <a href="mailto:tav@buildwithtav.co?subject=Carousel Studio Bug Report" style={{display:"block",textAlign:"center",padding:"11px",background:A.text,color:A.accentText,borderRadius:9,fontWeight:700,fontSize:13,textDecoration:"none"}}>
+                    Report a Bug
+                  </a>
+                </div>
               </div>
-            </div>
 
-            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24,marginBottom:16}}>
-              <label style={lbl}>Share your feedback</label>
-              <p style={{fontSize:13,lineHeight:1.7,color:A.muted,margin:"8px 0 14px"}}>How is Carousel Studio working for you? Your feedback helps improve it — and if you're happy, it means a lot to hear it.</p>
-              <FeedbackForm A={A} inp={inp} GOLD={GOLD}/>
-            </div>
+              {/* RIGHT COLUMN */}
+              <div style={{display:"flex",flexDirection:"column",gap:16}}>
+                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24}}>
+                  <label style={lbl}>What people are saying</label>
+                  <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:10}}>
+                    {[
+                      ["Sarah M.","Saves me at least 2 hours per carousel. The content quality is genuinely better than what I was writing myself.",5],
+                      ["James K.","Finally a tool that understands what actually works on Instagram. Generated 6 slides in under a minute that I actually posted.",5],
+                      ["Priya D.","The variety in topics and styles keeps surprising me. Nothing I've generated has felt generic.",4],
+                    ].map(([name,comment,stars])=>(
+                      <div key={name} style={{background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"14px 16px"}}>
+                        <div style={{color:GOLD,fontSize:14,marginBottom:4}}>{"★".repeat(stars)+"☆".repeat(5-stars)}</div>
+                        <p style={{fontSize:13,lineHeight:1.6,color:A.text,margin:"0 0 6px"}}>"{comment}"</p>
+                        <span style={{fontSize:11,fontWeight:700,color:A.muted}}>— {name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24}}>
-              <label style={lbl}>Found a bug?</label>
-              <p style={{fontSize:13,lineHeight:1.7,color:A.muted,margin:"8px 0 14px"}}>
-                Email me a screenshot and description at <a href="mailto:tav@buildwithtav.co" style={{color:GOLD,fontWeight:700,textDecoration:"none"}}>tav@buildwithtav.co</a> — I read every one and reply when it is fixed so you can get back to it.
-              </p>
-              <a href="mailto:tav@buildwithtav.co?subject=Carousel Studio Bug Report" style={{display:"block",textAlign:"center",padding:"11px",background:A.text,color:A.accentText,borderRadius:9,fontWeight:700,fontSize:13,textDecoration:"none"}}>
-                Report a Bug
-              </a>
+                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24}}>
+                  <label style={lbl}>Share your feedback</label>
+                  <p style={{fontSize:13,lineHeight:1.7,color:A.muted,margin:"8px 0 14px"}}>How is Carousel Studio working for you? Your feedback helps improve it.</p>
+                  <FeedbackForm A={A} inp={inp} GOLD={GOLD}/>
+                </div>
+              </div>
             </div>
           </div>
         )}
