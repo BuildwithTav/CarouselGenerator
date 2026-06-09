@@ -1095,6 +1095,13 @@ Return ONLY valid JSON, nothing else.` }
     }
   },[]);
 
+  // Refresh user data every 60 seconds so credit/plan changes show without signing out
+  useEffect(()=>{
+    if (!currentUser) return;
+    const interval = setInterval(()=>{ refreshUser(); }, 60000);
+    return () => clearInterval(interval);
+  }, [currentUser?.email]);
+
   const isMobileDevice = () => true;
 
   const slideHasCustomImage = (opts, isCover) => {
@@ -2459,11 +2466,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>Applies to all slides. Can be adjusted per-slide in the edit panel after generation.</p>
                 <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
               </div>
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
-                <label style={lbl}>Background Gradient — {overlayDark}%</label>
-                <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>Applies to all slides. Adjust per-slide after generation.</p>
-                <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
-              </div>
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div><div style={{fontWeight:600,fontSize:13}}>Slide numbers</div><div style={{color:A.muted,fontSize:12}}>Watermark number on each slide</div></div>
                 {tog(showNums,setShowNums)}
@@ -2608,6 +2610,26 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         {nav==="help"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:560,margin:"0 auto"}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Help & Support</h2>
+
+            {/* LIVE UPDATES */}
+            <div style={{background:A.surface,border:`1.5px solid ${GOLD}44`,borderRadius:12,padding:24,marginBottom:16}}>
+              <label style={{...lbl,color:GOLD}}>⚡ Updates</label>
+              <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:12}}>
+                {[
+                  { date:"09 Jun 2026", tag:"Update", msg:"Brand settings currently save to this device only. Cross-device sync is coming soon — logging in on a new device will require setting up your brand again for now." },
+                  { date:"09 Jun 2026", tag:"New", msg:"Monetisation live — Free, Starter and Pro plans now available. 6 credits per month on free tier." },
+                  { date:"08 Jun 2026", tag:"New", msg:"OTP email login added. Sign in with your email and a 6 digit code — no password needed." },
+                ].map((u,i)=>(
+                  <div key={i} style={{borderBottom:i<2?`1px solid ${A.border}`:"none",paddingBottom:i<2?12:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                      <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",background:u.tag==="New"?GOLD:u.tag==="Fix"?"#c0392b":A.border,color:u.tag==="New"?"#000":u.tag==="Fix"?"#fff":A.muted,borderRadius:4}}>{u.tag}</span>
+                      <span style={{fontSize:11,color:A.muted}}>{u.date}</span>
+                    </div>
+                    <p style={{fontSize:13,color:A.text,margin:0,lineHeight:1.6}}>{u.msg}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24,marginBottom:16}}>
               <p style={{fontSize:14,lineHeight:1.8,color:A.text,margin:"0 0 12px"}}>
