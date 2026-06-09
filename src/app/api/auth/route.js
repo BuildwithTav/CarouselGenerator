@@ -1058,7 +1058,7 @@ Return ONLY valid JSON, nothing else.` }
     }
   },[]);
 
-  const isMobileDevice = () => true;
+  const isMobileDevice = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   const slideHasCustomImage = (opts, isCover) => {
     // Cover photo only applies to slide 1 (isCover)
