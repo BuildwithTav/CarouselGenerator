@@ -1615,7 +1615,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <button onClick={sendOtp} disabled={authSubmitting} style={{width:"100%",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:15,border:"none"}}>
                   {authSubmitting?<span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><Spin/>Sending...</span>:"Send Code"}
                 </button>
-                <p style={{fontSize:11,color:A.muted,textAlign:"center",margin:"14px 0 0",lineHeight:1.6}}>By signing in you agree to our <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,textDecoration:"none"}}>Terms of Service</a>.</p>
+                <p style={{fontSize:11,color:A.muted,textAlign:"center",margin:"14px 0 0",lineHeight:1.6}}>By signing in you agree to our <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:GOLD,textDecoration:"none"}}>Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:GOLD,textDecoration:"none"}}>Privacy Policy</a>.</p>
               </>
             ) : (
               <>
@@ -2777,7 +2777,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <>
                 <div style={{background:"linear-gradient(135deg,#1a1a1a,#2a2a2a)",border:`1.5px solid ${GOLD}`,borderRadius:14,padding:24,marginBottom:16}}>
                   <label style={{...lbl,color:GOLD}}>Upgrade to Pro</label>
-                  <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"8px 0 16px",lineHeight:1.6}}>Unlimited credits, affiliate programme access and priority support.</p>
+                  <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"8px 0 4px",lineHeight:1.6}}>Unlimited credits. No counting. No running out.</p>
+                  <p style={{fontSize:12,color:"rgba(255,255,255,0.4)",margin:"0 0 16px",lineHeight:1.6}}>Plus affiliate access — refer 4 subscribers and Pro pays for itself.</p>
                   <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"13px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:14,border:"none"}}>
                     Upgrade to Pro — £59/month
                   </button>
@@ -2803,7 +2804,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
             )}
 
-            <p style={{fontSize:11,color:A.muted,textAlign:"center",margin:"0 0 16px",lineHeight:1.6}}>Secure payment via Stripe. Questions? <a href="mailto:tav@buildwithtav.co" style={{color:GOLD,textDecoration:"none"}}>tav@buildwithtav.co</a></p>
+            <p style={{fontSize:11,color:A.muted,textAlign:"center",margin:"0 0 16px",lineHeight:1.6}}>Secure payment via Stripe. Questions? <a href="mailto:tav@buildwithtav.co" style={{color:GOLD,textDecoration:"none"}}>tav@buildwithtav.co</a> · <a href="/terms" target="_blank" style={{color:GOLD,textDecoration:"none"}}>Terms</a> · <a href="/privacy" target="_blank" style={{color:GOLD,textDecoration:"none"}}>Privacy</a></p>
             <button onClick={logout} style={{width:"100%",padding:"13px",background:"none",border:`1.5px solid ${A.border}`,color:A.muted,borderRadius:10,fontWeight:600,fontSize:14}}>
               Sign out
             </button>
