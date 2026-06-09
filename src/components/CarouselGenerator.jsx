@@ -614,7 +614,7 @@ export default function App() {
   const canGenerate = () => {
     if (!currentUser) return false;
     if (currentUser.plan === "pro" || currentUser.is_admin) return true;
-    return (currentUser.credits_used||0) < (currentUser.credits_limit||3);
+    return (currentUser.credits_used||0) < (currentUser.credits_limit||10);
   };
 
   const handleUpgrade = async (priceId) => {
@@ -1150,7 +1150,7 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const generateQuotes = async () => {
-    if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (!canGenerate()) { alert("DEBUG: canGenerate false. credits_used=" + currentUser?.credits_used + " credits_limit=" + currentUser?.credits_limit + " plan=" + currentUser?.plan); setUpgradePrompt(true); return; }
     setGeneratingQuotes(true);
     const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
     const emptyCount = quoteInputs.filter(q=>!q.trim()).length;
