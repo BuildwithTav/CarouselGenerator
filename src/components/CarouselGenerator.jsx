@@ -598,7 +598,14 @@ export default function App() {
       const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"verify-otp", email: authEmail.trim().toLowerCase(), token: otpCode.trim() }) });
       const d = await r.json();
       if (d.error) { setAuthError("Invalid code — check your email and try again."); }
-      else { setToken(d.access_token); setCurrentUser(d.user||{ email: d.email, plan:"free", credits_used:0, credits_limit:10 }); setShowAuthModal(false); }
+      else { 
+        // Clear any stale localStorage data from previous user
+        try { 
+          const keysToKeep = ["cs_token"];
+          Object.keys(localStorage).forEach(k => { if(!keysToKeep.includes(k)) localStorage.removeItem(k); });
+        } catch {}
+        setToken(d.access_token); setCurrentUser(d.user||{ email: d.email, plan:"free", credits_used:0, credits_limit:10 }); setShowAuthModal(false); 
+      }
     } catch { setAuthError("Something went wrong — try again."); }
     setAuthSubmitting(false);
   };
@@ -874,6 +881,7 @@ Return ONLY valid JSON array:
   const generate = async (topicOverride) => {
     const t = topicOverride || topic;
     if (!t.trim()) { setErr("Add a topic first."); return; }
+    if (!canGenerate()) { setUpgradePrompt(true); return; }
     setErr(""); setAngle(""); setView("generating"); setLastTopic(t);
 
     try {
@@ -977,6 +985,7 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const generateCaption = async () => {
+    if (!canGenerate()) { setUpgradePrompt(true); return; }
     setGeneratingCaption(true);
     setShowCaption(false);
     try {
@@ -993,6 +1002,7 @@ Return ONLY valid JSON, nothing else.` }
 
   const rewrite = async () => {
     if (!rewritePrompt.trim()) return;
+    if (!canGenerate()) { setUpgradePrompt(true); return; }
     setRewriting(true);
     try {
       const btObj3 = BUSINESS_TYPES.find(b=>b.id===businessType);
@@ -1029,6 +1039,9 @@ Return ONLY valid JSON, nothing else.` }
   }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays,gradientMode]);
 
   const downloadOne = async (i) => {
+    if (currentUser?.plan === "free") {
+      if ((currentUser?.downloads_used||0) >= 1) { setUpgradePrompt(true); return; }
+    }
     setDownloading(true);
     try {
       await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`, i===0);
@@ -1101,6 +1114,9 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const downloadAll = async () => {
+    if (currentUser?.plan === "free") {
+      if ((currentUser?.downloads_used||0) >= 1) { setUpgradePrompt(true); return; }
+    }
     setDownloadingAll(true);
     const mobile = isMobileDevice();
     try {
@@ -1141,7 +1157,7 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const generateQuotes = async () => {
-    alert("clicked");
+    if (!canGenerate()) { setUpgradePrompt(true); return; }
     setGeneratingQuotes(true);
     const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
     const emptyCount = quoteInputs.filter(q=>!q.trim()).length;
