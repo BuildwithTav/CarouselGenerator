@@ -874,7 +874,6 @@ Return ONLY valid JSON array:
   const generate = async (topicOverride) => {
     const t = topicOverride || topic;
     if (!t.trim()) { setErr("Add a topic first."); return; }
-    if (!canGenerate()) { setUpgradePrompt(true); return; }
     setErr(""); setAngle(""); setView("generating"); setLastTopic(t);
 
     try {
@@ -978,7 +977,6 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const generateCaption = async () => {
-    if (!canGenerate()) { setUpgradePrompt(true); return; }
     setGeneratingCaption(true);
     setShowCaption(false);
     try {
@@ -995,7 +993,6 @@ Return ONLY valid JSON, nothing else.` }
 
   const rewrite = async () => {
     if (!rewritePrompt.trim()) return;
-    if (!canGenerate()) { setUpgradePrompt(true); return; }
     setRewriting(true);
     try {
       const btObj3 = BUSINESS_TYPES.find(b=>b.id===businessType);
@@ -1032,9 +1029,6 @@ Return ONLY valid JSON, nothing else.` }
   }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays,gradientMode]);
 
   const downloadOne = async (i) => {
-    if (currentUser?.plan === "free") {
-      if ((currentUser?.downloads_used||0) >= 1) { setUpgradePrompt(true); return; }
-    }
     setDownloading(true);
     try {
       await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`, i===0);
@@ -1107,9 +1101,6 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const downloadAll = async () => {
-    if (currentUser?.plan === "free") {
-      if ((currentUser?.downloads_used||0) >= 1) { setUpgradePrompt(true); return; }
-    }
     setDownloadingAll(true);
     const mobile = isMobileDevice();
     try {
