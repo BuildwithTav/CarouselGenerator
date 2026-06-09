@@ -2713,8 +2713,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     {currentUser?.plan==="pro"
                       ? `${currentUser?.credits_used||0} credits used this month (unlimited)`
                       : currentUser?.plan==="free"
-                      ? `${creditsRemaining()} of ${currentUser?.credits_limit||6} trial credits remaining`
-                      : `${creditsRemaining()} of ${currentUser?.credits_limit||30} credits remaining this month`}
+                      ? `${creditsRemaining()} trial credits remaining`
+                      : `${creditsRemaining()} credits remaining this month`}
                   </div>
                 </div>
                 <span style={{fontSize:11,fontWeight:700,padding:"4px 12px",background:currentUser?.plan==="pro"?GOLD:A.text,color:currentUser?.plan==="pro"?"#000":A.accentText,borderRadius:20}}>{currentUser?.plan?.toUpperCase()}</span>
