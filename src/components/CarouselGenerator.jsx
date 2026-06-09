@@ -1033,11 +1033,17 @@ Return ONLY valid JSON, nothing else.` }
   }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays,gradientMode]);
 
   const downloadOne = async (i) => {
-    if (currentUser?.plan === "free") { setUpgradePrompt(true); return; }
+    if (currentUser?.plan === "free") {
+      if ((currentUser?.downloads_used||0) >= 1) { setUpgradePrompt(true); return; }
+    }
     setDownloading(true);
     try {
       await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`, i===0);
       setDownloadDone(true); setTimeout(()=>setDownloadDone(false), 2000);
+      if (currentUser?.plan === "free") {
+        setCurrentUser(u => u ? ({...u, downloads_used: (u.downloads_used||0)+1}) : u);
+        await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email }) });
+      }
     } catch(e) { console.error(e); alert("Download failed — try again."); }
     setDownloading(false);
   };
@@ -1102,7 +1108,9 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const downloadAll = async () => {
-    if (currentUser?.plan === "free") { setUpgradePrompt(true); return; }
+    if (currentUser?.plan === "free") {
+      if ((currentUser?.downloads_used||0) >= 1) { setUpgradePrompt(true); return; }
+    }
     setDownloadingAll(true);
     const mobile = isMobileDevice();
     try {
@@ -1599,7 +1607,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </button>
               )}
               <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{padding:"14px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:15,border:"none",textAlign:"center"}}>
-                Pro — £79/month · Unlimited + Affiliate Access
+                Pro — £59/month · Unlimited + Affiliate Access
               </button>
               <button onClick={()=>setUpgradePrompt(false)} style={{padding:"10px",background:"none",color:A.muted,border:"none",fontSize:13}}>Maybe later</button>
             </div>
