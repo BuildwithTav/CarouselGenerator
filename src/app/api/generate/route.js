@@ -27,7 +27,7 @@ export async function POST(req) {
       const isPro = user.plan === "pro";
       const isUnlimited = isAdmin || isPro;
 
-      if (isPro && !isAdmin && user.credits_used >= 500) {
+      if (isPro && !isAdmin && user.credits_used >= 300) {
         return Response.json({ error: "fair_use_limit" }, { status: 429 });
       }
 
