@@ -226,7 +226,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     .cnt { position:absolute; top:52px; right:60px; z-index:10;
       font-size:14px; font-weight:700; color:${C.accent}88; font-family:'${bodyFont}',sans-serif; }
     .site { position:absolute; bottom:48px; left:0; right:0; text-align:center; z-index:10;
-      font-size:26px; color:${C.accent}88; font-family:'${bodyFont}',sans-serif; }
+      font-size:22px; color:${C.accent}88; font-family:'${bodyFont}',sans-serif; letter-spacing:1px; }
     .swipe { position:absolute; bottom:88px; left:0; right:0; z-index:10; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; }
     .swipe-dots { display:flex; align-items:center; justify-content:center; gap:6px; }
     .swipe-dot { width:6px; height:6px; border-radius:50%; background:${C.accent}44; }
@@ -453,11 +453,6 @@ function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover, pre
   return (
     <div onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#0A0A0A":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:previewW, height:previewH, flexShrink:0 }}>
       <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin allow-scripts" title={`slide-${idx+1}`}/>
-      {showWatermark&&(
-        <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"6px 10px",background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
-          <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.9)",letterSpacing:1,textTransform:"uppercase"}}>studio.buildwithtav.co</span>
-        </div>
-      )}
     </div>
   );
 }
@@ -615,13 +610,15 @@ export default function App() {
   const creditsRemaining = () => {
     if (!currentUser) return 0;
     if (currentUser.plan === "pro" || currentUser.is_admin) return "∞";
-    return Math.max(0, (currentUser.credits_limit||6) - (currentUser.credits_used||0));
+    const limit = (currentUser.credits_limit||6) + (currentUser.bonus_credits||0);
+    return Math.max(0, limit - (currentUser.credits_used||0));
   };
 
   const canGenerate = () => {
     if (!currentUser) return false;
     if (currentUser.plan === "pro" || currentUser.is_admin) return true;
-    return (currentUser.credits_used||0) < (currentUser.credits_limit||6);
+    const limit = (currentUser.credits_limit||6) + (currentUser.bonus_credits||0);
+    return (currentUser.credits_used||0) < limit;
   };
 
   const isLastCredit = () => {
@@ -629,12 +626,7 @@ export default function App() {
     return creditsRemaining() === 1;
   };
 
-  const confirmLastCredit = (action) => {
-    if (isLastCredit()) {
-      if (!window.confirm("You have 1 credit left. Use it on this?")) return false;
-    }
-    return true;
-  };
+  const confirmLastCredit = () => true;
 
   const checkMonthlyReset = async () => {
     if (!currentUser || currentUser.plan === "pro" || currentUser.is_admin) return;
@@ -1063,10 +1055,10 @@ Return ONLY valid JSON, nothing else.` }
     overlayDark: slideOverlays[slideIdx]??overlayDark,
     coverImageUrl: activeCoverPhoto, coverPosition, badgeArea,
     profileUrl, name, handle, blueTick,
-    websiteUrl: showWebsite?website:"",
+    websiteUrl: currentUser?.plan==="free" ? "studio.buildwithtav.co" : (showWebsite?website:""),
     showNums, ratio, accentColor, bgColour,
     coverImgPos, templateImgPos, gradientMode,
-  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays,gradientMode]);
+  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays,gradientMode,currentUser]);
 
   const downloadOne = async (i) => {
     if (!canGenerate()) { setUpgradePrompt(true); return; }
@@ -1689,8 +1681,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           {/* Credit counter */}
           {currentUser&&(
             <div style={{display:"flex",alignItems:"center",gap:6,padding:"0 10px",borderLeft:`1px solid ${A.border}`,marginLeft:4}}>
-              <span style={{fontSize:11,fontWeight:700,color:currentUser.plan==="free"&&creditsRemaining()===0?"#c0392b":currentUser.plan==="pro"?GOLD:A.muted}}>
-                {currentUser.plan==="pro"?"Pro ∞":currentUser.plan==="starter"?`${creditsRemaining()} left`:`${creditsRemaining()} free`}
+              <span style={{fontSize:11,fontWeight:700,color:currentUser.plan==="free"&&creditsRemaining()===0?"#c0392b":currentUser.plan==="free"&&creditsRemaining()===1?"#e67e22":currentUser.plan==="pro"?GOLD:A.muted}}>
+                {currentUser.plan==="pro"?"Pro ∞":currentUser.plan==="starter"?`${creditsRemaining()} left`:creditsRemaining()===1?"1 credit left ⚠️":`${creditsRemaining()} free`}
               </span>
               {currentUser.plan!=="pro"&&<button onClick={()=>setUpgradePrompt(true)} style={{fontSize:10,fontWeight:700,padding:"3px 8px",background:GOLD,color:"#000",border:"none",borderRadius:5}}>Upgrade</button>}
             </div>
@@ -2687,8 +2679,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     {currentUser?.plan==="pro"
                       ? `${currentUser?.credits_used||0} credits used this month (unlimited)`
                       : currentUser?.plan==="free"
-                      ? `${currentUser?.credits_used||0} of ${currentUser?.credits_limit||10} trial credits used`
-                      : `${currentUser?.credits_used||0} of ${currentUser?.credits_limit||30} credits used this month`}
+                      ? `${creditsRemaining()} of ${currentUser?.credits_limit||6} trial credits remaining`
+                      : `${creditsRemaining()} of ${currentUser?.credits_limit||30} credits remaining this month`}
                   </div>
                 </div>
                 <span style={{fontSize:11,fontWeight:700,padding:"4px 12px",background:currentUser?.plan==="pro"?GOLD:A.text,color:currentUser?.plan==="pro"?"#000":A.accentText,borderRadius:20}}>{currentUser?.plan?.toUpperCase()}</span>
