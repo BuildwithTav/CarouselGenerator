@@ -607,6 +607,16 @@ export default function App() {
 
   const logout = () => { clearToken(); setCurrentUser(null); setOtpSent(false); setOtpCode(""); setAuthEmail(""); setShowAuthModal(true); };
 
+  const refreshUser = async () => {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+token}, body: JSON.stringify({ action:"me" }) });
+      const d = await r.json();
+      if (d.user) setCurrentUser(d.user);
+    } catch {}
+  };
+
   const creditsRemaining = () => {
     if (!currentUser) return 0;
     if (currentUser.plan === "pro" || currentUser.is_admin) return "∞";
@@ -825,7 +835,7 @@ export default function App() {
         if (!res.ok) throw new Error(`${res.status}`);
         const data = await res.json();
         if (countCredit && currentUser) {
-          setCurrentUser(u => u ? ({ ...u, credits_used: (u.credits_used||0) + 1 }) : u);
+          refreshUser();
         }
         return data;
       } catch(e) { if(i===tries) throw e; await new Promise(r=>setTimeout(r, 2000+i*1000)); }
@@ -1067,8 +1077,9 @@ Return ONLY valid JSON, nothing else.` }
     try {
       await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`, i===0);
       setDownloadDone(true); setTimeout(()=>setDownloadDone(false), 2000);
-      if (currentUser && !currentUser.is_admin) {
-        setCurrentUser(u => u ? ({...u, credits_used: (u.credits_used||0)+1}) : u);
+      if (currentUser && !currentUser.is_admin && currentUser.plan !== "pro") {
+        await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email }) });
+        refreshUser();
       }
     } catch(e) { console.error(e); alert("Download failed — try again."); }
     setDownloading(false);
@@ -1171,8 +1182,9 @@ Return ONLY valid JSON, nothing else.` }
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(()=>URL.revokeObjectURL(url),2000);
       if (isMobileDevice()) setTimeout(()=>alert("✓ Zip downloaded — open the Files app to find your slides."),1500);
-      if (currentUser && !currentUser.is_admin) {
-        setCurrentUser(u => u ? ({...u, credits_used: (u.credits_used||0)+1}) : u);
+      if (currentUser && !currentUser.is_admin && currentUser.plan !== "pro") {
+        await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email }) });
+        refreshUser();
       }
     } catch(e){console.error("Zip failed:",e);alert("Download failed — try again.");}
     setDownloadingAll(false); setDownloadDone(true); setTimeout(()=>setDownloadDone(false),4000);
