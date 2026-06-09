@@ -25,11 +25,10 @@ export async function POST(req) {
         token,
         type: "email"
       });
-      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      if (error) return NextResponse.json({ error: "Invalid code — check your email and try again." }, { status: 400 });
 
       const user = data.user;
 
-      // Upsert user in our users table
       const { data: existing } = await supabase
         .from("users")
         .select("*")
@@ -41,22 +40,30 @@ export async function POST(req) {
           email: user.email,
           plan: "free",
           credits_used: 0,
-          credits_limit: 3
+          credits_limit: 10,
+          downloads_used: 0
         });
       }
+
+      const { data: profile } = await supabase
+        .from("users")
+        .select("*")
+        .eq("email", user.email)
+        .single();
 
       return NextResponse.json({
         success: true,
         email: user.email,
-        access_token: data.session.access_token
+        access_token: data.session.access_token,
+        user: profile
       });
     }
 
     if (action === "me") {
       const authHeader = req.headers.get("authorization");
       if (!authHeader) return NextResponse.json({ error: "No token" }, { status: 401 });
-      const token = authHeader.replace("Bearer ", "");
-      const { data: { user }, error } = await supabase.auth.getUser(token);
+      const t = authHeader.replace("Bearer ", "");
+      const { data: { user }, error } = await supabase.auth.getUser(t);
       if (error || !user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
       const { data: profile } = await supabase
@@ -66,6 +73,26 @@ export async function POST(req) {
         .single();
 
       return NextResponse.json({ user: profile });
+    }
+
+    if (action === "increment-downloads") {
+      const authHeader = req.headers.get("authorization");
+      if (!authHeader) return NextResponse.json({ error: "No token" }, { status: 401 });
+      const t = authHeader.replace("Bearer ", "");
+      const { data: { user }, error } = await supabase.auth.getUser(t);
+      if (error || !user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+      const { data: profile } = await supabase
+        .from("users")
+        .select("downloads_used")
+        .eq("email", user.email)
+        .single();
+
+      await supabase.from("users").update({
+        downloads_used: (profile?.downloads_used || 0) + 1
+      }).eq("email", user.email);
+
+      return NextResponse.json({ success: true });
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
