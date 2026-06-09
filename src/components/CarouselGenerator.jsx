@@ -454,8 +454,8 @@ function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover, pre
     <div onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#0A0A0A":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:previewW, height:previewH, flexShrink:0 }}>
       <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin allow-scripts" title={`slide-${idx+1}`}/>
       {showWatermark&&(
-        <div style={{position:"absolute",bottom:6,left:0,right:0,textAlign:"center",pointerEvents:"none"}}>
-          <span style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.7)",background:"rgba(0,0,0,0.45)",padding:"2px 6px",borderRadius:4,letterSpacing:0.3}}>studio.buildwithtav.co</span>
+        <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"6px 10px",background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
+          <span style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.9)",letterSpacing:1,textTransform:"uppercase"}}>studio.buildwithtav.co</span>
         </div>
       )}
     </div>
@@ -604,7 +604,7 @@ export default function App() {
           const keysToKeep = ["cs_token"];
           Object.keys(localStorage).forEach(k => { if(!keysToKeep.includes(k)) localStorage.removeItem(k); });
         } catch {}
-        setToken(d.access_token); setCurrentUser(d.user||{ email: d.email, plan:"free", credits_used:0, credits_limit:10 }); setShowAuthModal(false); 
+        setToken(d.access_token); setCurrentUser(d.user||{ email: d.email, plan:"free", credits_used:0, credits_limit:6 }); setShowAuthModal(false); 
       }
     } catch { setAuthError("Something went wrong — try again."); }
     setAuthSubmitting(false);
@@ -615,13 +615,39 @@ export default function App() {
   const creditsRemaining = () => {
     if (!currentUser) return 0;
     if (currentUser.plan === "pro" || currentUser.is_admin) return "∞";
-    return Math.max(0, (currentUser.credits_limit||3) - (currentUser.credits_used||0));
+    return Math.max(0, (currentUser.credits_limit||6) - (currentUser.credits_used||0));
   };
 
   const canGenerate = () => {
     if (!currentUser) return false;
     if (currentUser.plan === "pro" || currentUser.is_admin) return true;
-    return (currentUser.credits_used||0) < (currentUser.credits_limit||10);
+    return (currentUser.credits_used||0) < (currentUser.credits_limit||6);
+  };
+
+  const isLastCredit = () => {
+    if (!currentUser || currentUser.plan === "pro" || currentUser.is_admin) return false;
+    return creditsRemaining() === 1;
+  };
+
+  const confirmLastCredit = (action) => {
+    if (isLastCredit()) {
+      if (!window.confirm("You have 1 credit left. Use it on this?")) return false;
+    }
+    return true;
+  };
+
+  const checkMonthlyReset = async () => {
+    if (!currentUser || currentUser.plan === "pro" || currentUser.is_admin) return;
+    const periodStart = currentUser.period_start ? new Date(currentUser.period_start) : null;
+    if (!periodStart) return;
+    const now = new Date();
+    const daysSince = (now - periodStart) / (1000 * 60 * 60 * 24);
+    if (daysSince >= 30) {
+      try {
+        await fetch("/api/credits/reset", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email: currentUser.email }) });
+        setCurrentUser(u => u ? ({...u, credits_used: 0, period_start: now.toISOString()}) : u);
+      } catch {}
+    }
   };
 
   const handleUpgrade = async (priceId) => {
@@ -882,6 +908,8 @@ Return ONLY valid JSON array:
     const t = topicOverride || topic;
     if (!t.trim()) { setErr("Add a topic first."); return; }
     if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (!confirmLastCredit()) return;
+    await checkMonthlyReset();
     setErr(""); setAngle(""); setView("generating"); setLastTopic(t);
 
     try {
@@ -986,6 +1014,7 @@ Return ONLY valid JSON, nothing else.` }
 
   const generateCaption = async () => {
     if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (!confirmLastCredit()) return;
     setGeneratingCaption(true);
     setShowCaption(false);
     try {
@@ -1003,6 +1032,7 @@ Return ONLY valid JSON, nothing else.` }
   const rewrite = async () => {
     if (!rewritePrompt.trim()) return;
     if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (!confirmLastCredit()) return;
     setRewriting(true);
     try {
       const btObj3 = BUSINESS_TYPES.find(b=>b.id===businessType);
@@ -1039,16 +1069,14 @@ Return ONLY valid JSON, nothing else.` }
   }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays,gradientMode]);
 
   const downloadOne = async (i) => {
-    if (currentUser?.plan === "free") {
-      if ((currentUser?.downloads_used||0) >= 1) { setUpgradePrompt(true); return; }
-    }
+    if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (!confirmLastCredit()) return;
     setDownloading(true);
     try {
       await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`, i===0);
       setDownloadDone(true); setTimeout(()=>setDownloadDone(false), 2000);
-      if (currentUser?.plan === "free") {
-        setCurrentUser(u => u ? ({...u, downloads_used: (u.downloads_used||0)+1}) : u);
-        await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email }) });
+      if (currentUser && !currentUser.is_admin) {
+        setCurrentUser(u => u ? ({...u, credits_used: (u.credits_used||0)+1}) : u);
       }
     } catch(e) { console.error(e); alert("Download failed — try again."); }
     setDownloading(false);
@@ -1114,9 +1142,8 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const downloadAll = async () => {
-    if (currentUser?.plan === "free") {
-      if ((currentUser?.downloads_used||0) >= 1) { setUpgradePrompt(true); return; }
-    }
+    if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (!confirmLastCredit()) return;
     setDownloadingAll(true);
     const mobile = isMobileDevice();
     try {
@@ -1152,12 +1179,17 @@ Return ONLY valid JSON, nothing else.` }
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(()=>URL.revokeObjectURL(url),2000);
       if (isMobileDevice()) setTimeout(()=>alert("✓ Zip downloaded — open the Files app to find your slides."),1500);
+      if (currentUser && !currentUser.is_admin) {
+        setCurrentUser(u => u ? ({...u, credits_used: (u.credits_used||0)+1}) : u);
+      }
     } catch(e){console.error("Zip failed:",e);alert("Download failed — try again.");}
     setDownloadingAll(false); setDownloadDone(true); setTimeout(()=>setDownloadDone(false),4000);
   };
 
   const generateQuotes = async () => {
     if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (!confirmLastCredit()) return;
+    await checkMonthlyReset();
     setGeneratingQuotes(true);
     const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
     const emptyCount = quoteInputs.filter(q=>!q.trim()).length;
