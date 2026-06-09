@@ -568,7 +568,18 @@ export default function App() {
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
       body: JSON.stringify({ action:"me" })
     }).then(r=>r.json()).then(d=>{
-      if (d.user) { setCurrentUser(d.user); setShowAuthModal(false); }
+      if (d.user) { 
+        setCurrentUser(d.user); 
+        setShowAuthModal(false);
+        // Check if monthly credits need resetting
+        if (d.user && d.user.plan !== "pro" && !d.user.is_admin && d.user.period_start) {
+          const daysSince = (new Date() - new Date(d.user.period_start)) / (1000 * 60 * 60 * 24);
+          if (daysSince >= 30) {
+            fetch("/api/credits/reset", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email: d.user.email }) })
+              .then(()=>refreshUser()).catch(()=>{});
+          }
+        }
+      }
       else { clearToken(); setShowAuthModal(true); }
     }).catch(()=>{ clearToken(); setShowAuthModal(true); })
     .finally(()=>setAuthLoading(false));
@@ -1978,6 +1989,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                           <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
                         </div>
                         <button onClick={async()=>{
+                          if (!canGenerate()) { setUpgradePrompt(true); return; }
                           try {
                             const blob = await downloadQuote(q, i);
                             const url = URL.createObjectURL(blob);
@@ -1989,6 +2001,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                             const next=[entry,...quoteHistory].slice(0,20);
                             setQuoteHistory(next);
                             try{localStorage.setItem("bwt_quote_history",JSON.stringify(next));}catch{}
+                            if (currentUser && !currentUser.is_admin && currentUser.plan !== "pro") {
+                              await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email }) });
+                              refreshUser();
+                            }
                           } catch(e) { alert("Download failed — try again."); }
                         }} style={{width:220,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:700,cursor:"pointer"}}>
                           ↓ {i+1}
