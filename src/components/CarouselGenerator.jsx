@@ -1150,7 +1150,7 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const generateQuotes = async () => {
-    if (!canGenerate()) { alert("DEBUG: canGenerate false. credits_used=" + currentUser?.credits_used + " credits_limit=" + currentUser?.credits_limit + " plan=" + currentUser?.plan); setUpgradePrompt(true); return; }
+    if (!canGenerate()) { setUpgradePrompt(true); return; }
     setGeneratingQuotes(true);
     const btLabel = businessType==="other"?(otherType||"brand"):BUSINESS_TYPES.find(b=>b.id===businessType)?.label||"Digital Marketer";
     const emptyCount = quoteInputs.filter(q=>!q.trim()).length;
@@ -1188,7 +1188,7 @@ Return ONLY a JSON array of ${needed} strings.`;
         }
         setQuoteInputs(next);
       }
-    } catch {}
+    } catch(e) { console.error("generateQuotes error:", e); alert("Quote error: " + e.message); }
     setGeneratingQuotes(false);
   };
 
