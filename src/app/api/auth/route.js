@@ -41,7 +41,9 @@ export async function POST(req) {
           plan: "free",
           credits_used: 0,
           credits_limit: 6,
-          downloads_used: 0
+          downloads_used: 0,
+          bonus_credits: 0,
+          period_start: new Date().toISOString()
         });
       }
 
@@ -84,12 +86,12 @@ export async function POST(req) {
 
       const { data: profile } = await supabase
         .from("users")
-        .select("downloads_used")
+        .select("credits_used")
         .eq("email", user.email)
         .single();
 
       await supabase.from("users").update({
-        downloads_used: (profile?.downloads_used || 0) + 1
+        credits_used: (profile?.credits_used || 0) + 1
       }).eq("email", user.email);
 
       return NextResponse.json({ success: true });
