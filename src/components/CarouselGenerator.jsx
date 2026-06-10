@@ -1768,7 +1768,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </div>
           )}
           <button onClick={()=>{if(window.confirm("Reset app? This will clear all brand settings and history.")){{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}}}} className="desktop-reset" style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center"}}>Reset app</button>
-          {currentUser&&<button onClick={logout} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4}}>Sign out</button>}
+          {currentUser&&<button onClick={logout} className="desktop-only" style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4}}>Sign out</button>}
         </div>
       </nav>
       {menuOpen&&(
@@ -1790,6 +1790,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           <button onClick={()=>{setMenuOpen(false);if(window.confirm("Reset app? This will clear all brand settings and history.")){localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");localStorage.removeItem("bwt_quote_history");window.location.reload();}}} style={{display:"flex",alignItems:"center",width:"100%",padding:"16px 24px",background:"none",border:"none",borderLeft:"3px solid transparent",color:"#c0392b",fontSize:16,fontWeight:500,cursor:"pointer",textAlign:"left"}}>
             Reset app
           </button>
+          {currentUser&&<button onClick={()=>{setMenuOpen(false);logout();}} style={{display:"flex",alignItems:"center",width:"100%",padding:"16px 24px",background:"none",border:"none",borderLeft:"3px solid transparent",color:A.muted,fontSize:16,fontWeight:500,cursor:"pointer",textAlign:"left"}}>Sign out</button>}
         </div>
       )}
 
