@@ -8,8 +8,35 @@ const supabase = createClient(
 
 const SYSTEME_API_KEY = process.env.SYSTEME_API_KEY;
 
-async function addToSysteme(email, tag) {
+async function getOrCreateTag(tagName) {
   try {
+    // Get existing tags
+    const res = await fetch("https://api.systeme.io/api/tags?limit=100", {
+      headers: { "X-API-Key": SYSTEME_API_KEY, "Accept": "application/json" }
+    });
+    const data = await res.json();
+    const existing = data?.items?.find(t => t.name === tagName);
+    if (existing) return existing.id;
+
+    // Create tag
+    const create = await fetch("https://api.systeme.io/api/tags", {
+      method: "POST",
+      headers: { "X-API-Key": SYSTEME_API_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ name: tagName })
+    });
+    const created = await create.json();
+    return created?.id;
+  } catch(e) {
+    console.error("Systeme tag error:", e);
+    return null;
+  }
+}
+
+async function addToSysteme(email, tagName) {
+  try {
+    const tagId = await getOrCreateTag(tagName);
+    if (!tagId) return;
+
     // Check if contact exists
     const check = await fetch(`https://api.systeme.io/api/contacts?email=${encodeURIComponent(email)}`, {
       headers: { "X-API-Key": SYSTEME_API_KEY, "Accept": "application/json" }
@@ -22,14 +49,14 @@ async function addToSysteme(email, tag) {
       await fetch(`https://api.systeme.io/api/contacts/${existing.id}/tags`, {
         method: "POST",
         headers: { "X-API-Key": SYSTEME_API_KEY, "Content-Type": "application/json" },
-        body: JSON.stringify({ tagName: tag })
+        body: JSON.stringify({ tagId })
       });
     } else {
       // Create new contact with tag
       await fetch("https://api.systeme.io/api/contacts", {
         method: "POST",
         headers: { "X-API-Key": SYSTEME_API_KEY, "Content-Type": "application/json" },
-        body: JSON.stringify({ email, tags: [{ name: tag }] })
+        body: JSON.stringify({ email, tags: [{ id: tagId }] })
       });
     }
   } catch(e) {
@@ -76,8 +103,7 @@ export async function POST(req) {
           bonus_credits: 0,
           period_start: new Date().toISOString()
         });
-        // New user — add to Systeme
-        await addToSysteme(user.email, "carousel-studio-free");
+        addToSysteme(user.email, "carousel-studio-free");
       }
 
       const { data: profile } = await supabase
