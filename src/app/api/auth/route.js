@@ -6,6 +6,37 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
+const SYSTEME_API_KEY = process.env.SYSTEME_API_KEY;
+
+async function addToSysteme(email, tag) {
+  try {
+    // Check if contact exists
+    const check = await fetch(`https://api.systeme.io/api/contacts?email=${encodeURIComponent(email)}`, {
+      headers: { "X-API-Key": SYSTEME_API_KEY, "Accept": "application/json" }
+    });
+    const checkData = await check.json();
+    const existing = checkData?.items?.[0];
+
+    if (existing) {
+      // Add tag to existing contact
+      await fetch(`https://api.systeme.io/api/contacts/${existing.id}/tags`, {
+        method: "POST",
+        headers: { "X-API-Key": SYSTEME_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ tagName: tag })
+      });
+    } else {
+      // Create new contact with tag
+      await fetch("https://api.systeme.io/api/contacts", {
+        method: "POST",
+        headers: { "X-API-Key": SYSTEME_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ email, tags: [{ name: tag }] })
+      });
+    }
+  } catch(e) {
+    console.error("Systeme sync error:", e);
+  }
+}
+
 export async function POST(req) {
   try {
     const { action, email, token } = await req.json();
@@ -45,6 +76,8 @@ export async function POST(req) {
           bonus_credits: 0,
           period_start: new Date().toISOString()
         });
+        // New user — add to Systeme
+        await addToSysteme(user.email, "carousel-studio-free");
       }
 
       const { data: profile } = await supabase
