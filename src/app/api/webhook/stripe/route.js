@@ -50,8 +50,8 @@ export async function POST(req) {
     const priceId = fullSession.line_items?.data?.[0]?.price?.id;
     const isStarter = priceId === process.env.STRIPE_STARTER_PRICE_ID;
     const isPro = priceId === process.env.STRIPE_PRO_PRICE_ID;
-    const isTopup = priceId === process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID;
-    const isBoost = priceId === process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID;
+    const isTopup = priceId === process.env.STRIPE_TOPUP_PRICE_ID;
+    const isBoost = priceId === process.env.STRIPE_BOOST_PRICE_ID;
 
     // Handle credit top-ups (one-time payments)
     if (isTopup || isBoost) {
