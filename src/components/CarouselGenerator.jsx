@@ -519,23 +519,52 @@ function QuotePreview({ html, W, H, scale }) {
   return <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin allow-scripts"/>;
 }
 
-function FeedbackForm({ A, inp, GOLD }) {
-  const [rating, setRating] = useState(0);
-  const [hovered, setHovered] = useState(0);
-  const [comment, setComment] = useState("");
+function ContactForm({ A, inp, GOLD, userEmail }) {
+  const [type, setType] = useState("Review");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [err, setErr] = useState("");
+
+  const send = async () => {
+    if (!message.trim()) { setErr("Please add a message."); return; }
+    setSending(true); setErr("");
+    try {
+      const r = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, message, email: userEmail })
+      });
+      const d = await r.json();
+      if (d.error) { setErr("Something went wrong — try again."); }
+      else { setSent(true); setMessage(""); }
+    } catch { setErr("Something went wrong — try again."); }
+    setSending(false);
+  };
+
+  if (sent) return (
+    <div style={{textAlign:"center",padding:"20px 0"}}>
+      <div style={{fontSize:32,marginBottom:8}}>✓</div>
+      <p style={{fontSize:14,fontWeight:700,margin:"0 0 4px"}}>Sent. Thank you.</p>
+      <p style={{fontSize:12,color:A.muted,margin:0}}>I'll get back to you if needed.</p>
+      <button onClick={()=>setSent(false)} style={{marginTop:12,background:"none",border:"none",color:GOLD,fontSize:12,fontWeight:700,cursor:"pointer"}}>Send another</button>
+    </div>
+  );
+
   return (
-    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
       <div style={{display:"flex",gap:8}}>
-        {[1,2,3,4,5].map(star=>(
-          <button key={star} onClick={()=>setRating(star)} onMouseEnter={()=>setHovered(star)} onMouseLeave={()=>setHovered(0)}
-            style={{fontSize:28,background:"none",border:"none",cursor:"pointer",color:(hovered||rating)>=star?GOLD:A.border,padding:0,lineHeight:1}}>★</button>
+        {["Review","Bug","Feature"].map(t=>(
+          <button key={t} onClick={()=>setType(t)} style={{flex:1,padding:"8px",background:type===t?A.text:A.bg,color:type===t?A.accentText:A.muted,border:`1.5px solid ${type===t?A.text:A.border}`,borderRadius:7,fontSize:12,fontWeight:700,cursor:"pointer"}}>
+            {t==="Review"?"⭐ Review":t==="Bug"?"🐛 Bug":"💡 Feature"}
+          </button>
         ))}
       </div>
-      <textarea value={comment} onChange={e=>setComment(e.target.value)} placeholder="What is working for you? What could be better?" rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}/>
-      <a href={`mailto:tav@buildwithtav.co?subject=Carousel Studio Feedback — ${rating} stars&body=${encodeURIComponent(rating+" stars\n\n"+comment)}`}
-        style={{display:"block",textAlign:"center",padding:"11px",background:rating&&comment.trim()?A.text:A.border,color:rating&&comment.trim()?A.accentText:A.muted,borderRadius:9,fontWeight:700,fontSize:13,textDecoration:"none",pointerEvents:rating&&comment.trim()?"auto":"none"}}>
-        Send Feedback
-      </a>
+      <textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder={type==="Review"?"What do you think of Carousel Studio?":type==="Bug"?"Describe the bug and what you were doing when it happened.":"What feature would make Carousel Studio better for you?"} rows={4} style={{...inp,resize:"vertical",lineHeight:1.6}}/>
+      {err&&<p style={{color:"#c0392b",fontSize:12,margin:0}}>{err}</p>}
+      <button onClick={send} disabled={sending||!message.trim()} style={{padding:"11px",background:message.trim()?A.text:A.border,color:A.accentText,borderRadius:9,fontWeight:700,fontSize:13,border:"none",cursor:message.trim()?"pointer":"default"}}>
+        {sending?"Sending...":"Send"}
+      </button>
     </div>
   );
 }
@@ -2755,30 +2784,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
                 <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24}}>
                   <label style={lbl}>Get in touch</label>
-                  <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Found a bug, want to leave a review, or have a feature idea? I read everything.</p>
-                  <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                    <a href="mailto:tav@buildwithtav.co?subject=Carousel Studio — Review" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,textDecoration:"none"}}>
-                      <div>
-                        <div style={{fontWeight:700,fontSize:13,color:A.text}}>⭐ Leave a Review</div>
-                        <div style={{fontSize:11,color:A.muted,marginTop:2}}>Tell me what you think</div>
-                      </div>
-                      <span style={{color:GOLD,fontSize:12,fontWeight:700}}>→</span>
-                    </a>
-                    <a href="mailto:tav@buildwithtav.co?subject=Carousel Studio — Bug Report" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,textDecoration:"none"}}>
-                      <div>
-                        <div style={{fontWeight:700,fontSize:13,color:A.text}}>🐛 Report a Bug</div>
-                        <div style={{fontSize:11,color:A.muted,marginTop:2}}>Include a screenshot if possible</div>
-                      </div>
-                      <span style={{color:GOLD,fontSize:12,fontWeight:700}}>→</span>
-                    </a>
-                    <a href="mailto:tav@buildwithtav.co?subject=Carousel Studio — Feature Request" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,textDecoration:"none"}}>
-                      <div>
-                        <div style={{fontWeight:700,fontSize:13,color:A.text}}>💡 Suggest a Feature</div>
-                        <div style={{fontSize:11,color:A.muted,marginTop:2}}>What would make this better?</div>
-                      </div>
-                      <span style={{color:GOLD,fontSize:12,fontWeight:700}}>→</span>
-                    </a>
-                  </div>
+                  <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Leave a review, report a bug, or suggest a feature. I read everything.</p>
+                  <ContactForm A={A} inp={inp} GOLD={GOLD} userEmail={currentUser?.email}/>
                 </div>
               </div>
 
