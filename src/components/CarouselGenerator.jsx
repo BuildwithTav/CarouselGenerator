@@ -519,6 +519,16 @@ function QuotePreview({ html, W, H, scale }) {
   return <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin allow-scripts"/>;
 }
 
+function PaymentBadges({ dark }) {
+  return (
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:12,flexWrap:"wrap"}}>
+      {["Apple Pay","Klarna","Amazon Pay","Card"].map(m=>(
+        <span key={m} style={{fontSize:10,fontWeight:700,padding:"3px 10px",background:dark?"rgba(255,255,255,0.1)":"#f0eeea",border:dark?"1px solid rgba(255,255,255,0.15)":"1px solid #ddd",borderRadius:20,color:dark?"rgba(255,255,255,0.5)":"#888"}}>{m}</span>
+      ))}
+    </div>
+  );
+}
+
 function ContactForm({ A, inp, GOLD, userEmail }) {
   const [type, setType] = useState("Review");
   const [message, setMessage] = useState("");
@@ -746,6 +756,7 @@ export default function App() {
   };
 
   const [upgrading, setUpgrading] = useState(false);
+  const [hoveredBtn, setHoveredBtn] = useState(null);
 
   const handleUpgrade = async (priceId, mode="subscription") => {
     setUpgrading(true);
@@ -2888,13 +2899,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   {["Full carousel generation up to 8 slides","Quote cards, captions and AI rewrites","Downloads — no watermark","All formats, fonts, styles and colours","Custom photo uploads","Carousel history with saved captions"].map(f=>(
                     <div key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:A.text,marginBottom:6}}><span style={{color:GOLD,fontWeight:700}}>✓</span>{f}</div>
                   ))}
-                  <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID)} style={{width:"100%",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:15,border:"none",marginTop:16}}>
+                  <button onMouseEnter={()=>setHoveredBtn("starter")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID)} style={{width:"100%",padding:"13px",background:hoveredBtn==="starter"?"#1a1a1a":A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:15,border:"none",marginTop:16,transform:hoveredBtn==="starter"?"translateY(-1px)":"none",transition:"all 0.2s"}}>
                     Get Starter — £39/month
                   </button>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:10,flexWrap:"wrap"}}>
-                    {["Apple Pay","Klarna","Amazon Pay","Card"].map(m=>(
-                      <span key={m} style={{fontSize:10,fontWeight:700,padding:"2px 8px",background:A.bg,border:`1px solid ${A.border}`,borderRadius:4,color:A.muted}}>{m}</span>
-                    ))}
+                    <PaymentBadges dark={false}/>
                   </div>
                 </div>
                 <div style={{background:"linear-gradient(135deg,#1a1a1a,#2a2a2a)",border:`1.5px solid ${GOLD}`,borderRadius:14,padding:24,marginBottom:16}}>
@@ -2904,17 +2913,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   </div>
                   <div style={{fontSize:26,fontWeight:800,margin:"8px 0 4px",color:"#fff"}}>£59<span style={{fontSize:14,fontWeight:500,color:"rgba(255,255,255,0.5)"}}>/month</span></div>
                   <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"0 0 4px"}}>Unlimited credits. Run every brand and account without counting.</p>
-                  <p style={{fontSize:11,color:"rgba(255,255,255,0.3)",margin:"0 0 16px"}}>Fair usage policy applies — 300 credits/month. Subject to change with notice.</p>
+                  <p style={{fontSize:11,color:"rgba(255,255,255,0.3)",margin:"0 0 16px"}}>Fair usage policy applies. See <a href="/terms" target="_blank" style={{color:"rgba(255,255,255,0.4)",textDecoration:"underline"}}>Terms</a> for details.</p>
                   {["Everything in Starter","Unlimited credits — no limits, no counting","Managing multiple brands or clients? Pro handles all of them","Affiliate programme — refer 4 people and Pro pays for itself. Refer 10 and you're making £147/month from a £59 investment","Priority support","Early access to new features"].map(f=>(
                     <div key={f} style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:13,color:"#fff",marginBottom:6}}><span style={{color:GOLD,fontWeight:700,flexShrink:0}}>✓</span>{f}</div>
                   ))}
-                  <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"13px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:15,border:"none",marginTop:16}}>
+                  <button onMouseEnter={()=>setHoveredBtn("pro")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"13px",background:hoveredBtn==="pro"?"#e6c45a":GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:15,border:"none",marginTop:16,transform:hoveredBtn==="pro"?"translateY(-1px)":"none",boxShadow:hoveredBtn==="pro"?"0 4px 20px rgba(187,153,0,0.4)":"none",transition:"all 0.2s"}}>
                     Get Pro — £59/month
                   </button>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:10,flexWrap:"wrap"}}>
-                    {["Apple Pay","Klarna","Amazon Pay","Card"].map(m=>(
-                      <span key={m} style={{fontSize:10,fontWeight:700,padding:"2px 8px",background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:4,color:"rgba(255,255,255,0.5)"}}>{m}</span>
-                    ))}
+                    <PaymentBadges dark={true}/>
                   </div>
                 </div>
                 {/* Credit top-ups */}
@@ -2943,7 +2950,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <label style={{...lbl,color:GOLD}}>Upgrade to Pro</label>
                   <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"8px 0 4px",lineHeight:1.6}}>Unlimited credits. No counting. No running out.</p>
                   <p style={{fontSize:12,color:"rgba(255,255,255,0.4)",margin:"0 0 16px",lineHeight:1.6}}>Managing multiple brands or client accounts? Pro handles all of them. Refer 4 people and Pro pays for itself. Refer 10 and you're making £147/month from a £59 investment.</p>
-                  <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"13px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:14,border:"none"}}>
+                  <button onMouseEnter={()=>setHoveredBtn("pro2")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"13px",background:hoveredBtn==="pro2"?"#e6c45a":GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:14,border:"none",transform:hoveredBtn==="pro2"?"translateY(-1px)":"none",boxShadow:hoveredBtn==="pro2"?"0 4px 20px rgba(187,153,0,0.4)":"none",transition:"all 0.2s"}}>
                     Upgrade to Pro — £59/month
                   </button>
                 </div>
