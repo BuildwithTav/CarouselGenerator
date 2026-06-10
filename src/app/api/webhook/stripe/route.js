@@ -50,8 +50,30 @@ export async function POST(req) {
     const priceId = fullSession.line_items?.data?.[0]?.price?.id;
     const isStarter = priceId === process.env.STRIPE_STARTER_PRICE_ID;
     const isPro = priceId === process.env.STRIPE_PRO_PRICE_ID;
+    const isTopup = priceId === process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID;
+    const isBoost = priceId === process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID;
+
+    // Handle credit top-ups (one-time payments)
+    if (isTopup || isBoost) {
+      const creditsToAdd = isTopup ? 15 : 30;
+      const { data: user } = await supabase
+        .from("users")
+        .select("bonus_credits")
+        .eq("email", email)
+        .single();
+
+      await supabase.from("users").upsert({
+        email,
+        bonus_credits: (user?.bonus_credits || 0) + creditsToAdd
+      }, { onConflict: "email" });
+
+      await addTagToSysteme(email, "carousel-studio-credits");
+      return NextResponse.json({ received: true });
+    }
+
+    // Handle subscriptions
     const plan = isPro ? "pro" : isStarter ? "starter" : "free";
-    const credits_limit = isPro ? 999999 : isStarter ? 30 : 3;
+    const credits_limit = isPro ? 999999 : isStarter ? 30 : 6;
 
     await supabase.from("users").upsert({
       email,
@@ -63,7 +85,6 @@ export async function POST(req) {
       period_start: new Date().toISOString()
     }, { onConflict: "email" });
 
-    // Add tag to Systeme
     const tag = isPro ? "carousel-studio-pro" : "carousel-studio-starter";
     await addTagToSysteme(email, tag);
   }
@@ -84,7 +105,6 @@ export async function POST(req) {
         credits_used: 0
       }).eq("stripe_customer_id", customerId);
 
-      // Add cancelled tag to Systeme
       await addTagToSysteme(users[0].email, "carousel-studio-cancelled");
     }
   }
