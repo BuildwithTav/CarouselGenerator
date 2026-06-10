@@ -522,22 +522,29 @@ function QuotePreview({ html, W, H, scale }) {
 function ContactForm({ A, inp, GOLD, userEmail }) {
   const [type, setType] = useState("Review");
   const [message, setMessage] = useState("");
+  const [rating, setRating] = useState(0);
+  const [hovered, setHovered] = useState(0);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState("");
 
   const send = async () => {
     if (!message.trim()) { setErr("Please add a message."); return; }
+    if (type === "Review" && !rating) { setErr("Please select a star rating."); return; }
     setSending(true); setErr("");
     try {
       const r = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, message, email: userEmail })
+        body: JSON.stringify({ 
+          type: type === "Review" ? `Review — ${rating} stars` : type, 
+          message, 
+          email: userEmail 
+        })
       });
       const d = await r.json();
       if (d.error) { setErr("Something went wrong — try again."); }
-      else { setSent(true); setMessage(""); }
+      else { setSent(true); setMessage(""); setRating(0); }
     } catch { setErr("Something went wrong — try again."); }
     setSending(false);
   };
@@ -555,11 +562,19 @@ function ContactForm({ A, inp, GOLD, userEmail }) {
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
       <div style={{display:"flex",gap:8}}>
         {["Review","Bug","Feature"].map(t=>(
-          <button key={t} onClick={()=>setType(t)} style={{flex:1,padding:"8px",background:type===t?A.text:A.bg,color:type===t?A.accentText:A.muted,border:`1.5px solid ${type===t?A.text:A.border}`,borderRadius:7,fontSize:12,fontWeight:700,cursor:"pointer"}}>
+          <button key={t} onClick={()=>{setType(t);setRating(0);setErr("");}} style={{flex:1,padding:"8px",background:type===t?A.text:A.bg,color:type===t?A.accentText:A.muted,border:`1.5px solid ${type===t?A.text:A.border}`,borderRadius:7,fontSize:12,fontWeight:700,cursor:"pointer"}}>
             {t==="Review"?"⭐ Review":t==="Bug"?"🐛 Bug":"💡 Feature"}
           </button>
         ))}
       </div>
+      {type==="Review"&&(
+        <div style={{display:"flex",gap:6}}>
+          {[1,2,3,4,5].map(star=>(
+            <button key={star} onClick={()=>setRating(star)} onMouseEnter={()=>setHovered(star)} onMouseLeave={()=>setHovered(0)}
+              style={{fontSize:28,background:"none",border:"none",cursor:"pointer",color:(hovered||rating)>=star?GOLD:A.border,padding:0,lineHeight:1}}>★</button>
+          ))}
+        </div>
+      )}
       <textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder={type==="Review"?"What do you think of Carousel Studio?":type==="Bug"?"Describe the bug and what you were doing when it happened.":"What feature would make Carousel Studio better for you?"} rows={4} style={{...inp,resize:"vertical",lineHeight:1.6}}/>
       {err&&<p style={{color:"#c0392b",fontSize:12,margin:0}}>{err}</p>}
       <button onClick={send} disabled={sending||!message.trim()} style={{padding:"11px",background:message.trim()?A.text:A.border,color:A.accentText,borderRadius:9,fontWeight:700,fontSize:13,border:"none",cursor:message.trim()?"pointer":"default"}}>
