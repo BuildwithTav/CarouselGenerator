@@ -2754,13 +2754,31 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
 
                 <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24}}>
-                  <label style={lbl}>Found a bug?</label>
-                  <p style={{fontSize:13,lineHeight:1.7,color:A.muted,margin:"8px 0 14px"}}>
-                    Email me a screenshot and description at <a href="mailto:tav@buildwithtav.co" style={{color:GOLD,fontWeight:700,textDecoration:"none"}}>tav@buildwithtav.co</a> — I read every one.
-                  </p>
-                  <a href="mailto:tav@buildwithtav.co?subject=Carousel Studio Bug Report" style={{display:"block",textAlign:"center",padding:"11px",background:A.text,color:A.accentText,borderRadius:9,fontWeight:700,fontSize:13,textDecoration:"none"}}>
-                    Report a Bug
-                  </a>
+                  <label style={lbl}>Get in touch</label>
+                  <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Found a bug, want to leave a review, or have a feature idea? I read everything.</p>
+                  <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                    <a href="mailto:tav@buildwithtav.co?subject=Carousel Studio — Review" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,textDecoration:"none"}}>
+                      <div>
+                        <div style={{fontWeight:700,fontSize:13,color:A.text}}>⭐ Leave a Review</div>
+                        <div style={{fontSize:11,color:A.muted,marginTop:2}}>Tell me what you think</div>
+                      </div>
+                      <span style={{color:GOLD,fontSize:12,fontWeight:700}}>→</span>
+                    </a>
+                    <a href="mailto:tav@buildwithtav.co?subject=Carousel Studio — Bug Report" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,textDecoration:"none"}}>
+                      <div>
+                        <div style={{fontWeight:700,fontSize:13,color:A.text}}>🐛 Report a Bug</div>
+                        <div style={{fontSize:11,color:A.muted,marginTop:2}}>Include a screenshot if possible</div>
+                      </div>
+                      <span style={{color:GOLD,fontSize:12,fontWeight:700}}>→</span>
+                    </a>
+                    <a href="mailto:tav@buildwithtav.co?subject=Carousel Studio — Feature Request" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,textDecoration:"none"}}>
+                      <div>
+                        <div style={{fontWeight:700,fontSize:13,color:A.text}}>💡 Suggest a Feature</div>
+                        <div style={{fontSize:11,color:A.muted,marginTop:2}}>What would make this better?</div>
+                      </div>
+                      <span style={{color:GOLD,fontSize:12,fontWeight:700}}>→</span>
+                    </a>
+                  </div>
                 </div>
               </div>
 
@@ -2781,12 +2799,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       </div>
                     ))}
                   </div>
-                </div>
-
-                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24}}>
-                  <label style={lbl}>Share your feedback</label>
-                  <p style={{fontSize:13,lineHeight:1.7,color:A.muted,margin:"8px 0 14px"}}>How is Carousel Studio working for you? Your feedback helps improve it.</p>
-                  <FeedbackForm A={A} inp={inp} GOLD={GOLD}/>
                 </div>
               </div>
             </div>
