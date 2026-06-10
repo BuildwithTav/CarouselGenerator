@@ -8,17 +8,32 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
+const SYSTEME_API_KEY = process.env.SYSTEME_API_KEY;
+
+async function addTagToSysteme(email, tag) {
+  try {
+    const check = await fetch(`https://api.systeme.io/api/contacts?email=${encodeURIComponent(email)}`, {
+      headers: { "X-API-Key": SYSTEME_API_KEY, "Accept": "application/json" }
+    });
+    const checkData = await check.json();
+    const existing = checkData?.items?.[0];
+    if (existing) {
+      await fetch(`https://api.systeme.io/api/contacts/${existing.id}/tags`, {
+        method: "POST",
+        headers: { "X-API-Key": SYSTEME_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ tagName: tag })
+      });
+    }
+  } catch(e) { console.error("Systeme tag error:", e); }
+}
+
 export async function POST(req) {
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
 
   let event;
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
+    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     return NextResponse.json({ error: `Webhook error: ${err.message}` }, { status: 400 });
   }
@@ -28,7 +43,6 @@ export async function POST(req) {
     const email = session.customer_details?.email;
     if (!email) return NextResponse.json({ received: true });
 
-    // Retrieve full session with line items expanded
     const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
       expand: ["line_items"]
     });
@@ -48,6 +62,10 @@ export async function POST(req) {
       stripe_subscription_id: session.subscription,
       period_start: new Date().toISOString()
     }, { onConflict: "email" });
+
+    // Add tag to Systeme
+    const tag = isPro ? "carousel-studio-pro" : "carousel-studio-starter";
+    await addTagToSysteme(email, tag);
   }
 
   if (event.type === "customer.subscription.deleted") {
@@ -62,9 +80,12 @@ export async function POST(req) {
     if (users?.length) {
       await supabase.from("users").update({
         plan: "free",
-        credits_limit: 3,
+        credits_limit: 6,
         credits_used: 0
       }).eq("stripe_customer_id", customerId);
+
+      // Add cancelled tag to Systeme
+      await addTagToSysteme(users[0].email, "carousel-studio-cancelled");
     }
   }
 
