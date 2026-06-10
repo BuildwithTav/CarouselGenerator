@@ -53,13 +53,14 @@ export async function POST(req) {
         .eq("email", user.email)
         .single();
 
-     return NextResponse.json({
-  success: true,
-  email: user.email,
-  access_token: data.session.access_token,
-  refresh_token: data.session.refresh_token,
-  user: profile
-});
+      return NextResponse.json({
+        success: true,
+        email: user.email,
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+        user: profile
+      });
+    }
 
     if (action === "me") {
       const authHeader = req.headers.get("authorization");
