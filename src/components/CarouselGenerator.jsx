@@ -1629,8 +1629,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
   };
 
   const downloadAllQuotes = async () => {
-    setDownloadingQuotes(true);
     const filled = quoteInputs.filter(q => q.trim());
+    if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (filled.length > 1 && currentUser?.plan !== "pro" && !currentUser?.is_admin) {
+      if (!window.confirm(`Downloading all ${filled.length} quote cards will use ${filled.length} credits. Continue?`)) return;
+    }
+    setDownloadingQuotes(true);
     try {
       await new Promise((res,rej) => {
         if (window.JSZip) return res();
@@ -1642,7 +1646,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       for (let i=0; i<filled.length; i++) {
         try {
           const blob = await downloadQuote(filled[i], i);
-          if (blob) zip.file(`quote-${i+1}.png`, blob);
+          if (blob) {
+            zip.file(`quote-${i+1}.png`, blob);
+            if (currentUser && !currentUser.is_admin && currentUser.plan !== "pro") {
+              await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email }) });
+            }
+          }
         } catch(e) { console.error("Quote", i+1, "failed:", e); }
       }
       const zipBlob = await zip.generateAsync({type:"blob"});
@@ -1651,6 +1660,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       a.href=url; a.download="quote-cards.zip";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(()=>URL.revokeObjectURL(url),2000);
+      if (currentUser && !currentUser.is_admin && currentUser.plan !== "pro") refreshUser();
     } catch(e) { console.error("Quote zip failed:", e); alert("Download failed — try again."); }
     setDownloadingQuotes(false);
   };
