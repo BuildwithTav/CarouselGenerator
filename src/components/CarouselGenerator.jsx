@@ -558,11 +558,39 @@ export default function App() {
 
   const getToken = () => { try { return localStorage.getItem("cs_token")||null; } catch { return null; } };
   const setToken = (t) => { try { localStorage.setItem("cs_token",t); } catch {} };
-  const clearToken = () => { try { localStorage.removeItem("cs_token"); } catch {} };
+  const clearToken = () => { try { localStorage.removeItem("cs_token"); localStorage.removeItem("cs_refresh"); } catch {} };
+  const getRefreshToken = () => { try { return localStorage.getItem("cs_refresh")||null; } catch { return null; } };
+  const setRefreshToken = (t) => { try { localStorage.setItem("cs_refresh",t); } catch {} };
+
+  const tryRefreshSession = async () => {
+    const refresh = getRefreshToken();
+    if (!refresh) return false;
+    try {
+      const { data, error } = await import("@supabase/supabase-js").then(({createClient}) => {
+        const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+        return sb.auth.refreshSession({ refresh_token: refresh });
+      });
+      if (error || !data?.session) return false;
+      setToken(data.session.access_token);
+      setRefreshToken(data.session.refresh_token);
+      return true;
+    } catch { return false; }
+  };
 
   useEffect(() => {
     const token = getToken();
-    if (!token) { setAuthLoading(false); setShowAuthModal(true); return; }
+    if (!token) { 
+      tryRefreshSession().then(refreshed => {
+        if (refreshed) {
+          const newToken = getToken();
+          fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+newToken}, body: JSON.stringify({ action:"me" }) })
+            .then(r=>r.json()).then(d=>{ if (d.user) { setCurrentUser(d.user); setShowAuthModal(false); } else { clearToken(); setShowAuthModal(true); } })
+            .catch(()=>{ clearToken(); setShowAuthModal(true); })
+            .finally(()=>setAuthLoading(false));
+        } else { setAuthLoading(false); setShowAuthModal(true); }
+      });
+      return;
+    }
     fetch("/api/auth", {
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
@@ -571,7 +599,6 @@ export default function App() {
       if (d.user) { 
         setCurrentUser(d.user); 
         setShowAuthModal(false);
-        // Check if monthly credits need resetting
         if (d.user && d.user.plan !== "pro" && !d.user.is_admin && d.user.period_start) {
           const daysSince = (new Date() - new Date(d.user.period_start)) / (1000 * 60 * 60 * 24);
           if (daysSince >= 30) {
@@ -580,7 +607,16 @@ export default function App() {
           }
         }
       }
-      else { clearToken(); setShowAuthModal(true); }
+      else { 
+        tryRefreshSession().then(refreshed => {
+          if (refreshed) {
+            const newToken = getToken();
+            fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+newToken}, body: JSON.stringify({ action:"me" }) })
+              .then(r=>r.json()).then(d2=>{ if (d2.user) { setCurrentUser(d2.user); setShowAuthModal(false); } else { clearToken(); setShowAuthModal(true); } })
+              .catch(()=>{ clearToken(); setShowAuthModal(true); });
+          } else { clearToken(); setShowAuthModal(true); }
+        });
+      }
     }).catch(()=>{ clearToken(); setShowAuthModal(true); })
     .finally(()=>setAuthLoading(false));
   }, []);
@@ -607,10 +643,12 @@ export default function App() {
       else { 
         // Clear any stale localStorage data from previous user
         try { 
-          const keysToKeep = ["cs_token"];
+          const keysToKeep = ["cs_token","cs_refresh"];
           Object.keys(localStorage).forEach(k => { if(!keysToKeep.includes(k)) localStorage.removeItem(k); });
         } catch {}
-        setToken(d.access_token); setCurrentUser(d.user||{ email: d.email, plan:"free", credits_used:0, credits_limit:6 }); setShowAuthModal(false); 
+        setToken(d.access_token);
+        if (d.refresh_token) setRefreshToken(d.refresh_token);
+        setCurrentUser(d.user||{ email: d.email, plan:"free", credits_used:0, credits_limit:6 }); setShowAuthModal(false); 
       }
     } catch { setAuthError("Something went wrong — try again."); }
     setAuthSubmitting(false);
@@ -1038,7 +1076,18 @@ Return ONLY valid JSON, nothing else.` }
       const slidesSummary = slides.map((s,i)=>`Slide ${i+1}: ${s.headline}`).join("\n");
       const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:400, messages:[{ role:"user", content:`Write an Instagram/LinkedIn caption for a carousel post about "${lastTopic}" for a ${btLabel} targeting ${audienceDesc}.\n\nThe carousel covers:\n${slidesSummary}\n\nVoice: ${voiceProfile||"Direct, honest, no hype. Short punchy sentences."}\n\nRules:\n- Hook in first line — make them stop scrolling\n- 3-5 sentences max\n- Tell them to swipe\n- Soft CTA at end (save, follow, comment — pick the most relevant)\n- Max 5 relevant hashtags at the end\n- No emojis unless they feel natural\n- Sign off as — ${name||"Tav"}\n\nReturn ONLY the caption text, nothing else.` }] }, 4, true);
       const text = d.content?.find(b=>b.type==="text")?.text?.trim()||"";
-      if (text) { setCaption(text); setShowCaption(true); }
+      if (text) { 
+        setCaption(text); 
+        setShowCaption(true);
+        // Save caption to most recent history entry
+        setHistory(prev => {
+          if (!prev.length) return prev;
+          const updated = [...prev];
+          updated[0] = { ...updated[0], caption: text };
+          saveHistory(updated);
+          return updated;
+        });
+      }
     } catch(e) { console.error("Caption failed:", e); alert("Caption generation failed — try again."); }
     setGeneratingCaption(false);
   };
@@ -1709,9 +1758,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:8}}>↺ Regenerate</button>
             <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
           </>}
-          {/* Credit counter */}
+          {/* Credit counter — desktop only */}
           {currentUser&&(
-            <div style={{display:"flex",alignItems:"center",gap:6,padding:"0 10px",borderLeft:`1px solid ${A.border}`,marginLeft:4}}>
+            <div className="desktop-only" style={{display:"flex",alignItems:"center",gap:6,padding:"0 10px",borderLeft:`1px solid ${A.border}`,marginLeft:4}}>
               <span style={{fontSize:11,fontWeight:700,color:currentUser.plan==="free"&&creditsRemaining()===0?"#c0392b":currentUser.plan==="free"&&creditsRemaining()===1?"#e67e22":currentUser.plan==="pro"?GOLD:A.muted}}>
                 {currentUser.plan==="pro"?"Pro ∞":currentUser.plan==="starter"?`${creditsRemaining()} left`:creditsRemaining()===1?"1 credit left ⚠️":`${creditsRemaining()} free`}
               </span>
@@ -1724,6 +1773,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       </nav>
       {menuOpen&&(
         <div style={{position:"fixed",top:56,left:0,right:0,background:A.bg,borderBottom:`1px solid ${A.border}`,zIndex:999,padding:"8px 0",boxShadow:"0 4px 20px rgba(0,0,0,0.1)"}}>
+          {/* Credits in burger menu */}
+          {currentUser&&(
+            <div style={{padding:"12px 24px",borderBottom:`1px solid ${A.border}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <span style={{fontSize:14,fontWeight:700,color:currentUser.plan==="free"&&creditsRemaining()===0?"#c0392b":currentUser.plan==="free"&&creditsRemaining()===1?"#e67e22":currentUser.plan==="pro"?GOLD:A.muted}}>
+                {currentUser.plan==="pro"?"Pro — Unlimited":currentUser.plan==="starter"?`${creditsRemaining()} credits left`:creditsRemaining()===1?"⚠️ 1 credit left":`${creditsRemaining()} free credits`}
+              </span>
+              {currentUser.plan!=="pro"&&<button onClick={()=>{setMenuOpen(false);setUpgradePrompt(true);}} style={{fontSize:12,fontWeight:700,padding:"6px 14px",background:GOLD,color:"#000",border:"none",borderRadius:6}}>Upgrade</button>}
+            </div>
+          )}
           {BURGER_ITEMS.map(([id,label])=>(
             <button key={id} onClick={()=>{setNav(id);setMenuOpen(false);}} style={{display:"flex",alignItems:"center",width:"100%",padding:"16px 24px",background:nav===id?A.surface:"none",border:"none",borderLeft:nav===id?`3px solid ${GOLD}`:"3px solid transparent",color:nav===id?A.text:A.muted,fontSize:16,fontWeight:nav===id?700:500,cursor:"pointer",textAlign:"left"}}>
               {label}
@@ -1749,7 +1807,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <div>
                   <label style={lbl}>Format</label>
                   <div style={{display:"flex",gap:8}}>
-                    {[["instagram","Instagram & LinkedIn 4:5"],["portrait","Stories, Reels & TikTok 9:16"]].map(([id,label])=>(
+                    {[["instagram","Instagram · LinkedIn · TikTok Photos"],["portrait","Stories · Reels · TikTok Video"]].map(([id,label])=>(
                       <button key={id} onClick={()=>setQuoteFormat(id)} style={{flex:1,background:quoteFormat===id?A.text:A.bg,border:`1.5px solid ${quoteFormat===id?A.text:A.border}`,color:quoteFormat===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                     ))}
                   </div>
@@ -1778,7 +1836,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <div>
                 <label style={lbl}>Format</label>
                 <div style={{display:"flex",gap:8}}>
-                  {[["instagram","Instagram & LinkedIn 4:5"],["portrait","Stories, Reels & TikTok 9:16"]].map(([id,label])=>(
+                  {[["instagram","Instagram · LinkedIn · TikTok Photos"],["portrait","Stories · Reels · TikTok Video"]].map(([id,label])=>(
                     <button key={id} onClick={()=>setQuoteFormat(id)} style={{flex:1,background:quoteFormat===id?A.text:A.bg,border:`1.5px solid ${quoteFormat===id?A.text:A.border}`,color:quoteFormat===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                   ))}
                 </div>
@@ -2129,7 +2187,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <div>
                   <label style={lbl}>Format</label>
                   <div style={{display:"flex",gap:6}}>
-                    {[["instagram","Instagram & LinkedIn 4:5"],["portrait","Stories, Reels & TikTok 9:16"]].map(([id,label])=>(
+                    {[["instagram","Instagram · LinkedIn · TikTok Photos"],["portrait","Stories · Reels · TikTok Video"]].map(([id,label])=>(
                       <button key={id} onClick={()=>setRatio(id)} style={{flex:1,background:ratio===id?A.text:A.bg,border:`1.5px solid ${ratio===id?A.text:A.border}`,color:ratio===id?A.accentText:A.muted,padding:"7px 4px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                     ))}
                   </div>
@@ -2165,14 +2223,21 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 ? <div style={{textAlign:"center",padding:"30px 0",color:A.muted,fontSize:13}}>No carousels yet.</div>
                 : <div style={{display:"flex",flexDirection:"column",gap:10}}>
                     {history.map(entry=>(
-                      <div key={entry.id} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:"16px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16}}>
-                        <div>
-                          <div style={{fontWeight:700,fontSize:14,marginBottom:3}}>{entry.topic}</div>
-                          <div style={{color:A.muted,fontSize:12}}>{entry.slides.length} slides · {entry.date}</div>
+                      <div key={entry.id} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:"16px 18px"}}>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,marginBottom:entry.caption?10:0}}>
+                          <div>
+                            <div style={{fontWeight:700,fontSize:14,marginBottom:3}}>{entry.topic}</div>
+                            <div style={{color:A.muted,fontSize:12}}>{entry.slides.length} slides · {entry.date}{entry.caption?" · Caption saved":""}</div>
+                          </div>
+                          <button onClick={()=>{setSlides(entry.slides);setActive(0);setView("preview");setLastTopic(entry.topic);setNav("generate");if(entry.caption){setCaption(entry.caption);setShowCaption(true);}}} style={{background:A.text,color:A.accentText,padding:"7px 16px",borderRadius:8,fontSize:13,fontWeight:700,flexShrink:0}}>
+                            Load →
+                          </button>
                         </div>
-                        <button onClick={()=>{setSlides(entry.slides);setActive(0);setView("preview");setLastTopic(entry.topic);setNav("generate");}} style={{background:A.text,color:A.accentText,padding:"7px 16px",borderRadius:8,fontSize:13,fontWeight:700,flexShrink:0}}>
-                          Load →
-                        </button>
+                        {entry.caption&&(
+                          <div style={{background:A.bg,border:`1px solid ${A.border}`,borderRadius:8,padding:"10px 12px",fontSize:12,color:A.muted,lineHeight:1.6,whiteSpace:"pre-wrap"}}>
+                            {entry.caption.length>150?entry.caption.slice(0,150)+"...":entry.caption}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -2516,7 +2581,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           <div style={{animation:"fadeUp 0.3s ease"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
               <span style={{fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:A.muted}}>Format:</span>
-              {[["instagram","Instagram & LinkedIn 4:5"],["portrait","Stories, Reels & TikTok 9:16"]].map(([id,label])=>(
+              {[["instagram","Instagram · LinkedIn · TikTok Photos"],["portrait","Stories · Reels · TikTok Video"]].map(([id,label])=>(
                 <button key={id} onClick={()=>setRatio(id)} style={{background:ratio===id?A.text:A.surface,border:`1.5px solid ${ratio===id?A.text:A.border}`,color:ratio===id?A.accentText:A.muted,padding:"5px 14px",borderRadius:7,fontSize:12,fontWeight:700}}>{label}</button>
               ))}
               <button onClick={()=>{setSlides([]);setView("setup");setActive(0);setDownloadDone(false);}} style={{marginLeft:"auto",padding:"5px 14px",borderRadius:7,border:`1.5px solid ${A.border}`,background:A.surface,color:A.text,fontSize:12,fontWeight:700,cursor:"pointer"}}>+ New</button>
