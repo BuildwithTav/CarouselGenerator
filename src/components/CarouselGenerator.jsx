@@ -745,12 +745,16 @@ export default function App() {
     }
   };
 
+  const [upgrading, setUpgrading] = useState(false);
+
   const handleUpgrade = async (priceId, mode="subscription") => {
+    setUpgrading(true);
     try {
       const r = await fetch("/api/checkout", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email: currentUser.email, priceId, mode }) });
       const d = await r.json();
       if (d.url) window.location.href = d.url;
     } catch { alert("Something went wrong — try again."); }
+    setUpgrading(false);
   };
 
   const [profileUrl, setProfileUrl] = useState(S?.profileUrl||null);
@@ -1206,6 +1210,14 @@ Return ONLY valid JSON, nothing else.` }
     const interval = setInterval(()=>{ refreshUser(); }, 60000);
     return () => clearInterval(interval);
   }, [currentUser?.email]);
+
+  // Handle ?tab= URL param to navigate to specific tab on load
+  useEffect(()=>{
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+    if (tab) { setNav(tab); window.history.replaceState({}, "", "/"); }
+  }, []);
 
   const isMobileDevice = () => true;
 
@@ -1739,7 +1751,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         </div>
       )}
 
-      {/* UPGRADE MODAL */}
+      {/* UPGRADING OVERLAY */}
+      {upgrading&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:16}}>
+            <div style={{width:32,height:32,borderRadius:"50%",border:`3px solid ${GOLD}44`,borderTop:`3px solid ${GOLD}`,animation:"spin 0.7s linear infinite"}}/>
+            <span style={{color:"#fff",fontSize:14,fontWeight:600}}>Redirecting to checkout...</span>
+          </div>
+        </div>
+      )}
       {upgradePrompt&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9997,padding:16}}>
           <div style={{background:A.surface,borderRadius:16,padding:32,width:"100%",maxWidth:420,boxShadow:"0 20px 60px rgba(0,0,0,0.15)"}}>
@@ -2870,6 +2890,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID)} style={{width:"100%",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:15,border:"none",marginTop:16}}>
                     Get Starter — £39/month
                   </button>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:10,flexWrap:"wrap"}}>
+                    {["Apple Pay","Klarna","Amazon Pay","Card"].map(m=>(
+                      <span key={m} style={{fontSize:10,fontWeight:700,padding:"2px 8px",background:A.bg,border:`1px solid ${A.border}`,borderRadius:4,color:A.muted}}>{m}</span>
+                    ))}
+                  </div>
                 </div>
                 <div style={{background:"linear-gradient(135deg,#1a1a1a,#2a2a2a)",border:`1.5px solid ${GOLD}`,borderRadius:14,padding:24,marginBottom:16}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
@@ -2884,6 +2909,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"13px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:15,border:"none",marginTop:16}}>
                     Get Pro — £59/month
                   </button>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:10,flexWrap:"wrap"}}>
+                    {["Apple Pay","Klarna","Amazon Pay","Card"].map(m=>(
+                      <span key={m} style={{fontSize:10,fontWeight:700,padding:"2px 8px",background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:4,color:"rgba(255,255,255,0.5)"}}>{m}</span>
+                    ))}
+                  </div>
                 </div>
                 {/* Credit top-ups */}
                 <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
