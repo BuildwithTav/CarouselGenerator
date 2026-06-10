@@ -12,7 +12,7 @@ export async function POST(req) {
       customer_email: email,
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/?tab=account`,
       metadata: { email }
     });
 
