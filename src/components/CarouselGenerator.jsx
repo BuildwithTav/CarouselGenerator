@@ -1695,7 +1695,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:${A.border};border-radius:2px}
         input[type=range]{-webkit-appearance:none;height:3px;border-radius:2px;background:${A.border};width:100%}
         input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:${A.text};cursor:pointer}
-        ::placeholder{color:${A.muted};opacity:0.65}
+        .topup-btn:hover { border-color: #BB9900 !important; color: #BB9900 !important; transform: translateY(-1px); }
+        .topup-btn { transition: all 0.15s; }
       `}</style>
 
       {/* AUTH LOADING */}
@@ -1771,7 +1772,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             <p style={{fontSize:13,color:A.muted,margin:"0 0 24px",lineHeight:1.6}}>
               {creditsRemaining()===0
                 ? currentUser?.plan==="free" ? "Free accounts get 6 credits per month. Upgrade for more." : "You've hit your monthly limit. Upgrade to Pro for unlimited generations."
-                : "More credits, more features, no limits."}
+                : "More credits, more features. Cancel anytime."}
             </p>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
               {currentUser?.plan==="free"&&(
@@ -2902,7 +2903,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",background:GOLD,borderRadius:20,color:"#000"}}>Best value</span>
                   </div>
                   <div style={{fontSize:26,fontWeight:800,margin:"8px 0 4px",color:"#fff"}}>£59<span style={{fontSize:14,fontWeight:500,color:"rgba(255,255,255,0.5)"}}>/month</span></div>
-                  <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"0 0 16px"}}>Unlimited credits. Run every brand and account without counting.</p>
+                  <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"0 0 4px"}}>Unlimited credits. Run every brand and account without counting.</p>
+                  <p style={{fontSize:11,color:"rgba(255,255,255,0.3)",margin:"0 0 16px"}}>Fair usage policy applies — 300 credits/month. Subject to change with notice.</p>
                   {["Everything in Starter","Unlimited credits — no limits, no counting","Managing multiple brands or clients? Pro handles all of them","Affiliate programme — refer 4 people and Pro pays for itself. Refer 10 and you're making £147/month from a £59 investment","Priority support","Early access to new features"].map(f=>(
                     <div key={f} style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:13,color:"#fff",marginBottom:6}}><span style={{color:GOLD,fontWeight:700,flexShrink:0}}>✓</span>{f}</div>
                   ))}
@@ -2920,13 +2922,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <label style={lbl}>Need a top-up?</label>
                   <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>One-time credit purchases. Never expire.</p>
                   <div style={{display:"flex",gap:10}}>
-                    <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer"}}>
+                    <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center"}}>
                       <div style={{fontSize:16,fontWeight:800,marginBottom:2}}>15 credits</div>
-                      <div style={{color:A.muted,fontSize:12}}>£25 one-time</div>
+                      <div style={{fontSize:12}}>£25 one-time</div>
                     </button>
-                    <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${GOLD}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer"}}>
+                    <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center",position:"relative"}}>
+                      <div style={{position:"absolute",top:-8,right:8,fontSize:9,fontWeight:700,padding:"2px 6px",background:GOLD,color:"#000",borderRadius:4}}>Best value</div>
                       <div style={{fontSize:16,fontWeight:800,marginBottom:2}}>30 credits</div>
-                      <div style={{color:GOLD,fontSize:12}}>£45 one-time</div>
+                      <div style={{fontSize:12}}>£45 one-time</div>
                     </button>
                   </div>
                 </div>
@@ -2936,7 +2939,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             {/* Starter user — upgrade to pro + manage subscription */}
             {planLabel==="starter"&&(
               <>
-                <div style={{background:"linear-gradient(135deg,#1a1a1a,#2a2a2a)",border:`1.5px solid ${GOLD}`,borderRadius:14,padding:24,marginBottom:16}}>
+                <div style={{background:"linear-gradient(135deg,#1a1a1a,#2a2a2a)",border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
                   <label style={{...lbl,color:GOLD}}>Upgrade to Pro</label>
                   <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"8px 0 4px",lineHeight:1.6}}>Unlimited credits. No counting. No running out.</p>
                   <p style={{fontSize:12,color:"rgba(255,255,255,0.4)",margin:"0 0 16px",lineHeight:1.6}}>Managing multiple brands or client accounts? Pro handles all of them. Refer 4 people and Pro pays for itself. Refer 10 and you're making £147/month from a £59 investment.</p>
@@ -2948,13 +2951,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <label style={lbl}>Need more credits this month?</label>
                   <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>One-time top-ups. Never expire.</p>
                   <div style={{display:"flex",gap:10}}>
-                    <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer"}}>
+                    <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center"}}>
                       <div style={{fontSize:16,fontWeight:800,marginBottom:2}}>15 credits</div>
-                      <div style={{color:A.muted,fontSize:12}}>£25 one-time</div>
+                      <div style={{fontSize:12}}>£25 one-time</div>
                     </button>
-                    <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${GOLD}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer"}}>
+                    <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center",position:"relative"}}>
+                      <div style={{position:"absolute",top:-8,right:8,fontSize:9,fontWeight:700,padding:"2px 6px",background:GOLD,color:"#000",borderRadius:4}}>Best value</div>
                       <div style={{fontSize:16,fontWeight:800,marginBottom:2}}>30 credits</div>
-                      <div style={{color:GOLD,fontSize:12}}>£45 one-time</div>
+                      <div style={{fontSize:12}}>£45 one-time</div>
                     </button>
                   </div>
                 </div>
