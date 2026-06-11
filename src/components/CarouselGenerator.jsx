@@ -653,7 +653,7 @@ export default function App() {
       if (d.user) { 
         setCurrentUser(d.user); 
         setShowAuthModal(false);
-        if (d.user && d.user.plan !== "pro" && !d.user.is_admin && d.user.period_start) {
+        if (d.user && !isUnlimitedPlan(d.user.plan) && !d.user.is_admin && d.user.period_start) {
           const daysSince = (new Date() - new Date(d.user.period_start)) / (1000 * 60 * 60 * 24);
           if (daysSince >= 30) {
             fetch("/api/credits/reset", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email: d.user.email }) })
@@ -691,7 +691,8 @@ export default function App() {
     if (!otpCode.trim()) { setAuthError("Enter the 6 digit code."); return; }
     setAuthSubmitting(true); setAuthError("");
     try {
-      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"verify-otp", email: authEmail.trim().toLowerCase(), token: otpCode.trim() }) });
+      const affiliateRef = getAffiliateRef();
+      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"verify-otp", email: authEmail.trim().toLowerCase(), token: otpCode.trim(), affiliateRef }) });
       const d = await r.json();
       if (d.error) { setAuthError("Invalid code — check your email and try again."); }
       else { 
@@ -720,29 +721,31 @@ export default function App() {
     } catch {}
   };
 
+  const isUnlimitedPlan = (plan) => plan === "pro" || plan === "agency";
+
   const creditsRemaining = () => {
     if (!currentUser) return 0;
-    if (currentUser.plan === "pro" || currentUser.is_admin) return "∞";
+    if (isUnlimitedPlan(currentUser.plan) || currentUser.is_admin) return "∞";
     const limit = (currentUser.credits_limit||6) + (currentUser.bonus_credits||0);
     return Math.max(0, limit - (currentUser.credits_used||0));
   };
 
   const canGenerate = () => {
     if (!currentUser) return false;
-    if (currentUser.plan === "pro" || currentUser.is_admin) return true;
+    if (isUnlimitedPlan(currentUser.plan) || currentUser.is_admin) return true;
     const limit = (currentUser.credits_limit||6) + (currentUser.bonus_credits||0);
     return (currentUser.credits_used||0) < limit;
   };
 
   const isLastCredit = () => {
-    if (!currentUser || currentUser.plan === "pro" || currentUser.is_admin) return false;
+    if (!currentUser || isUnlimitedPlan(currentUser.plan) || currentUser.is_admin) return false;
     return creditsRemaining() === 1;
   };
 
   const confirmLastCredit = () => true;
 
   const checkMonthlyReset = async () => {
-    if (!currentUser || currentUser.plan === "pro" || currentUser.is_admin) return;
+    if (!currentUser || isUnlimitedPlan(currentUser.plan) || currentUser.is_admin) return;
     const periodStart = currentUser.period_start ? new Date(currentUser.period_start) : null;
     if (!periodStart) return;
     const now = new Date();
@@ -758,10 +761,21 @@ export default function App() {
   const [upgrading, setUpgrading] = useState(false);
   const [hoveredBtn, setHoveredBtn] = useState(null);
 
+  // Capture affiliate ref from URL on load
+  const getAffiliateRef = () => { try { return localStorage.getItem("cs_affiliate_ref")||null; } catch { return null; } };
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const sa = params.get("sa");
+      if (sa) localStorage.setItem("cs_affiliate_ref", sa);
+    } catch {}
+  }, []);
+
   const handleUpgrade = async (priceId, mode="subscription") => {
     setUpgrading(true);
     try {
-      const r = await fetch("/api/checkout", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email: currentUser.email, priceId, mode }) });
+      const affiliateRef = getAffiliateRef();
+      const r = await fetch("/api/checkout", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email: currentUser.email, priceId, mode, affiliateRef }) });
       const d = await r.json();
       if (d.url) window.location.href = d.url;
     } catch { alert("Something went wrong — try again."); }
@@ -1197,7 +1211,7 @@ Return ONLY valid JSON, nothing else.` }
     try {
       await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`, i===0);
       setDownloadDone(true); setTimeout(()=>setDownloadDone(false), 2000);
-      if (currentUser && !currentUser.is_admin && currentUser.plan !== "pro") {
+      if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
         await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email }) });
         refreshUser();
       }
@@ -1317,7 +1331,7 @@ Return ONLY valid JSON, nothing else.` }
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(()=>URL.revokeObjectURL(url),2000);
       if (isMobileDevice()) setTimeout(()=>alert("✓ Zip downloaded — open the Files app to find your slides."),1500);
-      if (currentUser && !currentUser.is_admin && currentUser.plan !== "pro") {
+      if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
         await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email }) });
         refreshUser();
       }
@@ -1631,7 +1645,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
   const downloadAllQuotes = async () => {
     const filled = quoteInputs.filter(q => q.trim());
     if (!canGenerate()) { setUpgradePrompt(true); return; }
-    if (filled.length > 1 && currentUser?.plan !== "pro" && !currentUser?.is_admin) {
+    if (filled.length > 1 && !isUnlimitedPlan(currentUser?.plan) && !currentUser?.is_admin) {
       if (!window.confirm(`Downloading all ${filled.length} quote cards will use ${filled.length} credits. Continue?`)) return;
     }
     setDownloadingQuotes(true);
@@ -1648,7 +1662,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           const blob = await downloadQuote(filled[i], i);
           if (blob) {
             zip.file(`quote-${i+1}.png`, blob);
-            if (currentUser && !currentUser.is_admin && currentUser.plan !== "pro") {
+            if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
               await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email }) });
             }
           }
@@ -1660,7 +1674,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       a.href=url; a.download="quote-cards.zip";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(()=>URL.revokeObjectURL(url),2000);
-      if (currentUser && !currentUser.is_admin && currentUser.plan !== "pro") refreshUser();
+      if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) refreshUser();
     } catch(e) { console.error("Quote zip failed:", e); alert("Download failed — try again."); }
     setDownloadingQuotes(false);
   };
@@ -1674,7 +1688,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
     </div>
   );
 
-  const planLabel = currentUser?.plan === "pro" ? "pro" : currentUser?.plan === "starter" ? "starter" : "free";
+  const planLabel = currentUser?.plan === "agency" ? "agency" : currentUser?.plan === "pro" ? "pro" : currentUser?.plan === "starter" ? "starter" : currentUser?.plan === "affiliate_licence" ? "affiliate_licence" : currentUser?.plan === "white_label" ? "white_label" : "free";
   const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
   const BURGER_ITEMS = [["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
   const MAIN_NAV = [["generate","Generate"],["quotes","Quotes"]];
@@ -1792,17 +1806,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </h2>
             <p style={{fontSize:13,color:A.muted,margin:"0 0 24px",lineHeight:1.6}}>
               {creditsRemaining()===0
-                ? currentUser?.plan==="free" ? "Free accounts get 6 credits per month. Upgrade for more." : "You've hit your monthly limit. Upgrade to Pro for unlimited generations."
+                ? currentUser?.plan==="free" ? "Free accounts get 6 credits per month. Upgrade for more." : "You've hit your monthly limit. Upgrade to Pro for 80 credits/month."
                 : "More credits, more features. Cancel anytime."}
             </p>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
               {currentUser?.plan==="free"&&(
                 <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID)} style={{padding:"14px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:15,border:"none",textAlign:"center"}}>
-                  Starter — £39/month · 30 credits
+                  Starter — $20/month · 20 credits
                 </button>
               )}
               <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{padding:"14px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:15,border:"none",textAlign:"center"}}>
-                Pro — £59/month · Unlimited + Affiliate Access
+                Pro — $50/month · 80 credits + 30% affiliate
               </button>
               <button onClick={()=>setUpgradePrompt(false)} style={{padding:"10px",background:"none",color:A.muted,border:"none",fontSize:13}}>Maybe later</button>
             </div>
@@ -1847,8 +1861,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           {/* Credit counter — desktop only */}
           {currentUser&&(
             <div className="desktop-only" style={{display:"flex",alignItems:"center",gap:6,padding:"0 10px",borderLeft:`1px solid ${A.border}`,marginLeft:4}}>
-              <span style={{fontSize:11,fontWeight:700,color:currentUser.plan==="free"&&creditsRemaining()===0?"#c0392b":currentUser.plan==="free"&&creditsRemaining()===1?"#e67e22":currentUser.plan==="pro"?GOLD:A.muted}}>
-                {currentUser.plan==="pro"?"Pro ∞":currentUser.plan==="starter"?`${creditsRemaining()} left`:creditsRemaining()===1?"1 credit left ⚠️":`${creditsRemaining()} free`}
+              <span style={{fontSize:11,fontWeight:700,color:currentUser.plan==="free"&&creditsRemaining()===0?"#c0392b":currentUser.plan==="free"&&creditsRemaining()===1?"#e67e22":isUnlimitedPlan(currentUser.plan)?GOLD:A.muted}}>
+                {isUnlimitedPlan(currentUser.plan)?(currentUser.plan==="agency"?"Agency ∞":"Pro ∞"):currentUser.plan==="starter"?`${creditsRemaining()} left`:currentUser.plan==="affiliate_licence"?`${creditsRemaining()} left`:currentUser.plan==="white_label"?`${creditsRemaining()} left`:creditsRemaining()===1?"1 credit left ⚠️":`${creditsRemaining()} free`}
               </span>
               {currentUser.plan!=="pro"&&<button onClick={()=>setUpgradePrompt(true)} style={{fontSize:10,fontWeight:700,padding:"3px 8px",background:GOLD,color:"#000",border:"none",borderRadius:5}}>Upgrade</button>}
             </div>
@@ -1862,8 +1876,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           {/* Credits in burger menu */}
           {currentUser&&(
             <div style={{padding:"12px 24px",borderBottom:`1px solid ${A.border}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-              <span style={{fontSize:14,fontWeight:700,color:currentUser.plan==="free"&&creditsRemaining()===0?"#c0392b":currentUser.plan==="free"&&creditsRemaining()===1?"#e67e22":currentUser.plan==="pro"?GOLD:A.muted}}>
-                {currentUser.plan==="pro"?"Pro — Unlimited":currentUser.plan==="starter"?`${creditsRemaining()} credits left`:creditsRemaining()===1?"⚠️ 1 credit left":`${creditsRemaining()} free credits`}
+              <span style={{fontSize:14,fontWeight:700,color:currentUser.plan==="free"&&creditsRemaining()===0?"#c0392b":currentUser.plan==="free"&&creditsRemaining()===1?"#e67e22":isUnlimitedPlan(currentUser.plan)?GOLD:A.muted}}>
+                {isUnlimitedPlan(currentUser.plan)?(currentUser.plan==="agency"?"Agency — Unlimited":"Pro — Unlimited"):currentUser.plan==="starter"?`${creditsRemaining()} credits left`:currentUser.plan==="affiliate_licence"?`${creditsRemaining()} credits left`:currentUser.plan==="white_label"?`${creditsRemaining()} credits left`:creditsRemaining()===1?"⚠️ 1 credit left":`${creditsRemaining()} free credits`}
               </span>
               {currentUser.plan!=="pro"&&<button onClick={()=>{setMenuOpen(false);setUpgradePrompt(true);}} style={{fontSize:12,fontWeight:700,padding:"6px 14px",background:GOLD,color:"#000",border:"none",borderRadius:6}}>Upgrade</button>}
             </div>
@@ -2146,7 +2160,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                             const next=[entry,...quoteHistory].slice(0,20);
                             setQuoteHistory(next);
                             try{localStorage.setItem("bwt_quote_history",JSON.stringify(next));}catch{}
-                            if (currentUser && !currentUser.is_admin && currentUser.plan !== "pro") {
+                            if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
                               await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email }) });
                               refreshUser();
                             }
@@ -2789,7 +2803,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
                 {[
                   { date:"09 Jun 2026", tag:"Update", msg:"Brand settings currently save to this device only. Cross-device sync is coming soon." },
-                  { date:"09 Jun 2026", tag:"New", msg:"Monetisation live — Free, Starter and Pro plans now available. 6 credits per month on free tier." },
+                  { date:"09 Jun 2026", tag:"New", msg:"Monetisation live — Free, Starter ($20), Pro ($50) and Agency ($100) plans now available. Affiliate Licence ($297) and White Label ($497) also available." },
                   { date:"08 Jun 2026", tag:"New", msg:"OTP email login added. Sign in with your email and a 6 digit code — no password needed." },
                   { date:"07 Jun 2026", tag:"Fix", msg:"Safari download issue resolved. Downloads now work across all browsers." },
                   { date:"06 Jun 2026", tag:"New", msg:"Caption generator added — write ready-to-post captions in your voice with hashtags." },
@@ -2883,16 +2897,16 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <label style={lbl}>Current plan</label>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:8}}>
                 <div>
-                  <div style={{fontSize:20,fontWeight:800,textTransform:"capitalize"}}>{currentUser?.plan}</div>
+                  <div style={{fontSize:20,fontWeight:800,textTransform:"capitalize"}}>{currentUser?.plan==="affiliate_licence"?"Affiliate Licence":currentUser?.plan==="white_label"?"White Label":currentUser?.plan}</div>
                   <div style={{fontSize:13,color:A.muted,marginTop:2}}>
-                    {currentUser?.plan==="pro"
+                    {isUnlimitedPlan(currentUser?.plan)
                       ? `${currentUser?.credits_used||0} credits used this month (unlimited)`
                       : currentUser?.plan==="free"
                       ? `${creditsRemaining()} trial credits remaining`
                       : `${creditsRemaining()} credits remaining this month`}
                   </div>
                 </div>
-                <span style={{fontSize:11,fontWeight:700,padding:"4px 12px",background:currentUser?.plan==="pro"?GOLD:A.text,color:currentUser?.plan==="pro"?"#000":A.accentText,borderRadius:20}}>{currentUser?.plan?.toUpperCase()}</span>
+                <span style={{fontSize:11,fontWeight:700,padding:"4px 12px",background:isUnlimitedPlan(currentUser?.plan)||currentUser?.plan==="affiliate_licence"||currentUser?.plan==="white_label"?GOLD:A.text,color:isUnlimitedPlan(currentUser?.plan)||currentUser?.plan==="affiliate_licence"||currentUser?.plan==="white_label"?"#000":A.accentText,borderRadius:20}}>{currentUser?.plan==="affiliate_licence"?"AFFILIATE":currentUser?.plan==="white_label"?"WHITE LABEL":currentUser?.plan?.toUpperCase()}</span>
               </div>
             </div>
 
@@ -2904,13 +2918,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <span style={{fontSize:16,fontWeight:800}}>Starter</span>
                     <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",background:A.text,borderRadius:20,color:A.accentText}}>Most popular</span>
                   </div>
-                  <div style={{fontSize:26,fontWeight:800,margin:"8px 0 4px"}}>£39<span style={{fontSize:14,fontWeight:500,color:A.muted}}>/month</span></div>
-                  <p style={{fontSize:13,color:A.muted,margin:"0 0 16px"}}>30 credits/month — enough for 3-4 complete carousels every week.</p>
-                  {["Full carousel generation up to 8 slides","Quote cards, captions and AI rewrites","Downloads — no watermark","All formats, fonts, styles and colours","Custom photo uploads","Carousel history with saved captions"].map(f=>(
+                  <div style={{fontSize:26,fontWeight:800,margin:"8px 0 4px"}}>$20<span style={{fontSize:14,fontWeight:500,color:A.muted}}>/month</span></div>
+                  <p style={{fontSize:13,color:A.muted,margin:"0 0 16px"}}>20 credits/month — enough for 1-2 carousels every week.</p>
+                  {["Full carousel generation up to 8 slides","Quote cards, captions and AI rewrites","Downloads — no watermark","All formats, fonts, styles and colours","Custom photo uploads","Carousel history with saved captions","Affiliate programme — earn 20% on referrals"].map(f=>(
                     <div key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:A.text,marginBottom:6}}><span style={{color:GOLD,fontWeight:700}}>✓</span>{f}</div>
                   ))}
                   <button onMouseEnter={()=>setHoveredBtn("starter")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID)} style={{width:"100%",padding:"13px",background:hoveredBtn==="starter"?"#1a1a1a":A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:15,border:"none",marginTop:16,transform:hoveredBtn==="starter"?"translateY(-1px)":"none",transition:"all 0.2s"}}>
-                    Get Starter — £39/month
+                    Get Starter — $20/month
                   </button>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:10,flexWrap:"wrap"}}>
                     <PaymentBadges dark={false}/>
@@ -2921,18 +2935,46 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <span style={{fontSize:16,fontWeight:800,color:"#fff"}}>Pro</span>
                     <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",background:GOLD,borderRadius:20,color:"#000"}}>Best value</span>
                   </div>
-                  <div style={{fontSize:26,fontWeight:800,margin:"8px 0 4px",color:"#fff"}}>£59<span style={{fontSize:14,fontWeight:500,color:"rgba(255,255,255,0.5)"}}>/month</span></div>
-                  <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"0 0 4px"}}>Unlimited credits. Run every brand and account without counting.</p>
+                  <div style={{fontSize:26,fontWeight:800,margin:"8px 0 4px",color:"#fff"}}>$50<span style={{fontSize:14,fontWeight:500,color:"rgba(255,255,255,0.5)"}}>/month</span></div>
+                  <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"0 0 4px"}}>80 credits/month — serious creators posting 3-5 carousels a week.</p>
                   <p style={{fontSize:11,color:"rgba(255,255,255,0.3)",margin:"0 0 16px"}}>Fair usage policy applies. See <a href="/terms" target="_blank" style={{color:"rgba(255,255,255,0.4)",textDecoration:"underline"}}>Terms</a> for details.</p>
-                  {["Everything in Starter","Unlimited credits — no limits, no counting","Managing multiple brands or clients? Pro handles all of them","Affiliate programme — refer 4 people and Pro pays for itself. Refer 10 and you're making £147/month from a £59 investment","Priority support","Early access to new features"].map(f=>(
+                  {["Everything in Starter","80 credits/month — 40 carousels","30% affiliate commission — refer 3 and Pro pays for itself","Priority support","Early access to new features"].map(f=>(
                     <div key={f} style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:13,color:"#fff",marginBottom:6}}><span style={{color:GOLD,fontWeight:700,flexShrink:0}}>✓</span>{f}</div>
                   ))}
                   <button onMouseEnter={()=>setHoveredBtn("pro")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"13px",background:hoveredBtn==="pro"?"#e6c45a":GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:15,border:"none",marginTop:16,transform:hoveredBtn==="pro"?"translateY(-1px)":"none",boxShadow:hoveredBtn==="pro"?"0 4px 20px rgba(187,153,0,0.4)":"none",transition:"all 0.2s"}}>
-                    Get Pro — £59/month
+                    Get Pro — $50/month
                   </button>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:10,flexWrap:"wrap"}}>
                     <PaymentBadges dark={true}/>
                   </div>
+                </div>
+                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                    <span style={{fontSize:16,fontWeight:800}}>Agency</span>
+                    <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",background:A.border,borderRadius:20,color:A.text}}>Power users</span>
+                  </div>
+                  <div style={{fontSize:26,fontWeight:800,margin:"8px 0 4px"}}>$100<span style={{fontSize:14,fontWeight:500,color:A.muted}}>/month</span></div>
+                  <p style={{fontSize:13,color:A.muted,margin:"0 0 16px"}}>300 credits/month — manage multiple brands and client accounts.</p>
+                  {["Everything in Pro","300 credits/month — 150 carousels","40% affiliate commission — highest recurring rate","Manage 3-4 client profiles with ease","Priority support"].map(f=>(
+                    <div key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:A.text,marginBottom:6}}><span style={{color:GOLD,fontWeight:700}}>✓</span>{f}</div>
+                  ))}
+                  <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID)} style={{width:"100%",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:15,border:"none",marginTop:16}}>
+                    Get Agency — $100/month
+                  </button>
+                </div>
+                <div style={{background:"linear-gradient(135deg,#1a0a00,#2a1500)",border:`1.5px solid ${GOLD}`,borderRadius:14,padding:24,marginBottom:16}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                    <span style={{fontSize:16,fontWeight:800,color:"#fff"}}>Affiliate Licence</span>
+                    <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",background:GOLD,borderRadius:20,color:"#000"}}>🔥 Founding price</span>
+                  </div>
+                  <div style={{fontSize:26,fontWeight:800,margin:"8px 0 4px",color:"#fff"}}>$297<span style={{fontSize:14,fontWeight:500,color:"rgba(255,255,255,0.5)"}}> one-time</span></div>
+                  <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"0 0 16px"}}>Pay once. Use forever. Earn 35% on every referral forever. No monthly fees. Limited founding spots available.</p>
+                  {["15 credits/month — use and demo the tool","35% recurring commission on every referral","8% Tier 2 commission on your network's referrals","No monthly subscription — ever","Pays for itself after a handful of referrals"].map(f=>(
+                    <div key={f} style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:13,color:"#fff",marginBottom:6}}><span style={{color:GOLD,fontWeight:700,flexShrink:0}}>✓</span>{f}</div>
+                  ))}
+                  <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AFFILIATE_PRICE_ID,"payment")} style={{width:"100%",padding:"13px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:15,border:"none",marginTop:16}}>
+                    Get Affiliate Licence — $297 once
+                  </button>
                 </div>
                 {/* Credit top-ups */}
                 <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
@@ -2941,12 +2983,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <div style={{display:"flex",gap:10}}>
                     <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center"}}>
                       <div style={{fontSize:16,fontWeight:800,marginBottom:2}}>15 credits</div>
-                      <div style={{fontSize:12}}>£25 one-time</div>
+                      <div style={{fontSize:12}}>$25 one-time</div>
                     </button>
                     <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center",position:"relative"}}>
                       <div style={{position:"absolute",top:-8,right:8,fontSize:9,fontWeight:700,padding:"2px 6px",background:GOLD,color:"#000",borderRadius:4}}>Best value</div>
                       <div style={{fontSize:16,fontWeight:800,marginBottom:2}}>30 credits</div>
-                      <div style={{fontSize:12}}>£45 one-time</div>
+                      <div style={{fontSize:12}}>$45 one-time</div>
                     </button>
                   </div>
                 </div>
@@ -2958,10 +3000,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <>
                 <div style={{background:"linear-gradient(135deg,#1a1a1a,#2a2a2a)",border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
                   <label style={{...lbl,color:GOLD}}>Upgrade to Pro</label>
-                  <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"8px 0 4px",lineHeight:1.6}}>Unlimited credits. No counting. No running out.</p>
-                  <p style={{fontSize:12,color:"rgba(255,255,255,0.4)",margin:"0 0 16px",lineHeight:1.6}}>Managing multiple brands or client accounts? Pro handles all of them. Refer 4 people and Pro pays for itself. Refer 10 and you're making £147/month from a £59 investment.</p>
+                  <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"8px 0 4px",lineHeight:1.6}}>80 credits/month. More output, higher affiliate commission.</p>
+                  <p style={{fontSize:12,color:"rgba(255,255,255,0.4)",margin:"0 0 16px",lineHeight:1.6}}>Refer 3 people and Pro pays for itself. Refer 10 and you're making $150/month from a $50 investment.</p>
                   <button onMouseEnter={()=>setHoveredBtn("pro2")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"13px",background:hoveredBtn==="pro2"?"#e6c45a":GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:14,border:"none",transform:hoveredBtn==="pro2"?"translateY(-1px)":"none",boxShadow:hoveredBtn==="pro2"?"0 4px 20px rgba(187,153,0,0.4)":"none",transition:"all 0.2s"}}>
-                    Upgrade to Pro — £59/month
+                    Upgrade to Pro — $50/month
                   </button>
                 </div>
                 <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
@@ -2970,12 +3012,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <div style={{display:"flex",gap:10}}>
                     <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center"}}>
                       <div style={{fontSize:16,fontWeight:800,marginBottom:2}}>15 credits</div>
-                      <div style={{fontSize:12}}>£25 one-time</div>
+                      <div style={{fontSize:12}}>$25 one-time</div>
                     </button>
                     <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center",position:"relative"}}>
                       <div style={{position:"absolute",top:-8,right:8,fontSize:9,fontWeight:700,padding:"2px 6px",background:GOLD,color:"#000",borderRadius:4}}>Best value</div>
                       <div style={{fontSize:16,fontWeight:800,marginBottom:2}}>30 credits</div>
-                      <div style={{fontSize:12}}>£45 one-time</div>
+                      <div style={{fontSize:12}}>$45 one-time</div>
                     </button>
                   </div>
                 </div>
@@ -2989,14 +3031,42 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </>
             )}
 
-            {/* Pro user — manage subscription only */}
+            {/* Pro user — upgrade to agency or manage */}
             {planLabel==="pro"&&(
+              <>
+                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+                  <label style={{...lbl,color:GOLD}}>Upgrade to Agency</label>
+                  <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>300 credits/month. Manage multiple client accounts. 40% affiliate commission.</p>
+                  <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID)} style={{width:"100%",padding:"13px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:14,border:"none"}}>
+                    Upgrade to Agency — $100/month
+                  </button>
+                </div>
+                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+                  <label style={lbl}>Manage subscription</label>
+                  <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Update payment method, download invoices, or cancel.</p>
+                  <a href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL} target="_blank" rel="noopener noreferrer" style={{display:"block",textAlign:"center",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:14,textDecoration:"none"}}>
+                    Manage Subscription
+                  </a>
+                </div>
+              </>
+            )}
+
+            {/* Agency user — manage subscription only */}
+            {planLabel==="agency"&&(
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
                 <label style={lbl}>Manage subscription</label>
                 <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Update payment method, download invoices, or cancel.</p>
                 <a href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL} target="_blank" rel="noopener noreferrer" style={{display:"block",textAlign:"center",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:14,textDecoration:"none"}}>
                   Manage Subscription
                 </a>
+              </div>
+            )}
+
+            {/* Licence holders — manage only */}
+            {(planLabel==="affiliate_licence"||planLabel==="white_label")&&(
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+                <label style={lbl}>Lifetime Licence</label>
+                <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>You have lifetime access. No subscription needed. Your credits reset monthly.</p>
               </div>
             )}
 
