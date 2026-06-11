@@ -2469,20 +2469,26 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <textarea value={voiceProfile} onChange={e=>setVoiceProfile(e.target.value)} placeholder="e.g. Direct and honest. Short punchy sentences. Speak to people tired of the hype. Never overpromise. CTA is always soft — 'free preview in bio'." rows={5} style={{...inp,resize:"vertical",lineHeight:1.7}}/>
               </div>
 
+              </div>
+
+            </div>
+
+            {/* Right column — cover photo library + badge position */}
+            <div style={{position:"sticky",top:80}}>
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Cover photo library</label>
                 <p style={{color:A.muted,fontSize:12,margin:"0 0 12px",lineHeight:1.6}}>Save up to 8 photos. Pick one per generation. Used on cover slide only.</p>
                 <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
                   {coverPhotos.map((p,i)=>(
                     <div key={i} style={{position:"relative"}}>
-                      <div onClick={()=>{setActiveCoverPhoto(p);sampleImageBrightness(p).then(setBadgeArea);}} style={{width:72,height:72,borderRadius:8,overflow:"hidden",border:`2px solid ${activeCoverPhoto===p?GOLD:A.border}`,cursor:"pointer"}}>
+                      <div onClick={()=>{setActiveCoverPhoto(p);sampleImageBrightness(p).then(setBadgeArea);}} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:`2px solid ${activeCoverPhoto===p?GOLD:A.border}`,cursor:"pointer"}}>
                         <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                       </div>
                       <button onClick={()=>{const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);if(activeCoverPhoto===p)setActiveCoverPhoto(next[0]||null);}} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>×</button>
                     </div>
                   ))}
                   {coverPhotos.length < 8 && (
-                    <div onClick={()=>coverPhotoRef.current?.click()} style={{width:72,height:72,borderRadius:8,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:28}}>+</div>
+                    <div onClick={()=>coverPhotoRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:28}}>+</div>
                   )}
                 </div>
                 <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
@@ -2501,8 +2507,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   const coverSlide = {headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null};
                   return (
                     <div>
-                      <label style={{...lbl,marginBottom:8}}>Preview</label>
-                      <div style={{width:280,height:280*(1350/1080),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                      <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
                         <SlidePreview slide={coverSlide} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
                       </div>
                       <p style={{color:A.muted,fontSize:11,marginTop:8}}>Switch position above to see how badge and headline sit on your photo.</p>
@@ -2510,20 +2515,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   );
                 })()}
               </div>
-
             </div>
 
-            {/* Right column — brand preview */}
-            <div style={{position:"sticky",top:80}}>
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
-                <label style={{...lbl,marginBottom:12}}>Brand Preview</label>
-                <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                  <SlidePreview slide={{headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={0} total={6} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={false}/>
-                </div>
-              </div>
-            </div>
-
-            </div>
           </div>
         )}
 
@@ -2588,8 +2581,33 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={lbl}>Body font</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+                  {FONTS.map(f=>(
+                    <button key={f.id} onClick={()=>setFontId(f.id)} style={{background:fontId===f.id?A.text:A.bg,border:`1.5px solid ${fontId===f.id?GOLD:A.border}`,borderRadius:8,padding:"7px 14px"}}>
+                      <span style={{fontFamily:`"${f.css}",serif`,fontSize:14,fontWeight:700,color:fontId===f.id?A.accentText:A.text}}>{f.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={lbl}>Background Gradient — {overlayDark}%</label>
+                <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>Applies to all slides. Can be adjusted per-slide in the edit panel after generation.</p>
+                <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
+              </div>
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div><div style={{fontWeight:600,fontSize:13}}>Slide numbers</div><div style={{color:A.muted,fontSize:12}}>Watermark number on each slide</div></div>
+                {tog(showNums,setShowNums)}
+              </div>
+
+            </div>
+
+            {/* Right column — slide background (IS the preview) */}
+            <div style={{position:"sticky",top:80}}>
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Slide background (slides 2 onwards)</label>
-                <div style={{display:"flex",gap:8,marginBottom:bgMode==="custom"?14:0}}>
+                <div style={{display:"flex",gap:8,marginBottom:bgMode==="custom"?14:8}}>
                   {BG_MODES.map(m=>(
                     <button key={m.id} onClick={()=>setBgMode(m.id)} style={{flex:1,background:bgMode===m.id?A.text:A.bg,border:`1.5px solid ${bgMode===m.id?A.text:A.border}`,borderRadius:8,padding:"10px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
                       <span style={{fontSize:12,fontWeight:700,color:bgMode===m.id?A.accentText:A.text}}>{m.label}</span>
@@ -2644,7 +2662,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                         <span style={{fontSize:12,fontWeight:600,color:A.muted}}>Upload background images (up to 8)</span>
                       </div>
                     )}
-                    <p style={{color:A.muted,fontSize:11,margin:0,lineHeight:1.6}}>Safe zone: keep important elements within 80px from each edge. Recommended size: 1080×1350px.</p>
+                    <p style={{color:A.muted,fontSize:11,margin:"0 0 12px",lineHeight:1.6}}>Safe zone: keep important elements within 80px from each edge. Recommended size: 1080×1350px.</p>
                     <input ref={templateBgRef} type="file" accept="image/*" onChange={async e=>{
                     const file = e.target.files[0]; if(!file) return;
                     const reader = new FileReader();
@@ -2666,47 +2684,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     };
                     reader.readAsDataURL(file);
                   }} style={{display:"none"}}/>
-                    <div style={{marginTop:12}}>
-                
-                      <label style={{...lbl,marginBottom:8}}>Preview — check safe zone</label>
-                      <div style={{width:280,height:280*(1350/1080),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                        <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
-                      </div>
+                    <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                      <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
                     </div>
                   </div>
                 )}
-              </div>
-
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
-                <label style={lbl}>Body font</label>
-                <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-                  {FONTS.map(f=>(
-                    <button key={f.id} onClick={()=>setFontId(f.id)} style={{background:fontId===f.id?A.text:A.bg,border:`1.5px solid ${fontId===f.id?GOLD:A.border}`,borderRadius:8,padding:"7px 14px"}}>
-                      <span style={{fontFamily:`"${f.css}",serif`,fontSize:14,fontWeight:700,color:fontId===f.id?A.accentText:A.text}}>{f.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
-                <label style={lbl}>Background Gradient — {overlayDark}%</label>
-                <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>Applies to all slides. Can be adjusted per-slide in the edit panel after generation.</p>
-                <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
-              </div>
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <div><div style={{fontWeight:600,fontSize:13}}>Slide numbers</div><div style={{color:A.muted,fontSize:12}}>Watermark number on each slide</div></div>
-                {tog(showNums,setShowNums)}
-              </div>
-
-            </div>
-
-            {/* Right column — live preview */}
-            <div style={{position:"sticky",top:80}}>
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
-                <label style={{...lbl,marginBottom:12}}>Live Preview</label>
-                <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                  <SlidePreview slide={{headline:"Your slide headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting body text appears here to show how it looks.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={{...slideOpts(1),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={false}/>
-                </div>
               </div>
             </div>
 
