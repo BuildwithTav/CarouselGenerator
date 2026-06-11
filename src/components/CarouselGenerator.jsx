@@ -2681,11 +2681,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       };
                       reader.readAsDataURL(file);
                     }} style={{display:"none"}}/>
-                      <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                        <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
-                      </div>
                     </div>
                   )}
+                  <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`,marginTop:16}}>
+                    <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
+                  </div>
                 </div>
               </div>
 
