@@ -2988,7 +2988,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     </div>
                     <div style={{fontSize:24,fontWeight:800,margin:"6px 0 2px"}}>$100<span style={{fontSize:13,fontWeight:500,color:A.muted}}>/mo</span></div>
                     <div style={{fontSize:12,color:A.muted,marginBottom:12}}>300 credits/month</div>
-                    {["Everything in Pro","300 credits — 150 carousels","40% affiliate + 8% Tier 2","Multi-brand management","Client account ready","Priority support"].map(f=>(
+                    {["Everything in Pro","300 credits — 150 carousels","40% affiliate + 8% Tier 2","Manage multiple brands","High volume creators & agencies","Priority support"].map(f=>(
                       <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:A.text,marginBottom:5}}><span style={{color:GOLD,fontWeight:700,fontSize:11}}>✓</span>{f}</div>
                     ))}
                     <div style={{flex:1}}/>
@@ -3001,11 +3001,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <div style={{background:"linear-gradient(135deg,#0a0a1a,#15152a)",border:`1.5px solid #6644cc`,borderRadius:14,padding:20,display:"flex",flexDirection:"column"}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
                       <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>White Label</span>
-                      <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",background:"#6644cc",borderRadius:20,color:"#fff"}}>Resell</span>
+                      <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",background:"#6644cc",borderRadius:20,color:"#fff"}}>Your brand</span>
                     </div>
                     <div style={{fontSize:24,fontWeight:800,margin:"6px 0 2px",color:"#fff"}}>$497<span style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.5)"}}> once</span></div>
-                    <div style={{fontSize:12,color:"rgba(255,255,255,0.5)",marginBottom:12}}>80 credits/month</div>
-                    {["Your brand, your domain","80 credits/month","40% affiliate + 8% Tier 2","Sell to your own clients","Must use our pricing","Lifetime access"].map(f=>(
+                    <div style={{fontSize:12,color:"rgba(255,255,255,0.5)",marginBottom:12}}>80 credits/month — no monthly fee ever</div>
+                    {["Your brand, your domain","Resell as your own product","40% affiliate + 8% Tier 2","Sell to your clients at our prices","No monthly subscription ever","Lifetime access"].map(f=>(
                       <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"#fff",marginBottom:5}}><span style={{color:"#9977ff",fontWeight:700,fontSize:11}}>✓</span>{f}</div>
                     ))}
                     <div style={{flex:1}}/>
