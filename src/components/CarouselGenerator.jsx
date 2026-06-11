@@ -2471,59 +2471,56 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
               </div>
 
-            </div>
-
-            {/* Right column — cover photo library + badge position */}
-            <div style={{position:"sticky",top:80}}>
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
-                <label style={lbl}>Cover photo library</label>
-                <p style={{color:A.muted,fontSize:12,margin:"0 0 12px",lineHeight:1.6}}>Save up to 8 photos. Pick one per generation. Used on cover slide only.</p>
-                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
-                  {coverPhotos.map((p,i)=>(
-                    <div key={i} style={{position:"relative"}}>
-                      <div onClick={()=>{setActiveCoverPhoto(p);sampleImageBrightness(p).then(setBadgeArea);}} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:`2px solid ${activeCoverPhoto===p?GOLD:A.border}`,cursor:"pointer"}}>
-                        <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              {/* Right column — cover photo library + badge position */}
+              <div style={{position:"sticky",top:80}}>
+                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                  <label style={lbl}>Cover photo library</label>
+                  <p style={{color:A.muted,fontSize:12,margin:"0 0 12px",lineHeight:1.6}}>Save up to 8 photos. Pick one per generation. Used on cover slide only.</p>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
+                    {coverPhotos.map((p,i)=>(
+                      <div key={i} style={{position:"relative"}}>
+                        <div onClick={()=>{setActiveCoverPhoto(p);sampleImageBrightness(p).then(setBadgeArea);}} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:`2px solid ${activeCoverPhoto===p?GOLD:A.border}`,cursor:"pointer"}}>
+                          <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                        </div>
+                        <button onClick={()=>{const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);if(activeCoverPhoto===p)setActiveCoverPhoto(next[0]||null);}} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>×</button>
                       </div>
-                      <button onClick={()=>{const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);if(activeCoverPhoto===p)setActiveCoverPhoto(next[0]||null);}} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>×</button>
-                    </div>
-                  ))}
-                  {coverPhotos.length < 8 && (
-                    <div onClick={()=>coverPhotoRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:28}}>+</div>
-                  )}
-                </div>
-                <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
-
-                <label style={{...lbl,marginTop:14}}>Badge & hook position on cover</label>
-                <div style={{display:"flex",gap:8,marginBottom:14}}>
-                  {COVER_POSITIONS.map(p=>(
-                    <button key={p.id} onClick={()=>setCoverPosition(p.id)} style={{flex:1,background:coverPosition===p.id?A.text:A.bg,border:`1.5px solid ${coverPosition===p.id?A.text:A.border}`,borderRadius:8,padding:"8px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                      <span style={{fontSize:11,fontWeight:700,color:coverPosition===p.id?A.accentText:A.text}}>{p.label}</span>
-                      <span style={{fontSize:10,color:coverPosition===p.id?"rgba(255,255,255,0.6)":A.muted}}>{p.desc}</span>
-                    </button>
-                  ))}
-                </div>
-
-                {activeCoverPhoto&&(()=>{
-                  const coverSlide = {headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null};
-                  return (
-                    <div>
-                      <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                        <SlidePreview slide={coverSlide} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
+                    ))}
+                    {coverPhotos.length < 8 && (
+                      <div onClick={()=>coverPhotoRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:28}}>+</div>
+                    )}
+                  </div>
+                  <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
+                  <label style={{...lbl,marginTop:14}}>Badge & hook position on cover</label>
+                  <div style={{display:"flex",gap:8,marginBottom:14}}>
+                    {COVER_POSITIONS.map(p=>(
+                      <button key={p.id} onClick={()=>setCoverPosition(p.id)} style={{flex:1,background:coverPosition===p.id?A.text:A.bg,border:`1.5px solid ${coverPosition===p.id?A.text:A.border}`,borderRadius:8,padding:"8px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                        <span style={{fontSize:11,fontWeight:700,color:coverPosition===p.id?A.accentText:A.text}}>{p.label}</span>
+                        <span style={{fontSize:10,color:coverPosition===p.id?"rgba(255,255,255,0.6)":A.muted}}>{p.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {activeCoverPhoto&&(()=>{
+                    const coverSlide = {headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null};
+                    return (
+                      <div>
+                        <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                          <SlidePreview slide={coverSlide} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
+                        </div>
+                        <p style={{color:A.muted,fontSize:11,marginTop:8}}>Switch position above to see how badge and headline sit on your photo.</p>
                       </div>
-                      <p style={{color:A.muted,fontSize:11,marginTop:8}}>Switch position above to see how badge and headline sit on your photo.</p>
-                    </div>
-                  );
-                })()}
+                    );
+                  })()}
+                </div>
               </div>
-            </div>
 
+            </div>
           </div>
         )}
 
         {nav==="visual"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Visual</h2>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:24,alignItems:"start"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:24,alignItems:"start"}}>
               <div style={{display:"flex",flexDirection:"column",gap:20}}>
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
@@ -2601,96 +2598,96 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 {tog(showNums,setShowNums)}
               </div>
 
-            </div>
+              </div>
 
-            {/* Right column — slide background (IS the preview) */}
-            <div style={{position:"sticky",top:80}}>
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
-                <label style={lbl}>Slide background (slides 2 onwards)</label>
-                <div style={{display:"flex",gap:8,marginBottom:bgMode==="custom"?14:8}}>
-                  {BG_MODES.map(m=>(
-                    <button key={m.id} onClick={()=>setBgMode(m.id)} style={{flex:1,background:bgMode===m.id?A.text:A.bg,border:`1.5px solid ${bgMode===m.id?A.text:A.border}`,borderRadius:8,padding:"10px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                      <span style={{fontSize:12,fontWeight:700,color:bgMode===m.id?A.accentText:A.text}}>{m.label}</span>
-                      <span style={{fontSize:10,color:bgMode===m.id?"rgba(255,255,255,0.6)":A.muted}}>{m.desc}</span>
-                    </button>
-                  ))}
-                </div>
-                {bgMode==="colour"&&(
-                  <div style={{marginTop:12}}>
-                    <label style={lbl}>Pick a colour</label>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:10}}>
-                      {BG_COLOUR_PRESETS.map(p=>(
-                        <button key={p.id} onClick={()=>setBgColour(p.hex)} title={p.label} style={{width:32,height:32,borderRadius:"50%",background:p.hex,border:bgColour===p.hex?`3px solid ${A.text}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0,boxShadow:["#F5F3EF","#FAF7F2","#FFFFFF"].includes(p.hex)?`inset 0 0 0 1px ${A.border}`:"none"}}/>
-                      ))}
-                      {bgCustomSlots.map((c,i)=>(
-                        <div key={i} style={{position:"relative"}}>
-                          {c ? (
-                            <>
-                              <div onClick={()=>setBgColour(c)} style={{width:32,height:32,borderRadius:"50%",background:c,border:bgColour===c?`3px solid ${A.text}`:`2px solid ${A.border}`,cursor:"pointer",boxShadow:["#FFFFFF","#F5F3EF","#FAF7F2"].includes(c)?`inset 0 0 0 1px ${A.border}`:"none"}}/>
-                              <div onClick={()=>{const s=[...bgCustomSlots];s[i]="";setBgCustomSlots(s);if(bgColour===c)setBgColour("#0A0A0A");}} style={{position:"absolute",top:-4,right:-4,width:14,height:14,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,lineHeight:1}}>×</div>
-                            </>
-                          ) : (
-                            <>
-                              <div style={{width:32,height:32,borderRadius:"50%",background:A.surface,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:A.muted,cursor:"pointer"}}>+</div>
-                              <input type="color" defaultValue={bgColour} onChange={e=>{const s=[...bgCustomSlots];s[i]=e.target.value;setBgCustomSlots(s);setBgColour(e.target.value);}} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
-                            </>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                      <input type="color" value={bgColour} onChange={e=>setBgColour(e.target.value)} style={{width:40,height:40,borderRadius:8,border:`1px solid ${A.border}`,cursor:"pointer",padding:2}}/>
-                      <input value={bgColour} onChange={e=>setBgColour(e.target.value)} placeholder="#1a1a2e" style={{...inp,flex:1,fontSize:13}}/>
-                    </div>
+              {/* Right column — slide background (IS the preview) */}
+              <div style={{position:"sticky",top:80}}>
+                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                  <label style={lbl}>Slide background (slides 2 onwards)</label>
+                  <div style={{display:"flex",gap:8,marginBottom:bgMode==="custom"?14:8}}>
+                    {BG_MODES.map(m=>(
+                      <button key={m.id} onClick={()=>setBgMode(m.id)} style={{flex:1,background:bgMode===m.id?A.text:A.bg,border:`1.5px solid ${bgMode===m.id?A.text:A.border}`,borderRadius:8,padding:"10px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                        <span style={{fontSize:12,fontWeight:700,color:bgMode===m.id?A.accentText:A.text}}>{m.label}</span>
+                        <span style={{fontSize:10,color:bgMode===m.id?"rgba(255,255,255,0.6)":A.muted}}>{m.desc}</span>
+                      </button>
+                    ))}
                   </div>
-                )}
-                {bgMode==="custom"&&(
-                  <div>
-                    {templatePhotos.length > 0 ? (
-                      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
-                        {templatePhotos.map((photo,i)=>(
-                          <div key={i} onClick={()=>setTemplateBgUrl(photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:templateBgUrl===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0}}>
-                            <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  {bgMode==="colour"&&(
+                    <div style={{marginTop:12}}>
+                      <label style={lbl}>Pick a colour</label>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:10}}>
+                        {BG_COLOUR_PRESETS.map(p=>(
+                          <button key={p.id} onClick={()=>setBgColour(p.hex)} title={p.label} style={{width:32,height:32,borderRadius:"50%",background:p.hex,border:bgColour===p.hex?`3px solid ${A.text}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0,boxShadow:["#F5F3EF","#FAF7F2","#FFFFFF"].includes(p.hex)?`inset 0 0 0 1px ${A.border}`:"none"}}/>
+                        ))}
+                        {bgCustomSlots.map((c,i)=>(
+                          <div key={i} style={{position:"relative"}}>
+                            {c ? (
+                              <>
+                                <div onClick={()=>setBgColour(c)} style={{width:32,height:32,borderRadius:"50%",background:c,border:bgColour===c?`3px solid ${A.text}`:`2px solid ${A.border}`,cursor:"pointer",boxShadow:["#FFFFFF","#F5F3EF","#FAF7F2"].includes(c)?`inset 0 0 0 1px ${A.border}`:"none"}}/>
+                                <div onClick={()=>{const s=[...bgCustomSlots];s[i]="";setBgCustomSlots(s);if(bgColour===c)setBgColour("#0A0A0A");}} style={{position:"absolute",top:-4,right:-4,width:14,height:14,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,lineHeight:1}}>×</div>
+                              </>
+                            ) : (
+                              <>
+                                <div style={{width:32,height:32,borderRadius:"50%",background:A.surface,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:A.muted,cursor:"pointer"}}>+</div>
+                                <input type="color" defaultValue={bgColour} onChange={e=>{const s=[...bgCustomSlots];s[i]=e.target.value;setBgCustomSlots(s);setBgColour(e.target.value);}} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
+                              </>
+                            )}
                           </div>
                         ))}
-                        {templatePhotos.length < 8 && (
-                          <div onClick={()=>templateBgRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
-                        )}
                       </div>
-                    ) : (
-                      <div onClick={()=>templateBgRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:"12px",cursor:"pointer",textAlign:"center",marginBottom:8}}>
-                        <span style={{fontSize:12,fontWeight:600,color:A.muted}}>Upload background images (up to 8)</span>
+                      <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                        <input type="color" value={bgColour} onChange={e=>setBgColour(e.target.value)} style={{width:40,height:40,borderRadius:8,border:`1px solid ${A.border}`,cursor:"pointer",padding:2}}/>
+                        <input value={bgColour} onChange={e=>setBgColour(e.target.value)} placeholder="#1a1a2e" style={{...inp,flex:1,fontSize:13}}/>
                       </div>
-                    )}
-                    <p style={{color:A.muted,fontSize:11,margin:"0 0 12px",lineHeight:1.6}}>Safe zone: keep important elements within 80px from each edge. Recommended size: 1080×1350px.</p>
-                    <input ref={templateBgRef} type="file" accept="image/*" onChange={async e=>{
-                    const file = e.target.files[0]; if(!file) return;
-                    const reader = new FileReader();
-                    reader.onload = async ev => {
-                      const base64 = ev.target.result;
-                      setTemplateBgUrl(base64);
-                      try {
-                        const res = await fetch('/api/upload-photo', {
-                          method:'POST',
-                          headers:{'Content-Type':'application/json'},
-                          body: JSON.stringify({ imageData: base64, filename: `template-${Date.now()}.jpg` })
-                        });
-                        const data = await res.json();
-                        if (data.url) {
-                          setTemplateBgUrl(data.url);
-                          setTemplatePhotos(prev => [data.url, ...prev.filter(p=>p!==data.url)].slice(0,8));
-                        }
-                      } catch(err) { console.error('Template upload failed:', err); }
-                    };
-                    reader.readAsDataURL(file);
-                  }} style={{display:"none"}}/>
-                    <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                      <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
                     </div>
-                  </div>
-                )}
+                  )}
+                  {bgMode==="custom"&&(
+                    <div>
+                      {templatePhotos.length > 0 ? (
+                        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
+                          {templatePhotos.map((photo,i)=>(
+                            <div key={i} onClick={()=>setTemplateBgUrl(photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:templateBgUrl===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0}}>
+                              <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                            </div>
+                          ))}
+                          {templatePhotos.length < 8 && (
+                            <div onClick={()=>templateBgRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
+                          )}
+                        </div>
+                      ) : (
+                        <div onClick={()=>templateBgRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:"12px",cursor:"pointer",textAlign:"center",marginBottom:8}}>
+                          <span style={{fontSize:12,fontWeight:600,color:A.muted}}>Upload background images (up to 8)</span>
+                        </div>
+                      )}
+                      <p style={{color:A.muted,fontSize:11,margin:"0 0 12px",lineHeight:1.6}}>Safe zone: keep important elements within 80px from each edge. Recommended size: 1080×1350px.</p>
+                      <input ref={templateBgRef} type="file" accept="image/*" onChange={async e=>{
+                      const file = e.target.files[0]; if(!file) return;
+                      const reader = new FileReader();
+                      reader.onload = async ev => {
+                        const base64 = ev.target.result;
+                        setTemplateBgUrl(base64);
+                        try {
+                          const res = await fetch('/api/upload-photo', {
+                            method:'POST',
+                            headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify({ imageData: base64, filename: `template-${Date.now()}.jpg` })
+                          });
+                          const data = await res.json();
+                          if (data.url) {
+                            setTemplateBgUrl(data.url);
+                            setTemplatePhotos(prev => [data.url, ...prev.filter(p=>p!==data.url)].slice(0,8));
+                          }
+                        } catch(err) { console.error('Template upload failed:', err); }
+                      };
+                      reader.readAsDataURL(file);
+                    }} style={{display:"none"}}/>
+                      <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                        <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
 
             </div>
           </div>
