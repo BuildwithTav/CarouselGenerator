@@ -2944,7 +2944,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             {planLabel==="free"&&(
               <>
                 {/* Subscription plans — 3 column on desktop */}
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12,marginBottom:16}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16}}>
                   {/* Starter */}
                   <div style={{background:A.surface,border:`1.5px solid ${A.text}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column"}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
@@ -3009,7 +3009,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <div style={{fontSize:24,fontWeight:800,color:"#fff"}}>$297 <span style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.5)"}}>one-time</span></div>
                   </div>
                   <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 16px",lineHeight:1.6}}>Pay once. Use forever. Earn 35% recurring on every referral — for life. No monthly fees. Limited founding spots.</p>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:8,marginBottom:16}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}>
                     {["15 credits/month included","35% recurring commission","8% Tier 2 on your network","No monthly subscription ever","Pays for itself after a few referrals","Founding price — won't last"].map(f=>(
                       <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"#fff"}}><span style={{color:GOLD,fontWeight:700}}>✓</span>{f}</div>
                     ))}
