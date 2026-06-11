@@ -2973,7 +2973,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     {["Everything in Starter","80 credits — 40 carousels","30% affiliate + 8% Tier 2","Refer 3 = Pro pays itself","Priority support","Early feature access"].map(f=>(
                       <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"#fff",marginBottom:5}}><span style={{color:GOLD,fontWeight:700,fontSize:11}}>✓</span>{f}</div>
                     ))}
-                    <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",marginTop:6}}>Fair usage policy applies. <a href="/terms" target="_blank" style={{color:"rgba(255,255,255,0.3)"}}>Terms</a></div>
                     <div style={{flex:1}}/>
                     <button onMouseEnter={()=>setHoveredBtn("pro")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"11px",background:hoveredBtn==="pro"?"#e6c45a":GOLD,color:"#000",borderRadius:9,fontWeight:700,fontSize:13,border:"none",marginTop:14,transform:hoveredBtn==="pro"?"translateY(-1px)":"none",boxShadow:hoveredBtn==="pro"?"0 4px 20px rgba(187,153,0,0.4)":"none",transition:"all 0.2s"}}>
                       Get Pro
