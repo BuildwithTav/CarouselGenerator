@@ -2916,7 +2916,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         {/* UPGRADE TAB */}
         {/* ACCOUNT TAB */}
         {nav==="account"&&(
-          <div style={{animation:"fadeUp 0.3s ease",maxWidth:500,margin:"0 auto"}}>
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
             <div style={{marginBottom:28}}>
               <h2 style={{fontSize:24,fontWeight:800,margin:"0 0 6px"}}>Account</h2>
               <p style={{color:A.muted,fontSize:14,margin:0}}>{currentUser?.email}</p>
@@ -2944,7 +2944,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             {planLabel==="free"&&(
               <>
                 {/* Subscription plans — 3 column on desktop */}
-                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
                   {/* Starter */}
                   <div style={{background:A.surface,border:`1.5px solid ${A.text}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column"}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
@@ -2953,7 +2953,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     </div>
                     <div style={{fontSize:24,fontWeight:800,margin:"6px 0 2px"}}>$20<span style={{fontSize:13,fontWeight:500,color:A.muted}}>/mo</span></div>
                     <div style={{fontSize:12,color:A.muted,marginBottom:12}}>20 credits/month</div>
-                    {["No watermark","Carousel generator","Quote cards & captions","AI rewrites","History & saves","20% affiliate commission"].map(f=>(
+                    {["No watermark","Carousel generator","Quote cards & captions","AI rewrites","History & saves","20% affiliate + 8% Tier 2"].map(f=>(
                       <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:A.text,marginBottom:5}}><span style={{color:GOLD,fontWeight:700,fontSize:11}}>✓</span>{f}</div>
                     ))}
                     <div style={{flex:1}}/>
@@ -2970,7 +2970,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     </div>
                     <div style={{fontSize:24,fontWeight:800,margin:"6px 0 2px",color:"#fff"}}>$50<span style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.5)"}}>/mo</span></div>
                     <div style={{fontSize:12,color:"rgba(255,255,255,0.5)",marginBottom:12}}>80 credits/month</div>
-                    {["Everything in Starter","80 credits — 40 carousels","30% affiliate commission","Refer 3 = Pro pays itself","Priority support","Early feature access"].map(f=>(
+                    {["Everything in Starter","80 credits — 40 carousels","30% affiliate + 8% Tier 2","Refer 3 = Pro pays itself","Priority support","Early feature access"].map(f=>(
                       <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"#fff",marginBottom:5}}><span style={{color:GOLD,fontWeight:700,fontSize:11}}>✓</span>{f}</div>
                     ))}
                     <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",marginTop:6}}>Fair usage policy applies. <a href="/terms" target="_blank" style={{color:"rgba(255,255,255,0.3)"}}>Terms</a></div>
@@ -2988,7 +2988,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     </div>
                     <div style={{fontSize:24,fontWeight:800,margin:"6px 0 2px"}}>$100<span style={{fontSize:13,fontWeight:500,color:A.muted}}>/mo</span></div>
                     <div style={{fontSize:12,color:A.muted,marginBottom:12}}>300 credits/month</div>
-                    {["Everything in Pro","300 credits — 150 carousels","40% affiliate commission","Multi-brand management","Client account ready","Priority support"].map(f=>(
+                    {["Everything in Pro","300 credits — 150 carousels","40% affiliate + 8% Tier 2","Multi-brand management","Client account ready","Priority support"].map(f=>(
                       <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:A.text,marginBottom:5}}><span style={{color:GOLD,fontWeight:700,fontSize:11}}>✓</span>{f}</div>
                     ))}
                     <div style={{flex:1}}/>
@@ -2996,6 +2996,23 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       Get Agency
                     </button>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"center",marginTop:8}}><PaymentBadges dark={false}/></div>
+                  </div>
+                  {/* White Label */}
+                  <div style={{background:"linear-gradient(135deg,#0a0a1a,#15152a)",border:`1.5px solid #6644cc`,borderRadius:14,padding:20,display:"flex",flexDirection:"column"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                      <span style={{fontSize:15,fontWeight:800,color:"#fff"}}>White Label</span>
+                      <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",background:"#6644cc",borderRadius:20,color:"#fff"}}>Resell</span>
+                    </div>
+                    <div style={{fontSize:24,fontWeight:800,margin:"6px 0 2px",color:"#fff"}}>$497<span style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.5)"}}> once</span></div>
+                    <div style={{fontSize:12,color:"rgba(255,255,255,0.5)",marginBottom:12}}>80 credits/month</div>
+                    {["Your brand, your domain","80 credits/month","40% affiliate + 8% Tier 2","Sell to your own clients","Must use our pricing","Lifetime access"].map(f=>(
+                      <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"#fff",marginBottom:5}}><span style={{color:"#9977ff",fontWeight:700,fontSize:11}}>✓</span>{f}</div>
+                    ))}
+                    <div style={{flex:1}}/>
+                    <button onMouseEnter={()=>setHoveredBtn("whitelabel")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_WHITELABEL_PRICE_ID,"payment")} style={{width:"100%",padding:"11px",background:hoveredBtn==="whitelabel"?"#7755dd":"#6644cc",color:"#fff",borderRadius:9,fontWeight:700,fontSize:13,border:"none",marginTop:14,transform:hoveredBtn==="whitelabel"?"translateY(-1px)":"none",transition:"all 0.2s"}}>
+                      Get White Label
+                    </button>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",marginTop:8}}><PaymentBadges dark={true}/></div>
                   </div>
                 </div>
 
