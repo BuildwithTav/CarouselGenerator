@@ -760,6 +760,13 @@ export default function App() {
 
   const [upgrading, setUpgrading] = useState(false);
   const [hoveredBtn, setHoveredBtn] = useState(null);
+  const [affiliateStats, setAffiliateStats] = useState(null);
+  const [affiliateLoading, setAffiliateLoading] = useState(false);
+  const [showPayoutForm, setShowPayoutForm] = useState(false);
+  const [payoutMethod, setPayoutMethod] = useState("bank");
+  const [payoutDetails, setPayoutDetails] = useState({});
+  const [payoutSubmitting, setPayoutSubmitting] = useState(false);
+  const [payoutSuccess, setPayoutSuccess] = useState(false);
 
   // Capture affiliate ref from URL on load
   const getAffiliateRef = () => { try { return localStorage.getItem("cs_affiliate_ref")||null; } catch { return null; } };
@@ -782,6 +789,29 @@ export default function App() {
     setUpgrading(false);
   };
 
+  const loadAffiliateStats = async () => {
+    if (!currentUser || affiliateLoading) return;
+    setAffiliateLoading(true);
+    try {
+      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"affiliate-stats" }) });
+      const d = await r.json();
+      setAffiliateStats(d);
+    } catch {}
+    setAffiliateLoading(false);
+  };
+
+  const submitPayoutRequest = async () => {
+    setPayoutSubmitting(true);
+    try {
+      const amount = parseFloat(affiliateStats?.available || 0);
+      if (amount < 30) { alert("Minimum withdrawal is $30."); setPayoutSubmitting(false); return; }
+      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"request-payout", amount, payoutMethod, payoutDetails }) });
+      const d = await r.json();
+      if (d.success) { setPayoutSuccess(true); setShowPayoutForm(false); }
+      else alert("Something went wrong — try again.");
+    } catch { alert("Something went wrong — try again."); }
+    setPayoutSubmitting(false);
+  };
   const [profileUrl, setProfileUrl] = useState(S?.profileUrl||null);
   const [name, setName] = useState(S?.name||"");
   const [handle, setHandle] = useState(S?.handle||"");
@@ -3069,6 +3099,125 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>You have lifetime access. No subscription needed. Your credits reset monthly.</p>
               </div>
             )}
+
+            {/* Affiliate Dashboard */}
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                <label style={lbl}>Affiliate Programme</label>
+                {currentUser?.affiliate_active&&<span style={{fontSize:10,fontWeight:700,padding:"2px 8px",background:"#1a3a1a",color:"#4caf50",borderRadius:10}}>ACTIVE</span>}
+              </div>
+
+              {/* Not eligible — free user */}
+              {planLabel==="free"&&(
+                <div>
+                  <p style={{fontSize:13,color:A.muted,margin:"8px 0 12px",lineHeight:1.6}}>The affiliate programme is available to paid subscribers and licence holders. Refer people to Carousel Studio and earn recurring commission every month they stay subscribed.</p>
+                  <div style={{background:A.bg,border:`1px solid ${A.border}`,borderRadius:10,padding:16,marginBottom:12}}>
+                    <div style={{fontSize:13,fontWeight:700,marginBottom:8}}>Commission rates:</div>
+                    {[["Starter","20% recurring"],["Pro","30% recurring"],["Agency","40% recurring"],["Affiliate Licence","35% recurring + 8% Tier 2"],["White Label","40% recurring + 8% Tier 2"]].map(([plan,rate])=>(
+                      <div key={plan} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:A.muted,marginBottom:4}}>
+                        <span>{plan}</span><span style={{color:GOLD,fontWeight:700}}>{rate}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p style={{fontSize:12,color:A.muted,lineHeight:1.5}}>Upgrade to any paid plan to unlock your affiliate link and start earning.</p>
+                </div>
+              )}
+
+              {/* Eligible but not yet loaded */}
+              {planLabel!=="free"&&!affiliateStats&&(
+                <div>
+                  <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Share your unique link and earn {planLabel==="starter"?"20%":planLabel==="pro"?"30%":planLabel==="agency"?"40%":planLabel==="white_label"?"40%":"35%"} recurring commission on every subscriber you refer. Plus 8% on everything your referrals generate.</p>
+                  <button onClick={loadAffiliateStats} style={{width:"100%",padding:"12px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:14,border:"none"}}>
+                    {affiliateLoading?"Loading...":"View My Affiliate Dashboard"}
+                  </button>
+                </div>
+              )}
+
+              {/* Affiliate dashboard loaded */}
+              {affiliateStats?.active&&(
+                <div>
+                  {/* Affiliate link */}
+                  <div style={{background:A.bg,border:`1px solid ${GOLD}44`,borderRadius:10,padding:12,marginBottom:16}}>
+                    <div style={{fontSize:11,color:A.muted,marginBottom:6}}>Your affiliate link</div>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{fontSize:12,color:A.text,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                        {"https://studio.buildwithtav.co?sa="+affiliateStats.affiliate_id}
+                      </div>
+                      <button onClick={()=>{try{navigator.clipboard.writeText("https://studio.buildwithtav.co?sa="+affiliateStats.affiliate_id);}catch{}}} style={{padding:"6px 12px",background:GOLD,color:"#000",borderRadius:6,fontWeight:700,fontSize:11,border:"none",flexShrink:0}}>Copy</button>
+                    </div>
+                  </div>
+
+                  {/* Earnings grid */}
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+                    {[["Total earned","$"+affiliateStats.total],["Pending (30d hold)","$"+affiliateStats.pending],["Available","$"+affiliateStats.available],["Paid out","$"+affiliateStats.paid]].map(([label,val])=>(
+                      <div key={label} style={{background:A.bg,border:`1px solid ${A.border}`,borderRadius:10,padding:12,textAlign:"center"}}>
+                        <div style={{fontSize:18,fontWeight:800,color:label==="Available"?GOLD:A.text}}>{val}</div>
+                        <div style={{fontSize:11,color:A.muted,marginTop:2}}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{fontSize:12,color:A.muted,marginBottom:16}}>Referrals: <span style={{color:A.text,fontWeight:700}}>{affiliateStats.referral_count}</span></div>
+
+                  {/* Withdraw button */}
+                  {!showPayoutForm&&!payoutSuccess&&(
+                    <button onClick={()=>setShowPayoutForm(true)} disabled={parseFloat(affiliateStats.available)<30} style={{width:"100%",padding:"12px",background:parseFloat(affiliateStats.available)>=30?GOLD:"#333",color:parseFloat(affiliateStats.available)>=30?"#000":A.muted,borderRadius:10,fontWeight:700,fontSize:14,border:"none",cursor:parseFloat(affiliateStats.available)>=30?"pointer":"default"}}>
+                      {parseFloat(affiliateStats.available)<30?"Minimum $30 to withdraw":"Withdraw Available Funds"}
+                    </button>
+                  )}
+
+                  {/* Payout success */}
+                  {payoutSuccess&&(
+                    <div style={{background:"#1a3a1a",border:"1px solid #4caf50",borderRadius:10,padding:14,textAlign:"center"}}>
+                      <div style={{color:"#4caf50",fontWeight:700,fontSize:14}}>Withdrawal requested ✓</div>
+                      <div style={{color:A.muted,fontSize:12,marginTop:4}}>We'll process your payment within 5 business days.</div>
+                    </div>
+                  )}
+
+                  {/* Payout form */}
+                  {showPayoutForm&&(
+                    <div style={{background:A.bg,border:`1px solid ${A.border}`,borderRadius:10,padding:16}}>
+                      <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Withdrawal — ${affiliateStats.available}</div>
+                      <div style={{display:"flex",gap:8,marginBottom:12}}>
+                        {["bank","paypal"].map(m=>(
+                          <button key={m} onClick={()=>setPayoutMethod(m)} style={{flex:1,padding:"8px",background:payoutMethod===m?GOLD:"transparent",color:payoutMethod===m?"#000":A.muted,borderRadius:8,fontWeight:700,fontSize:12,border:`1px solid ${payoutMethod===m?GOLD:A.border}`}}>
+                            {m==="bank"?"Bank Transfer":"PayPal"}
+                          </button>
+                        ))}
+                      </div>
+                      {payoutMethod==="bank"&&(
+                        <>
+                          {[["accountName","Account name"],["accountNumber","Account number"],["sortCode","Sort code (UK) / IBAN (International)"],["bankName","Bank name"]].map(([key,label])=>(
+                            <div key={key} style={{marginBottom:10}}>
+                              <div style={{fontSize:11,color:A.muted,marginBottom:4}}>{label}</div>
+                              <input value={payoutDetails[key]||""} onChange={e=>setPayoutDetails(p=>({...p,[key]:e.target.value}))} style={{width:"100%",padding:"9px 12px",background:A.surface,border:`1px solid ${A.border}`,borderRadius:8,color:A.text,fontSize:13,boxSizing:"border-box"}} placeholder={label}/>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                      {payoutMethod==="paypal"&&(
+                        <div style={{marginBottom:10}}>
+                          <div style={{fontSize:11,color:A.muted,marginBottom:4}}>PayPal email</div>
+                          <input value={payoutDetails.paypalEmail||""} onChange={e=>setPayoutDetails(p=>({...p,paypalEmail:e.target.value}))} style={{width:"100%",padding:"9px 12px",background:A.surface,border:`1px solid ${A.border}`,borderRadius:8,color:A.text,fontSize:13,boxSizing:"border-box"}} placeholder="PayPal email address"/>
+                        </div>
+                      )}
+                      <p style={{fontSize:11,color:A.muted,margin:"8px 0 12px",lineHeight:1.5}}>I confirm these details are correct. Incorrect details are my responsibility.</p>
+                      <div style={{display:"flex",gap:8}}>
+                        <button onClick={()=>setShowPayoutForm(false)} style={{flex:1,padding:"10px",background:"none",border:`1px solid ${A.border}`,color:A.muted,borderRadius:8,fontWeight:600,fontSize:13}}>Cancel</button>
+                        <button onClick={submitPayoutRequest} disabled={payoutSubmitting} style={{flex:2,padding:"10px",background:GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:13,border:"none"}}>
+                          {payoutSubmitting?"Submitting...":"Confirm Withdrawal"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Inactive affiliate */}
+              {affiliateStats&&!affiliateStats.active&&(
+                <p style={{fontSize:13,color:A.muted,margin:"8px 0",lineHeight:1.6}}>Your affiliate account is not yet active. Upgrade to a paid plan to activate it.</p>
+              )}
+            </div>
 
             <p style={{fontSize:11,color:A.muted,textAlign:"center",margin:"0 0 16px",lineHeight:1.6}}>Secure payment via Stripe. Questions? <a href="mailto:tav@buildwithtav.co" style={{color:GOLD,textDecoration:"none"}}>tav@buildwithtav.co</a> · <a href="/terms" target="_blank" style={{color:GOLD,textDecoration:"none"}}>Terms</a> · <a href="/privacy" target="_blank" style={{color:GOLD,textDecoration:"none"}}>Privacy</a></p>
             <button onClick={logout} style={{width:"100%",padding:"13px",background:"none",border:`1.5px solid ${A.border}`,color:A.muted,borderRadius:10,fontWeight:600,fontSize:14}}>
