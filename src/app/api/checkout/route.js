@@ -5,7 +5,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function POST(req) {
   try {
-    const { email, priceId, mode } = await req.json();
+    const { email, priceId, mode, affiliateRef } = await req.json();
 
     const session = await stripe.checkout.sessions.create({
       mode: mode || "subscription",
@@ -13,7 +13,10 @@ export async function POST(req) {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/?tab=account`,
-      metadata: { email }
+      metadata: {
+        email,
+        affiliate_ref: affiliateRef || ""
+      }
     });
 
     return NextResponse.json({ url: session.url });
