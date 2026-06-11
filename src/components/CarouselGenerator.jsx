@@ -3004,7 +3004,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     </div>
                     <div style={{fontSize:24,fontWeight:800,margin:"6px 0 2px",color:"#fff"}}>$497<span style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.5)"}}> once</span></div>
                     <div style={{fontSize:12,color:"rgba(255,255,255,0.5)",marginBottom:12}}>80 credits/month — no monthly fee ever</div>
-                    {["Your brand, your domain","Resell as your own product","40% affiliate + 8% Tier 2","Sell to your clients at our prices","No monthly subscription ever","Lifetime access"].map(f=>(
+                    {["Your brand, your domain","Resell as your own product","40% affiliate + 8% Tier 2","No monthly subscription ever","Lifetime access","Setup support included"].map(f=>(
                       <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"#fff",marginBottom:5}}><span style={{color:"#9977ff",fontWeight:700,fontSize:11}}>✓</span>{f}</div>
                     ))}
                     <div style={{flex:1}}/>
