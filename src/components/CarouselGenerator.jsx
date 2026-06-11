@@ -2401,9 +2401,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         )}
 
         {nav==="brand"&&(
-          <div style={{animation:"fadeUp 0.3s ease",maxWidth:640}}>
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Brand</h2>
-            <div style={{display:"flex",flexDirection:"column",gap:20}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:24,alignItems:"start"}}>
+              <div style={{display:"flex",flexDirection:"column",gap:20}}>
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Profile photo</label>
@@ -2511,13 +2512,26 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
 
             </div>
+
+            {/* Right column — brand preview */}
+            <div style={{position:"sticky",top:80}}>
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={{...lbl,marginBottom:12}}>Brand Preview</label>
+                <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                  <SlidePreview slide={{headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={0} total={6} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={false}/>
+                </div>
+              </div>
+            </div>
+
+            </div>
           </div>
         )}
 
         {nav==="visual"&&(
-          <div style={{animation:"fadeUp 0.3s ease",maxWidth:640}}>
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Visual</h2>
-            <div style={{display:"flex",flexDirection:"column",gap:20}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:24,alignItems:"start"}}>
+              <div style={{display:"flex",flexDirection:"column",gap:20}}>
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Headline style</label>
@@ -2686,16 +2700,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
             </div>
 
+            {/* Right column — live preview */}
+            <div style={{position:"sticky",top:80}}>
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
-                <label style={lbl}>Live Preview</label>
-                <p style={{fontSize:12,color:A.muted,marginBottom:12}}>See how your slides look with current settings</p>
-                <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
-                  <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                    <SlidePreview slide={{headline:"Your slide headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting body text appears here to show how it looks.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={{...slideOpts(1),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={false}/>
-                  </div>
+                <label style={{...lbl,marginBottom:12}}>Live Preview</label>
+                <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                  <SlidePreview slide={{headline:"Your slide headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting body text appears here to show how it looks.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={{...slideOpts(1),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={false}/>
                 </div>
               </div>
+            </div>
 
+            </div>
           </div>
         )}
 
