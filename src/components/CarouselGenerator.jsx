@@ -1062,7 +1062,7 @@ Return ONLY valid JSON array:
   const generate = async (topicOverride) => {
     const t = topicOverride || topic;
     if (!t.trim()) { setErr("Add a topic first."); return; }
-    if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (!confirmLastCredit()) return;
     await checkMonthlyReset();
     setErr(""); setAngle(""); setView("generating"); setLastTopic(t);
@@ -1168,7 +1168,7 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const generateCaption = async () => {
-    if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (!confirmLastCredit()) return;
     setGeneratingCaption(true);
     setShowCaption(false);
@@ -1197,7 +1197,7 @@ Return ONLY valid JSON, nothing else.` }
 
   const rewrite = async () => {
     if (!rewritePrompt.trim()) return;
-    if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (!confirmLastCredit()) return;
     setRewriting(true);
     try {
@@ -1235,7 +1235,7 @@ Return ONLY valid JSON, nothing else.` }
   }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays,gradientMode,currentUser]);
 
   const downloadOne = async (i) => {
-    if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (!confirmLastCredit()) return;
     setDownloading(true);
     try {
@@ -1324,7 +1324,7 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const downloadAll = async () => {
-    if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (!confirmLastCredit()) return;
     setDownloadingAll(true);
     const mobile = isMobileDevice();
@@ -1370,7 +1370,7 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const generateQuotes = async () => {
-    if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (!confirmLastCredit()) return;
     await checkMonthlyReset();
     setGeneratingQuotes(true);
@@ -1674,7 +1674,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
   const downloadAllQuotes = async () => {
     const filled = quoteInputs.filter(q => q.trim());
-    if (!canGenerate()) { setUpgradePrompt(true); return; }
+    if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (filled.length > 1 && !isUnlimitedPlan(currentUser?.plan) && !currentUser?.is_admin) {
       if (!window.confirm(`Downloading all ${filled.length} quote cards will use ${filled.length} credits. Continue?`)) return;
     }
@@ -2173,7 +2173,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                           <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
                         </div>
                         <button onClick={async()=>{
-                          if (!canGenerate()) { setUpgradePrompt(true); return; }
+                          if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
                           try {
                             const blob = await downloadQuote(q, i);
                             const url = URL.createObjectURL(blob);
