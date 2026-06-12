@@ -17,7 +17,6 @@ async function addTagToSysteme(email, tag) {
     const checkData = await check.json();
     const existing = checkData?.items?.[0];
     if (existing) {
-      // Get tag ID first
       const tagsRes = await fetch("https://api.systeme.io/api/tags?limit=100", {
         headers: { "X-API-Key": SYSTEME_API_KEY, "Accept": "application/json" }
       });
@@ -34,21 +33,48 @@ async function addTagToSysteme(email, tag) {
   } catch(e) { console.error("Systeme tag error:", e); }
 }
 
-// Commission rates by plan
-function getCommissionRate(plan) {
+function getPlanRate(plan) {
   switch(plan) {
     case "agency": return 0.40;
     case "pro": return 0.30;
     case "starter": return 0.20;
-    case "affiliate_licence": return 0.25;
-    case "white_label": return 0.35;
+    case "affiliate_licence": return 0.35;
+    case "white_label": return 0.40;
     default: return 0;
   }
 }
 
+// Get effective commission rate using monthly snapshot logic
+// Uses lowest of month_start and month_end snapshots to prevent gaming
+async function getEffectiveRate(affiliateId, currentPlan) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const firstDay = `${year}-${month}-01`;
+
+  const { data: snapshots } = await supabase
+    .from("monthly_rate_snapshots")
+    .select("snapshot_type, commission_rate")
+    .eq("affiliate_id", affiliateId)
+    .gte("snapshot_date", firstDay)
+    .order("snapshot_date", { ascending: true });
+
+  if (!snapshots || snapshots.length === 0) {
+    return getPlanRate(currentPlan);
+  }
+
+  const startSnap = snapshots.find(s => s.snapshot_type === "month_start");
+  const endSnap = snapshots.find(s => s.snapshot_type === "month_end");
+
+  if (startSnap && endSnap) {
+    return Math.min(startSnap.commission_rate, endSnap.commission_rate);
+  }
+
+  return startSnap ? startSnap.commission_rate : getPlanRate(currentPlan);
+}
+
 async function logCommissions(subscriberEmail, stripePaymentId, plan, saleAmount) {
   try {
-    // Find who referred this subscriber
     const { data: referral } = await supabase
       .from("referrals")
       .select("affiliate_id")
@@ -57,7 +83,6 @@ async function logCommissions(subscriberEmail, stripePaymentId, plan, saleAmount
 
     if (!referral?.affiliate_id) return;
 
-    // Find Tier 1 affiliate
     const { data: tier1Affiliate } = await supabase
       .from("users")
       .select("affiliate_id, plan, affiliate_active, affiliate_parent_id")
@@ -66,10 +91,9 @@ async function logCommissions(subscriberEmail, stripePaymentId, plan, saleAmount
 
     if (!tier1Affiliate || !tier1Affiliate.affiliate_active) return;
 
-    const tier1Rate = getCommissionRate(tier1Affiliate.plan);
+    const tier1Rate = await getEffectiveRate(tier1Affiliate.affiliate_id, tier1Affiliate.plan);
     const tier1Amount = saleAmount * tier1Rate;
 
-    // Check for duplicate
     const { data: existing } = await supabase
       .from("commissions")
       .select("id")
@@ -92,7 +116,7 @@ async function logCommissions(subscriberEmail, stripePaymentId, plan, saleAmount
       });
     }
 
-    // Tier 2 — 8% to parent of Tier 1
+    // Tier 2 — fixed at 8%
     if (tier1Affiliate.affiliate_parent_id) {
       const { data: tier2Affiliate } = await supabase
         .from("users")
@@ -179,13 +203,20 @@ export async function POST(req) {
       return NextResponse.json({ received: true });
     }
 
+    // Store affiliate ref in case user pays before signing up to app
+    if (affiliateRef) {
+      await supabase.from("pending_affiliate_refs").upsert({
+        email,
+        affiliate_ref: affiliateRef
+      }, { onConflict: "email" });
+    }
+
     // Handle one-off licences
     if (isAffiliateLicence || isWhiteLabel) {
       const licenceType = isAffiliateLicence ? "affiliate_licence" : "white_label";
       const credits_limit = isAffiliateLicence ? 15 : 80;
       const saleAmount = isAffiliateLicence ? 297 : 497;
 
-      // Record licence purchase
       await supabase.from("licence_purchases").insert({
         email,
         licence_type: licenceType,
@@ -194,7 +225,6 @@ export async function POST(req) {
         status: "active"
       });
 
-      // Update user plan and activate affiliate
       await supabase.from("users").upsert({
         email,
         plan: licenceType,
@@ -205,22 +235,19 @@ export async function POST(req) {
         period_start: new Date().toISOString()
       }, { onConflict: "email" });
 
-      // If referred via affiliate link, log referral
       if (affiliateRef) {
-        const { data: existing } = await supabase
+        const { data: existingRef } = await supabase
           .from("referrals")
           .select("id")
           .eq("referred_email", email)
           .single();
 
-        if (!existing) {
+        if (!existingRef) {
           await supabase.from("referrals").insert({
             referred_email: email,
             affiliate_id: affiliateRef
           });
         }
-
-        // Log commission for licence purchase
         await logCommissions(email, session.payment_intent || session.id, licenceType, saleAmount);
       }
 
@@ -246,23 +273,29 @@ export async function POST(req) {
       affiliate_tier: plan
     }, { onConflict: "email" });
 
-    // If referred via affiliate link, log referral
-    if (affiliateRef) {
-      const { data: existing } = await supabase
+    // Resolve affiliate ref — from metadata or pending table
+    const resolvedRef = affiliateRef || await supabase
+      .from("pending_affiliate_refs")
+      .select("affiliate_ref")
+      .eq("email", email)
+      .single()
+      .then(r => r.data?.affiliate_ref || null);
+
+    if (resolvedRef) {
+      const { data: existingRef } = await supabase
         .from("referrals")
         .select("id")
         .eq("referred_email", email)
         .single();
 
-      if (!existing) {
+      if (!existingRef) {
         await supabase.from("referrals").insert({
           referred_email: email,
-          affiliate_id: affiliateRef
+          affiliate_id: resolvedRef
         });
       }
     }
 
-    // Log commissions on subscription payment
     if (saleAmount > 0) {
       await logCommissions(email, session.id, plan, saleAmount);
     }
@@ -271,10 +304,10 @@ export async function POST(req) {
     await addTagToSysteme(email, tag);
   }
 
-  // Handle recurring subscription payments (rebills)
+  // Handle recurring subscription payments
   if (event.type === "invoice.payment_succeeded") {
     const invoice = event.data.object;
-    if (invoice.billing_reason === "subscription_create") return NextResponse.json({ received: true }); // Already handled above
+    if (invoice.billing_reason === "subscription_create") return NextResponse.json({ received: true });
 
     const customerId = invoice.customer;
     const { data: user } = await supabase
@@ -289,7 +322,6 @@ export async function POST(req) {
         await logCommissions(user.email, invoice.id, user.plan, saleAmount);
       }
 
-      // Reset credits on rebill
       await supabase.from("users").update({
         credits_used: 0,
         period_start: new Date().toISOString()
