@@ -101,16 +101,32 @@ function emailCreditsExhausted(firstName) {
 <p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hi ${firstName},</p>
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">You've used your 6 free credits. Hopefully you've seen what Carousel Studio can do.</p>
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">If you want to keep going — and start earning from the tool at the same time — here's what upgrading gets you:</p>
-<div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;">
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 6px;font-weight:700;">Starter — $20/month</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 20px;line-height:1.7;">20 credits. Clean downloads. <strong style="color:#BB9900;">20% commission</strong> on everyone you refer.</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 6px;font-weight:700;">Pro — $50/month</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 20px;line-height:1.7;">80 credits — around 40 carousels. <strong style="color:#BB9900;">30% commission.</strong> Refer 3 and Pro pays for itself.</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 6px;font-weight:700;">Agency — $100/month</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">300 credits. Multiple brands. <strong style="color:#BB9900;">40% commission</strong> — the highest rate.</p>
+<div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:16px;">
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 4px;font-weight:700;">Starter — $20/month</p>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 4px;line-height:1.6;">20 credits. Clean downloads. Enough for any solo creator.</p>
+<p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">20% Tier 1 commission + 8% Tier 2 on your network</p>
 </div>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Every plan also earns you <strong>8% on your network's referrals</strong> — so if the people you refer start referring others, you earn on that too.</p>
-<div style="text-align:center;margin:32px 0;"><a href="https://www.buildwithtav.co/carouselstudio" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">Upgrade Now →</a></div>
+<div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:16px;">
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 4px;font-weight:700;">Pro — $50/month</p>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 4px;line-height:1.6;">80 credits — around 40 carousels. Refer 3 people and Pro pays for itself.</p>
+<p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">30% Tier 1 commission + 8% Tier 2 on your network</p>
+</div>
+<div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:16px;">
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 4px;font-weight:700;">Agency — $100/month</p>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 4px;line-height:1.6;">300 credits. High enough volume to run content for multiple clients under one account.</p>
+<p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">40% Tier 1 commission + 8% Tier 2 on your network</p>
+</div>
+<div style="background:#1a1800;border-radius:10px;padding:24px;margin-bottom:16px;border:1px solid rgba(187,153,0,0.3);">
+<p style="font-size:17px;color:#ffffff;margin:0 0 4px;font-weight:700;">Affiliate Licence — $297 once</p>
+<p style="font-size:15px;color:rgba(255,255,255,0.8);margin:0 0 4px;line-height:1.6;">Pay once. Use forever. 15 credits/month for demos and promos. No monthly fee ever.</p>
+<p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">35% Tier 1 commission + 8% Tier 2 on your network — for life</p>
+</div>
+<div style="background:#12001a;border-radius:10px;padding:24px;margin-bottom:24px;border:1px solid rgba(153,119,255,0.3);">
+<p style="font-size:17px;color:#ffffff;margin:0 0 4px;font-weight:700;">White Label — $497 once</p>
+<p style="font-size:15px;color:rgba(255,255,255,0.8);margin:0 0 4px;line-height:1.6;">Your brand, your domain. Resell as your own product. 80 credits/month. No monthly fee ever.</p>
+<p style="font-size:15px;color:#9977ff;margin:0;font-weight:700;">40% Tier 1 commission + 8% Tier 2 on your network — for life</p>
+</div>
+<div style="text-align:center;margin:32px 0;"><a href="https://www.buildwithtav.co/carouselstudio" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">See All Plans →</a></div>
 <p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">If you need help, use the Help tab inside the app.<br><br>— Tav</p>
 </div>
 <p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p>
@@ -222,7 +238,7 @@ export async function POST(req) {
       if (error) return NextResponse.json({ error: "Invalid code — check your email and try again." }, { status: 400 });
 
       const user = data.user;
-      const firstName = user.email.split("@")[0];
+      const resolvedFirstName = body.firstName || user.email.split("@")[0];
 
       const { data: existing } = await supabase
         .from("users")
@@ -251,6 +267,7 @@ export async function POST(req) {
 
         await supabase.from("users").insert({
           email: user.email,
+          first_name: resolvedFirstName,
           plan: "free",
           credits_used: 0,
           credits_limit: 6,
@@ -283,17 +300,16 @@ export async function POST(req) {
         }
 
         // Send welcome email — free user
-        const { subject, html } = emailFreeWelcome(firstName);
+        const { subject, html } = emailFreeWelcome(resolvedFirstName);
         await sendEmail(user.email, subject, html);
 
         addToSysteme(user.email, "carousel-studio-free");
 
       } else if (existing.plan !== "free" && existing.affiliate_id && existing.affiliate_active) {
-        // Existing paid user signing in for first time — check if we should send affiliate email
-        // Only send once — check if already sent via a flag or just send on first login
         const commissionRate = getCommissionRate(existing.plan);
         const planLabel = getPlanLabel(existing.plan);
-        const { subject, html } = emailPaidWelcome(firstName, planLabel, existing.affiliate_id, commissionRate);
+        const nameToUse = existing.first_name || resolvedFirstName;
+        const { subject, html } = emailPaidWelcome(nameToUse, planLabel, existing.affiliate_id, commissionRate);
         await sendEmail(user.email, subject, html);
       }
 
@@ -337,13 +353,13 @@ export async function POST(req) {
 
       const { data: profile } = await supabase
         .from("users")
-        .select("plan, credits_exhausted_email_sent")
+        .select("plan, credits_exhausted_email_sent, first_name")
         .eq("email", user.email)
         .single();
 
       // Only send once per credit period
       if (profile?.plan === "free" && !profile?.credits_exhausted_email_sent) {
-        const firstName = user.email.split("@")[0];
+        const firstName = profile?.first_name || user.email.split("@")[0];
         const exhaustedEmail = emailCreditsExhausted(firstName);
         await sendEmail(user.email, exhaustedEmail.subject, exhaustedEmail.html);
         await supabase.from("users").update({ credits_exhausted_email_sent: true }).eq("email", user.email);
