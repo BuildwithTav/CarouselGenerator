@@ -7,610 +7,167 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  
+
   :root {
-    --black: #0a0a0a;
+    --bg: #0a0a0a;
     --surface: #141414;
-    --border: #222;
+    --surface2: #1a1a1a;
+    --border: #2a2a2a;
+    --text: #ffffff;
+    --mid: #e0e0e0;
+    --muted: #b0b0b0;
     --gold: #BB9900;
     --gold-light: #e6c45a;
-    --white: #ffffff;
-    --muted: rgba(255,255,255,0.5);
+    --gold-bg: rgba(187,153,0,0.1);
+    --gold-border: rgba(187,153,0,0.3);
     --radius: 14px;
   }
 
-  body {
-    background: var(--black);
-    color: var(--white);
-    font-family: 'Raleway', sans-serif;
-    line-height: 1.6;
-    overflow-x: hidden;
-  }
-
+  body { background: var(--bg); color: var(--text); font-family: 'Raleway', sans-serif; line-height: 1.6; overflow-x: hidden; }
   h1, h2, h3, h4 { font-family: 'Montserrat', sans-serif; }
 
   /* NAV */
-  nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 40px;
-    height: 64px;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    background: rgba(10,10,10,0.95);
-    backdrop-filter: blur(20px);
-    z-index: 100;
-  }
-
-  .nav-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-decoration: none;
-  }
-
-  .nav-logo-icon {
-    width: 36px;
-    height: 36px;
-    background: var(--black);
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 900;
-    font-size: 16px;
-    color: var(--gold);
-  }
-
-  .nav-logo-text {
-    display: flex;
-    flex-direction: column;
-    line-height: 1;
-  }
-
-  .nav-logo-title {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 800;
-    font-size: 14px;
-    color: var(--white);
-  }
-
-  .nav-logo-sub {
-    font-size: 10px;
-    color: var(--gold);
-    font-weight: 600;
-  }
-
-  .nav-cta {
-    background: var(--gold);
-    color: #000;
-    padding: 10px 24px;
-    border-radius: 8px;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
-    font-size: 13px;
-    text-decoration: none;
-    transition: background 0.2s;
-  }
-
-  .nav-cta:hover { background: var(--gold-light); }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 0 40px; height: 64px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(10,10,10,0.97); backdrop-filter: blur(20px); z-index: 100; }
+  .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .nav-logo-icon { width: 36px; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 16px; color: var(--gold); }
+  .nav-logo-title { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 14px; color: var(--text); display: block; }
+  .nav-logo-sub { font-size: 10px; color: var(--gold); font-weight: 700; display: block; }
+  .nav-cta { background: var(--gold); color: #000; padding: 10px 24px; border-radius: 8px; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 13px; text-decoration: none; transition: all 0.2s; }
+  .nav-cta:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(187,153,0,0.35); }
 
   /* HERO */
-  .hero {
-    padding: 80px 40px 60px;
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 60px;
-    align-items: center;
-  }
-
-  .hero-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(187,153,0,0.1);
-    border: 1px solid rgba(187,153,0,0.3);
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--gold);
-    margin-bottom: 24px;
-    font-family: 'Montserrat', sans-serif;
-    letter-spacing: 0.5px;
-  }
-
-  .hero h1 {
-    font-size: 48px;
-    font-weight: 900;
-    line-height: 1.1;
-    margin-bottom: 20px;
-    letter-spacing: -1px;
-  }
-
+  .hero { padding: 80px 40px 60px; }
+  .hero-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+  .hero-badge { display: inline-flex; align-items: center; background: var(--gold-bg); border: 1px solid var(--gold-border); border-radius: 20px; padding: 6px 14px; font-size: 11px; font-weight: 700; color: var(--gold); font-family: 'Montserrat', sans-serif; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px; }
+  .hero h1 { font-size: 46px; font-weight: 900; line-height: 1.1; margin-bottom: 18px; letter-spacing: -1px; color: var(--text); }
   .hero h1 span { color: var(--gold); }
-
-  .hero-sub {
-    font-size: 17px;
-    color: var(--muted);
-    margin-bottom: 36px;
-    line-height: 1.7;
-    max-width: 480px;
-  }
-
-  .hero-form {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-
-  .hero-input {
-    flex: 1;
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 18px;
-    color: var(--white);
-    font-size: 15px;
-    font-family: 'Raleway', sans-serif;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .hero-input:focus { border-color: var(--gold); }
-  .hero-input::placeholder { color: var(--muted); }
-
-  .hero-btn {
-    background: var(--gold);
-    color: #000;
-    padding: 14px 28px;
-    border-radius: 10px;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 800;
-    font-size: 14px;
-    border: none;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.2s, transform 0.1s;
-  }
-
-  .hero-btn:hover { background: var(--gold-light); transform: translateY(-1px); }
-
-  .hero-note {
-    font-size: 12px;
-    color: var(--muted);
-  }
-
-  .hero-img {
-    border-radius: var(--radius);
-    overflow: hidden;
-    border: 1.5px solid var(--border);
-    box-shadow: 0 40px 80px rgba(0,0,0,0.5);
-  }
-
+  .hero-sub { font-size: 17px; color: var(--mid); margin-bottom: 36px; line-height: 1.7; max-width: 480px; }
+  .hero-btn { display: inline-block; background: var(--gold); color: #000; padding: 16px 36px; border-radius: 10px; font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 15px; text-decoration: none; transition: all 0.2s; }
+  .hero-btn:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(187,153,0,0.4); }
+  .hero-note { font-size: 13px; color: var(--muted); margin-top: 12px; }
+  .hero-img { border-radius: var(--radius); overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.5); border: 1px solid var(--border); }
   .hero-img img { width: 100%; display: block; }
 
   /* SOCIAL PROOF */
-  .social-proof {
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    padding: 20px 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 40px;
-    flex-wrap: wrap;
-  }
-
-  .proof-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--muted);
-    font-weight: 600;
-  }
-
-  .proof-item span { color: var(--gold); font-size: 16px; }
+  .social-proof { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 18px 40px; display: flex; align-items: center; justify-content: center; gap: 40px; flex-wrap: wrap; }
+  .proof-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--mid); font-weight: 600; }
+  .proof-item span { color: var(--gold); font-weight: 900; }
 
   /* FEATURES */
-  .features {
-    padding: 80px 40px;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .section-label {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 12px;
-  }
-
-  .section-title {
-    font-size: 36px;
-    font-weight: 900;
-    margin-bottom: 16px;
-    letter-spacing: -0.5px;
-  }
-
-  .section-sub {
-    font-size: 16px;
-    color: var(--muted);
-    margin-bottom: 60px;
-    max-width: 560px;
-  }
-
-  .features-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-  }
-
-  .feature-card {
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
-
-  .feature-card:hover { border-color: rgba(187,153,0,0.4); }
-
+  .features { padding: 80px 40px; max-width: 1200px; margin: 0 auto; }
+  .section-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
+  .section-title { font-size: 36px; font-weight: 900; margin-bottom: 14px; letter-spacing: -0.5px; color: var(--text); }
+  .section-sub { font-size: 16px; color: var(--mid); margin-bottom: 48px; max-width: 560px; line-height: 1.7; }
+  .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .feature-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: all 0.2s; }
+  .feature-card:hover { border-color: var(--gold); box-shadow: 0 8px 32px rgba(187,153,0,0.12); transform: translateY(-2px); }
   .feature-img { width: 100%; display: block; border-bottom: 1px solid var(--border); }
-
   .feature-content { padding: 24px; }
-
-  .feature-tag {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 8px;
-  }
-
-  .feature-title {
-    font-size: 18px;
-    font-weight: 800;
-    margin-bottom: 8px;
-    font-family: 'Montserrat', sans-serif;
-  }
-
-  .feature-desc {
-    font-size: 14px;
-    color: var(--muted);
-    line-height: 1.6;
-  }
-
-  .feature-card.wide {
-    grid-column: span 2;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .feature-card.wide .feature-img {
-    border-bottom: none;
-    border-right: 1px solid var(--border);
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .feature-card.wide .feature-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 40px;
-  }
+  .feature-tag { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+  .feature-title { font-size: 17px; font-weight: 800; margin-bottom: 8px; color: var(--text); font-family: 'Montserrat', sans-serif; }
+  .feature-desc { font-size: 14px; color: var(--mid); line-height: 1.6; }
+  .feature-card.wide { grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; }
+  .feature-card.wide .feature-img { border-bottom: none; border-right: 1px solid var(--border); height: 100%; object-fit: cover; }
+  .feature-card.wide .feature-content { display: flex; flex-direction: column; justify-content: center; padding: 40px; }
 
   /* PRICING */
-  .pricing {
-    padding: 80px 40px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-  }
+  .pricing { padding: 80px 40px; background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .pricing-inner { max-width: 1200px; margin: 0 auto; }
+  .pricing-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 20px; }
+  .plan-card { background: var(--surface2); border: 2px solid var(--border); border-radius: var(--radius); padding: 24px; display: flex; flex-direction: column; position: relative; transition: all 0.2s; }
+  .plan-card:hover { border-color: var(--gold); box-shadow: 0 8px 32px rgba(187,153,0,0.15); transform: translateY(-3px); }
+  .plan-card.featured { background: #0a0a0a; border-color: var(--gold); }
+  .plan-card.featured:hover { box-shadow: 0 12px 40px rgba(187,153,0,0.3); }
+  .plan-badge { position: absolute; top: -10px; right: 16px; background: var(--gold); color: #000; font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 10px; }
+  .plan-name { font-family: 'Montserrat', sans-serif; font-size: 15px; font-weight: 800; margin-bottom: 4px; color: var(--text); }
+  .plan-credits { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .plan-price { font-family: 'Montserrat', sans-serif; font-size: 32px; font-weight: 900; margin-bottom: 4px; color: var(--text); }
+  .plan-card.featured .plan-price { color: var(--gold); }
+  .plan-price span { font-size: 14px; font-weight: 500; color: var(--muted); }
+  .plan-features { list-style: none; margin: 14px 0 20px; flex: 1; }
+  .plan-features li { font-size: 13px; color: var(--mid); padding: 4px 0; display: flex; align-items: flex-start; gap: 8px; }
+  .plan-features li::before { content: '✓'; color: var(--gold); font-weight: 800; flex-shrink: 0; }
+  .plan-btn { display: block; text-align: center; padding: 12px; border-radius: 9px; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 13px; text-decoration: none; transition: all 0.2s; border: none; cursor: pointer; }
+  .plan-btn-dark { background: var(--text); color: #000; }
+  .plan-btn-dark:hover { background: var(--gold); color: #000; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(187,153,0,0.3); }
+  .plan-btn-gold { background: var(--gold); color: #000; }
+  .plan-btn-gold:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(187,153,0,0.4); }
 
-  .pricing-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
+  /* AFFILIATE */
+  .affiliate-hero { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px; margin-top: 20px; display: grid; grid-template-columns: 1fr auto; gap: 40px; align-items: center; }
+  .affiliate-section-label { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+  .affiliate-hero h3 { font-size: 22px; font-weight: 900; margin-bottom: 8px; color: var(--text); }
+  .affiliate-hero p { font-size: 14px; color: var(--mid); margin-bottom: 20px; line-height: 1.7; max-width: 540px; }
+  .affiliate-features { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .affiliate-feature { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--mid); }
+  .affiliate-feature::before { content: '✓'; color: var(--gold); font-weight: 800; }
+  .affiliate-price { text-align: center; flex-shrink: 0; }
+  .affiliate-price .amount { font-family: 'Montserrat', sans-serif; font-size: 40px; font-weight: 900; color: var(--gold); line-height: 1; }
+  .affiliate-price .once { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
 
-  .pricing-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 20px;
-  }
-
-  .plan-card {
-    background: var(--black);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-  }
-
-  .plan-card.featured {
-    border-color: var(--gold);
-    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
-  }
-
-  .plan-badge {
-    position: absolute;
-    top: -10px;
-    right: 16px;
-    background: var(--gold);
-    color: #000;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 10px;
-  }
-
-  .plan-name {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 15px;
-    font-weight: 800;
-    margin-bottom: 4px;
-  }
-
-  .plan-credits {
-    font-size: 12px;
-    color: var(--muted);
-    margin-bottom: 16px;
-  }
-
-  .plan-price {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 32px;
-    font-weight: 900;
-    margin-bottom: 4px;
-  }
-
-  .plan-price span {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--muted);
-  }
-
-  .plan-features {
-    list-style: none;
-    margin: 16px 0 24px;
-    flex: 1;
-  }
-
-  .plan-features li {
-    font-size: 13px;
-    color: var(--muted);
-    padding: 4px 0;
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .plan-features li::before {
-    content: '✓';
-    color: var(--gold);
-    font-weight: 700;
-    flex-shrink: 0;
-    margin-top: 1px;
-  }
-
-  .plan-btn {
-    display: block;
-    text-align: center;
-    padding: 12px;
-    border-radius: 9px;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
-    font-size: 13px;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .plan-btn-dark {
-    background: var(--white);
-    color: #000;
-  }
-
-  .plan-btn-dark:hover { background: #eee; }
-
-  .plan-btn-gold {
-    background: var(--gold);
-    color: #000;
-  }
-
-  .plan-btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); }
-
-  /* AFFILIATE HERO */
-  .affiliate-hero {
-    background: linear-gradient(135deg, #1a0a00, #2a1500);
-    border: 2px solid var(--gold);
-    border-radius: var(--radius);
-    padding: 36px 40px;
-    margin-top: 20px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 40px;
-    align-items: center;
-  }
-
-  .affiliate-hero h3 {
-    font-size: 22px;
-    font-weight: 900;
-    margin-bottom: 8px;
-  }
-
-  .affiliate-hero p {
-    font-size: 14px;
-    color: rgba(255,255,255,0.7);
-    margin-bottom: 16px;
-    line-height: 1.6;
-  }
-
-  .affiliate-features {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
-  }
-
-  .affiliate-feature {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--white);
-  }
-
-  .affiliate-feature::before {
-    content: '✓';
-    color: var(--gold);
-    font-weight: 700;
-  }
-
-  .affiliate-price {
-    text-align: center;
-    flex-shrink: 0;
-  }
-
-  .affiliate-price .amount {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 40px;
-    font-weight: 900;
-    color: var(--gold);
-    line-height: 1;
-  }
-
-  .affiliate-price .once {
-    font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 16px;
-  }
+  /* WHITE LABEL */
+  .white-label-section { padding: 80px 40px; max-width: 1200px; margin: 0 auto; }
+  .white-label-box { background: var(--surface); border: 2px solid #6644cc; border-radius: var(--radius); padding: 40px; display: grid; grid-template-columns: 1fr auto; gap: 40px; align-items: center; box-shadow: 0 8px 40px rgba(102,68,204,0.12); }
+  .white-label-box h2 { font-size: 26px; font-weight: 900; margin-bottom: 10px; color: var(--text); }
+  .white-label-box p { font-size: 15px; color: var(--mid); margin-bottom: 24px; line-height: 1.7; max-width: 540px; }
+  .wl-features { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .wl-feature { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--mid); }
+  .wl-feature::before { content: '✓'; color: #9977ff; font-weight: 800; }
+  .wl-price { text-align: center; flex-shrink: 0; }
+  .wl-price .amount { font-family: 'Montserrat', sans-serif; font-size: 40px; font-weight: 900; color: #9977ff; line-height: 1; }
+  .wl-price .once { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .wl-btn { display: block; text-align: center; padding: 13px 28px; border-radius: 9px; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 13px; text-decoration: none; background: #6644cc; color: #fff; min-width: 180px; transition: all 0.2s; }
+  .wl-btn:hover { background: #7755dd; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(102,68,204,0.4); }
 
   /* CTA */
-  .cta-section {
-    padding: 100px 40px;
-    text-align: center;
-    max-width: 700px;
-    margin: 0 auto;
-  }
-
-  .cta-section h2 {
-    font-size: 42px;
-    font-weight: 900;
-    margin-bottom: 16px;
-    letter-spacing: -0.5px;
-  }
-
+  .cta-section { background: var(--surface); border-top: 1px solid var(--border); padding: 100px 40px; text-align: center; }
+  .cta-inner { max-width: 700px; margin: 0 auto; }
+  .cta-section h2 { font-size: 42px; font-weight: 900; margin-bottom: 16px; letter-spacing: -0.5px; color: var(--text); }
   .cta-section h2 span { color: var(--gold); }
-
-  .cta-section p {
-    font-size: 16px;
-    color: var(--muted);
-    margin-bottom: 36px;
-  }
-
-  .cta-form {
-    display: flex;
-    justify-content: center;
-    margin: 0 auto 20px;
-  }
+  .cta-section p { font-size: 16px; color: var(--mid); margin-bottom: 36px; line-height: 1.7; }
 
   /* FOOTER */
-  footer {
-    border-top: 1px solid var(--border);
-    padding: 24px 40px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  footer a {
-    color: var(--muted);
-    text-decoration: none;
-    font-size: 13px;
-    transition: color 0.2s;
-  }
-
+  footer { background: var(--bg); border-top: 1px solid var(--border); padding: 24px 40px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  footer a { color: var(--muted); text-decoration: none; font-size: 13px; transition: color 0.2s; }
   footer a:hover { color: var(--gold); }
-
   .footer-links { display: flex; gap: 24px; }
 
-  .plan-btn { transition: all 0.2s; cursor: pointer; }
-  .plan-btn-dark:hover { background: #BB9900 !important; color: #000 !important; transform: translateY(-3px); box-shadow: 0 8px 24px rgba(187,153,0,0.4); }
-  .plan-btn-gold:hover { background: #e6c45a !important; transform: translateY(-3px); box-shadow: 0 8px 24px rgba(187,153,0,0.5); }
-  a[style*="6644cc"]:hover { background: #7755dd !important; transform: translateY(-3px); box-shadow: 0 8px 24px rgba(102,68,204,0.5); }
-  .hero-btn { transition: all 0.2s; }
-  .hero-btn:hover { background: #e6c45a !important; transform: translateY(-3px); box-shadow: 0 8px 24px rgba(187,153,0,0.4); }
-  .nav-cta { transition: all 0.2s; }
-  .nav-cta:hover { background: #e6c45a !important; transform: translateY(-3px); box-shadow: 0 6px 20px rgba(187,153,0,0.4); }
-  .plan-card { transition: all 0.2s; }
-  .plan-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15) !important; }
-  .plan-card.featured:hover { box-shadow: 0 12px 40px rgba(187,153,0,0.25); border-color: var(--gold) !important; }
-
   @media (max-width: 900px) {
-    .hero { grid-template-columns: 1fr; gap: 40px; padding: 60px 24px 40px; }
-    .hero h1 { font-size: 34px; }
+    .hero-inner { grid-template-columns: 1fr; gap: 40px; }
+    .hero { padding: 60px 24px 40px; }
+    .hero h1 { font-size: 32px; }
     .features-grid { grid-template-columns: 1fr; }
-    .feature-card.wide { grid-column: span 1; grid-template-columns: 1fr; display: flex; flex-direction: column; }
+    .feature-card.wide { grid-column: span 1; display: flex; flex-direction: column; }
     .feature-card.wide .feature-img { border-right: none; border-bottom: 1px solid var(--border); }
     .pricing-grid { grid-template-columns: 1fr 1fr; }
     .affiliate-hero { grid-template-columns: 1fr; }
     .affiliate-features { grid-template-columns: 1fr 1fr; }
     .affiliate-price { text-align: center; width: 100%; }
+    .white-label-box { grid-template-columns: 1fr; text-align: center; }
+    .wl-features { grid-template-columns: 1fr 1fr; }
+    .wl-price { width: 100%; }
     .features { padding: 60px 24px; }
     .pricing { padding: 60px 24px; }
+    .white-label-section { padding: 60px 24px; }
     .cta-section { padding: 60px 24px; }
-    .social-proof { padding: 20px 24px; gap: 20px; }
+    .social-proof { padding: 18px 24px; gap: 16px; }
     footer { padding: 24px; }
     nav { padding: 0 24px; }
   }
 
-  @media (max-width: 700px) {
-    section[style*="padding:80px 40px"] > div[style*="grid-template-columns:1fr auto"] {
-      grid-template-columns: 1fr !important;
-      text-align: center;
-    }
-    div[style*="font-size:40px"][style*="9977ff"] {
-      font-size: 32px !important;
-    }
-    div[style*="grid-template-columns:1fr 1fr 1fr"][style*="gap:10px"] {
-      grid-template-columns: 1fr 1fr !important;
-    }
-  }
-
   @media (max-width: 600px) {
     .pricing-grid { grid-template-columns: 1fr; }
-    .hero-form { flex-direction: column; }
-    .cta-form { flex-direction: column; }
+    .affiliate-features { grid-template-columns: 1fr; }
+    .wl-features { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 
-<!-- NAV -->
 <nav>
   <a href="#" class="nav-logo">
     <div class="nav-logo-icon">C</div>
-    <div class="nav-logo-text">
+    <div>
       <span class="nav-logo-title">Carousel Studio</span>
       <span class="nav-logo-sub">by BuildWithTav</span>
     </div>
@@ -618,57 +175,51 @@
   <a href="https://studio.buildwithtav.co" class="nav-cta">Start Free →</a>
 </nav>
 
-<!-- HERO -->
 <section class="hero">
-  <div>
-    <div class="hero-badge">⚡ AI-Powered Carousel Generator</div>
-    <h1>Carousels that <span>stop the scroll.</span> Built in seconds.</h1>
-    <p class="hero-sub">Tell it your topic. It handles the strategy, slides, copy and design — in your brand voice. No templates. No guesswork. No wasted time.</p>
-    <div class="hero-form">
-      <a href="https://studio.buildwithtav.co" class="hero-btn" style="display:inline-block;text-decoration:none;padding:16px 36px;font-size:16px">Start Free — No credit card needed →</a>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-badge">AI-Powered Carousel Generator</div>
+      <h1>Carousels that <span>stop the scroll.</span> Built in seconds.</h1>
+      <p class="hero-sub">Tell it your topic. It handles the strategy, slides, copy and design — in your brand voice. Up to 8 slides. Ready in under 30 seconds.</p>
+      <a href="https://studio.buildwithtav.co" class="hero-btn">Start Free — No credit card needed →</a>
+      <p class="hero-note">6 free credits included. No commitment.</p>
     </div>
-    <p class="hero-note">Free to start. No credit card needed. 6 credits included.</p>
-  </div>
-  <div class="hero-img">
-    <img src="https://studio.buildwithtav.co/images/Screenshot%202026-06-11%20at%2018.25.02.png" alt="Carousel Studio edit screen showing generated carousel slides">
+    <div class="hero-img">
+      <img src="https://studio.buildwithtav.co/images/Screenshot%202026-06-11%20at%2018.25.02.png" alt="Carousel Studio in action">
+    </div>
   </div>
 </section>
 
-<!-- SOCIAL PROOF -->
 <div class="social-proof">
   <div class="proof-item"><span>✓</span> Works for Instagram, LinkedIn & TikTok</div>
   <div class="proof-item"><span>✓</span> Your brand voice, not generic AI</div>
   <div class="proof-item"><span>✓</span> Generates in 15–25 seconds</div>
-  <div class="proof-item"><span>✓</span> Quote cards, captions & rewrites included</div>
+  <div class="proof-item"><span>✓</span> Quote cards, captions & rewrites available</div>
 </div>
 
-<!-- FEATURES -->
 <section class="features">
   <div class="section-label">How it works</div>
   <h2 class="section-title">One topic. Up to 8 slides. Done.</h2>
   <p class="section-sub">Tell Carousel Studio what you want to say and who you're talking to. Everything else is handled.</p>
-
   <div class="features-grid">
     <div class="feature-card wide">
       <img src="https://studio.buildwithtav.co/images/Screenshot%202026-06-11%20at%2018.20.32.png" alt="Generate tab" class="feature-img">
       <div class="feature-content">
         <div class="feature-tag">Step 1 — Generate</div>
         <h3 class="feature-title">Tell it your topic. It does the rest.</h3>
-        <p class="feature-desc">Enter your topic, choose your audience, add an optional brief. Carousel Studio writes the hook, structures the slides and designs the layout — all in your brand voice. Ready in under 30 seconds.</p>
+        <p class="feature-desc">Enter your topic, choose your audience, add an optional brief. Carousel Studio writes the hook, structures the slides and designs the layout — all in your brand voice. Choose 1 to 8 slides. Ready in under 30 seconds.</p>
         <br>
-        <p class="feature-desc" style="color: var(--gold);">Works with your brand photo, colours, font and handle. Every slide looks like you.</p>
+        <p class="feature-desc" style="color:var(--gold);font-weight:700">Works with your brand photo, colours, font and handle. Every slide looks like you.</p>
       </div>
     </div>
-
     <div class="feature-card">
       <img src="https://studio.buildwithtav.co/images/Screenshot%202026-06-11%20at%2018.25.02.png" alt="Edit screen" class="feature-img">
       <div class="feature-content">
         <div class="feature-tag">Step 2 — Edit</div>
         <h3 class="feature-title">Tweak anything. Download everything.</h3>
-        <p class="feature-desc">Edit headlines, body text, accent words and gradient per slide. Regenerate with AI. Generate a caption. Download individually or all at once.</p>
+        <p class="feature-desc">Edit headlines, body text, accent words and gradient per slide. Rewrite with AI. Generate a caption. Download individually or all at once.</p>
       </div>
     </div>
-
     <div class="feature-card">
       <img src="https://studio.buildwithtav.co/images/Screenshot%202026-06-11%20at%2018.27.17.png" alt="Quote cards" class="feature-img">
       <div class="feature-content">
@@ -677,7 +228,6 @@
         <p class="feature-desc">Generate up to 3 branded quote cards per session. Use your own background photo, pick a template, choose your font. Downloadable in seconds.</p>
       </div>
     </div>
-
     <div class="feature-card">
       <img src="https://studio.buildwithtav.co/images/Screenshot%202026-06-11%20at%2018.28.50.png" alt="Brand settings" class="feature-img">
       <div class="feature-content">
@@ -686,69 +236,63 @@
         <p class="feature-desc">Upload your photo, set your handle, choose your accent colour and voice profile. Every carousel and quote card reflects your brand automatically.</p>
       </div>
     </div>
-
     <div class="feature-card">
       <img src="https://studio.buildwithtav.co/images/Screenshot%202026-06-11%20at%2018.29.06.png" alt="Visual settings" class="feature-img">
       <div class="feature-content">
         <div class="feature-tag">Visual Control</div>
         <h3 class="feature-title">Your colours, fonts and backgrounds.</h3>
-        <p class="feature-desc">Pick your headline style, accent colour, body font and slide background. Upload your own images. Every setting updates the live preview instantly.</p>
+        <p class="feature-desc">Pick your headline style, accent colour, body font and slide background. Upload your own images. Live preview updates instantly.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- PRICING -->
 <section class="pricing">
   <div class="pricing-inner">
     <div class="section-label" style="text-align:center">Pricing</div>
     <h2 class="section-title" style="text-align:center">Start free. Scale when you're ready.</h2>
     <p class="section-sub" style="text-align:center;margin:0 auto 48px">Every paid plan includes the affiliate programme. Refer people and earn recurring commission every month.</p>
-
     <div class="pricing-grid">
       <div class="plan-card">
         <div class="plan-name">Free</div>
         <div class="plan-credits">6 credits/month</div>
         <div class="plan-price">$0</div>
         <ul class="plan-features">
-          <li>6 credits/month — ~3 carousels</li>
+          <li>6 credits — ~3 carousels</li>
           <li>Full carousel generator</li>
           <li>Quote cards & captions</li>
           <li>Studio branding on downloads</li>
         </ul>
         <a href="https://studio.buildwithtav.co" class="plan-btn plan-btn-dark">Start Free</a>
       </div>
-
       <div class="plan-card">
         <div class="plan-name">Starter</div>
         <div class="plan-credits">20 credits/month</div>
         <div class="plan-price">$20<span>/mo</span></div>
         <ul class="plan-features">
-          <li>20 credits/month — ~10 carousels</li>
+          <li>20 credits — ~10 carousels</li>
           <li>Clean downloads — no branding</li>
-          <li>All features included</li>
+          <li>All features</li>
           <li>20% affiliate commission</li>
           <li>8% Tier 2 on your network</li>
         </ul>
         <a href="https://www.buildwithtav.co/carouselstudio" class="plan-btn plan-btn-dark">Get Starter</a>
       </div>
-
       <div class="plan-card featured">
         <div class="plan-badge">Best value</div>
         <div class="plan-name">Pro</div>
         <div class="plan-credits">80 credits/month</div>
-        <div class="plan-price" style="color:var(--gold)">$50<span style="color:var(--muted)">/mo</span></div>
+        <div class="plan-price">$50<span>/mo</span></div>
         <ul class="plan-features">
           <li>80 credits — ~40 carousels</li>
-          <li>No watermark</li>
-          <li>All features included</li>
+          <li>Clean downloads — no branding</li>
+          <li>All features</li>
           <li>30% affiliate commission</li>
           <li>Refer 3 = Pro pays for itself</li>
           <li>8% Tier 2 on your network</li>
         </ul>
         <a href="https://www.buildwithtav.co/carouselstudio" class="plan-btn plan-btn-gold">Get Pro</a>
       </div>
-
       <div class="plan-card">
         <div class="plan-name">Agency</div>
         <div class="plan-credits">300 credits/month</div>
@@ -756,22 +300,20 @@
         <ul class="plan-features">
           <li>300 credits — ~150 carousels</li>
           <li>Manage multiple brands</li>
+          <li>All features</li>
           <li>40% affiliate commission</li>
-          <li>Highest recurring rate</li>
           <li>8% Tier 2 on your network</li>
         </ul>
         <a href="https://www.buildwithtav.co/carouselstudio" class="plan-btn plan-btn-dark">Get Agency</a>
       </div>
     </div>
-
-    <!-- AFFILIATE LICENCE -->
     <div class="affiliate-hero">
       <div>
-        <div class="section-label" style="margin-bottom:8px">🔥 Founding price — limited spots</div>
+        <div class="affiliate-section-label">Founding price — limited spots</div>
         <h3>Affiliate Licence — pay once, earn forever.</h3>
-        <p>Don't want a monthly subscription? Pay $297 once. Get lifetime access to the tool plus 35% recurring commission on every person you refer — forever. No monthly fees. Ever.</p>
+        <p>Don't want a monthly subscription? Pay $297 once. Get lifetime access plus 35% recurring commission on every person you refer — forever. No monthly fees. Ever.</p>
         <div class="affiliate-features">
-          <div class="affiliate-feature">15 credits/month — demos &amp; promos</div>
+          <div class="affiliate-feature">15 credits/month — demos & promos</div>
           <div class="affiliate-feature">35% recurring commission</div>
           <div class="affiliate-feature">8% Tier 2 on your network</div>
           <div class="affiliate-feature">No monthly fee ever</div>
@@ -782,49 +324,46 @@
       <div class="affiliate-price">
         <div class="amount">$297</div>
         <div class="once">one-time payment</div>
-        <a href="https://studio.buildwithtav.co" class="plan-btn plan-btn-gold" style="min-width:180px">Get Affiliate Licence</a>
+        <a href="https://www.buildwithtav.co/carouselstudio" class="plan-btn plan-btn-gold" style="min-width:180px">Get Affiliate Licence</a>
       </div>
     </div>
   </div>
 </section>
 
-
-<!-- WHITE LABEL -->
-<section style="padding:80px 40px;max-width:1200px;margin:0 auto">
-  <div style="background:linear-gradient(135deg,#0a0a1a,#15152a);border:1.5px solid #6644cc;border-radius:14px;padding:32px;display:grid;grid-template-columns:1fr auto;gap:32px;align-items:center;box-sizing:border-box">
+<section class="white-label-section">
+  <div class="white-label-box">
     <div>
-      <div class="section-label" style="color:#9977ff;margin-bottom:12px">White Label Licence</div>
-      <h2 style="font-size:28px;font-weight:900;margin-bottom:12px">Your brand. Your domain. Your product.</h2>
-      <p style="font-size:15px;color:rgba(255,255,255,0.7);margin-bottom:24px;line-height:1.7;max-width:540px">Resell Carousel Studio as your own tool. We brand it with your logo, colours and domain. Your clients never see Carousel Studio — they see your product. One-time payment. Lifetime access. 40% commission on every client you bring.</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-        <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#fff"><span style="color:#9977ff;font-weight:700">✓</span> Your brand &amp; domain</div>
-        <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#fff"><span style="color:#9977ff;font-weight:700">✓</span> Resell as your own product</div>
-        <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#fff"><span style="color:#9977ff;font-weight:700">✓</span> 80 credits/month included</div>
-        <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#fff"><span style="color:#9977ff;font-weight:700">✓</span> 40% affiliate commission</div>
-        <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#fff"><span style="color:#9977ff;font-weight:700">✓</span> 8% Tier 2 on your network</div>
-        <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#fff"><span style="color:#9977ff;font-weight:700">✓</span> No monthly fee ever</div>
+      <div class="section-label" style="color:#9977ff;margin-bottom:10px">White Label Licence</div>
+      <h2>Your brand. Your domain. Your product.</h2>
+      <p>Resell Carousel Studio as your own tool. We brand it with your logo, colours and domain. Your clients never see Carousel Studio — they see your product. One payment. Lifetime access.</p>
+      <div class="wl-features">
+        <div class="wl-feature">Your brand & domain</div>
+        <div class="wl-feature">Resell as your own product</div>
+        <div class="wl-feature">80 credits/month included</div>
+        <div class="wl-feature">40% affiliate commission</div>
+        <div class="wl-feature">8% Tier 2 on your network</div>
+        <div class="wl-feature">No monthly fee ever</div>
       </div>
     </div>
-    <div style="text-align:center;flex-shrink:0">
-      <div style="font-family:Montserrat,sans-serif;font-size:40px;font-weight:900;color:#9977ff;line-height:1">$497</div>
-      <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:16px">one-time payment</div>
-      <a href="https://www.buildwithtav.co/carouselstudio" style="display:block;text-align:center;padding:13px 28px;border-radius:9px;font-family:Montserrat,sans-serif;font-weight:700;font-size:13px;text-decoration:none;background:#6644cc;color:#fff;min-width:180px;transition:all 0.2s">Get White Label</a>
+    <div class="wl-price">
+      <div class="amount">$497</div>
+      <div class="once">one-time payment</div>
+      <a href="https://www.buildwithtav.co/carouselstudio" class="wl-btn">Get White Label</a>
     </div>
   </div>
 </section>
-<!-- CTA -->
+
 <section class="cta-section">
-  <h2>Ready to create carousels that <span>actually perform?</span></h2>
-  <p>Free to start. No credit card. No commitment. Just better content.</p>
-  <div style="display:flex;justify-content:center;margin:0 auto 20px">
-    <a href="https://studio.buildwithtav.co" class="hero-btn" style="display:inline-block;text-decoration:none;padding:16px 40px;font-size:16px">Start Free — No credit card needed →</a>
+  <div class="cta-inner">
+    <h2>Ready to create carousels that <span>actually perform?</span></h2>
+    <p>Free to start. No credit card. No commitment. Just better content.</p>
+    <a href="https://studio.buildwithtav.co" class="hero-btn">Start Free — No credit card needed →</a>
+    <p style="font-size:12px;color:var(--muted);margin-top:16px">6 free credits included. Upgrade anytime.</p>
   </div>
-  <p style="font-size:12px;color:var(--muted);text-align:center">6 free credits included. Upgrade anytime.</p>
 </section>
 
-<!-- FOOTER -->
 <footer>
-  <a href="https://studio.buildwithtav.co" style="color:var(--gold);font-weight:700;font-family:'Montserrat',sans-serif;">Carousel Studio</a>
+  <a href="https://studio.buildwithtav.co" style="color:var(--gold);font-weight:800;font-family:'Montserrat',sans-serif;font-size:14px">Carousel Studio</a>
   <div class="footer-links">
     <a href="https://studio.buildwithtav.co/terms">Terms</a>
     <a href="https://studio.buildwithtav.co/privacy">Privacy</a>
