@@ -1037,7 +1037,7 @@ VOICE: ${voice}
 AUDIENCE: ${audienceDesc}
 TOPIC: "${topicStr}"${briefSection}${inspiration}
 SLIDES: ${slideCount}${narrativeStyle}
-TEXT DENSITY: ${textDensity === "concise" ? "CONCISE — keep body text to 1 short punchy sentence max. Prioritise impact over explanation. Less is more." : textDensity === "detailed" ? "DETAILED — use 2-3 sentences for body text. Explain the insight fully. Give context and specifics." : "BALANCED — 1-2 sentences for body text. Clear and direct. Every word earns its place."}
+TEXT DENSITY: ${textDensity === "concise" ? "PUNCHY — keep body text to 1 short punchy sentence max. Prioritise impact over explanation. Less is more." : textDensity === "detailed" ? "DEPTH — use 2-3 sentences for body text. Explain the insight fully. Give context and specifics." : "BALANCED — 1-2 sentences for body text. Clear and direct. Every word earns its place."}
 
 NARRATIVE ARC: hook → reality → insight → shift → advice → CTA
 
@@ -2334,7 +2334,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <div>
                   <label style={lbl}>Text density</label>
                   <div style={{display:"flex",gap:6}}>
-                    {[["concise","Concise"],["balanced","Balanced"],["detailed","Detailed"]].map(([id,label])=>(
+                    {[["concise","Punchy"],["balanced","Balanced"],["detailed","Depth"]].map(([id,label])=>(
                       <button key={id} onClick={()=>setTextDensity(id)} style={{flex:1,background:textDensity===id?A.text:A.bg,border:`1.5px solid ${textDensity===id?A.text:A.border}`,color:textDensity===id?A.accentText:A.muted,padding:"7px 4px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                     ))}
                   </div>
