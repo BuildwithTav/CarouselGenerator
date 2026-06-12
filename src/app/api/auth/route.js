@@ -87,6 +87,37 @@ function emailPaidWelcome(firstName, planName, affiliateId, commissionRate) {
   };
 }
 
+// ─── CREDITS EXHAUSTED EMAIL ──────────────────────────────────────────────────
+
+function emailCreditsExhausted(firstName) {
+  return {
+    subject: "You've used your free credits — here's what's next",
+    html: `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f5f3ef;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:40px 24px;">
+<div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div>
+<div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;">
+<p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hi ${firstName},</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">You've used your 6 free credits. Hopefully you've seen what Carousel Studio can do.</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">If you want to keep going — and start earning from the tool at the same time — here's what upgrading gets you:</p>
+<div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;">
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 6px;font-weight:700;">Starter — $20/month</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 20px;line-height:1.7;">20 credits. Clean downloads. <strong style="color:#BB9900;">20% commission</strong> on everyone you refer.</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 6px;font-weight:700;">Pro — $50/month</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 20px;line-height:1.7;">80 credits — around 40 carousels. <strong style="color:#BB9900;">30% commission.</strong> Refer 3 and Pro pays for itself.</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 6px;font-weight:700;">Agency — $100/month</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">300 credits. Multiple brands. <strong style="color:#BB9900;">40% commission</strong> — the highest rate.</p>
+</div>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Every plan also earns you <strong>8% on your network's referrals</strong> — so if the people you refer start referring others, you earn on that too.</p>
+<div style="text-align:center;margin:32px 0;"><a href="https://www.buildwithtav.co/carouselstudio" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">Upgrade Now →</a></div>
+<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">If you need help, use the Help tab inside the app.<br><br>— Tav</p>
+</div>
+<p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p>
+</div></body></html>`
+  };
+}
+
 // ─── SYSTEME ──────────────────────────────────────────────────────────────────
 
 async function getOrCreateTag(tagName) {
@@ -408,35 +439,4 @@ export async function POST(req) {
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
-}
-
-// ─── CREDITS EXHAUSTED EMAIL ──────────────────────────────────────────────────
-
-function emailCreditsExhausted(firstName) {
-  return {
-    subject: "You've used your free credits — here's what's next",
-    html: `<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f5f3ef;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-<div style="max-width:600px;margin:0 auto;padding:40px 24px;">
-<div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div>
-<div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;">
-<p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hi ${firstName},</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">You've used your 6 free credits. Hopefully you've seen what Carousel Studio can do.</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">If you want to keep going — and start earning from the tool at the same time — here's what upgrading gets you:</p>
-<div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;">
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 6px;font-weight:700;">Starter — $20/month</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 20px;line-height:1.7;">20 credits. Clean downloads. <strong style="color:#BB9900;">20% commission</strong> on everyone you refer.</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 6px;font-weight:700;">Pro — $50/month</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 20px;line-height:1.7;">80 credits — around 40 carousels. <strong style="color:#BB9900;">30% commission.</strong> Refer 3 and Pro pays for itself.</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 6px;font-weight:700;">Agency — $100/month</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">300 credits. Multiple brands. <strong style="color:#BB9900;">40% commission</strong> — the highest rate.</p>
-</div>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Every plan also earns you <strong>8% on your network's referrals</strong> — so if the people you refer start referring others, you earn on that too.</p>
-<div style="text-align:center;margin:32px 0;"><a href="https://www.buildwithtav.co/carouselstudio" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">Upgrade Now →</a></div>
-<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">If you need help, use the Help tab inside the app.<br><br>— Tav</p>
-</div>
-<p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p>
-</div></body></html>`
-  };
 }
