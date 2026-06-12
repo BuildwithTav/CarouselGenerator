@@ -10,18 +10,34 @@ const supabase = createClient(
 const SYSTEME_API_KEY = process.env.SYSTEME_API_KEY;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL = "Carousel Studio <tav@mail.buildwithtav.co>";
+const UNSUBSCRIBE_SECRET = process.env.UNSUBSCRIBE_SECRET || "cs_unsub_secret";
 
-// ─── EMAIL ────────────────────────────────────────────────────────────────────
+function generateUnsubToken(email) {
+  const crypto = require("crypto");
+  return crypto.createHmac("sha256", UNSUBSCRIBE_SECRET)
+    .update(email.toLowerCase())
+    .digest("hex")
+    .slice(0, 32);
+}
+
+function unsubscribeFooter(email) {
+  const token = generateUnsubToken(email);
+  const url = `https://studio.buildwithtav.co/api/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`;
+  return `<p style="font-size:12px;color:#7a7875;text-align:center;margin-top:16px;">You're receiving this because you signed up for Carousel Studio. <a href="${url}" style="color:#7a7875;text-decoration:underline;">Unsubscribe</a></p>`;
+}
 
 async function sendEmail(to, subject, html) {
   try {
+    const { data: profile } = await supabase.from("users").select("marketing_consent").eq("email", to).single();
+    if (profile && profile.marketing_consent === false) return;
+    const htmlWithFooter = html.replace("</body>", unsubscribeFooter(to) + "</body>");
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html })
+      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html: htmlWithFooter })
     });
   } catch(e) {
     console.error("Resend error:", e);
