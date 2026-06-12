@@ -436,6 +436,18 @@ export async function POST(req) {
         .select("id")
         .eq("affiliate_id", profile.affiliate_id);
 
+      const { data: tier1Commissions } = await supabase
+        .from("commissions")
+        .select("id")
+        .eq("affiliate_id", profile.affiliate_id)
+        .eq("tier", 1);
+
+      const { data: tier2Commissions } = await supabase
+        .from("commissions")
+        .select("id")
+        .eq("affiliate_id", profile.affiliate_id)
+        .eq("tier", 2);
+
       return NextResponse.json({
         active: true,
         affiliate_id: profile.affiliate_id,
@@ -444,7 +456,9 @@ export async function POST(req) {
         pending: pending.toFixed(2),
         available: available.toFixed(2),
         paid: paid.toFixed(2),
-        referral_count: referrals?.length || 0
+        referral_count: referrals?.length || 0,
+        tier1_count: tier1Commissions?.length || 0,
+        tier2_count: tier2Commissions?.length || 0
       });
     }
 
