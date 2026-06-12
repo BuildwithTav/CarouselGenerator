@@ -9,18 +9,40 @@ const supabase = createClient(
 const SYSTEME_API_KEY = process.env.SYSTEME_API_KEY;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL = "Carousel Studio <tav@mail.buildwithtav.co>";
+const UNSUBSCRIBE_SECRET = process.env.UNSUBSCRIBE_SECRET || "cs_unsub_secret";
+
+function generateUnsubToken(email) {
+  const crypto = require("crypto");
+  return crypto.createHmac("sha256", UNSUBSCRIBE_SECRET)
+    .update(email.toLowerCase())
+    .digest("hex")
+    .slice(0, 32);
+}
+
+function unsubscribeFooter(email) {
+  const token = generateUnsubToken(email);
+  const url = `https://studio.buildwithtav.co/api/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`;
+  return `<p style="font-size:12px;color:#7a7875;text-align:center;margin-top:16px;">You're receiving this because you signed up for Carousel Studio. <a href="${url}" style="color:#7a7875;text-decoration:underline;">Unsubscribe</a></p>`;
+}
 
 // ─── RESEND ───────────────────────────────────────────────────────────────────
 
-async function sendEmail(to, subject, html) {
+async function sendEmail(to, subject, html, skipConsentCheck = false) {
   try {
+    // Check marketing consent unless it's a transactional email
+    if (!skipConsentCheck) {
+      const { data: profile } = await supabase.from("users").select("marketing_consent").eq("email", to).single();
+      if (profile && profile.marketing_consent === false) return;
+    }
+    // Add unsubscribe footer
+    const htmlWithFooter = html.replace("</body>", unsubscribeFooter(to) + "</body>");
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html })
+      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html: htmlWithFooter })
     });
   } catch(e) {
     console.error("Resend error:", e);
@@ -239,6 +261,7 @@ export async function POST(req) {
 
       const user = data.user;
       const resolvedFirstName = body.firstName || user.email.split("@")[0];
+      const marketingConsent = body.marketingConsent === true;
 
       const { data: existing } = await supabase
         .from("users")
@@ -268,6 +291,7 @@ export async function POST(req) {
         await supabase.from("users").insert({
           email: user.email,
           first_name: resolvedFirstName,
+          marketing_consent: marketingConsent,
           plan: "free",
           credits_used: 0,
           credits_limit: 6,
