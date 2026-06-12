@@ -328,6 +328,30 @@ export async function POST(req) {
       return NextResponse.json({ user: profile });
     }
 
+    if (action === "credits-exhausted-email") {
+      const authHeader = req.headers.get("authorization");
+      if (!authHeader) return NextResponse.json({ error: "No token" }, { status: 401 });
+      const t = authHeader.replace("Bearer ", "");
+      const { data: { user }, error } = await supabase.auth.getUser(t);
+      if (error || !user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+
+      const { data: profile } = await supabase
+        .from("users")
+        .select("plan, credits_exhausted_email_sent")
+        .eq("email", user.email)
+        .single();
+
+      // Only send once per credit period
+      if (profile?.plan === "free" && !profile?.credits_exhausted_email_sent) {
+        const firstName = user.email.split("@")[0];
+        const exhaustedEmail = emailCreditsExhausted(firstName);
+        await sendEmail(user.email, exhaustedEmail.subject, exhaustedEmail.html);
+        await supabase.from("users").update({ credits_exhausted_email_sent: true }).eq("email", user.email);
+      }
+
+      return NextResponse.json({ success: true });
+    }
+
     if (action === "increment-downloads") {
       const authHeader = req.headers.get("authorization");
       if (!authHeader) return NextResponse.json({ error: "No token" }, { status: 401 });
@@ -348,10 +372,13 @@ export async function POST(req) {
       }).eq("email", user.email);
 
       // Trigger credits exhausted email if free user just used last credit
+      console.log("Credits check:", { plan: profile?.plan, newCreditsUsed, limit: profile?.credits_limit });
       if (profile?.plan === "free" && newCreditsUsed >= (profile?.credits_limit || 6)) {
+        console.log("Sending credits exhausted email to:", user.email);
         const firstName = user.email.split("@")[0];
         const exhaustedEmail = emailCreditsExhausted(firstName);
         await sendEmail(user.email, exhaustedEmail.subject, exhaustedEmail.html);
+        console.log("Credits exhausted email sent");
       }
 
       return NextResponse.json({ success: true });
