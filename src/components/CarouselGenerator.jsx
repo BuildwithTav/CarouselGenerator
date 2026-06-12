@@ -1840,13 +1840,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 : "More credits, more features. Cancel anytime."}
             </p>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              {currentUser?.plan==="free"&&(
-                <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID)} style={{padding:"14px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:15,border:"none",textAlign:"center"}}>
-                  Starter — $20/month · 20 credits
-                </button>
-              )}
-              <button onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{padding:"14px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:15,border:"none",textAlign:"center"}}>
-                Pro — $50/month · 80 credits + 30% affiliate
+              <button onClick={()=>{setUpgradePrompt(false);setNav("account");}} style={{padding:"14px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:15,border:"none",textAlign:"center"}}>
+                See All Plans & Pricing →
               </button>
               <button onClick={()=>setUpgradePrompt(false)} style={{padding:"10px",background:"none",color:A.muted,border:"none",fontSize:13}}>Maybe later</button>
             </div>
