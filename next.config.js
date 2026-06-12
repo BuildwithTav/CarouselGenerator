@@ -13,5 +13,14 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: '/landing',
+        destination: '/landing.html',
+        permanent: false,
+      },
+    ];
+  },
 }
 module.exports = nextConfig
