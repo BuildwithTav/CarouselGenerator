@@ -8,6 +8,68 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 const SYSTEME_API_KEY = process.env.SYSTEME_API_KEY;
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const FROM_EMAIL = "Carousel Studio <tav@mail.buildwithtav.co>";
+
+// ─── EMAIL ────────────────────────────────────────────────────────────────────
+
+async function sendEmail(to, subject, html) {
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html })
+    });
+  } catch(e) {
+    console.error("Resend error:", e);
+  }
+}
+
+function emailPaymentConfirmed(firstName, planName, planPrice, isSinglePayment) {
+  const billingText = isSinglePayment
+    ? `one-time payment of <strong>$${planPrice}</strong>`
+    : `<strong>$${planPrice}/month</strong> — your Stripe receipt has the full details`;
+  return {
+    subject: `Payment confirmed — welcome to Carousel Studio ${planName}`,
+    html: `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f5f3ef;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:40px 24px;">
+<div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div>
+<div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;">
+<p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hi ${firstName},</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Payment confirmed. You're now on <strong style="color:#BB9900;">Carousel Studio ${planName}</strong> — ${billingText}.</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 8px;font-weight:700;">Access your account:</p>
+<div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;">
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;"><strong style="color:#BB9900;">1.</strong> Go to <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;font-weight:700;">studio.buildwithtav.co</a></p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;"><strong style="color:#BB9900;">2.</strong> Enter the email address you used at checkout</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;"><strong style="color:#BB9900;">3.</strong> Enter the code we send you — your plan will be active immediately</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;"><strong style="color:#BB9900;">4.</strong> Head to the <strong>Brand tab</strong> and spend 2 minutes setting up your profile</p>
+</div>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Once you're set up, I'll send you a separate email with your personal affiliate link and everything you need to start earning commission.</p>
+<div style="text-align:center;margin:32px 0;"><a href="https://studio.buildwithtav.co" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">Access Carousel Studio →</a></div>
+<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">Any questions — just reply to this email.<br><br>— Tav</p>
+</div>
+<p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p>
+</div></body></html>`
+  };
+}
+
+function getPlanLabel(plan) {
+  switch(plan) {
+    case "agency": return "Agency";
+    case "pro": return "Pro";
+    case "starter": return "Starter";
+    case "affiliate_licence": return "Affiliate Licence";
+    case "white_label": return "White Label";
+    default: return "Free";
+  }
+}
+
+// ─── SYSTEME ──────────────────────────────────────────────────────────────────
 
 async function addTagToSysteme(email, tag) {
   try {
@@ -33,6 +95,8 @@ async function addTagToSysteme(email, tag) {
   } catch(e) { console.error("Systeme tag error:", e); }
 }
 
+// ─── COMMISSIONS ─────────────────────────────────────────────────────────────
+
 function getPlanRate(plan) {
   switch(plan) {
     case "agency": return 0.40;
@@ -44,8 +108,6 @@ function getPlanRate(plan) {
   }
 }
 
-// Get effective commission rate using monthly snapshot logic
-// Uses lowest of month_start and month_end snapshots to prevent gaming
 async function getEffectiveRate(affiliateId, currentPlan) {
   const now = new Date();
   const year = now.getFullYear();
@@ -59,17 +121,12 @@ async function getEffectiveRate(affiliateId, currentPlan) {
     .gte("snapshot_date", firstDay)
     .order("snapshot_date", { ascending: true });
 
-  if (!snapshots || snapshots.length === 0) {
-    return getPlanRate(currentPlan);
-  }
+  if (!snapshots || snapshots.length === 0) return getPlanRate(currentPlan);
 
   const startSnap = snapshots.find(s => s.snapshot_type === "month_start");
   const endSnap = snapshots.find(s => s.snapshot_type === "month_end");
 
-  if (startSnap && endSnap) {
-    return Math.min(startSnap.commission_rate, endSnap.commission_rate);
-  }
-
+  if (startSnap && endSnap) return Math.min(startSnap.commission_rate, endSnap.commission_rate);
   return startSnap ? startSnap.commission_rate : getPlanRate(currentPlan);
 }
 
@@ -116,7 +173,6 @@ async function logCommissions(subscriberEmail, stripePaymentId, plan, saleAmount
       });
     }
 
-    // Tier 2 — fixed at 8%
     if (tier1Affiliate.affiliate_parent_id) {
       const { data: tier2Affiliate } = await supabase
         .from("users")
@@ -156,6 +212,8 @@ async function logCommissions(subscriberEmail, stripePaymentId, plan, saleAmount
   }
 }
 
+// ─── MAIN ─────────────────────────────────────────────────────────────────────
+
 export async function POST(req) {
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
@@ -172,6 +230,8 @@ export async function POST(req) {
     const email = session.customer_details?.email;
     if (!email) return NextResponse.json({ received: true });
 
+    const firstName = session.customer_details?.name?.split(" ")[0] || email.split("@")[0];
+
     const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
       expand: ["line_items"]
     });
@@ -187,85 +247,59 @@ export async function POST(req) {
     const isTopup = priceId === process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID;
     const isBoost = priceId === process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID;
 
-    // Handle credit top-ups
     if (isTopup || isBoost) {
       const creditsToAdd = isTopup ? 15 : 30;
-      const { data: user } = await supabase
-        .from("users")
-        .select("bonus_credits")
-        .eq("email", email)
-        .single();
-      await supabase.from("users").upsert({
-        email,
-        bonus_credits: (user?.bonus_credits || 0) + creditsToAdd
-      }, { onConflict: "email" });
+      const { data: user } = await supabase.from("users").select("bonus_credits").eq("email", email).single();
+      await supabase.from("users").upsert({ email, bonus_credits: (user?.bonus_credits || 0) + creditsToAdd }, { onConflict: "email" });
       await addTagToSysteme(email, "carousel-studio-credits");
       return NextResponse.json({ received: true });
     }
 
-    // Store affiliate ref in case user pays before signing up to app
+    // Store affiliate ref for users who pay before signing up
     if (affiliateRef) {
-      await supabase.from("pending_affiliate_refs").upsert({
-        email,
-        affiliate_ref: affiliateRef
-      }, { onConflict: "email" });
+      await supabase.from("pending_affiliate_refs").upsert({ email, affiliate_ref: affiliateRef }, { onConflict: "email" });
     }
 
-    // Handle one-off licences
     if (isAffiliateLicence || isWhiteLabel) {
       const licenceType = isAffiliateLicence ? "affiliate_licence" : "white_label";
       const credits_limit = isAffiliateLicence ? 15 : 80;
       const saleAmount = isAffiliateLicence ? 297 : 497;
+      const planLabel = getPlanLabel(licenceType);
 
       await supabase.from("licence_purchases").insert({
-        email,
-        licence_type: licenceType,
+        email, licence_type: licenceType,
         stripe_payment_id: session.payment_intent || session.id,
-        amount: saleAmount,
-        status: "active"
+        amount: saleAmount, status: "active"
       });
 
       await supabase.from("users").upsert({
-        email,
-        plan: licenceType,
-        credits_limit,
-        credits_used: 0,
-        affiliate_active: true,
-        affiliate_tier: licenceType,
+        email, plan: licenceType, credits_limit, credits_used: 0,
+        affiliate_active: true, affiliate_tier: licenceType,
         period_start: new Date().toISOString()
       }, { onConflict: "email" });
 
       if (affiliateRef) {
-        const { data: existingRef } = await supabase
-          .from("referrals")
-          .select("id")
-          .eq("referred_email", email)
-          .single();
-
-        if (!existingRef) {
-          await supabase.from("referrals").insert({
-            referred_email: email,
-            affiliate_id: affiliateRef
-          });
-        }
+        const { data: existingRef } = await supabase.from("referrals").select("id").eq("referred_email", email).single();
+        if (!existingRef) await supabase.from("referrals").insert({ referred_email: email, affiliate_id: affiliateRef });
         await logCommissions(email, session.payment_intent || session.id, licenceType, saleAmount);
       }
+
+      // Send payment confirmed email
+      const { subject, html } = emailPaymentConfirmed(firstName, planLabel, saleAmount, true);
+      await sendEmail(email, subject, html);
 
       const tag = isWhiteLabel ? "carousel-studio-whitelabel" : "carousel-studio-affiliate-licence";
       await addTagToSysteme(email, tag);
       return NextResponse.json({ received: true });
     }
 
-    // Handle subscriptions
     const plan = isAgency ? "agency" : isPro ? "pro" : isStarter ? "starter" : "free";
     const credits_limit = isAgency ? 300 : isPro ? 80 : isStarter ? 20 : 6;
     const saleAmount = isAgency ? 100 : isPro ? 50 : isStarter ? 20 : 0;
+    const planLabel = getPlanLabel(plan);
 
     await supabase.from("users").upsert({
-      email,
-      plan,
-      credits_limit,
-      credits_used: 0,
+      email, plan, credits_limit, credits_used: 0,
       stripe_customer_id: session.customer,
       stripe_subscription_id: session.subscription,
       period_start: new Date().toISOString(),
@@ -273,54 +307,36 @@ export async function POST(req) {
       affiliate_tier: plan
     }, { onConflict: "email" });
 
-    // Resolve affiliate ref — from metadata or pending table
     const resolvedRef = affiliateRef || await supabase
-      .from("pending_affiliate_refs")
-      .select("affiliate_ref")
-      .eq("email", email)
-      .single()
+      .from("pending_affiliate_refs").select("affiliate_ref").eq("email", email).single()
       .then(r => r.data?.affiliate_ref || null);
 
     if (resolvedRef) {
-      const { data: existingRef } = await supabase
-        .from("referrals")
-        .select("id")
-        .eq("referred_email", email)
-        .single();
-
-      if (!existingRef) {
-        await supabase.from("referrals").insert({
-          referred_email: email,
-          affiliate_id: resolvedRef
-        });
-      }
+      const { data: existingRef } = await supabase.from("referrals").select("id").eq("referred_email", email).single();
+      if (!existingRef) await supabase.from("referrals").insert({ referred_email: email, affiliate_id: resolvedRef });
     }
 
     if (saleAmount > 0) {
       await logCommissions(email, session.id, plan, saleAmount);
+      // Send payment confirmed email
+      const { subject, html } = emailPaymentConfirmed(firstName, planLabel, saleAmount, false);
+      await sendEmail(email, subject, html);
     }
 
     const tag = isAgency ? "carousel-studio-agency" : isPro ? "carousel-studio-pro" : "carousel-studio-starter";
     await addTagToSysteme(email, tag);
   }
 
-  // Handle recurring subscription payments
   if (event.type === "invoice.payment_succeeded") {
     const invoice = event.data.object;
     if (invoice.billing_reason === "subscription_create") return NextResponse.json({ received: true });
 
     const customerId = invoice.customer;
-    const { data: user } = await supabase
-      .from("users")
-      .select("email, plan")
-      .eq("stripe_customer_id", customerId)
-      .single();
+    const { data: user } = await supabase.from("users").select("email, plan").eq("stripe_customer_id", customerId).single();
 
     if (user) {
       const saleAmount = user.plan === "agency" ? 100 : user.plan === "pro" ? 50 : user.plan === "starter" ? 20 : 0;
-      if (saleAmount > 0) {
-        await logCommissions(user.email, invoice.id, user.plan, saleAmount);
-      }
+      if (saleAmount > 0) await logCommissions(user.email, invoice.id, user.plan, saleAmount);
 
       await supabase.from("users").update({
         credits_used: 0,
@@ -332,18 +348,12 @@ export async function POST(req) {
   if (event.type === "customer.subscription.deleted") {
     const subscription = event.data.object;
     const customerId = subscription.customer;
-    const { data: users } = await supabase
-      .from("users")
-      .select("email, affiliate_id")
-      .eq("stripe_customer_id", customerId);
+    const { data: users } = await supabase.from("users").select("email, affiliate_id").eq("stripe_customer_id", customerId);
 
     if (users?.length) {
       await supabase.from("users").update({
-        plan: "free",
-        credits_limit: 6,
-        credits_used: 0,
-        affiliate_active: false,
-        affiliate_tier: "none"
+        plan: "free", credits_limit: 6, credits_used: 0,
+        affiliate_active: false, affiliate_tier: "none"
       }).eq("stripe_customer_id", customerId);
 
       await addTagToSysteme(users[0].email, "carousel-studio-cancelled");
