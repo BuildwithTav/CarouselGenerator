@@ -69,6 +69,31 @@ function getPlanLabel(plan) {
   }
 }
 
+function emailUpgradeConfirmed(firstName, planName, planPrice, commissionRate) {
+  return {
+    subject: `You're now on ${planName} — here's what changed`,
+    html: `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f5f3ef;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:40px 24px;">
+<div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div>
+<div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;">
+<p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hi ${firstName},</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">You're now on <strong style="color:#BB9900;">Carousel Studio ${planName}</strong> — $${planPrice}/month. Your Stripe receipt has the full billing details.</p>
+<div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;">
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;font-weight:700;">What's changed:</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;">— Your credits have been updated to reflect your new plan</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;">— Your affiliate commission rate is now <strong style="color:#BB9900;">${commissionRate}%</strong> — this applies to your entire network immediately</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">— Your affiliate link stays the same — no need to update anything you've already shared</p>
+</div>
+<div style="text-align:center;margin:32px 0;"><a href="https://studio.buildwithtav.co" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">Go to Carousel Studio →</a></div>
+<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">If you need help, use the Help tab inside the app.<br><br>— Tav</p>
+</div>
+<p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p>
+</div></body></html>`
+  };
+}
+
 // ─── SYSTEME ──────────────────────────────────────────────────────────────────
 
 async function addTagToSysteme(email, tag) {
@@ -298,6 +323,11 @@ export async function POST(req) {
     const saleAmount = isAgency ? 100 : isPro ? 50 : isStarter ? 20 : 0;
     const planLabel = getPlanLabel(plan);
 
+    // Check if existing user — detect upgrade
+    const { data: existingUser } = await supabase.from("users").select("plan, first_name").eq("email", email).single();
+    const isUpgrade = existingUser && existingUser.plan !== "free" && existingUser.plan !== plan;
+    const resolvedFirstName = existingUser?.first_name || firstName;
+
     await supabase.from("users").upsert({
       email, plan, credits_limit, credits_used: 0,
       stripe_customer_id: session.customer,
@@ -318,9 +348,16 @@ export async function POST(req) {
 
     if (saleAmount > 0) {
       await logCommissions(email, session.id, plan, saleAmount);
-      // Send payment confirmed email
-      const { subject, html } = emailPaymentConfirmed(firstName, planLabel, saleAmount, false);
-      await sendEmail(email, subject, html);
+      if (isUpgrade) {
+        // Send upgrade confirmed email
+        const commissionRate = getPlanRate(plan) * 100;
+        const { subject, html } = emailUpgradeConfirmed(resolvedFirstName, planLabel, saleAmount, commissionRate);
+        await sendEmail(email, subject, html);
+      } else {
+        // Send new payment confirmed email
+        const { subject, html } = emailPaymentConfirmed(resolvedFirstName, planLabel, saleAmount, false);
+        await sendEmail(email, subject, html);
+      }
     }
 
     const tag = isAgency ? "carousel-studio-agency" : isPro ? "carousel-studio-pro" : "carousel-studio-starter";
