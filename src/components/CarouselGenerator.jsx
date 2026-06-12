@@ -892,6 +892,8 @@ export default function App() {
   const [quoteSigFont, setQuoteSigFont] = useState("dancing");
   const [quoteBgMode, setQuoteBgMode] = useState("dark");
   const [quoteBgCustomUrl, setQuoteBgCustomUrl] = useState(null);
+  const [quotePhotos, setQuotePhotos] = useState(S?.quotePhotos||[]);
+  const [textDensity, setTextDensity] = useState(S?.textDensity||"balanced");
   const [quoteOverlay, setQuoteOverlay] = useState(0);
   const [quoteTemplate, setQuoteTemplate] = useState("classic");
   const [luxuryLabel, setLuxuryLabel] = useState("wisdom");
@@ -917,6 +919,7 @@ export default function App() {
   const templateBgRef = useRef(null);
   const inspirationRef = useRef(null);
   const quoteBgRef = useRef(null);
+  const quotePhotoRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -928,11 +931,11 @@ export default function App() {
     const safeCoverPhotos = coverPhotos.filter(p => !p?.startsWith('data:'));
     const safeActiveCover = activeCoverPhoto?.startsWith('data:') ? '' : activeCoverPhoto;
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
-           coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
-           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,ratio,bgColour,audienceType,customActiveSlot});
+           coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,quotePhotos,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
+           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,ratio,bgColour,audienceType,customActiveSlot,textDensity});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
-      bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType,customActiveSlot]);
+      bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType,customActiveSlot,textDensity,quotePhotos]);
 
   const readFile = (e, cb) => {
     const f = e.target.files[0]; if (!f) return;
@@ -1034,6 +1037,7 @@ VOICE: ${voice}
 AUDIENCE: ${audienceDesc}
 TOPIC: "${topicStr}"${briefSection}${inspiration}
 SLIDES: ${slideCount}${narrativeStyle}
+TEXT DENSITY: ${textDensity === "concise" ? "CONCISE — keep body text to 1 short punchy sentence max. Prioritise impact over explanation. Less is more." : textDensity === "detailed" ? "DETAILED — use 2-3 sentences for body text. Explain the insight fully. Give context and specifics." : "BALANCED — 1-2 sentences for body text. Clear and direct. Every word earns its place."}
 
 NARRATIVE ARC: hook → reality → insight → shift → advice → CTA
 
@@ -1981,35 +1985,48 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
                 {quoteBgMode==="custom"&&(
                   <div>
-                    <div onClick={()=>quoteBgRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${quoteBgCustomUrl?A.text:A.border}`,borderRadius:9,padding:"10px",cursor:"pointer",textAlign:"center",marginBottom:10}}>
-                      <span style={{fontSize:12,fontWeight:600,color:quoteBgCustomUrl?A.text:A.muted}}>{quoteBgCustomUrl?"✓ Background uploaded — click to change":"Upload your background image"}</span>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
+                      {quotePhotos.map((p,i)=>(
+                        <div key={i} style={{position:"relative"}}>
+                          <div onClick={()=>setQuoteBgCustomUrl(p)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:`2px solid ${quoteBgCustomUrl===p?GOLD:A.border}`,cursor:"pointer"}}>
+                            <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                          </div>
+                          <button onClick={()=>{const next=quotePhotos.filter((_,j)=>j!==i);setQuotePhotos(next);if(quoteBgCustomUrl===p)setQuoteBgCustomUrl(next[0]||null);}} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0,border:"none",cursor:"pointer"}}>×</button>
+                        </div>
+                      ))}
+                      {quotePhotos.length < 8 && (
+                        <div onClick={()=>quotePhotoRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:28}}>+</div>
+                      )}
                     </div>
+                    <input ref={quotePhotoRef} type="file" accept="image/*" onChange={async e=>{
+                      const file = e.target.files[0]; if(!file) return;
+                      const reader = new FileReader();
+                      reader.onload = async ev => {
+                        const base64 = ev.target.result;
+                        setQuoteBgCustomUrl(base64);
+                        try {
+                          const res = await fetch('/api/upload-photo', {
+                            method:'POST',
+                            headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify({ imageData: base64, filename: `quotebg-${Date.now()}.jpg` })
+                          });
+                          const data = await res.json();
+                          if (data.url) {
+                            setQuoteBgCustomUrl(data.url);
+                            setQuotePhotos(prev => [data.url, ...prev.filter(p=>p!==data.url)].slice(0,8));
+                          }
+                        } catch(err) { console.error('Quote BG upload failed:', err); }
+                      };
+                      reader.readAsDataURL(file);
+                    }} style={{display:"none"}}/>
                     <p style={{color:A.muted,fontSize:11,margin:"0 0 12px",lineHeight:1.6}}>
-                      Safe zone: keep important elements within 80px from all edges.<br/>
+                      Save up to 8 backgrounds. Click to select. Safe zone: keep text within 80px of edges.<br/>
                       Recommended: <strong>{quoteFormat==="portrait"?"1080×1920px":"1080×1350px"}</strong>
                     </p>
                     <div style={{marginBottom:12}}>
                       <label style={lbl}>Overlay darkness — {quoteOverlay}% <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(0% = no overlay)</span></label>
                       <input type="range" min={0} max={80} value={quoteOverlay} onChange={e=>setQuoteOverlay(+e.target.value)}/>
                     </div>
-                    <input ref={quoteBgRef} type="file" accept="image/*" onChange={async e=>{
-                    const file = e.target.files[0]; if(!file) return;
-                    const reader = new FileReader();
-                    reader.onload = async ev => {
-                      const base64 = ev.target.result;
-                      setQuoteBgCustomUrl(base64);
-                      try {
-                        const res = await fetch('/api/upload-photo', {
-                          method:'POST',
-                          headers:{'Content-Type':'application/json'},
-                          body: JSON.stringify({ imageData: base64, filename: `quotebg-${Date.now()}.jpg` })
-                        });
-                        const data = await res.json();
-                        if (data.url) setQuoteBgCustomUrl(data.url);
-                      } catch(err) { console.error('Quote BG upload failed:', err); }
-                    };
-                    reader.readAsDataURL(file);
-                  }} style={{display:"none"}}/>
                     {quoteBgCustomUrl&&(()=>{
                       const isP = quoteFormat==="portrait";
                       const W=1080,H=isP?1920:1350,scale=280/W;
@@ -2314,6 +2331,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 })()}
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                <div>
+                  <label style={lbl}>Text density</label>
+                  <div style={{display:"flex",gap:6}}>
+                    {[["concise","Concise"],["balanced","Balanced"],["detailed","Detailed"]].map(([id,label])=>(
+                      <button key={id} onClick={()=>setTextDensity(id)} style={{flex:1,background:textDensity===id?A.text:A.bg,border:`1.5px solid ${textDensity===id?A.text:A.border}`,color:textDensity===id?A.accentText:A.muted,padding:"7px 4px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
+                    ))}
+                  </div>
+                </div>
                 <div>
                   <label style={lbl}>Format</label>
                   <div style={{display:"flex",gap:6}}>
@@ -3180,7 +3205,16 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     ))}
                   </div>
 
-                  <div style={{fontSize:12,color:A.muted,marginBottom:16}}>Referrals: <span style={{color:A.text,fontWeight:700}}>{affiliateStats.referral_count}</span></div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+                    <div style={{background:A.bg,border:`1px solid ${A.border}`,borderRadius:10,padding:12,textAlign:"center"}}>
+                      <div style={{fontSize:18,fontWeight:800,color:A.text}}>{affiliateStats.referral_count}</div>
+                      <div style={{fontSize:11,color:A.muted,marginTop:2}}>Total referrals</div>
+                    </div>
+                    <div style={{background:A.bg,border:`1px solid ${A.border}`,borderRadius:10,padding:12,textAlign:"center"}}>
+                      <div style={{fontSize:18,fontWeight:800,color:GOLD}}>{affiliateStats.tier2_count||0}</div>
+                      <div style={{fontSize:11,color:A.muted,marginTop:2}}>Tier 2 payments</div>
+                    </div>
+                  </div>
 
                   {/* Withdraw button */}
                   {!showPayoutForm&&!payoutSuccess&&(
