@@ -47,7 +47,7 @@ function emailFreeWelcome(firstName) {
 </div>
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">When you're ready to unlock more credits, remove the studio branding from downloads and start earning commission on every person you refer — upgrade from inside the app.</p>
 <div style="text-align:center;margin:32px 0;"><a href="https://studio.buildwithtav.co" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">Open Carousel Studio →</a></div>
-<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">Any questions — just reply to this email.<br><br>— Tav</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">If you need help, use the Help tab inside the app.<br><br>— Tav</p>
 </div>
 <p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p>
 </div></body></html>`
@@ -80,7 +80,7 @@ function emailPaidWelcome(firstName, planName, affiliateId, commissionRate) {
 </div>
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Your full earnings dashboard is in the <strong>Account tab</strong> inside the app — track referrals, pending commissions and request payouts from there.</p>
 <div style="text-align:center;margin:32px 0;"><a href="https://studio.buildwithtav.co" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">Go to Your Dashboard →</a></div>
-<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">Any questions — just reply.<br><br>— Tav</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">If you need help, use the Help tab inside the app.<br><br>— Tav</p>
 </div>
 <p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p>
 </div></body></html>`
@@ -434,7 +434,7 @@ function emailCreditsExhausted(firstName) {
 </div>
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Every plan also earns you <strong>8% on your network's referrals</strong> — so if the people you refer start referring others, you earn on that too.</p>
 <div style="text-align:center;margin:32px 0;"><a href="https://www.buildwithtav.co/carouselstudio" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">Upgrade Now →</a></div>
-<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">Any questions — just reply.<br><br>— Tav</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">If you need help, use the Help tab inside the app.<br><br>— Tav</p>
 </div>
 <p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p>
 </div></body></html>`
