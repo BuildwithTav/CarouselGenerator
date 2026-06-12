@@ -604,6 +604,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [authEmail, setAuthEmail] = useState("");
   const [authFirstName, setAuthFirstName] = useState("");
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [authError, setAuthError] = useState("");
@@ -679,6 +680,7 @@ export default function App() {
   const sendOtp = async () => {
     if (!authFirstName.trim()) { setAuthError("Enter your first name."); return; }
     if (!authEmail.trim()) { setAuthError("Enter your email address."); return; }
+    if (!marketingConsent) { setAuthError("Please agree to receive emails to continue."); return; }
     setAuthSubmitting(true); setAuthError("");
     try {
       const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"send-otp", email: authEmail.trim().toLowerCase() }) });
@@ -694,7 +696,7 @@ export default function App() {
     setAuthSubmitting(true); setAuthError("");
     try {
       const affiliateRef = getAffiliateRef();
-      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"verify-otp", email: authEmail.trim().toLowerCase(), token: otpCode.trim(), affiliateRef, firstName: authFirstName.trim() }) });
+      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"verify-otp", email: authEmail.trim().toLowerCase(), token: otpCode.trim(), affiliateRef, firstName: authFirstName.trim(), marketingConsent }) });
       const d = await r.json();
       if (d.error) { setAuthError("Invalid code — check your email and try again."); }
       else { 
@@ -1805,7 +1807,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <button onClick={sendOtp} disabled={authSubmitting} style={{width:"100%",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:15,border:"none"}}>
                   {authSubmitting?<span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><Spin/>Sending...</span>:"Send Code"}
                 </button>
-                <p style={{fontSize:11,color:A.muted,textAlign:"center",margin:"14px 0 0",lineHeight:1.6}}>By signing in you agree to our <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:GOLD,textDecoration:"none"}}>Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:GOLD,textDecoration:"none"}}>Privacy Policy</a>.</p>
+                <div style={{display:"flex",alignItems:"flex-start",gap:10,margin:"14px 0 0"}}>
+                  <input type="checkbox" id="marketing-consent" checked={marketingConsent} onChange={e=>setMarketingConsent(e.target.checked)} style={{marginTop:2,accentColor:GOLD,flexShrink:0,width:16,height:16,cursor:"pointer"}}/>
+                  <label htmlFor="marketing-consent" style={{fontSize:11,color:A.muted,lineHeight:1.6,cursor:"pointer"}}>
+                    I agree to receive emails from Carousel Studio including product updates, account notices and offers. Unsubscribe at any time. By continuing you agree to our <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:GOLD,textDecoration:"none"}}>Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:GOLD,textDecoration:"none"}}>Privacy Policy</a>.
+                  </label>
+                </div>
               </>
             ) : (
               <>
