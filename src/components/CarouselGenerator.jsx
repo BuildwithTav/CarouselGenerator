@@ -603,6 +603,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authEmail, setAuthEmail] = useState("");
+  const [authFirstName, setAuthFirstName] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [authError, setAuthError] = useState("");
@@ -676,6 +677,7 @@ export default function App() {
   }, []);
 
   const sendOtp = async () => {
+    if (!authFirstName.trim()) { setAuthError("Enter your first name."); return; }
     if (!authEmail.trim()) { setAuthError("Enter your email address."); return; }
     setAuthSubmitting(true); setAuthError("");
     try {
@@ -692,7 +694,7 @@ export default function App() {
     setAuthSubmitting(true); setAuthError("");
     try {
       const affiliateRef = getAffiliateRef();
-      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"verify-otp", email: authEmail.trim().toLowerCase(), token: otpCode.trim(), affiliateRef }) });
+      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"verify-otp", email: authEmail.trim().toLowerCase(), token: otpCode.trim(), affiliateRef, firstName: authFirstName.trim() }) });
       const d = await r.json();
       if (d.error) { setAuthError("Invalid code — check your email and try again."); }
       else { 
@@ -1790,7 +1792,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             {!otpSent ? (
               <>
                 <h2 style={{fontSize:20,fontWeight:800,margin:"0 0 6px"}}>Sign in to continue</h2>
-                <p style={{fontSize:13,color:A.muted,margin:"0 0 20px",lineHeight:1.6}}>Enter your email and we'll send you a 6 digit code. No password needed.</p>
+                <p style={{fontSize:13,color:A.muted,margin:"0 0 20px",lineHeight:1.6}}>Enter your details and we'll send you a 6 digit code. No password needed.</p>
+                <label style={lbl}>First name</label>
+                <input value={authFirstName} onChange={e=>setAuthFirstName(e.target.value)} placeholder="Your first name" type="text" style={{...inp,marginBottom:12,fontSize:15}}/>
                 <label style={lbl}>Email address</label>
                 <input value={authEmail} onChange={e=>setAuthEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendOtp()} placeholder="you@example.com" type="email" style={{...inp,marginBottom:12,fontSize:15}}/>
                 {authError&&<p style={{color:"#c0392b",fontSize:12,margin:"0 0 10px"}}>{authError}</p>}
