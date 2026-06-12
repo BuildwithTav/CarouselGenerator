@@ -305,11 +305,13 @@ export async function POST(req) {
 
         addToSysteme(user.email, "carousel-studio-free");
 
-      } else if (existing.plan !== "free" && existing.affiliate_id && existing.affiliate_active) {
+      } else if (existing.plan !== "free" && existing.affiliate_id && existing.affiliate_active && !existing.affiliate_welcome_email_sent) {
         const commissionRate = getCommissionRate(existing.plan);
         const planLabel = getPlanLabel(existing.plan);
         const nameToUse = existing.first_name || resolvedFirstName;
         const { subject, html } = emailPaidWelcome(nameToUse, planLabel, existing.affiliate_id, commissionRate);
+        await sendEmail(user.email, subject, html);
+        await supabase.from("users").update({ affiliate_welcome_email_sent: true }).eq("email", user.email);
         await sendEmail(user.email, subject, html);
       }
 
