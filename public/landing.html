@@ -555,29 +555,46 @@
   .footer-links { display: flex; gap: 24px; }
 
   .plan-btn { transition: all 0.2s; cursor: pointer; }
-  .plan-btn-dark:hover { background: #333 !important; transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .plan-btn-dark:hover { background: #BB9900 !important; color: #000 !important; transform: translateY(-3px); box-shadow: 0 8px 24px rgba(187,153,0,0.4); }
   .plan-btn-gold:hover { background: #e6c45a !important; transform: translateY(-3px); box-shadow: 0 8px 24px rgba(187,153,0,0.5); }
   a[style*="6644cc"]:hover { background: #7755dd !important; transform: translateY(-3px); box-shadow: 0 8px 24px rgba(102,68,204,0.5); }
   .hero-btn { transition: all 0.2s; }
   .hero-btn:hover { background: #e6c45a !important; transform: translateY(-3px); box-shadow: 0 8px 24px rgba(187,153,0,0.4); }
   .nav-cta { transition: all 0.2s; }
   .nav-cta:hover { background: #e6c45a !important; transform: translateY(-3px); box-shadow: 0 6px 20px rgba(187,153,0,0.4); }
+  .plan-card { transition: all 0.2s; }
+  .plan-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15) !important; }
+  .plan-card.featured:hover { box-shadow: 0 12px 40px rgba(187,153,0,0.25); border-color: var(--gold) !important; }
 
   @media (max-width: 900px) {
     .hero { grid-template-columns: 1fr; gap: 40px; padding: 60px 24px 40px; }
     .hero h1 { font-size: 34px; }
     .features-grid { grid-template-columns: 1fr; }
-    .feature-card.wide { grid-column: span 1; grid-template-columns: 1fr; }
+    .feature-card.wide { grid-column: span 1; grid-template-columns: 1fr; display: flex; flex-direction: column; }
     .feature-card.wide .feature-img { border-right: none; border-bottom: 1px solid var(--border); }
     .pricing-grid { grid-template-columns: 1fr 1fr; }
     .affiliate-hero { grid-template-columns: 1fr; }
     .affiliate-features { grid-template-columns: 1fr 1fr; }
+    .affiliate-price { text-align: center; width: 100%; }
     .features { padding: 60px 24px; }
     .pricing { padding: 60px 24px; }
     .cta-section { padding: 60px 24px; }
     .social-proof { padding: 20px 24px; gap: 20px; }
     footer { padding: 24px; }
     nav { padding: 0 24px; }
+  }
+
+  @media (max-width: 700px) {
+    section[style*="padding:80px 40px"] > div[style*="grid-template-columns:1fr auto"] {
+      grid-template-columns: 1fr !important;
+      text-align: center;
+    }
+    div[style*="font-size:40px"][style*="9977ff"] {
+      font-size: 32px !important;
+    }
+    div[style*="grid-template-columns:1fr 1fr 1fr"][style*="gap:10px"] {
+      grid-template-columns: 1fr 1fr !important;
+    }
   }
 
   @media (max-width: 600px) {
@@ -774,7 +791,7 @@
 
 <!-- WHITE LABEL -->
 <section style="padding:80px 40px;max-width:1200px;margin:0 auto">
-  <div style="background:linear-gradient(135deg,#0a0a1a,#15152a);border:1.5px solid #6644cc;border-radius:14px;padding:48px;display:grid;grid-template-columns:1fr auto;gap:48px;align-items:center">
+  <div style="background:linear-gradient(135deg,#0a0a1a,#15152a);border:1.5px solid #6644cc;border-radius:14px;padding:32px;display:grid;grid-template-columns:1fr auto;gap:32px;align-items:center;box-sizing:border-box">
     <div>
       <div class="section-label" style="color:#9977ff;margin-bottom:12px">White Label Licence</div>
       <h2 style="font-size:28px;font-weight:900;margin-bottom:12px">Your brand. Your domain. Your product.</h2>
