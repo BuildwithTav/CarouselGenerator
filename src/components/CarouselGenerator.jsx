@@ -3064,59 +3064,90 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             )}
 
             {/* Free user — show upgrade options */}
-            {planLabel==="free"&&(
+            {(planLabel==="free"||planLabel==="starter"||planLabel==="pro"||planLabel==="agency")&&(
               <>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+                {/* Current plan — small compact box */}
+                <div style={{background:A.surface,border:`1px solid ${A.border}`,borderRadius:10,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div>
+                    <span style={{fontSize:12,color:A.muted}}>Current plan: </span>
+                    <span style={{fontSize:13,fontWeight:800,color:GOLD,textTransform:"capitalize"}}>{planLabel==="free"?"Free":planLabel==="starter"?"Starter":planLabel==="pro"?"Pro":"Agency"}</span>
+                  </div>
+                  <div style={{fontSize:12,color:A.muted}}>{creditsRemaining()} credits remaining</div>
+                </div>
+
+                {/* 4 plans side by side always */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:12}}>
                   {/* Free */}
-                  <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column"}}>
-                    <div style={{fontSize:14,fontWeight:800,marginBottom:4,color:GOLD}}>Free</div>
-                    <div style={{fontSize:11,color:A.muted,marginBottom:8}}>6 credits/month</div>
-                    <div style={{fontSize:28,fontWeight:900,marginBottom:12,color:A.text}}>$0</div>
-                    <div style={{flex:1}}>
-                      {["Watermarked downloads","Carousel generator","Quote cards","AI captions"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:A.muted,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
+                  <div style={{background:A.surface,border:`1.5px solid ${planLabel==="free"?GOLD:A.border}`,borderRadius:14,padding:16,display:"flex",flexDirection:"column",position:"relative"}}>
+                    {planLabel==="free"&&<div style={{position:"absolute",top:-10,left:12,background:GOLD,color:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:10}}>Current</div>}
+                    <div style={{fontSize:13,fontWeight:800,color:GOLD,marginBottom:2}}>Free</div>
+                    <div style={{fontSize:10,color:A.muted,marginBottom:6}}>6 credits/mo</div>
+                    <div style={{fontSize:22,fontWeight:900,color:A.text,marginBottom:10}}>$0</div>
+                    <div style={{flex:1,marginBottom:12}}>
+                      {["Carousel generator","Quote cards","AI captions","Watermarked downloads"].map(f=>(
+                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:A.muted,marginBottom:5,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
-                    <button disabled style={{width:"100%",padding:"11px",background:A.border,color:A.muted,borderRadius:9,fontWeight:700,fontSize:12,border:"none",marginTop:14,cursor:"default"}}>Current Plan</button>
+                    {planLabel==="free"
+                      ? <button disabled style={{width:"100%",padding:"9px",background:A.border,color:A.muted,borderRadius:8,fontWeight:700,fontSize:11,border:"none",cursor:"default"}}>Current Plan</button>
+                      : <button onMouseEnter={()=>setHoveredBtn("free_down")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>window.open(process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL,"_blank")} style={{width:"100%",padding:"9px",background:"none",border:`1px solid ${A.border}`,color:A.muted,borderRadius:8,fontWeight:700,fontSize:11,cursor:"pointer"}}>Downgrade</button>
+                    }
                   </div>
                   {/* Starter */}
-                  <div style={{background:A.surface,border:`1.5px solid ${A.text}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column"}}>
-                    <div style={{fontSize:14,fontWeight:800,marginBottom:4,color:GOLD}}>Starter</div>
-                    <div style={{fontSize:11,color:A.muted,marginBottom:8}}>20 credits/month</div>
-                    <div style={{fontSize:28,fontWeight:900,marginBottom:12,color:A.text}}>$20<span style={{fontSize:13,fontWeight:500,color:A.muted}}>/mo</span></div>
-                    <div style={{flex:1}}>
-                      {["No watermark on downloads","Carousel generator","Quote cards & captions","AI rewrites","History & saves","20% affiliate commission","8% Tier 2 on your network"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:A.text,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
+                  <div style={{background:A.surface,border:`1.5px solid ${planLabel==="starter"?GOLD:A.border}`,borderRadius:14,padding:16,display:"flex",flexDirection:"column",position:"relative"}}>
+                    {planLabel==="starter"&&<div style={{position:"absolute",top:-10,left:12,background:GOLD,color:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:10}}>Current</div>}
+                    <div style={{fontSize:13,fontWeight:800,color:GOLD,marginBottom:2}}>Starter</div>
+                    <div style={{fontSize:10,color:A.muted,marginBottom:6}}>20 credits/mo</div>
+                    <div style={{fontSize:22,fontWeight:900,color:A.text,marginBottom:10}}>$20<span style={{fontSize:11,fontWeight:500,color:A.muted}}>/mo</span></div>
+                    <div style={{flex:1,marginBottom:12}}>
+                      {["No watermark","Carousel generator","Quote cards & captions","AI rewrites & history","20% affiliate commission","8% Tier 2 on network"].map(f=>(
+                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:A.text,marginBottom:5,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
-                    <button onMouseEnter={()=>setHoveredBtn("starter")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID)} style={{width:"100%",padding:"11px",background:hoveredBtn==="starter"?"#1a1a1a":A.text,color:A.accentText,borderRadius:9,fontWeight:700,fontSize:12,border:"none",marginTop:14,transition:"all 0.2s"}}>Get Starter</button>
+                    {planLabel==="starter"
+                      ? <button disabled style={{width:"100%",padding:"9px",background:A.border,color:A.muted,borderRadius:8,fontWeight:700,fontSize:11,border:"none",cursor:"default"}}>Current Plan</button>
+                      : planLabel==="free"
+                      ? <button onMouseEnter={()=>setHoveredBtn("starter")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID)} style={{width:"100%",padding:"9px",background:hoveredBtn==="starter"?"#1a1a1a":A.text,color:A.accentText,borderRadius:8,fontWeight:700,fontSize:11,border:"none",transition:"all 0.2s"}}>Get Starter</button>
+                      : <button onMouseEnter={()=>setHoveredBtn("starter_d")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>window.open(process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL,"_blank")} style={{width:"100%",padding:"9px",background:"none",border:`1px solid ${A.border}`,color:A.muted,borderRadius:8,fontWeight:700,fontSize:11,cursor:"pointer"}}>Downgrade</button>
+                    }
                   </div>
-                  {/* Pro */}
-                  <div style={{background:"#111",border:`2px solid ${GOLD}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column",position:"relative"}}>
-                    <div style={{position:"absolute",top:-10,right:12,background:GOLD,color:"#000",fontSize:10,fontWeight:700,padding:"2px 10px",borderRadius:10}}>Best value</div>
-                    <div style={{fontSize:14,fontWeight:800,marginBottom:4,color:GOLD}}>Pro</div>
-                    <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginBottom:8}}>80 credits/month</div>
-                    <div style={{fontSize:28,fontWeight:900,marginBottom:12,color:GOLD}}>$50<span style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.4)"}}>/mo</span></div>
-                    <div style={{flex:1}}>
-                      {["Everything in Starter","~40 carousels/month","30% affiliate commission","8% Tier 2 on your network","Refer 3 — Pro pays itself"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:"#fff",marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
+                  {/* Pro — best value */}
+                  <div style={{background:"#111",border:`2px solid ${GOLD}`,borderRadius:14,padding:16,display:"flex",flexDirection:"column",position:"relative"}}>
+                    <div style={{position:"absolute",top:-10,right:10,background:planLabel==="pro"?"rgba(187,153,0,0.4)":GOLD,color:planLabel==="pro"?GOLD:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:10}}>{planLabel==="pro"?"Current":"Best value"}</div>
+                    <div style={{fontSize:13,fontWeight:800,color:GOLD,marginBottom:2}}>Pro</div>
+                    <div style={{fontSize:10,color:"rgba(255,255,255,0.5)",marginBottom:6}}>80 credits/mo</div>
+                    <div style={{fontSize:22,fontWeight:900,color:GOLD,marginBottom:10}}>$50<span style={{fontSize:11,fontWeight:500,color:"rgba(255,255,255,0.4)"}}>/mo</span></div>
+                    <div style={{flex:1,marginBottom:12}}>
+                      {["Everything in Starter","~40 carousels/month","30% affiliate commission","8% Tier 2 on network","Refer 3 — Pro pays itself"].map(f=>(
+                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:"#fff",marginBottom:5,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
-                    <button onMouseEnter={()=>setHoveredBtn("pro")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"11px",background:hoveredBtn==="pro"?"#e6c45a":GOLD,color:"#000",borderRadius:9,fontWeight:700,fontSize:12,border:"none",marginTop:14,transition:"all 0.2s"}}>Get Pro</button>
+                    {planLabel==="pro"
+                      ? <button disabled style={{width:"100%",padding:"9px",background:"rgba(187,153,0,0.2)",color:GOLD,borderRadius:8,fontWeight:700,fontSize:11,border:"none",cursor:"default"}}>Current Plan</button>
+                      : planLabel==="agency"
+                      ? <button onMouseEnter={()=>setHoveredBtn("pro_d")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>window.open(process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL,"_blank")} style={{width:"100%",padding:"9px",background:"none",border:`1px solid ${GOLD}44`,color:GOLD,borderRadius:8,fontWeight:700,fontSize:11,cursor:"pointer"}}>Downgrade</button>
+                      : <button onMouseEnter={()=>setHoveredBtn("pro")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"9px",background:hoveredBtn==="pro"?"#e6c45a":GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:11,border:"none",transition:"all 0.2s"}}>Get Pro</button>
+                    }
                   </div>
                   {/* Agency */}
-                  <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column"}}>
-                    <div style={{fontSize:14,fontWeight:800,marginBottom:4,color:GOLD}}>Agency</div>
-                    <div style={{fontSize:11,color:A.muted,marginBottom:8}}>300 credits/month</div>
-                    <div style={{fontSize:28,fontWeight:900,marginBottom:12,color:A.text}}>$100<span style={{fontSize:13,fontWeight:500,color:A.muted}}>/mo</span></div>
-                    <div style={{flex:1}}>
-                      {["Everything in Pro","~150 carousels/month","40% affiliate commission","8% Tier 2 on your network","High volume & agencies"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:A.text,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
+                  <div style={{background:A.surface,border:`1.5px solid ${planLabel==="agency"?GOLD:A.border}`,borderRadius:14,padding:16,display:"flex",flexDirection:"column",position:"relative"}}>
+                    {planLabel==="agency"&&<div style={{position:"absolute",top:-10,left:12,background:GOLD,color:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:10}}>Current</div>}
+                    <div style={{fontSize:13,fontWeight:800,color:GOLD,marginBottom:2}}>Agency</div>
+                    <div style={{fontSize:10,color:A.muted,marginBottom:6}}>300 credits/mo</div>
+                    <div style={{fontSize:22,fontWeight:900,color:A.text,marginBottom:10}}>$100<span style={{fontSize:11,fontWeight:500,color:A.muted}}>/mo</span></div>
+                    <div style={{flex:1,marginBottom:12}}>
+                      {["Everything in Pro","~150 carousels/month","40% affiliate commission","8% Tier 2 on network","Multiple brands & clients"].map(f=>(
+                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:A.text,marginBottom:5,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
-                    <button onMouseEnter={()=>setHoveredBtn("agency")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID)} style={{width:"100%",padding:"11px",background:hoveredBtn==="agency"?"#1a1a1a":A.text,color:A.accentText,borderRadius:9,fontWeight:700,fontSize:12,border:"none",marginTop:14,transition:"all 0.2s"}}>Get Agency</button>
+                    {planLabel==="agency"
+                      ? <button disabled style={{width:"100%",padding:"9px",background:A.border,color:A.muted,borderRadius:8,fontWeight:700,fontSize:11,border:"none",cursor:"default"}}>Current Plan</button>
+                      : <button onMouseEnter={()=>setHoveredBtn("agency")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID)} style={{width:"100%",padding:"9px",background:hoveredBtn==="agency"?"#1a1a1a":A.text,color:A.accentText,borderRadius:8,fontWeight:700,fontSize:11,border:"none",transition:"all 0.2s"}}>Get Agency</button>
+                    }
                   </div>
                 </div>
+
+                {/* Affiliate Licence */}
                 <div style={{background:"linear-gradient(135deg,#1a0a00,#2a1500)",border:`2px solid ${GOLD}`,borderRadius:14,padding:24,marginBottom:12}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,flexWrap:"wrap",gap:8}}>
                     <div><span style={{fontSize:16,fontWeight:800,color:"#fff"}}>Affiliate Licence</span><span style={{fontSize:10,fontWeight:700,padding:"2px 10px",background:GOLD,borderRadius:20,color:"#000",marginLeft:10}}>🔥 Founding price</span></div>
@@ -3130,6 +3161,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   </div>
                   <button onMouseEnter={()=>setHoveredBtn("afflicence")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AFFILIATE_PRICE_ID,"payment")} style={{width:"100%",padding:"13px",background:hoveredBtn==="afflicence"?"#e6c45a":GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:14,border:"none",transition:"all 0.2s"}}>Get Affiliate Licence — $297 once</button>
                 </div>
+
+                {/* White Label */}
                 <div style={{background:"linear-gradient(135deg,#0a001a,#15002a)",border:"2px solid #6644cc",borderRadius:14,padding:24,marginBottom:16}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,flexWrap:"wrap",gap:8}}>
                     <div><span style={{fontSize:16,fontWeight:800,color:"#fff"}}>White Label</span><span style={{fontSize:10,fontWeight:700,padding:"2px 10px",background:"#6644cc",borderRadius:20,color:"#fff",marginLeft:10}}>Your brand</span></div>
@@ -3143,196 +3176,27 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   </div>
                   <button onMouseEnter={()=>setHoveredBtn("whitelabel")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_WHITELABEL_PRICE_ID,"payment")} style={{width:"100%",padding:"13px",background:hoveredBtn==="whitelabel"?"#7755dd":"#6644cc",color:"#fff",borderRadius:10,fontWeight:700,fontSize:14,border:"none",transition:"all 0.2s"}}>Get White Label — $497 once</button>
                 </div>
-              </>
-            )}
 
-            {planLabel==="starter"&&(
-              <>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-                  <div style={{background:A.surface,border:`1.5px solid ${A.text}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column"}}>
-                    <div style={{fontSize:14,fontWeight:800,marginBottom:4,color:GOLD}}>Starter</div>
-                    <div style={{fontSize:11,color:A.muted,marginBottom:8}}>20 credits/month</div>
-                    <div style={{fontSize:28,fontWeight:900,marginBottom:12,color:A.text}}>$20<span style={{fontSize:13,fontWeight:500,color:A.muted}}>/mo</span></div>
-                    <div style={{flex:1}}>
-                      {["No watermark on downloads","Carousel generator","Quote cards & captions","AI rewrites","History & saves","20% affiliate commission","8% Tier 2 on your network"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:A.muted,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
-                      ))}
+                {/* Top-ups for paid plans */}
+                {planLabel!=="free"&&(
+                  <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+                    <label style={lbl}>Need more credits this month?</label>
+                    <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>One-time top-ups. Never expire.</p>
+                    <div style={{display:"flex",gap:10}}>
+                      <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>15 credits</div><div style={{fontSize:12}}>$25 one-time</div></button>
+                      <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center",position:"relative"}}><div style={{position:"absolute",top:-8,right:8,fontSize:9,fontWeight:700,padding:"2px 6px",background:GOLD,color:"#000",borderRadius:4}}>Best value</div><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>30 credits</div><div style={{fontSize:12}}>$45 one-time</div></button>
                     </div>
-                    <button disabled style={{width:"100%",padding:"11px",background:A.border,color:A.muted,borderRadius:9,fontWeight:700,fontSize:12,border:"none",marginTop:14,cursor:"default"}}>Current Plan</button>
                   </div>
-                  <div style={{background:"#111",border:`2px solid ${GOLD}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column",position:"relative"}}>
-                    <div style={{position:"absolute",top:-10,right:12,background:GOLD,color:"#000",fontSize:10,fontWeight:700,padding:"2px 10px",borderRadius:10}}>Best value</div>
-                    <div style={{fontSize:14,fontWeight:800,marginBottom:4,color:GOLD}}>Pro</div>
-                    <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginBottom:8}}>80 credits/month</div>
-                    <div style={{fontSize:28,fontWeight:900,marginBottom:12,color:GOLD}}>$50<span style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.4)"}}>/mo</span></div>
-                    <div style={{flex:1}}>
-                      {["Everything in Starter","~40 carousels/month","30% affiliate commission","8% Tier 2 on your network","Refer 3 — Pro pays itself"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:"#fff",marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
-                      ))}
-                    </div>
-                    <button onMouseEnter={()=>setHoveredBtn("pro2")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"11px",background:hoveredBtn==="pro2"?"#e6c45a":GOLD,color:"#000",borderRadius:9,fontWeight:700,fontSize:12,border:"none",marginTop:14,transition:"all 0.2s"}}>Get Pro</button>
-                  </div>
-                  <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column"}}>
-                    <div style={{fontSize:14,fontWeight:800,marginBottom:4,color:GOLD}}>Agency</div>
-                    <div style={{fontSize:11,color:A.muted,marginBottom:8}}>300 credits/month</div>
-                    <div style={{fontSize:28,fontWeight:900,marginBottom:12,color:A.text}}>$100<span style={{fontSize:13,fontWeight:500,color:A.muted}}>/mo</span></div>
-                    <div style={{flex:1}}>
-                      {["Everything in Pro","~150 carousels/month","40% affiliate commission","8% Tier 2 on your network","High volume & agencies"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:A.text,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
-                      ))}
-                    </div>
-                    <button onMouseEnter={()=>setHoveredBtn("agency3")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID)} style={{width:"100%",padding:"11px",background:hoveredBtn==="agency3"?"#1a1a1a":A.text,color:A.accentText,borderRadius:9,fontWeight:700,fontSize:12,border:"none",marginTop:14,transition:"all 0.2s"}}>Get Agency</button>
-                  </div>
-                  <div style={{background:"linear-gradient(135deg,#1a0a00,#2a1500)",border:`1.5px solid ${GOLD}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column"}}>
-                    <div style={{fontSize:14,fontWeight:800,marginBottom:4,color:GOLD}}>Affiliate Licence</div>
-                    <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginBottom:8}}>15 credits/month</div>
-                    <div style={{fontSize:28,fontWeight:900,marginBottom:12,color:GOLD}}>$297<span style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.4)"}}> once</span></div>
-                    <div style={{flex:1}}>
-                      {["No monthly fee ever","35% recurring commission","8% Tier 2 on your network","Commission for life","Founding price"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:"#fff",marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
-                      ))}
-                    </div>
-                    <button onMouseEnter={()=>setHoveredBtn("afflicence3")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AFFILIATE_PRICE_ID,"payment")} style={{width:"100%",padding:"11px",background:hoveredBtn==="afflicence3"?"#e6c45a":GOLD,color:"#000",borderRadius:9,fontWeight:700,fontSize:12,border:"none",marginTop:14,transition:"all 0.2s"}}>Get Licence</button>
-                  </div>
-                </div>
-                <div style={{background:"linear-gradient(135deg,#0a001a,#15002a)",border:"2px solid #6644cc",borderRadius:14,padding:24,marginBottom:12}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,flexWrap:"wrap",gap:8}}>
-                    <div><span style={{fontSize:16,fontWeight:800,color:"#fff"}}>White Label</span><span style={{fontSize:10,fontWeight:700,padding:"2px 10px",background:"#6644cc",borderRadius:20,color:"#fff",marginLeft:10}}>Your brand</span></div>
-                    <div style={{fontSize:22,fontWeight:800,color:"#9977ff"}}>$497 <span style={{fontSize:12,fontWeight:500,color:"rgba(255,255,255,0.5)"}}>one-time</span></div>
-                  </div>
-                  <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 14px",lineHeight:1.6}}>Your brand, your domain, your product. Resell Carousel Studio as your own tool. One payment. Lifetime access.</p>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:16}}>
-                    {["Your brand & domain","Resell as your own product","80 credits/month included","40% affiliate commission","8% Tier 2 on your network","No monthly fee ever"].map(f=>(
-                      <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:"#fff",lineHeight:1.4}}><span style={{color:"#9977ff",fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
-                    ))}
-                  </div>
-                  <button onMouseEnter={()=>setHoveredBtn("wl3")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_WHITELABEL_PRICE_ID,"payment")} style={{width:"100%",padding:"13px",background:hoveredBtn==="wl3"?"#7755dd":"#6644cc",color:"#fff",borderRadius:10,fontWeight:700,fontSize:14,border:"none",transition:"all 0.2s"}}>Get White Label — $497 once</button>
-                </div>
-                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
-                  <label style={lbl}>Need more credits this month?</label>
-                  <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>One-time top-ups. Never expire.</p>
-                  <div style={{display:"flex",gap:10}}>
-                    <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>15 credits</div><div style={{fontSize:12}}>$25 one-time</div></button>
-                    <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center",position:"relative"}}><div style={{position:"absolute",top:-8,right:8,fontSize:9,fontWeight:700,padding:"2px 6px",background:GOLD,color:"#000",borderRadius:4}}>Best value</div><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>30 credits</div><div style={{fontSize:12}}>$45 one-time</div></button>
-                  </div>
-                </div>
-                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
-                  <label style={lbl}>Manage subscription</label>
-                  <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Update payment method, download invoices, or cancel.</p>
-                  <a href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL} target="_blank" rel="noopener noreferrer" style={{display:"block",textAlign:"center",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:14,textDecoration:"none"}}>Manage Subscription</a>
-                </div>
-              </>
-            )}
+                )}
 
-            {planLabel==="pro"&&(
-              <>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-                  <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column"}}>
-                    <div style={{fontSize:14,fontWeight:800,marginBottom:4,color:GOLD}}>Starter</div>
-                    <div style={{fontSize:11,color:A.muted,marginBottom:8}}>20 credits/month</div>
-                    <div style={{fontSize:28,fontWeight:900,marginBottom:12,color:A.text}}>$20<span style={{fontSize:13,fontWeight:500,color:A.muted}}>/mo</span></div>
-                    <div style={{flex:1}}>
-                      {["No watermark on downloads","Carousel generator","Quote cards & captions","AI rewrites","20% affiliate commission","8% Tier 2 on your network"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:A.muted,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
-                      ))}
-                    </div>
-                    <button disabled style={{width:"100%",padding:"11px",background:A.border,color:A.muted,borderRadius:9,fontWeight:700,fontSize:12,border:"none",marginTop:14,cursor:"default"}}>Lower Plan</button>
+                {/* Manage subscription for paid plans */}
+                {planLabel!=="free"&&(
+                  <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+                    <label style={lbl}>Manage subscription</label>
+                    <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Update payment method, download invoices, or cancel.</p>
+                    <a href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL} target="_blank" rel="noopener noreferrer" style={{display:"block",textAlign:"center",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:14,textDecoration:"none"}}>Manage Subscription</a>
                   </div>
-                  <div style={{background:"#111",border:`2px solid ${GOLD}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column",position:"relative"}}>
-                    <div style={{position:"absolute",top:-10,right:12,background:GOLD,color:"#000",fontSize:10,fontWeight:700,padding:"2px 10px",borderRadius:10}}>Current</div>
-                    <div style={{fontSize:14,fontWeight:800,marginBottom:4,color:GOLD}}>Pro</div>
-                    <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginBottom:8}}>80 credits/month</div>
-                    <div style={{fontSize:28,fontWeight:900,marginBottom:12,color:GOLD}}>$50<span style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.4)"}}>/mo</span></div>
-                    <div style={{flex:1}}>
-                      {["Everything in Starter","~40 carousels/month","30% affiliate commission","8% Tier 2 on your network","Refer 3 — Pro pays itself"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:"#fff",marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
-                      ))}
-                    </div>
-                    <button disabled style={{width:"100%",padding:"11px",background:"rgba(187,153,0,0.3)",color:GOLD,borderRadius:9,fontWeight:700,fontSize:12,border:"none",marginTop:14,cursor:"default"}}>Current Plan</button>
-                  </div>
-                  <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column"}}>
-                    <div style={{fontSize:14,fontWeight:800,marginBottom:4,color:GOLD}}>Agency</div>
-                    <div style={{fontSize:11,color:A.muted,marginBottom:8}}>300 credits/month</div>
-                    <div style={{fontSize:28,fontWeight:900,marginBottom:12,color:A.text}}>$100<span style={{fontSize:13,fontWeight:500,color:A.muted}}>/mo</span></div>
-                    <div style={{flex:1}}>
-                      {["Everything in Pro","~150 carousels/month","40% affiliate commission","8% Tier 2 on your network","High volume & agencies"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:A.text,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
-                      ))}
-                    </div>
-                    <button onMouseEnter={()=>setHoveredBtn("agency2")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID)} style={{width:"100%",padding:"11px",background:hoveredBtn==="agency2"?"#1a1a1a":A.text,color:A.accentText,borderRadius:9,fontWeight:700,fontSize:12,border:"none",marginTop:14,transition:"all 0.2s"}}>Get Agency</button>
-                  </div>
-                  <div style={{background:"linear-gradient(135deg,#1a0a00,#2a1500)",border:`1.5px solid ${GOLD}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column"}}>
-                    <div style={{fontSize:14,fontWeight:800,marginBottom:4,color:GOLD}}>Affiliate Licence</div>
-                    <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginBottom:8}}>15 credits/month</div>
-                    <div style={{fontSize:28,fontWeight:900,marginBottom:12,color:GOLD}}>$297<span style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.4)"}}> once</span></div>
-                    <div style={{flex:1}}>
-                      {["No monthly fee ever","35% recurring commission","8% Tier 2 on your network","Commission for life","Founding price"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:"#fff",marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
-                      ))}
-                    </div>
-                    <button onMouseEnter={()=>setHoveredBtn("afflicence2")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AFFILIATE_PRICE_ID,"payment")} style={{width:"100%",padding:"11px",background:hoveredBtn==="afflicence2"?"#e6c45a":GOLD,color:"#000",borderRadius:9,fontWeight:700,fontSize:12,border:"none",marginTop:14,transition:"all 0.2s"}}>Get Licence</button>
-                  </div>
-                </div>
-                <div style={{background:"linear-gradient(135deg,#0a001a,#15002a)",border:"2px solid #6644cc",borderRadius:14,padding:24,marginBottom:12}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,flexWrap:"wrap",gap:8}}>
-                    <div><span style={{fontSize:16,fontWeight:800,color:"#fff"}}>White Label</span><span style={{fontSize:10,fontWeight:700,padding:"2px 10px",background:"#6644cc",borderRadius:20,color:"#fff",marginLeft:10}}>Your brand</span></div>
-                    <div style={{fontSize:22,fontWeight:800,color:"#9977ff"}}>$497 <span style={{fontSize:12,fontWeight:500,color:"rgba(255,255,255,0.5)"}}>one-time</span></div>
-                  </div>
-                  <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 14px",lineHeight:1.6}}>Your brand, your domain, your product. Resell Carousel Studio as your own tool. One payment. Lifetime access.</p>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:16}}>
-                    {["Your brand & domain","Resell as your own product","80 credits/month included","40% affiliate commission","8% Tier 2 on your network","No monthly fee ever"].map(f=>(
-                      <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:"#fff",lineHeight:1.4}}><span style={{color:"#9977ff",fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
-                    ))}
-                  </div>
-                  <button onMouseEnter={()=>setHoveredBtn("wl2")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_WHITELABEL_PRICE_ID,"payment")} style={{width:"100%",padding:"13px",background:hoveredBtn==="wl2"?"#7755dd":"#6644cc",color:"#fff",borderRadius:10,fontWeight:700,fontSize:14,border:"none",transition:"all 0.2s"}}>Get White Label — $497 once</button>
-                </div>
-                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
-                  <label style={lbl}>Need more credits this month?</label>
-                  <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>One-time top-ups. Never expire.</p>
-                  <div style={{display:"flex",gap:10}}>
-                    <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>15 credits</div><div style={{fontSize:12}}>$25 one-time</div></button>
-                    <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center",position:"relative"}}><div style={{position:"absolute",top:-8,right:8,fontSize:9,fontWeight:700,padding:"2px 6px",background:GOLD,color:"#000",borderRadius:4}}>Best value</div><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>30 credits</div><div style={{fontSize:12}}>$45 one-time</div></button>
-                  </div>
-                </div>
-                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
-                  <label style={lbl}>Manage subscription</label>
-                  <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Update payment method, download invoices, or cancel.</p>
-                  <a href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL} target="_blank" rel="noopener noreferrer" style={{display:"block",textAlign:"center",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:14,textDecoration:"none"}}>Manage Subscription</a>
-                </div>
-              </>
-            )}
-
-            {planLabel==="agency"&&(
-              <>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-                  <div style={{background:"linear-gradient(135deg,#1a0a00,#2a1500)",border:`1.5px solid ${GOLD}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column"}}>
-                    <div style={{fontSize:14,fontWeight:800,marginBottom:4,color:GOLD}}>Affiliate Licence</div>
-                    <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginBottom:8}}>15 credits/month</div>
-                    <div style={{fontSize:28,fontWeight:900,marginBottom:12,color:GOLD}}>$297<span style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.4)"}}> once</span></div>
-                    <div style={{flex:1}}>
-                      {["No monthly fee ever","35% recurring commission","8% Tier 2 on your network","Commission for life","Founding price"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:"#fff",marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
-                      ))}
-                    </div>
-                    <button onMouseEnter={()=>setHoveredBtn("afflicence4")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AFFILIATE_PRICE_ID,"payment")} style={{width:"100%",padding:"11px",background:hoveredBtn==="afflicence4"?"#e6c45a":GOLD,color:"#000",borderRadius:9,fontWeight:700,fontSize:12,border:"none",marginTop:14,transition:"all 0.2s"}}>Get Licence</button>
-                  </div>
-                  <div style={{background:"linear-gradient(135deg,#0a001a,#15002a)",border:"1.5px solid #6644cc",borderRadius:14,padding:20,display:"flex",flexDirection:"column"}}>
-                    <div style={{fontSize:14,fontWeight:800,marginBottom:4,color:"#9977ff"}}>White Label</div>
-                    <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginBottom:8}}>80 credits/month</div>
-                    <div style={{fontSize:28,fontWeight:900,marginBottom:12,color:"#9977ff"}}>$497<span style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.4)"}}> once</span></div>
-                    <div style={{flex:1}}>
-                      {["Your brand & domain","Resell as your own product","40% affiliate commission","8% Tier 2 on your network","No monthly fee ever"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:"#fff",marginBottom:6,lineHeight:1.4}}><span style={{color:"#9977ff",fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
-                      ))}
-                    </div>
-                    <button onMouseEnter={()=>setHoveredBtn("wl4")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_WHITELABEL_PRICE_ID,"payment")} style={{width:"100%",padding:"11px",background:hoveredBtn==="wl4"?"#7755dd":"#6644cc",color:"#fff",borderRadius:9,fontWeight:700,fontSize:12,border:"none",marginTop:14,transition:"all 0.2s"}}>Get White Label</button>
-                  </div>
-                </div>
-                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
-                  <label style={lbl}>Manage subscription</label>
-                  <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Update payment method, download invoices, or cancel.</p>
-                  <a href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL} target="_blank" rel="noopener noreferrer" style={{display:"block",textAlign:"center",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:14,textDecoration:"none"}}>Manage Subscription</a>
-                </div>
+                )}
               </>
             )}
 
