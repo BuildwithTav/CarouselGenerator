@@ -2634,7 +2634,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <div style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:A.muted,fontSize:12}}>▼</div>
                 </div>
                 <div style={{marginTop:10,padding:"10px 14px",background:A.bg,border:`1px solid ${A.border}`,borderRadius:8}}>
-                  <span style={{fontFamily:`"${FONTS.find(f=>f.id===fontId)?.css||"Montserrat"}",sans-serif`,fontSize:18,fontWeight:700,color:A.text}}>The quick brown fox jumps over the lazy dog</span>
+                  {(()=>{
+                    const h = loadHistory();
+                    const headlines = h.flatMap(e=>e.slides||[]).map(s=>s.headline||s.title).filter(Boolean).slice(0,3);
+                    const samples = headlines.length > 0 ? headlines : ["Your headlines will appear here as you generate"];
+                    return samples.map((t,i)=>(
+                      <div key={i} style={{fontFamily:`"${FONTS.find(f=>f.id===fontId)?.css||"Montserrat"}",sans-serif`,fontSize:15,fontWeight:700,color:i===0?A.text:A.muted,lineHeight:1.5,borderBottom:i<samples.length-1?`1px solid ${A.border}`:"none",paddingBottom:i<samples.length-1?6:0,marginBottom:i<samples.length-1?6:0}}>{t}</div>
+                    ));
+                  })()}
                 </div>
               </div>
 
@@ -3129,8 +3136,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <label style={lbl}>Need more credits this month?</label>
                 <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>One-time top-ups. Never expire.</p>
                 <div style={{display:"flex",gap:10}}>
-                  <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>15 credits</div><div style={{fontSize:12}}>$25 one-time</div></button>
-                  <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center",position:"relative"}}><div style={{position:"absolute",top:-8,right:8,fontSize:9,fontWeight:700,padding:"2px 6px",background:GOLD,color:"#000",borderRadius:4}}>Best value</div><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>30 credits</div><div style={{fontSize:12}}>$45 one-time</div></button>
+                  <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>150 credits</div><div style={{fontSize:12}}>$25 one-time</div></button>
+                  <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center",position:"relative"}}><div style={{position:"absolute",top:-8,right:8,fontSize:9,fontWeight:700,padding:"2px 6px",background:GOLD,color:"#000",borderRadius:4}}>Best value</div><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>300 credits</div><div style={{fontSize:12}}>$45 one-time</div></button>
                 </div>
               </div>
             )}
