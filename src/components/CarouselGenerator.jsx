@@ -3072,7 +3072,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <p style={{fontSize:13,color:A.muted,margin:"8px 0 12px",lineHeight:1.6}}>Upgrade to any paid plan to unlock your affiliate link and start earning recurring commission.</p>
                 <div style={{background:A.bg,border:`1px solid ${A.border}`,borderRadius:10,padding:16}}>
                   <div style={{fontSize:13,fontWeight:700,marginBottom:8}}>Commission rates:</div>
-                  {[["Starter","20% + 8% Tier 2"],["Pro","30% + 8% Tier 2"],["Agency","40% + 8% Tier 2"],["Affiliate Licence","35% + 8% Tier 2"],["White Label","40% + 8% Tier 2"]].map(([plan,rate])=>(
+                  {[["Starter","20% + 15% Tier 2"],["Pro","30% + 15% Tier 2"],["Agency","40% + 15% Tier 2"],["Affiliate Licence","35% + 15% Tier 2"],["White Label","40% + 15% Tier 2"]].map(([plan,rate])=>(
                     <div key={plan} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:A.muted,marginBottom:4}}>
                       <span>{plan}</span><span style={{color:GOLD,fontWeight:700}}>{rate}</span>
                     </div>
@@ -3196,7 +3196,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <div style={{fontSize:10,color:A.muted,marginBottom:6}}>20 credits/month</div>
                     <div style={{fontSize:24,fontWeight:900,color:A.text,marginBottom:14}}>$20<span style={{fontSize:11,fontWeight:500,color:A.muted}}>/mo</span></div>
                     <div style={{flex:1,marginBottom:14}}>
-                      {["No watermark on downloads","Carousel generator","Quote cards & captions","AI rewrites","History & saves","20% affiliate commission","8% Tier 2 on your network"].map(f=>(
+                      {["No watermark on downloads","Carousel generator","Quote cards & captions","AI rewrites","History & saves","20% affiliate commission","15% Tier 2 on your network"].map(f=>(
                         <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:A.text,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
@@ -3214,7 +3214,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <div style={{fontSize:10,color:"rgba(255,255,255,0.5)",marginBottom:6}}>80 credits/month</div>
                     <div style={{fontSize:24,fontWeight:900,color:GOLD,marginBottom:14}}>$50<span style={{fontSize:11,fontWeight:500,color:"rgba(255,255,255,0.4)"}}>/mo</span></div>
                     <div style={{flex:1,marginBottom:14}}>
-                      {["Everything in Starter","~40 carousels/month","30% affiliate commission","8% Tier 2 on your network","Refer 3 — Pro pays itself","Priority support","Early feature access"].map(f=>(
+                      {["Everything in Starter","~40 carousels/month","30% affiliate commission","15% Tier 2 on your network","Refer 3 — Pro pays itself","Priority support","Early feature access"].map(f=>(
                         <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:"#fff",marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
@@ -3232,7 +3232,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <div style={{fontSize:10,color:A.muted,marginBottom:6}}>300 credits/month</div>
                     <div style={{fontSize:24,fontWeight:900,color:A.text,marginBottom:14}}>$100<span style={{fontSize:11,fontWeight:500,color:A.muted}}>/mo</span></div>
                     <div style={{flex:1,marginBottom:14}}>
-                      {["Everything in Pro","~150 carousels/month","40% affiliate commission","8% Tier 2 on your network","Enough credits for multiple brands","High volume creators & agencies","Priority support"].map(f=>(
+                      {["Everything in Pro","~150 carousels/month","40% affiliate commission","15% Tier 2 on your network","Enough credits for multiple brands","High volume creators & agencies","Priority support"].map(f=>(
                         <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:A.text,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
@@ -3251,7 +3251,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   </div>
                   <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 14px",lineHeight:1.6}}>Pay once. Earn <strong style={{color:GOLD}}>forever</strong>. No monthly fee — ever. Your commissions never stop, even if you never pay another penny.</p>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:16}}>
-                    {["15 credits/month for demos","35% lifetime recurring commission","8% Tier 2 on your network","One payment — no monthly fee ever","Commissions never stop","Pays for itself after a few referrals","Founding price — won't last","Full affiliate dashboard access"].map(f=>(
+                    {["15 credits/month for demos","35% lifetime recurring commission","15% Tier 2 on your network","One payment — no monthly fee ever","Commissions never stop","Pays for itself after a few referrals","Founding price — won't last","Full affiliate dashboard access"].map(f=>(
                       <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:"#fff",lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
                     ))}
                   </div>
@@ -3266,7 +3266,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   </div>
                   <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 14px",lineHeight:1.6}}>Your brand, your domain, your product. Resell as your own tool. Pay once and earn <strong style={{color:"#9977ff"}}>40% lifetime commission</strong> on every client — forever.</p>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:16}}>
-                    {["Your brand & domain","Resell as your own product","80 credits/month included","40% lifetime recurring commission","8% Tier 2 on your network","No monthly fee ever","One payment — lifetime access","Full affiliate dashboard access"].map(f=>(
+                    {["Your brand & domain","Resell as your own product","80 credits/month included","40% lifetime recurring commission","15% Tier 2 on your network","No monthly fee ever","One payment — lifetime access","Full affiliate dashboard access"].map(f=>(
                       <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:"#fff",lineHeight:1.4}}><span style={{color:"#9977ff",fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
                     ))}
                   </div>
