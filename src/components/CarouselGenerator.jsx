@@ -2857,6 +2857,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
                 {[
+                  { date:"13 Jun 2026", tag:"Coming Soon", msg:"Auto-posting to Instagram is in development. Generate your carousel and post directly from Carousel Studio — no downloading, no uploading. Coming soon." },
+                  { date:"13 Jun 2026", tag:"Update", msg:"Tier 2 affiliate commission increased from 8% to 15%. Every referral your network makes now earns you 15% — automatically, every month." },
                   { date:"09 Jun 2026", tag:"Update", msg:"Brand settings currently save to this device only. Cross-device sync is coming soon." },
                   { date:"09 Jun 2026", tag:"New", msg:"Monetisation live — Free, Starter ($20), Pro ($50) and Agency ($100) plans now available. Affiliate Licence ($297) and White Label ($497) also available." },
                   { date:"08 Jun 2026", tag:"New", msg:"OTP email login added. Sign in with your email and a 6 digit code — no password needed." },
@@ -2865,7 +2867,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 ].filter((_,i)=>showAllUpdates||i<3).map((u,i,arr)=>(
                   <div key={i} style={{borderBottom:i<arr.length-1?`1px solid ${A.border}`:"none",paddingBottom:i<arr.length-1?12:0}}>
                     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                      <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",background:u.tag==="New"?GOLD:u.tag==="Fix"?"#2ecc71":A.border,color:u.tag==="New"?"#000":u.tag==="Fix"?"#000":A.muted,borderRadius:4}}>{u.tag}</span>
+                      <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",background:u.tag==="New"?GOLD:u.tag==="Fix"?"#2ecc71":u.tag==="Coming Soon"?"#6644cc":A.border,color:u.tag==="New"?"#000":u.tag==="Fix"?"#000":u.tag==="Coming Soon"?"#fff":A.muted,borderRadius:4}}>{u.tag}</span>
                       <span style={{fontSize:11,color:A.muted}}>{u.date}</span>
                     </div>
                     <p style={{fontSize:13,color:A.text,margin:0,lineHeight:1.6}}>{u.msg}</p>
@@ -3276,6 +3278,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 {/* Top-ups for paid plans */}
                 {/* Manage subscription */}
                 {/* These live in the Account tab */}
+
+                {/* Affiliate earnings diagram */}
+                <div style={{background:"linear-gradient(135deg,#1c1000,#2a1800)",border:`1.5px solid ${GOLD}`,borderRadius:14,padding:24,marginTop:8}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:800,color:"#fff",marginBottom:4}}>See how the affiliate system works</div>
+                      <p style={{fontSize:13,color:"rgba(255,255,255,0.65)",margin:0,lineHeight:1.6}}>Frank paid $297 once. He now earns $440 every month — forever. See exactly how with real numbers.</p>
+                    </div>
+                    <a href="/affiliate" target="_blank" rel="noopener noreferrer" style={{background:GOLD,color:"#000",padding:"11px 20px",borderRadius:9,fontWeight:700,fontSize:13,textDecoration:"none",whiteSpace:"nowrap",flexShrink:0}}>See Frank's earnings →</a>
+                  </div>
+                </div>
               </>
             )}
           </div>
