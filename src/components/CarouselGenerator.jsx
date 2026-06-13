@@ -2947,23 +2947,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <p style={{color:A.muted,fontSize:14,margin:0}}>{currentUser?.email}</p>
             </div>
 
-            {/* Current plan */}
-            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
-              <label style={lbl}>Current plan</label>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:8}}>
-                <div>
-                  <div style={{fontSize:20,fontWeight:800,textTransform:"capitalize"}}>{currentUser?.plan==="affiliate_licence"?"Affiliate Licence":currentUser?.plan==="white_label"?"White Label":currentUser?.plan}</div>
-                  <div style={{fontSize:13,color:A.muted,marginTop:2}}>
-                    {isUnlimitedPlan(currentUser?.plan)
-                      ? `${currentUser?.credits_used||0} credits used this month (unlimited)`
-                      : currentUser?.plan==="free"
-                      ? `${creditsRemaining()} trial credits remaining`
-                      : `${creditsRemaining()} credits remaining this month`}
-                  </div>
-                </div>
-                <span style={{fontSize:11,fontWeight:700,padding:"4px 12px",background:isUnlimitedPlan(currentUser?.plan)||currentUser?.plan==="affiliate_licence"||currentUser?.plan==="white_label"?GOLD:A.text,color:isUnlimitedPlan(currentUser?.plan)||currentUser?.plan==="affiliate_licence"||currentUser?.plan==="white_label"?"#000":A.accentText,borderRadius:20}}>{currentUser?.plan==="affiliate_licence"?"AFFILIATE":currentUser?.plan==="white_label"?"WHITE LABEL":currentUser?.plan?.toUpperCase()}</span>
-              </div>
-            </div>
 
             {/* Affiliate Dashboard — shown at top for paid users */}
             {planLabel!=="free"&&(
@@ -3066,83 +3049,74 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             {/* Free user — show upgrade options */}
             {(planLabel==="free"||planLabel==="starter"||planLabel==="pro"||planLabel==="agency")&&(
               <>
-                {/* Current plan — small compact box */}
-                <div style={{background:A.surface,border:`1px solid ${A.border}`,borderRadius:10,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <div>
-                    <span style={{fontSize:12,color:A.muted}}>Current plan: </span>
-                    <span style={{fontSize:13,fontWeight:800,color:GOLD,textTransform:"capitalize"}}>{planLabel==="free"?"Free":planLabel==="starter"?"Starter":planLabel==="pro"?"Pro":"Agency"}</span>
-                  </div>
-                  <div style={{fontSize:12,color:A.muted}}>{creditsRemaining()} credits remaining</div>
-                </div>
-
                 {/* 4 plans side by side always */}
                 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:12}}>
                   {/* Free */}
-                  <div style={{background:A.surface,border:`1.5px solid ${planLabel==="free"?GOLD:A.border}`,borderRadius:14,padding:16,display:"flex",flexDirection:"column",position:"relative"}}>
+                  <div style={{background:A.surface,border:`1.5px solid ${planLabel==="free"?GOLD:A.border}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column",position:"relative"}}>
                     {planLabel==="free"&&<div style={{position:"absolute",top:-10,left:12,background:GOLD,color:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:10}}>Current</div>}
                     <div style={{fontSize:13,fontWeight:800,color:GOLD,marginBottom:2}}>Free</div>
-                    <div style={{fontSize:10,color:A.muted,marginBottom:6}}>6 credits/mo</div>
-                    <div style={{fontSize:22,fontWeight:900,color:A.text,marginBottom:10}}>$0</div>
-                    <div style={{flex:1,marginBottom:12}}>
-                      {["Carousel generator","Quote cards","AI captions","Watermarked downloads"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:A.muted,marginBottom:5,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
+                    <div style={{fontSize:10,color:A.muted,marginBottom:6}}>6 credits/month</div>
+                    <div style={{fontSize:24,fontWeight:900,color:A.text,marginBottom:14}}>$0</div>
+                    <div style={{flex:1,marginBottom:14}}>
+                      {["Carousel generator","Quote cards","AI captions","Punchy/Balanced/Depth modes","Watermarked downloads","3 carousels to try the tool"].map(f=>(
+                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:A.muted,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
                     {planLabel==="free"
-                      ? <button disabled style={{width:"100%",padding:"9px",background:A.border,color:A.muted,borderRadius:8,fontWeight:700,fontSize:11,border:"none",cursor:"default"}}>Current Plan</button>
-                      : <button onMouseEnter={()=>setHoveredBtn("free_down")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>window.open(process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL,"_blank")} style={{width:"100%",padding:"9px",background:"none",border:`1px solid ${A.border}`,color:A.muted,borderRadius:8,fontWeight:700,fontSize:11,cursor:"pointer"}}>Downgrade</button>
+                      ? <button disabled style={{width:"100%",padding:"10px",background:GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:11,border:"none",cursor:"default"}}>Current Plan</button>
+                      : <button onMouseEnter={()=>setHoveredBtn("free_down")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>window.open(process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL,"_blank")} style={{width:"100%",padding:"10px",background:"none",border:`1px solid ${A.border}`,color:A.muted,borderRadius:8,fontWeight:700,fontSize:11,cursor:"pointer"}}>Downgrade</button>
                     }
                   </div>
                   {/* Starter */}
-                  <div style={{background:A.surface,border:`1.5px solid ${planLabel==="starter"?GOLD:A.border}`,borderRadius:14,padding:16,display:"flex",flexDirection:"column",position:"relative"}}>
+                  <div style={{background:A.surface,border:`1.5px solid ${planLabel==="starter"?GOLD:A.border}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column",position:"relative"}}>
                     {planLabel==="starter"&&<div style={{position:"absolute",top:-10,left:12,background:GOLD,color:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:10}}>Current</div>}
                     <div style={{fontSize:13,fontWeight:800,color:GOLD,marginBottom:2}}>Starter</div>
-                    <div style={{fontSize:10,color:A.muted,marginBottom:6}}>20 credits/mo</div>
-                    <div style={{fontSize:22,fontWeight:900,color:A.text,marginBottom:10}}>$20<span style={{fontSize:11,fontWeight:500,color:A.muted}}>/mo</span></div>
-                    <div style={{flex:1,marginBottom:12}}>
-                      {["No watermark","Carousel generator","Quote cards & captions","AI rewrites & history","20% affiliate commission","8% Tier 2 on network"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:A.text,marginBottom:5,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
+                    <div style={{fontSize:10,color:A.muted,marginBottom:6}}>20 credits/month</div>
+                    <div style={{fontSize:24,fontWeight:900,color:A.text,marginBottom:14}}>$20<span style={{fontSize:11,fontWeight:500,color:A.muted}}>/mo</span></div>
+                    <div style={{flex:1,marginBottom:14}}>
+                      {["No watermark on downloads","Carousel generator","Quote cards & captions","AI rewrites","History & saves","20% affiliate commission","8% Tier 2 on your network"].map(f=>(
+                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:A.text,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
                     {planLabel==="starter"
-                      ? <button disabled style={{width:"100%",padding:"9px",background:A.border,color:A.muted,borderRadius:8,fontWeight:700,fontSize:11,border:"none",cursor:"default"}}>Current Plan</button>
+                      ? <button disabled style={{width:"100%",padding:"10px",background:GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:11,border:"none",cursor:"default"}}>Current Plan</button>
                       : planLabel==="free"
-                      ? <button onMouseEnter={()=>setHoveredBtn("starter")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID)} style={{width:"100%",padding:"9px",background:hoveredBtn==="starter"?"#1a1a1a":A.text,color:A.accentText,borderRadius:8,fontWeight:700,fontSize:11,border:"none",transition:"all 0.2s"}}>Get Starter</button>
-                      : <button onMouseEnter={()=>setHoveredBtn("starter_d")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>window.open(process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL,"_blank")} style={{width:"100%",padding:"9px",background:"none",border:`1px solid ${A.border}`,color:A.muted,borderRadius:8,fontWeight:700,fontSize:11,cursor:"pointer"}}>Downgrade</button>
+                      ? <button onMouseEnter={()=>setHoveredBtn("starter")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID)} style={{width:"100%",padding:"10px",background:hoveredBtn==="starter"?"#1a1a1a":A.text,color:A.accentText,borderRadius:8,fontWeight:700,fontSize:11,border:"none",transition:"all 0.2s"}}>Get Starter</button>
+                      : <button onMouseEnter={()=>setHoveredBtn("starter_d")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>window.open(process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL,"_blank")} style={{width:"100%",padding:"10px",background:"none",border:`1px solid ${A.border}`,color:A.muted,borderRadius:8,fontWeight:700,fontSize:11,cursor:"pointer"}}>Downgrade</button>
                     }
                   </div>
                   {/* Pro — best value */}
-                  <div style={{background:"#111",border:`2px solid ${GOLD}`,borderRadius:14,padding:16,display:"flex",flexDirection:"column",position:"relative"}}>
-                    <div style={{position:"absolute",top:-10,right:10,background:planLabel==="pro"?"rgba(187,153,0,0.4)":GOLD,color:planLabel==="pro"?GOLD:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:10}}>{planLabel==="pro"?"Current":"Best value"}</div>
+                  <div style={{background:"#111",border:`2px solid ${GOLD}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column",position:"relative"}}>
+                    <div style={{position:"absolute",top:-10,right:10,background:planLabel==="pro"?GOLD:GOLD,color:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:10}}>{planLabel==="pro"?"✓ Current":"Best value"}</div>
                     <div style={{fontSize:13,fontWeight:800,color:GOLD,marginBottom:2}}>Pro</div>
-                    <div style={{fontSize:10,color:"rgba(255,255,255,0.5)",marginBottom:6}}>80 credits/mo</div>
-                    <div style={{fontSize:22,fontWeight:900,color:GOLD,marginBottom:10}}>$50<span style={{fontSize:11,fontWeight:500,color:"rgba(255,255,255,0.4)"}}>/mo</span></div>
-                    <div style={{flex:1,marginBottom:12}}>
-                      {["Everything in Starter","~40 carousels/month","30% affiliate commission","8% Tier 2 on network","Refer 3 — Pro pays itself"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:"#fff",marginBottom:5,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
+                    <div style={{fontSize:10,color:"rgba(255,255,255,0.5)",marginBottom:6}}>80 credits/month</div>
+                    <div style={{fontSize:24,fontWeight:900,color:GOLD,marginBottom:14}}>$50<span style={{fontSize:11,fontWeight:500,color:"rgba(255,255,255,0.4)"}}>/mo</span></div>
+                    <div style={{flex:1,marginBottom:14}}>
+                      {["Everything in Starter","~40 carousels/month","30% affiliate commission","8% Tier 2 on your network","Refer 3 — Pro pays itself","Priority support","Early feature access"].map(f=>(
+                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:"#fff",marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
                     {planLabel==="pro"
-                      ? <button disabled style={{width:"100%",padding:"9px",background:"rgba(187,153,0,0.2)",color:GOLD,borderRadius:8,fontWeight:700,fontSize:11,border:"none",cursor:"default"}}>Current Plan</button>
+                      ? <button disabled style={{width:"100%",padding:"10px",background:GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:11,border:"none",cursor:"default"}}>Current Plan</button>
                       : planLabel==="agency"
-                      ? <button onMouseEnter={()=>setHoveredBtn("pro_d")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>window.open(process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL,"_blank")} style={{width:"100%",padding:"9px",background:"none",border:`1px solid ${GOLD}44`,color:GOLD,borderRadius:8,fontWeight:700,fontSize:11,cursor:"pointer"}}>Downgrade</button>
-                      : <button onMouseEnter={()=>setHoveredBtn("pro")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"9px",background:hoveredBtn==="pro"?"#e6c45a":GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:11,border:"none",transition:"all 0.2s"}}>Get Pro</button>
+                      ? <button onMouseEnter={()=>setHoveredBtn("pro_d")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>window.open(process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL,"_blank")} style={{width:"100%",padding:"10px",background:"none",border:`1px solid ${GOLD}`,color:GOLD,borderRadius:8,fontWeight:700,fontSize:11,cursor:"pointer"}}>Downgrade</button>
+                      : <button onMouseEnter={()=>setHoveredBtn("pro")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID)} style={{width:"100%",padding:"10px",background:hoveredBtn==="pro"?"#e6c45a":GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:11,border:"none",transition:"all 0.2s"}}>Get Pro</button>
                     }
                   </div>
                   {/* Agency */}
-                  <div style={{background:A.surface,border:`1.5px solid ${planLabel==="agency"?GOLD:A.border}`,borderRadius:14,padding:16,display:"flex",flexDirection:"column",position:"relative"}}>
+                  <div style={{background:A.surface,border:`1.5px solid ${planLabel==="agency"?GOLD:A.border}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column",position:"relative"}}>
                     {planLabel==="agency"&&<div style={{position:"absolute",top:-10,left:12,background:GOLD,color:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:10}}>Current</div>}
                     <div style={{fontSize:13,fontWeight:800,color:GOLD,marginBottom:2}}>Agency</div>
-                    <div style={{fontSize:10,color:A.muted,marginBottom:6}}>300 credits/mo</div>
-                    <div style={{fontSize:22,fontWeight:900,color:A.text,marginBottom:10}}>$100<span style={{fontSize:11,fontWeight:500,color:A.muted}}>/mo</span></div>
-                    <div style={{flex:1,marginBottom:12}}>
-                      {["Everything in Pro","~150 carousels/month","40% affiliate commission","8% Tier 2 on network","Multiple brands & clients"].map(f=>(
-                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:A.text,marginBottom:5,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
+                    <div style={{fontSize:10,color:A.muted,marginBottom:6}}>300 credits/month</div>
+                    <div style={{fontSize:24,fontWeight:900,color:A.text,marginBottom:14}}>$100<span style={{fontSize:11,fontWeight:500,color:A.muted}}>/mo</span></div>
+                    <div style={{flex:1,marginBottom:14}}>
+                      {["Everything in Pro","~150 carousels/month","40% affiliate commission","8% Tier 2 on your network","Enough credits for multiple brands","High volume creators & agencies","Priority support"].map(f=>(
+                        <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:A.text,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
                     {planLabel==="agency"
-                      ? <button disabled style={{width:"100%",padding:"9px",background:A.border,color:A.muted,borderRadius:8,fontWeight:700,fontSize:11,border:"none",cursor:"default"}}>Current Plan</button>
-                      : <button onMouseEnter={()=>setHoveredBtn("agency")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID)} style={{width:"100%",padding:"9px",background:hoveredBtn==="agency"?"#1a1a1a":A.text,color:A.accentText,borderRadius:8,fontWeight:700,fontSize:11,border:"none",transition:"all 0.2s"}}>Get Agency</button>
+                      ? <button disabled style={{width:"100%",padding:"10px",background:GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:11,border:"none",cursor:"default"}}>Current Plan</button>
+                      : <button onMouseEnter={()=>setHoveredBtn("agency")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID)} style={{width:"100%",padding:"10px",background:hoveredBtn==="agency"?"#1a1a1a":A.text,color:A.accentText,borderRadius:8,fontWeight:700,fontSize:11,border:"none",transition:"all 0.2s"}}>Get Agency</button>
                     }
                   </div>
                 </div>
@@ -3153,9 +3127,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <div><span style={{fontSize:16,fontWeight:800,color:"#fff"}}>Affiliate Licence</span><span style={{fontSize:10,fontWeight:700,padding:"2px 10px",background:GOLD,borderRadius:20,color:"#000",marginLeft:10}}>🔥 Founding price</span></div>
                     <div style={{fontSize:22,fontWeight:800,color:GOLD}}>$297 <span style={{fontSize:12,fontWeight:500,color:"rgba(255,255,255,0.5)"}}>one-time</span></div>
                   </div>
-                  <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 14px",lineHeight:1.6}}>Pay once. Use forever. No monthly subscription. Earn 35% recurring commission on every referral for life.</p>
+                  <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 14px",lineHeight:1.6}}>Pay once. Earn <strong style={{color:GOLD}}>forever</strong>. No monthly fee — ever. Your commissions never stop, even if you never pay another penny.</p>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:16}}>
-                    {["15 credits/month for demos","35% recurring commission","8% Tier 2 on your network","No monthly subscription ever","Pays for itself after a few referrals","Founding price — won't last"].map(f=>(
+                    {["15 credits/month for demos","35% lifetime recurring commission","8% Tier 2 on your network","One payment — no monthly fee ever","Commissions never stop","Pays for itself after a few referrals","Founding price — won't last","Full affiliate dashboard access"].map(f=>(
                       <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:"#fff",lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
                     ))}
                   </div>
@@ -3168,9 +3142,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <div><span style={{fontSize:16,fontWeight:800,color:"#fff"}}>White Label</span><span style={{fontSize:10,fontWeight:700,padding:"2px 10px",background:"#6644cc",borderRadius:20,color:"#fff",marginLeft:10}}>Your brand</span></div>
                     <div style={{fontSize:22,fontWeight:800,color:"#9977ff"}}>$497 <span style={{fontSize:12,fontWeight:500,color:"rgba(255,255,255,0.5)"}}>one-time</span></div>
                   </div>
-                  <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 14px",lineHeight:1.6}}>Your brand, your domain, your product. Resell Carousel Studio as your own tool. One payment. Lifetime access.</p>
+                  <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 14px",lineHeight:1.6}}>Your brand, your domain, your product. Resell as your own tool. Pay once and earn <strong style={{color:"#9977ff"}}>40% lifetime commission</strong> on every client — forever.</p>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:16}}>
-                    {["Your brand & domain","Resell as your own product","80 credits/month included","40% affiliate commission","8% Tier 2 on your network","No monthly fee ever"].map(f=>(
+                    {["Your brand & domain","Resell as your own product","80 credits/month included","40% lifetime recurring commission","8% Tier 2 on your network","No monthly fee ever","One payment — lifetime access","Full affiliate dashboard access"].map(f=>(
                       <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:"#fff",lineHeight:1.4}}><span style={{color:"#9977ff",fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
                     ))}
                   </div>
