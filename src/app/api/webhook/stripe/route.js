@@ -222,7 +222,7 @@ async function logCommissions(subscriberEmail, stripePaymentId, plan, saleAmount
         .single();
 
       if (tier2Affiliate?.affiliate_active) {
-        const tier2Rate = 0.08;
+        const tier2Rate = 0.15;
         const tier2Amount = saleAmount * tier2Rate;
 
         const { data: existing2 } = await supabase
