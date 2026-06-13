@@ -725,7 +725,7 @@ export default function App() {
     } catch {}
   };
 
-  const isUnlimitedPlan = (plan) => plan === "pro" || plan === "agency";
+  const isUnlimitedPlan = (plan) => false;
 
   const creditsRemaining = () => {
     if (!currentUser) return 0;
@@ -1901,10 +1901,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           {/* Credit counter — desktop only */}
           {currentUser&&(
             <div className="desktop-only" style={{display:"flex",alignItems:"center",gap:6,padding:"0 10px",borderLeft:`1px solid ${A.border}`,marginLeft:4}}>
-              <span style={{fontSize:11,fontWeight:700,color:currentUser.plan==="free"&&creditsRemaining()===0?"#c0392b":currentUser.plan==="free"&&creditsRemaining()===1?"#e67e22":isUnlimitedPlan(currentUser.plan)?GOLD:A.muted}}>
-                {isUnlimitedPlan(currentUser.plan)?(currentUser.plan==="agency"?"Agency ∞":"Pro ∞"):currentUser.plan==="starter"?`${creditsRemaining()} left`:currentUser.plan==="affiliate_licence"?`${creditsRemaining()} left`:currentUser.plan==="white_label"?`${creditsRemaining()} left`:creditsRemaining()===1?"1 credit left ⚠️":`${creditsRemaining()} free`}
+              <span style={{fontSize:11,fontWeight:700,color:currentUser.plan==="free"&&creditsRemaining()===0?"#c0392b":currentUser.plan==="free"&&creditsRemaining()===1?"#e67e22":GOLD}}>
+                {currentUser.plan==="free"&&creditsRemaining()===0?"No credits left":currentUser.plan==="free"&&creditsRemaining()===1?"1 credit left ⚠️":currentUser.plan==="free"?`${creditsRemaining()} free`:`${creditsRemaining()} left`}
               </span>
-              {currentUser.plan!=="pro"&&<button onClick={()=>setUpgradePrompt(true)} style={{fontSize:10,fontWeight:700,padding:"3px 8px",background:GOLD,color:"#000",border:"none",borderRadius:5}}>Upgrade</button>}
+              {planLabel!=="affiliate_licence"&&planLabel!=="white_label"&&<button onClick={()=>setUpgradePrompt(true)} style={{fontSize:10,fontWeight:700,padding:"3px 8px",background:GOLD,color:"#000",border:"none",borderRadius:5}}>Upgrade</button>}
             </div>
           )}
           <button onClick={()=>{if(window.confirm("Reset app? This will clear all brand settings and history.")){{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}}}} className="desktop-reset" style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center"}}>Reset app</button>
@@ -1916,10 +1916,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           {/* Credits in burger menu */}
           {currentUser&&(
             <div style={{padding:"12px 24px",borderBottom:`1px solid ${A.border}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-              <span style={{fontSize:14,fontWeight:700,color:currentUser.plan==="free"&&creditsRemaining()===0?"#c0392b":currentUser.plan==="free"&&creditsRemaining()===1?"#e67e22":isUnlimitedPlan(currentUser.plan)?GOLD:A.muted}}>
-                {isUnlimitedPlan(currentUser.plan)?(currentUser.plan==="agency"?"Agency — Unlimited":"Pro — Unlimited"):currentUser.plan==="starter"?`${creditsRemaining()} credits left`:currentUser.plan==="affiliate_licence"?`${creditsRemaining()} credits left`:currentUser.plan==="white_label"?`${creditsRemaining()} credits left`:creditsRemaining()===1?"⚠️ 1 credit left":`${creditsRemaining()} free credits`}
+              <span style={{fontSize:14,fontWeight:700,color:currentUser.plan==="free"&&creditsRemaining()===0?"#c0392b":currentUser.plan==="free"&&creditsRemaining()===1?"#e67e22":GOLD}}>
+                {currentUser.plan==="free"&&creditsRemaining()===0?"No credits left":currentUser.plan==="free"&&creditsRemaining()===1?"⚠️ 1 credit left":currentUser.plan==="free"?`${creditsRemaining()} free credits`:`${creditsRemaining()} credits left`}
               </span>
-              {currentUser.plan!=="pro"&&<button onClick={()=>{setMenuOpen(false);setUpgradePrompt(true);}} style={{fontSize:12,fontWeight:700,padding:"6px 14px",background:GOLD,color:"#000",border:"none",borderRadius:6}}>Upgrade</button>}
+              {planLabel!=="affiliate_licence"&&planLabel!=="white_label"&&<button onClick={()=>{setMenuOpen(false);setUpgradePrompt(true);}} style={{fontSize:12,fontWeight:700,padding:"6px 14px",background:GOLD,color:"#000",border:"none",borderRadius:6}}>Upgrade</button>}
             </div>
           )}
           {BURGER_ITEMS.map(([id,label])=>(
@@ -3162,15 +3162,31 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </>
             )}
 
-            {/* Agency user — manage subscription only */}
+            {/* Agency user — manage subscription + licence options */}
             {planLabel==="agency"&&(
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
-                <label style={lbl}>Manage subscription</label>
-                <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Update payment method, download invoices, or cancel.</p>
-                <a href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL} target="_blank" rel="noopener noreferrer" style={{display:"block",textAlign:"center",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:14,textDecoration:"none"}}>
-                  Manage Subscription
-                </a>
-              </div>
+              <>
+                <div style={{background:"linear-gradient(135deg,#1a0a00,#2a1500)",border:`1.5px solid ${GOLD}`,borderRadius:14,padding:24,marginBottom:16}}>
+                  <label style={{...lbl,color:GOLD}}>Affiliate Licence — pay once, earn forever</label>
+                  <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"8px 0 16px",lineHeight:1.6}}>$297 one-time. 35% recurring commission for life. No monthly fee ever. 15 credits/month for demos.</p>
+                  <button onMouseEnter={()=>setHoveredBtn("afflicence4")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AFFILIATE_PRICE_ID,"payment")} style={{width:"100%",padding:"13px",background:hoveredBtn==="afflicence4"?"#e6c45a":GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:14,border:"none",transform:hoveredBtn==="afflicence4"?"translateY(-1px)":"none",boxShadow:hoveredBtn==="afflicence4"?"0 4px 20px rgba(187,153,0,0.4)":"none",transition:"all 0.2s"}}>
+                    Get Affiliate Licence — $297 once
+                  </button>
+                </div>
+                <div style={{background:"linear-gradient(135deg,#0a001a,#15002a)",border:"1.5px solid #6644cc",borderRadius:14,padding:24,marginBottom:16}}>
+                  <label style={{...lbl,color:"#9977ff"}}>White Label — your brand, your product</label>
+                  <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"8px 0 16px",lineHeight:1.6}}>$497 one-time. Your logo, your domain. Resell as your own tool. 40% commission. 80 credits/month.</p>
+                  <button onMouseEnter={()=>setHoveredBtn("wl4")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_WHITELABEL_PRICE_ID,"payment")} style={{width:"100%",padding:"13px",background:hoveredBtn==="wl4"?"#7755dd":"#6644cc",color:"#fff",borderRadius:10,fontWeight:700,fontSize:14,border:"none",transform:hoveredBtn==="wl4"?"translateY(-1px)":"none",transition:"all 0.2s"}}>
+                    Get White Label — $497 once
+                  </button>
+                </div>
+                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+                  <label style={lbl}>Manage subscription</label>
+                  <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Update payment method, download invoices, or cancel.</p>
+                  <a href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL} target="_blank" rel="noopener noreferrer" style={{display:"block",textAlign:"center",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:14,textDecoration:"none"}}>
+                    Manage Subscription
+                  </a>
+                </div>
+              </>
             )}
 
             {/* Licence holders — manage only */}
