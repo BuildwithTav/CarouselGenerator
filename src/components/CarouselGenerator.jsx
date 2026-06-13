@@ -1471,7 +1471,7 @@ Return ONLY a JSON array of ${needed} strings.`;
       </div>`;
     const classicHandle = showHandle&&handleStr ? `
       <div style="position:absolute;bottom:${Math.round(100*s)}px;left:0;right:0;text-align:center;z-index:6;">
-        <span style="color:${subColor};font-size:${Math.round(24*s)}px;font-family:'${sigFont}',cursive,serif;letter-spacing:${Math.round(3*s)}px;opacity:0.7;">${esc(handleStr)}</span>
+        <span style="color:${subColor};font-size:${Math.round(24*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:${Math.round(3*s)}px;opacity:0.85;">${esc(handleStr)}</span>
       </div>` : "";
 
     const luxuryHTML = `
@@ -1523,7 +1523,7 @@ Return ONLY a JSON array of ${needed} strings.`;
       </div>`;
     const luxuryHandle = showHandle&&handleStr ? `
       <div style="position:absolute;bottom:${Math.round(100*s)}px;left:0;right:0;text-align:center;z-index:6;">
-        <span style="color:${luxAccent};font-size:${Math.round(24*s)}px;font-family:'${sigFont}',cursive,serif;letter-spacing:${Math.round(4*s)}px;opacity:0.65;">${esc(handleStr)}</span>
+        <span style="color:${luxAccent};font-size:${Math.round(22*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:${Math.round(5*s)}px;opacity:0.8;">${esc(handleStr)}</span>
       </div>` : "";
 
     const femBg = isDark ? "#0e0c0c" : "#FAF6F2";
@@ -1581,7 +1581,7 @@ Return ONLY a JSON array of ${needed} strings.`;
       </div>`;
     const feminineHandle = showHandle&&handleStr ? `
       <div style="position:absolute;bottom:${Math.round(150*s)}px;left:0;right:0;text-align:center;z-index:10;">
-        <span style="color:${femAccent};font-size:${Math.round(24*s)}px;font-family:'${sigFont}',cursive,serif;letter-spacing:${Math.round(2*s)}px;opacity:0.65;">${esc(handleStr)}</span>
+        <span style="color:${femAccent};font-size:${Math.round(22*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:${Math.round(3*s)}px;opacity:0.85;">${esc(handleStr)}</span>
       </div>` : "";
 
     const rawTextC = isDark ? "#FFFFFF" : "#0A0A0A";
@@ -1597,7 +1597,7 @@ Return ONLY a JSON array of ${needed} strings.`;
       </div>`;
     const rawHandle = showHandle&&handleStr ? `
       <div style="position:absolute;bottom:${Math.round(100*s)}px;left:${Math.round(60*s)}px;z-index:6;">
-        <span style="color:${rawTextC};font-size:${Math.round(22*s)}px;font-family:'${sigFont}',cursive,serif;opacity:0.4;letter-spacing:${Math.round(2*s)}px;">${esc(handleStr)}</span>
+        <span style="color:${rawTextC};font-size:${Math.round(22*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;opacity:0.6;letter-spacing:${Math.round(3*s)}px;">${esc(handleStr)}</span>
       </div>` : "";
 
     const customDivider = `
@@ -1609,7 +1609,7 @@ Return ONLY a JSON array of ${needed} strings.`;
     const isLeft = tmpl === "raw" && !hasBgImg;
     const tExtras = { classic: classicHTML, luxury: luxuryHTML, feminine: feminineHTML, raw: rawHTML, custom: "" }[tmpl] || "";
     const tDivider = { classic: classicDivider, luxury: luxuryDivider, feminine: feminineDivider, raw: rawDivider, custom: customDivider }[tmpl] || customDivider;
-    const tHandle = { classic: classicHandle, luxury: luxuryHandle, feminine: feminineHandle, raw: rawHandle, custom: "" }[tmpl] || (showHandle&&handleStr?`<div style="position:absolute;bottom:${handleBottom}px;left:0;right:0;text-align:center;z-index:6;"><span style="color:${accent};font-size:${Math.round(26*s)}px;font-family:'${sigFont}',cursive,serif;letter-spacing:2px;opacity:0.75;">${esc(handleStr)}</span></div>`:"");
+    const tHandle = { classic: classicHandle, luxury: luxuryHandle, feminine: feminineHandle, raw: rawHandle, custom: "" }[tmpl] || (showHandle&&handleStr?`<div style="position:absolute;bottom:${handleBottom}px;left:0;right:0;text-align:center;z-index:6;"><span style="color:${accent};font-size:${Math.round(26*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:3px;opacity:0.85;">${esc(handleStr)}</span></div>`:"");
     const cardBg = tmpl === "feminine" ? femBg : bg;
     const cardTextColor = tmpl === "feminine" ? femText : textColor;
     const cardSubColor = tmpl === "feminine" ? (isDark?"rgba(245,237,232,0.7)":"rgba(58,37,32,0.6)") : subColor;
