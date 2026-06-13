@@ -988,7 +988,7 @@ export default function App() {
         if (res.status === 429) {
           const d = await res.json();
           if (d.error === "credits_exhausted" || d.error === "fair_use_limit") {
-            setUpgradePrompt(true);
+            setNav("upgrade");
             throw new Error("credits_exhausted");
           }
         }
@@ -1070,7 +1070,7 @@ Return ONLY valid JSON array:
   const generate = async (topicOverride) => {
     const t = topicOverride || topic;
     if (!t.trim()) { setErr("Add a topic first."); return; }
-    if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
+    if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (!confirmLastCredit()) return;
     await checkMonthlyReset();
     setErr(""); setAngle(""); setView("generating"); setLastTopic(t);
@@ -1176,7 +1176,7 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const generateCaption = async () => {
-    if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
+    if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (!confirmLastCredit()) return;
     setGeneratingCaption(true);
     setShowCaption(false);
@@ -1205,7 +1205,7 @@ Return ONLY valid JSON, nothing else.` }
 
   const rewrite = async () => {
     if (!rewritePrompt.trim()) return;
-    if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
+    if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (!confirmLastCredit()) return;
     setRewriting(true);
     try {
@@ -1243,7 +1243,7 @@ Return ONLY valid JSON, nothing else.` }
   }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays,gradientMode,currentUser]);
 
   const downloadOne = async (i) => {
-    if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
+    if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (!confirmLastCredit()) return;
     setDownloading(true);
     try {
@@ -1332,7 +1332,7 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const downloadAll = async () => {
-    if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
+    if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (!confirmLastCredit()) return;
     setDownloadingAll(true);
     const mobile = isMobileDevice();
@@ -1378,7 +1378,7 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   const generateQuotes = async () => {
-    if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
+    if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (!confirmLastCredit()) return;
     await checkMonthlyReset();
     setGeneratingQuotes(true);
@@ -1682,7 +1682,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
   const downloadAllQuotes = async () => {
     const filled = quoteInputs.filter(q => q.trim());
-    if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
+    if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (filled.length > 1 && !isUnlimitedPlan(currentUser?.plan) && !currentUser?.is_admin) {
       if (!window.confirm(`Downloading all ${filled.length} quote cards will use ${filled.length} credits. Continue?`)) return;
     }
@@ -1855,7 +1855,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 : "More credits, more features. Cancel anytime."}
             </p>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <button onClick={()=>{setUpgradePrompt(false);setNav("account");}} style={{padding:"14px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:15,border:"none",textAlign:"center"}}>
+              <button onClick={()=>{setUpgradePrompt(false);setNav("upgrade");}} style={{padding:"14px",background:GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:15,border:"none",textAlign:"center"}}>
                 See All Plans & Pricing →
               </button>
               <button onClick={()=>setUpgradePrompt(false)} style={{padding:"10px",background:"none",color:A.muted,border:"none",fontSize:13}}>Maybe later</button>
@@ -1904,7 +1904,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <span style={{fontSize:11,fontWeight:700,color:currentUser.plan==="free"&&creditsRemaining()===0?"#c0392b":currentUser.plan==="free"&&creditsRemaining()===1?"#e67e22":GOLD}}>
                 {currentUser.plan==="free"&&creditsRemaining()===0?"No credits left":currentUser.plan==="free"&&creditsRemaining()===1?"1 credit left ⚠️":currentUser.plan==="free"?`${creditsRemaining()} free`:`${creditsRemaining()} left`}
               </span>
-              {planLabel!=="affiliate_licence"&&planLabel!=="white_label"&&<button onClick={()=>setUpgradePrompt(true)} style={{fontSize:10,fontWeight:700,padding:"3px 8px",background:GOLD,color:"#000",border:"none",borderRadius:5}}>Upgrade</button>}
+              {planLabel!=="affiliate_licence"&&planLabel!=="white_label"&&<button onClick={()=>setNav("upgrade")} style={{fontSize:10,fontWeight:700,padding:"3px 8px",background:GOLD,color:"#000",border:"none",borderRadius:5}}>Upgrade</button>}
             </div>
           )}
           <button onClick={()=>{if(window.confirm("Reset app? This will clear all brand settings and history.")){{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem("bwt_history");window.location.reload();}}}} className="desktop-reset" style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,marginLeft:4,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center"}}>Reset app</button>
@@ -1919,7 +1919,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <span style={{fontSize:14,fontWeight:700,color:currentUser.plan==="free"&&creditsRemaining()===0?"#c0392b":currentUser.plan==="free"&&creditsRemaining()===1?"#e67e22":GOLD}}>
                 {currentUser.plan==="free"&&creditsRemaining()===0?"No credits left":currentUser.plan==="free"&&creditsRemaining()===1?"⚠️ 1 credit left":currentUser.plan==="free"?`${creditsRemaining()} free credits`:`${creditsRemaining()} credits left`}
               </span>
-              {planLabel!=="affiliate_licence"&&planLabel!=="white_label"&&<button onClick={()=>{setMenuOpen(false);setUpgradePrompt(true);}} style={{fontSize:12,fontWeight:700,padding:"6px 14px",background:GOLD,color:"#000",border:"none",borderRadius:6}}>Upgrade</button>}
+              {planLabel!=="affiliate_licence"&&planLabel!=="white_label"&&<button onClick={()=>{setMenuOpen(false);setNav("upgrade");}} style={{fontSize:12,fontWeight:700,padding:"6px 14px",background:GOLD,color:"#000",border:"none",borderRadius:6}}>Upgrade</button>}
             </div>
           )}
           {BURGER_ITEMS.map(([id,label])=>(
@@ -2201,7 +2201,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                           <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
                         </div>
                         <button onClick={async()=>{
-                          if (!canGenerate()) { setUpgradePrompt(true); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
+                          if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
                           try {
                             const blob = await downloadQuote(q, i);
                             const url = URL.createObjectURL(blob);
@@ -2947,8 +2947,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <p style={{color:A.muted,fontSize:14,margin:0}}>{currentUser?.email}</p>
             </div>
 
-
-            {/* Affiliate Dashboard — shown at top for paid users */}
+            {/* Current plan summary */}
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+              <div>
+                <div style={{fontSize:11,color:A.muted,marginBottom:4}}>Current plan</div>
+                <div style={{fontSize:20,fontWeight:800,color:GOLD,textTransform:"capitalize"}}>{currentUser?.plan==="affiliate_licence"?"Affiliate Licence":currentUser?.plan==="white_label"?"White Label":currentUser?.plan}</div>
+                <div style={{fontSize:13,color:A.muted,marginTop:2}}>{currentUser?.plan==="free"?`${creditsRemaining()} trial credits remaining`:`${creditsRemaining()} credits remaining this month`}</div>
+              </div>
+              {planLabel!=="affiliate_licence"&&planLabel!=="white_label"&&(
+                <button onClick={()=>setNav("upgrade")} style={{background:GOLD,color:"#000",padding:"10px 20px",borderRadius:9,fontWeight:700,fontSize:13,border:"none",cursor:"pointer"}}>Upgrade →</button>
+              )}
+            </div>
             {planLabel!=="free"&&(
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
@@ -3047,7 +3056,120 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             )}
 
             {/* Free user — show upgrade options */}
-            {(planLabel==="free"||planLabel==="starter"||planLabel==="pro"||planLabel==="agency")&&(
+
+            {/* Licence holders — manage only */}
+            {(planLabel==="affiliate_licence"||planLabel==="white_label")&&(
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+                <label style={lbl}>Lifetime Licence</label>
+                <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>You have lifetime access. No subscription needed. Your credits reset monthly.</p>
+              </div>
+            )}
+
+            {/* Free user — affiliate info */}
+            {planLabel==="free"&&(
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+                <label style={lbl}>Affiliate Programme</label>
+                <p style={{fontSize:13,color:A.muted,margin:"8px 0 12px",lineHeight:1.6}}>Upgrade to any paid plan to unlock your affiliate link and start earning recurring commission.</p>
+                <div style={{background:A.bg,border:`1px solid ${A.border}`,borderRadius:10,padding:16}}>
+                  <div style={{fontSize:13,fontWeight:700,marginBottom:8}}>Commission rates:</div>
+                  {[["Starter","20% + 8% Tier 2"],["Pro","30% + 8% Tier 2"],["Agency","40% + 8% Tier 2"],["Affiliate Licence","35% + 8% Tier 2"],["White Label","40% + 8% Tier 2"]].map(([plan,rate])=>(
+                    <div key={plan} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:A.muted,marginBottom:4}}>
+                      <span>{plan}</span><span style={{color:GOLD,fontWeight:700}}>{rate}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Top-ups for paid plans */}
+            {planLabel!=="free"&&(
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+                <label style={lbl}>Need more credits this month?</label>
+                <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>One-time top-ups. Never expire.</p>
+                <div style={{display:"flex",gap:10}}>
+                  <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>15 credits</div><div style={{fontSize:12}}>$25 one-time</div></button>
+                  <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center",position:"relative"}}><div style={{position:"absolute",top:-8,right:8,fontSize:9,fontWeight:700,padding:"2px 6px",background:GOLD,color:"#000",borderRadius:4}}>Best value</div><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>30 credits</div><div style={{fontSize:12}}>$45 one-time</div></button>
+                </div>
+              </div>
+            )}
+
+            {/* Manage subscription */}
+            {planLabel!=="free"&&planLabel!=="affiliate_licence"&&planLabel!=="white_label"&&(
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
+                <label style={lbl}>Manage subscription</label>
+                <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Update payment method, download invoices, or cancel.</p>
+                <a href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL} target="_blank" rel="noopener noreferrer" style={{display:"block",textAlign:"center",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:14,textDecoration:"none"}}>Manage Subscription</a>
+              </div>
+            )}
+
+            <p style={{fontSize:11,color:A.muted,textAlign:"center",margin:"0 0 16px",lineHeight:1.6}}>Secure payment via Stripe. Questions? <a href="mailto:tav@buildwithtav.co" style={{color:GOLD,textDecoration:"none"}}>tav@buildwithtav.co</a> · <a href="/terms" target="_blank" style={{color:GOLD,textDecoration:"none"}}>Terms</a> · <a href="/privacy" target="_blank" style={{color:GOLD,textDecoration:"none"}}>Privacy</a></p>
+            <button onClick={logout} style={{width:"100%",padding:"13px",background:"none",border:`1.5px solid ${A.border}`,color:A.muted,borderRadius:10,fontWeight:600,fontSize:14}}>
+              Sign out
+            </button>
+          </div>
+        )}
+
+      {/* Mobile edit drawer */}
+      {editDrawerOpen&&slides[active]&&(
+        <>
+
+        <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1001,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0"}}>
+          <div style={{display:"flex",flexDirection:"column",maxHeight:"70svh"}}>
+          {/* Fixed header with preview - does not scroll */}
+          <div style={{flexShrink:0,padding:"12px 16px 0",borderRadius:"20px 20px 0 0",background:A.bg}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+              <div style={{fontWeight:800,fontSize:16}}>Edit Slide {active+1}</div>
+              <button onClick={()=>setEditDrawerOpen(false)} style={{background:"none",border:"none",fontSize:22,color:A.muted,cursor:"pointer"}}>✕</button>
+            </div>
+            {/* Slide number buttons */}
+            <div style={{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap"}}>
+            {slides.map((_,i)=>(
+              <button key={i} onClick={()=>{setActive(i);setTimeout(()=>{const el=document.querySelector(`[data-slide-index='${i}']`);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},100);}} style={{width:36,height:36,borderRadius:8,background:active===i?A.text:A.surface,border:`1.5px solid ${active===i?GOLD:A.border}`,color:active===i?A.accentText:A.muted,fontSize:13,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
+            ))}
+            </div>
+            {/* Pinned slide preview - fixed thumbnail, full slide scaled to fit */}
+            <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
+              <SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={false} isCover={active===0} previewSize={120} showWatermark={currentUser?.plan==="free"}/>
+            </div>
+          </div>
+          {/* Scrollable edit fields */}
+          <div className="drawer-scroll" style={{overflowY:"auto",padding:"0 16px 40px",flex:1,WebkitOverflowScrolling:"touch"}}>
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div>
+              <label style={lbl}>Background Gradient — {overlayDark}%</label>
+              <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
+            </div>
+            <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={{...inp,fontSize:16}}/></div>
+            <div><label style={lbl}>Headline</label><textarea value={slides[active]?.headline||""} onChange={e=>updateSlide("headline",e.target.value)} rows={3} style={{...inp,fontSize:16,resize:"none",lineHeight:1.5}}/></div>
+            <div><label style={lbl}>Accent Word</label><input value={slides[active]?.accent_word||""} onChange={e=>updateSlide("accent_word",e.target.value)} style={{...inp,fontSize:16}}/></div>
+            <div><label style={lbl}>Body</label><textarea value={slides[active]?.body||""} onChange={e=>updateSlide("body",e.target.value)} rows={4} style={{...inp,fontSize:16,resize:"none",lineHeight:1.6}}/></div>
+            <div><label style={lbl}>CTA <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(leave blank to hide)</span></label><input value={slides[active]?.cta_items?.[0]||""} onChange={e=>updateSlide("cta_items",e.target.value?[e.target.value]:[])} style={{...inp,fontSize:16}} placeholder="e.g. Save this so you can come back to it"/></div>
+            <div>
+              <label style={lbl}>AI Rewrite</label>
+              <div style={{display:"flex",gap:8}}>
+                <input value={rewritePrompt} onChange={e=>setRewritePrompt(e.target.value)} placeholder='"Make this punchier"' style={{...inp,flex:1,fontSize:13}}/>
+                <button onClick={()=>rewrite()} disabled={rewriting} style={{background:A.text,color:A.accentText,border:"none",borderRadius:9,padding:"0 14px",fontWeight:700,fontSize:13,cursor:"pointer",flexShrink:0}}>{rewriting?<Spin/>:"↺"}</button>
+              </div>
+            </div>
+          </div>
+          </div>
+          </div>
+        </div>
+      </>
+      )}
+
+
+        {/* UPGRADE VIEW — accessible via upgrade pill only */}
+        {nav==="upgrade"&&(
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:28}}>
+              <button onClick={()=>setNav("account")} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Back</button>
+              <div>
+                <h2 style={{fontSize:24,fontWeight:800,margin:0}}>Upgrade</h2>
+                <p style={{color:A.muted,fontSize:14,margin:0}}>Choose a plan or licence</p>
+              </div>
+            </div>
+{(planLabel==="free"||planLabel==="starter"||planLabel==="pro"||planLabel==="agency")&&(
               <>
                 {/* 4 plans side by side always */}
                 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:12}}>
@@ -3152,107 +3274,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
 
                 {/* Top-ups for paid plans */}
-                {planLabel!=="free"&&(
-                  <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
-                    <label style={lbl}>Need more credits this month?</label>
-                    <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>One-time top-ups. Never expire.</p>
-                    <div style={{display:"flex",gap:10}}>
-                      <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>15 credits</div><div style={{fontSize:12}}>$25 one-time</div></button>
-                      <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center",position:"relative"}}><div style={{position:"absolute",top:-8,right:8,fontSize:9,fontWeight:700,padding:"2px 6px",background:GOLD,color:"#000",borderRadius:4}}>Best value</div><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>30 credits</div><div style={{fontSize:12}}>$45 one-time</div></button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Manage subscription for paid plans */}
-                {planLabel!=="free"&&(
-                  <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
-                    <label style={lbl}>Manage subscription</label>
-                    <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>Update payment method, download invoices, or cancel.</p>
-                    <a href={process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL} target="_blank" rel="noopener noreferrer" style={{display:"block",textAlign:"center",padding:"13px",background:A.text,color:A.accentText,borderRadius:10,fontWeight:700,fontSize:14,textDecoration:"none"}}>Manage Subscription</a>
-                  </div>
-                )}
+                {/* Manage subscription */}
+                {/* These live in the Account tab */}
               </>
             )}
-
-            {/* Licence holders — manage only */}
-            {(planLabel==="affiliate_licence"||planLabel==="white_label")&&(
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
-                <label style={lbl}>Lifetime Licence</label>
-                <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>You have lifetime access. No subscription needed. Your credits reset monthly.</p>
-              </div>
-            )}
-
-            {/* Free user — affiliate info */}
-            {planLabel==="free"&&(
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
-                <label style={lbl}>Affiliate Programme</label>
-                <p style={{fontSize:13,color:A.muted,margin:"8px 0 12px",lineHeight:1.6}}>Upgrade to any paid plan to unlock your affiliate link and start earning recurring commission.</p>
-                <div style={{background:A.bg,border:`1px solid ${A.border}`,borderRadius:10,padding:16}}>
-                  <div style={{fontSize:13,fontWeight:700,marginBottom:8}}>Commission rates:</div>
-                  {[["Starter","20% + 8% Tier 2"],["Pro","30% + 8% Tier 2"],["Agency","40% + 8% Tier 2"],["Affiliate Licence","35% + 8% Tier 2"],["White Label","40% + 8% Tier 2"]].map(([plan,rate])=>(
-                    <div key={plan} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:A.muted,marginBottom:4}}>
-                      <span>{plan}</span><span style={{color:GOLD,fontWeight:700}}>{rate}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <p style={{fontSize:11,color:A.muted,textAlign:"center",margin:"0 0 16px",lineHeight:1.6}}>Secure payment via Stripe. Questions? <a href="mailto:tav@buildwithtav.co" style={{color:GOLD,textDecoration:"none"}}>tav@buildwithtav.co</a> · <a href="/terms" target="_blank" style={{color:GOLD,textDecoration:"none"}}>Terms</a> · <a href="/privacy" target="_blank" style={{color:GOLD,textDecoration:"none"}}>Privacy</a></p>
-            <button onClick={logout} style={{width:"100%",padding:"13px",background:"none",border:`1.5px solid ${A.border}`,color:A.muted,borderRadius:10,fontWeight:600,fontSize:14}}>
-              Sign out
-            </button>
           </div>
         )}
 
-      {/* Mobile edit drawer */}
-      {editDrawerOpen&&slides[active]&&(
-        <>
-
-        <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1001,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0"}}>
-          <div style={{display:"flex",flexDirection:"column",maxHeight:"70svh"}}>
-          {/* Fixed header with preview - does not scroll */}
-          <div style={{flexShrink:0,padding:"12px 16px 0",borderRadius:"20px 20px 0 0",background:A.bg}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-              <div style={{fontWeight:800,fontSize:16}}>Edit Slide {active+1}</div>
-              <button onClick={()=>setEditDrawerOpen(false)} style={{background:"none",border:"none",fontSize:22,color:A.muted,cursor:"pointer"}}>✕</button>
-            </div>
-            {/* Slide number buttons */}
-            <div style={{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap"}}>
-            {slides.map((_,i)=>(
-              <button key={i} onClick={()=>{setActive(i);setTimeout(()=>{const el=document.querySelector(`[data-slide-index='${i}']`);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},100);}} style={{width:36,height:36,borderRadius:8,background:active===i?A.text:A.surface,border:`1.5px solid ${active===i?GOLD:A.border}`,color:active===i?A.accentText:A.muted,fontSize:13,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
-            ))}
-            </div>
-            {/* Pinned slide preview - fixed thumbnail, full slide scaled to fit */}
-            <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
-              <SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={false} isCover={active===0} previewSize={120} showWatermark={currentUser?.plan==="free"}/>
-            </div>
-          </div>
-          {/* Scrollable edit fields */}
-          <div className="drawer-scroll" style={{overflowY:"auto",padding:"0 16px 40px",flex:1,WebkitOverflowScrolling:"touch"}}>
-          <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            <div>
-              <label style={lbl}>Background Gradient — {overlayDark}%</label>
-              <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
-            </div>
-            <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={{...inp,fontSize:16}}/></div>
-            <div><label style={lbl}>Headline</label><textarea value={slides[active]?.headline||""} onChange={e=>updateSlide("headline",e.target.value)} rows={3} style={{...inp,fontSize:16,resize:"none",lineHeight:1.5}}/></div>
-            <div><label style={lbl}>Accent Word</label><input value={slides[active]?.accent_word||""} onChange={e=>updateSlide("accent_word",e.target.value)} style={{...inp,fontSize:16}}/></div>
-            <div><label style={lbl}>Body</label><textarea value={slides[active]?.body||""} onChange={e=>updateSlide("body",e.target.value)} rows={4} style={{...inp,fontSize:16,resize:"none",lineHeight:1.6}}/></div>
-            <div><label style={lbl}>CTA <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(leave blank to hide)</span></label><input value={slides[active]?.cta_items?.[0]||""} onChange={e=>updateSlide("cta_items",e.target.value?[e.target.value]:[])} style={{...inp,fontSize:16}} placeholder="e.g. Save this so you can come back to it"/></div>
-            <div>
-              <label style={lbl}>AI Rewrite</label>
-              <div style={{display:"flex",gap:8}}>
-                <input value={rewritePrompt} onChange={e=>setRewritePrompt(e.target.value)} placeholder='"Make this punchier"' style={{...inp,flex:1,fontSize:13}}/>
-                <button onClick={()=>rewrite()} disabled={rewriting} style={{background:A.text,color:A.accentText,border:"none",borderRadius:9,padding:"0 14px",fontWeight:700,fontSize:13,cursor:"pointer",flexShrink:0}}>{rewriting?<Spin/>:"↺"}</button>
-              </div>
-            </div>
-          </div>
-          </div>
-          </div>
-        </div>
-      </>
-      )}
 
 
       <footer style={{borderTop:`1px solid ${A.border}`,padding:"14px 32px",textAlign:"center",marginTop:60}}>
