@@ -407,7 +407,8 @@ export async function POST(req) {
         .eq("email", user.email)
         .single();
 
-      const newCreditsUsed = (profile?.credits_used || 0) + 1;
+      const creditAmount = body.credits || 1;
+      const newCreditsUsed = (profile?.credits_used || 0) + creditAmount;
 
       await supabase.from("users").update({
         credits_used: newCreditsUsed
