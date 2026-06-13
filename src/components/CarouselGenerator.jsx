@@ -28,12 +28,28 @@ const BG_COLOUR_PRESETS = [
 ];
 
 const FONTS = [
-  { id:"montserrat", label:"Montserrat",    css:"Montserrat" },
-  { id:"playfair",   label:"Playfair",      css:"Playfair Display" },
-  { id:"poppins",    label:"Poppins",       css:"Poppins" },
-  { id:"inter",      label:"Inter",         css:"Inter" },
-  { id:"oswald",     label:"Oswald",        css:"Oswald" },
-  { id:"dancing",    label:"Dancing Script", css:"Dancing Script" },
+  { id:"montserrat",   label:"Montserrat",        css:"Montserrat" },
+  { id:"playfair",     label:"Playfair Display",  css:"Playfair Display" },
+  { id:"poppins",      label:"Poppins",           css:"Poppins" },
+  { id:"inter",        label:"Inter",             css:"Inter" },
+  { id:"oswald",       label:"Oswald",            css:"Oswald" },
+  { id:"dancing",      label:"Dancing Script",    css:"Dancing Script" },
+  { id:"raleway",      label:"Raleway",           css:"Raleway" },
+  { id:"lato",         label:"Lato",              css:"Lato" },
+  { id:"roboto",       label:"Roboto",            css:"Roboto" },
+  { id:"ubuntu",       label:"Ubuntu",            css:"Ubuntu" },
+  { id:"nunito",       label:"Nunito",            css:"Nunito" },
+  { id:"sourcesans",   label:"Source Sans",       css:"Source Sans 3" },
+  { id:"crimson",      label:"Crimson Text",      css:"Crimson Text" },
+  { id:"merriweather", label:"Merriweather",      css:"Merriweather" },
+  { id:"bebasneue",    label:"Bebas Neue",        css:"Bebas Neue" },
+  { id:"abril",        label:"Abril Fatface",     css:"Abril Fatface" },
+  { id:"pacifico",     label:"Pacifico",          css:"Pacifico" },
+  { id:"josefin",      label:"Josefin Sans",      css:"Josefin Sans" },
+  { id:"quicksand",    label:"Quicksand",         css:"Quicksand" },
+  { id:"dmserif",      label:"DM Serif Display",  css:"DM Serif Display" },
+  { id:"cormorant",    label:"Cormorant Garamond",css:"Cormorant Garamond" },
+  { id:"righteous",    label:"Righteous",         css:"Righteous" },
 ];
 
 const HEADLINE_STYLES = [
@@ -183,7 +199,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     return `${esc(before)}<span style="color:${C.accent}">${esc(accentPart)}</span>${esc(after)}`;
   }
 
-  const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&family=Dancing+Script:wght@600;700&display=swap`;
+  const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&family=Dancing+Script:wght@600;700&family=Raleway:wght@700;800;900&family=Lato:wght@700;900&family=Roboto:wght@700;900&family=Ubuntu:wght@700&family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@700;900&family=Crimson+Text:wght@700&family=Merriweather:wght@700;900&family=Bebas+Neue&family=Abril+Fatface&family=Pacifico&family=Josefin+Sans:wght@700&family=Quicksand:wght@700&family=DM+Serif+Display&family=Cormorant+Garamond:wght@700&family=Righteous&display=swap`;
   const ts = C.dark || bgImageUrl ? "text-shadow:0 2px 28px rgba(0,0,0,0.95);" : "";
   const ts2 = C.dark || bgImageUrl ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : "";
 
@@ -707,7 +723,7 @@ export default function App() {
         } catch {}
         setToken(d.access_token);
         if (d.refresh_token) setRefreshToken(d.refresh_token);
-        setCurrentUser(d.user||{ email: d.email, plan:"free", credits_used:0, credits_limit:6 }); setShowAuthModal(false); 
+        setCurrentUser(d.user||{ email: d.email, plan:"free", credits_used:0, credits_limit:60 }); setShowAuthModal(false); 
       }
     } catch { setAuthError("Something went wrong — try again."); }
     setAuthSubmitting(false);
@@ -730,14 +746,14 @@ export default function App() {
   const creditsRemaining = () => {
     if (!currentUser) return 0;
     if (isUnlimitedPlan(currentUser.plan) || currentUser.is_admin) return "∞";
-    const limit = (currentUser.credits_limit||6) + (currentUser.bonus_credits||0);
+    const limit = (currentUser.credits_limit||60) + (currentUser.bonus_credits||0);
     return Math.max(0, limit - (currentUser.credits_used||0));
   };
 
   const canGenerate = () => {
     if (!currentUser) return false;
     if (isUnlimitedPlan(currentUser.plan) || currentUser.is_admin) return true;
-    const limit = (currentUser.credits_limit||6) + (currentUser.bonus_credits||0);
+    const limit = (currentUser.credits_limit||60) + (currentUser.bonus_credits||0);
     return (currentUser.credits_used||0) < limit;
   };
 
@@ -1851,7 +1867,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             </h2>
             <p style={{fontSize:13,color:A.muted,margin:"0 0 24px",lineHeight:1.6}}>
               {creditsRemaining()===0
-                ? currentUser?.plan==="free" ? "Free accounts get 6 credits per month. Upgrade for more." : "You've hit your monthly limit. Upgrade to Pro for 80 credits/month."
+                ? currentUser?.plan==="free" ? "Free accounts get 6 credits per month. Upgrade for more." : "You've hit your monthly limit. Upgrade to Pro for 800 credits/month."
                 : "More credits, more features. Cancel anytime."}
             </p>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -2078,18 +2094,19 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
               <div>
                 <label style={lbl}>Quote font</label>
-                <div style={{display:"flex",gap:5,flexWrap:"nowrap"}}>
-                  {[{id:"playfair",label:"Playfair",css:"Playfair Display"},{id:"montserrat",label:"Montserrat",css:"Montserrat"},{id:"poppins",label:"Poppins",css:"Poppins"},{id:"oswald",label:"Oswald",css:"Oswald"}].map(f=>(
-                    <button key={f.id} onClick={()=>setQuoteFont(f.id)} style={{background:quoteFont===f.id?A.text:"none",border:`1.5px solid ${quoteFont===f.id?A.text:A.border}`,borderRadius:20,padding:"4px 12px",flexShrink:0}}>
-                      <span style={{fontFamily:`"${f.css}",serif`,fontSize:12,fontWeight:600,fontStyle:"italic",color:quoteFont===f.id?A.accentText:A.muted}}>{f.label}</span>
-                    </button>
-                  ))}
+                <div style={{position:"relative"}}>
+                  <select value={quoteFont} onChange={e=>setQuoteFont(e.target.value)} style={{width:"100%",padding:"10px 14px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,color:A.text,fontSize:14,fontFamily:`"${FONTS.find(f=>f.id===quoteFont)?.css||"Playfair Display"}",serif`,fontStyle:"italic",fontWeight:700,appearance:"none",cursor:"pointer",paddingRight:36}}>
+                    {FONTS.map(f=>(
+                      <option key={f.id} value={f.id}>{f.label}</option>
+                    ))}
+                  </select>
+                  <div style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:A.muted,fontSize:12}}>▼</div>
                 </div>
               </div>
               <div>
                 <label style={lbl}>Signature font</label>
                 <div style={{display:"flex",gap:5,flexWrap:"nowrap"}}>
-                  {[{id:"montserrat",label:"Plain",css:"Montserrat"},{id:"playfair",label:"Elegant",css:"Playfair Display"},{id:"dancing",label:"Script",css:"Dancing Script"}].map(f=>(
+                  {[{id:"montserrat",label:"Plain",css:"Montserrat"},{id:"playfair",label:"Elegant",css:"Playfair Display"},{id:"dancing",label:"Script",css:"Dancing Script"},{id:"pacifico",label:"Casual",css:"Pacifico"},{id:"cormorant",label:"Luxury",css:"Cormorant Garamond"}].map(f=>(
                     <button key={f.id} onClick={()=>setQuoteSigFont(f.id)} style={{background:quoteSigFont===f.id?A.text:"none",border:`1.5px solid ${quoteSigFont===f.id?A.text:A.border}`,borderRadius:20,padding:"4px 12px",flexShrink:0}}>
                       <span style={{fontFamily:`"${f.css}",serif`,fontSize:12,fontWeight:600,color:quoteSigFont===f.id?A.accentText:A.muted}}>{f.label}</span>
                     </button>
@@ -2183,11 +2200,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted}}>Preview</div>
                   <div style={{display:"flex",gap:4,alignItems:"center"}}>
                     <span style={{fontSize:10,color:A.muted,marginRight:4}}>Font:</span>
-                    {FONTS.map(f=>(
-                      <button key={f.id} onClick={()=>setQuoteFont(f.id)} style={{background:quoteFont===f.id?A.text:"none",border:`1px solid ${quoteFont===f.id?A.text:A.border}`,borderRadius:12,padding:"2px 8px"}}>
-                        <span style={{fontFamily:`"${f.css}",serif`,fontSize:10,fontStyle:"italic",color:quoteFont===f.id?A.accentText:A.muted}}>{f.label}</span>
-                      </button>
-                    ))}
+                    <select value={quoteFont} onChange={e=>setQuoteFont(e.target.value)} style={{padding:"2px 8px",background:A.bg,border:`1px solid ${A.border}`,borderRadius:8,color:A.text,fontSize:11,fontFamily:`"${FONTS.find(f=>f.id===quoteFont)?.css||"Playfair Display"}",serif`,fontStyle:"italic",appearance:"none",cursor:"pointer"}}>
+                      {FONTS.map(f=>(<option key={f.id} value={f.id}>{f.label}</option>))}
+                    </select>
                   </div>
                 </div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:12}}>
@@ -2610,12 +2625,16 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Body font</label>
-                <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-                  {FONTS.map(f=>(
-                    <button key={f.id} onClick={()=>setFontId(f.id)} style={{background:fontId===f.id?A.text:A.bg,border:`1.5px solid ${fontId===f.id?GOLD:A.border}`,borderRadius:8,padding:"7px 14px"}}>
-                      <span style={{fontFamily:`"${f.css}",serif`,fontSize:14,fontWeight:700,color:fontId===f.id?A.accentText:A.text}}>{f.label}</span>
-                    </button>
-                  ))}
+                <div style={{position:"relative"}}>
+                  <select value={fontId} onChange={e=>setFontId(e.target.value)} style={{width:"100%",padding:"10px 14px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,color:A.text,fontSize:14,fontFamily:`"${FONTS.find(f=>f.id===fontId)?.css||"Montserrat"}",sans-serif`,fontWeight:700,appearance:"none",cursor:"pointer",paddingRight:36}}>
+                    {FONTS.map(f=>(
+                      <option key={f.id} value={f.id} style={{fontFamily:`"${f.css}",sans-serif`,fontWeight:700}}>{f.label}</option>
+                    ))}
+                  </select>
+                  <div style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:A.muted,fontSize:12}}>▼</div>
+                </div>
+                <div style={{marginTop:10,padding:"10px 14px",background:A.bg,border:`1px solid ${A.border}`,borderRadius:8}}>
+                  <span style={{fontFamily:`"${FONTS.find(f=>f.id===fontId)?.css||"Montserrat"}",sans-serif`,fontSize:18,fontWeight:700,color:A.text}}>The quick brown fox jumps over the lazy dog</span>
                 </div>
               </div>
 
@@ -2935,6 +2954,27 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     ))}
                   </div>
                 </div>
+
+                {/* Credits breakdown */}
+                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:24}}>
+                  <label style={lbl}>How credits work</label>
+                  <p style={{fontSize:12,color:A.muted,margin:"6px 0 12px",lineHeight:1.6}}>Credits are consumed per action. Photo uploads are always free.</p>
+                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                    {[
+                      ["Carousel generation","10 credits"],
+                      ["Quote card batch","10 credits"],
+                      ["AI caption","5 credits"],
+                      ["AI rewrite","5 credits"],
+                      ["Download","5 credits"],
+                      ["Photo upload","Free"],
+                    ].map(([action,cost])=>(
+                      <div key={action} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${A.border}`}}>
+                        <span style={{fontSize:12,color:A.text}}>{action}</span>
+                        <span style={{fontSize:12,fontWeight:700,color:cost==="Free"?"#4caf50":GOLD}}>{cost}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -3074,7 +3114,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <p style={{fontSize:13,color:A.muted,margin:"8px 0 12px",lineHeight:1.6}}>Upgrade to any paid plan to unlock your affiliate link and start earning recurring commission.</p>
                 <div style={{background:A.bg,border:`1px solid ${A.border}`,borderRadius:10,padding:16}}>
                   <div style={{fontSize:13,fontWeight:700,marginBottom:8}}>Commission rates:</div>
-                  {[["Starter","20% + 15% Tier 2"],["Pro","30% + 15% Tier 2"],["Agency","40% + 15% Tier 2"],["Affiliate Licence","35% + 15% Tier 2"],["White Label","40% + 15% Tier 2"]].map(([plan,rate])=>(
+                  {[["Starter","20% + 15% Tier 2"],["Pro","30% + 15% Tier 2"],["Agency","40% + 15% Tier 2"],["Affiliate Licence","35% + 15% Tier 2 · lifetime"],["White Label","40% + 15% Tier 2 · lifetime"]].map(([plan,rate])=>(
                     <div key={plan} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:A.muted,marginBottom:4}}>
                       <span>{plan}</span><span style={{color:GOLD,fontWeight:700}}>{rate}</span>
                     </div>
@@ -3179,10 +3219,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <div style={{background:A.surface,border:`1.5px solid ${planLabel==="free"?GOLD:A.border}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column",position:"relative"}}>
                     {planLabel==="free"&&<div style={{position:"absolute",top:-10,left:12,background:GOLD,color:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:10}}>Current</div>}
                     <div style={{fontSize:13,fontWeight:800,color:GOLD,marginBottom:2}}>Free</div>
-                    <div style={{fontSize:10,color:A.muted,marginBottom:6}}>6 credits/month</div>
+                    <div style={{fontSize:10,color:A.muted,marginBottom:6}}>60 credits/month</div>
                     <div style={{fontSize:24,fontWeight:900,color:A.text,marginBottom:14}}>$0</div>
                     <div style={{flex:1,marginBottom:14}}>
-                      {["Carousel generator","Quote cards","AI captions","Punchy/Balanced/Depth modes","Watermarked downloads","3 carousels to try the tool"].map(f=>(
+                      {["60 credits/month","6 carousel generations","Watermarked downloads","Carousel generator","Quote cards","AI captions"].map(f=>(
                         <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:A.muted,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
@@ -3195,10 +3235,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <div style={{background:A.surface,border:`1.5px solid ${planLabel==="starter"?GOLD:A.border}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column",position:"relative"}}>
                     {planLabel==="starter"&&<div style={{position:"absolute",top:-10,left:12,background:GOLD,color:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:10}}>Current</div>}
                     <div style={{fontSize:13,fontWeight:800,color:GOLD,marginBottom:2}}>Starter</div>
-                    <div style={{fontSize:10,color:A.muted,marginBottom:6}}>20 credits/month</div>
+                    <div style={{fontSize:10,color:A.muted,marginBottom:6}}>200 credits/month</div>
                     <div style={{fontSize:24,fontWeight:900,color:A.text,marginBottom:14}}>$20<span style={{fontSize:11,fontWeight:500,color:A.muted}}>/mo</span></div>
                     <div style={{flex:1,marginBottom:14}}>
-                      {["No watermark on downloads","Carousel generator","Quote cards & captions","AI rewrites","History & saves","20% affiliate commission","15% Tier 2 on your network"].map(f=>(
+                      {["No watermark on downloads","200 credits/month","20 carousel generations","Captions, rewrites & downloads","20% affiliate commission","15% Tier 2 on your network"].map(f=>(
                         <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:A.text,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
@@ -3213,10 +3253,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <div style={{background:"#111",border:`2px solid ${GOLD}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column",position:"relative"}}>
                     <div style={{position:"absolute",top:-10,right:10,background:planLabel==="pro"?GOLD:GOLD,color:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:10}}>{planLabel==="pro"?"✓ Current":"Best value"}</div>
                     <div style={{fontSize:13,fontWeight:800,color:GOLD,marginBottom:2}}>Pro</div>
-                    <div style={{fontSize:10,color:"rgba(255,255,255,0.5)",marginBottom:6}}>80 credits/month</div>
+                    <div style={{fontSize:10,color:"rgba(255,255,255,0.5)",marginBottom:6}}>800 credits/month</div>
                     <div style={{fontSize:24,fontWeight:900,color:GOLD,marginBottom:14}}>$50<span style={{fontSize:11,fontWeight:500,color:"rgba(255,255,255,0.4)"}}>/mo</span></div>
                     <div style={{flex:1,marginBottom:14}}>
-                      {["Everything in Starter","~40 carousels/month","30% affiliate commission","15% Tier 2 on your network","Refer 3 — Pro pays itself","Priority support","Early feature access"].map(f=>(
+                      {["Everything in Starter","80 carousels/month/month","30% affiliate commission","15% Tier 2 on your network","Refer 4 — Pro pays itself","Priority support","Early feature access"].map(f=>(
                         <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:"#fff",marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
@@ -3231,10 +3271,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <div style={{background:A.surface,border:`1.5px solid ${planLabel==="agency"?GOLD:A.border}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column",position:"relative"}}>
                     {planLabel==="agency"&&<div style={{position:"absolute",top:-10,left:12,background:GOLD,color:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:10}}>Current</div>}
                     <div style={{fontSize:13,fontWeight:800,color:GOLD,marginBottom:2}}>Agency</div>
-                    <div style={{fontSize:10,color:A.muted,marginBottom:6}}>300 credits/month</div>
+                    <div style={{fontSize:10,color:A.muted,marginBottom:6}}>3,000 credits/month</div>
                     <div style={{fontSize:24,fontWeight:900,color:A.text,marginBottom:14}}>$100<span style={{fontSize:11,fontWeight:500,color:A.muted}}>/mo</span></div>
                     <div style={{flex:1,marginBottom:14}}>
-                      {["Everything in Pro","~150 carousels/month","40% affiliate commission","15% Tier 2 on your network","Enough credits for multiple brands","High volume creators & agencies","Priority support"].map(f=>(
+                      {["Everything in Pro","300 carousels/month/month","40% affiliate commission","15% Tier 2 on your network","Enough credits for multiple brands","High volume creators & agencies","Priority support"].map(f=>(
                         <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:A.text,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
@@ -3253,7 +3293,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   </div>
                   <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 14px",lineHeight:1.6}}>Pay once. Earn <strong style={{color:GOLD}}>forever</strong>. No monthly fee — ever. Your commissions never stop, even if you never pay another penny.</p>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:16}}>
-                    {["15 credits/month for demos","35% lifetime recurring commission","15% Tier 2 on your network","One payment — no monthly fee ever","Commissions never stop","Pays for itself after a few referrals","Founding price — won't last","Full affiliate dashboard access"].map(f=>(
+                    {["150 credits/month for demos","35% lifetime recurring commission","15% Tier 2 on your network","One payment — no monthly fee ever","Commissions never stop","Pays for itself after a few referrals","Founding price — won't last","Full affiliate dashboard access"].map(f=>(
                       <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:"#fff",lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
                     ))}
                   </div>
@@ -3268,7 +3308,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   </div>
                   <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 14px",lineHeight:1.6}}>Your brand, your domain, your product. Resell as your own tool. Pay once and earn <strong style={{color:"#9977ff"}}>40% lifetime commission</strong> on every client — forever.</p>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:16}}>
-                    {["Your brand & domain","Resell as your own product","80 credits/month included","40% lifetime recurring commission","15% Tier 2 on your network","No monthly fee ever","One payment — lifetime access","Full affiliate dashboard access"].map(f=>(
+                    {["Your brand & domain","Resell as your own product","800 credits/month included","40% lifetime recurring commission","15% Tier 2 on your network","No monthly fee ever","One payment — lifetime access","Full affiliate dashboard access"].map(f=>(
                       <div key={f} style={{display:"flex",alignItems:"flex-start",gap:6,fontSize:12,color:"#fff",lineHeight:1.4}}><span style={{color:"#9977ff",fontWeight:800,flexShrink:0,marginTop:1}}>✓</span>{f}</div>
                     ))}
                   </div>
