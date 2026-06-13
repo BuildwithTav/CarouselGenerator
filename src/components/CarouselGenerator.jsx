@@ -3113,10 +3113,22 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     Manage Subscription
                   </a>
                 </div>
+                <div style={{background:"linear-gradient(135deg,#1a0a00,#2a1500)",border:`1.5px solid ${GOLD}`,borderRadius:14,padding:24,marginBottom:16}}>
+                  <label style={{...lbl,color:GOLD}}>Affiliate Licence — pay once, earn forever</label>
+                  <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"8px 0 16px",lineHeight:1.6}}>$297 one-time. 35% recurring commission for life. No monthly fee ever. 15 credits/month for demos.</p>
+                  <button onMouseEnter={()=>setHoveredBtn("afflicence3")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AFFILIATE_PRICE_ID,"payment")} style={{width:"100%",padding:"13px",background:hoveredBtn==="afflicence3"?"#e6c45a":GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:14,border:"none",transform:hoveredBtn==="afflicence3"?"translateY(-1px)":"none",boxShadow:hoveredBtn==="afflicence3"?"0 4px 20px rgba(187,153,0,0.4)":"none",transition:"all 0.2s"}}>
+                    Get Affiliate Licence — $297 once
+                  </button>
+                </div>
+                <div style={{background:"linear-gradient(135deg,#0a001a,#15002a)",border:"1.5px solid #6644cc",borderRadius:14,padding:24,marginBottom:16}}>
+                  <label style={{...lbl,color:"#9977ff"}}>White Label — your brand, your product</label>
+                  <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"8px 0 16px",lineHeight:1.6}}>$497 one-time. Your logo, your domain. Resell as your own tool. 40% commission. 80 credits/month.</p>
+                  <button onMouseEnter={()=>setHoveredBtn("wl3")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_WHITELABEL_PRICE_ID,"payment")} style={{width:"100%",padding:"13px",background:hoveredBtn==="wl3"?"#7755dd":"#6644cc",color:"#fff",borderRadius:10,fontWeight:700,fontSize:14,border:"none",transform:hoveredBtn==="wl3"?"translateY(-1px)":"none",transition:"all 0.2s"}}>
+                    Get White Label — $497 once
+                  </button>
+                </div>
               </>
             )}
-
-            {/* Pro user — upgrade to agency or manage */}
             {planLabel==="pro"&&(
               <>
                 <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
@@ -3124,6 +3136,20 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>300 credits/month. Manage multiple client accounts. 40% affiliate commission.</p>
                   <button onMouseEnter={()=>setHoveredBtn("agency2")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID)} style={{width:"100%",padding:"13px",background:hoveredBtn==="agency2"?"#e6c45a":GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:14,border:"none",transform:hoveredBtn==="agency2"?"translateY(-1px)":"none",boxShadow:hoveredBtn==="agency2"?"0 4px 20px rgba(187,153,0,0.4)":"none",transition:"all 0.2s"}}>
                     Upgrade to Agency — $100/month
+                  </button>
+                </div>
+                <div style={{background:"linear-gradient(135deg,#1a0a00,#2a1500)",border:`1.5px solid ${GOLD}`,borderRadius:14,padding:24,marginBottom:16}}>
+                  <label style={{...lbl,color:GOLD}}>Affiliate Licence — pay once, earn forever</label>
+                  <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"8px 0 16px",lineHeight:1.6}}>$297 one-time. 35% recurring commission for life. No monthly fee ever. 15 credits/month for demos.</p>
+                  <button onMouseEnter={()=>setHoveredBtn("afflicence2")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_AFFILIATE_PRICE_ID,"payment")} style={{width:"100%",padding:"13px",background:hoveredBtn==="afflicence2"?"#e6c45a":GOLD,color:"#000",borderRadius:10,fontWeight:700,fontSize:14,border:"none",transform:hoveredBtn==="afflicence2"?"translateY(-1px)":"none",boxShadow:hoveredBtn==="afflicence2"?"0 4px 20px rgba(187,153,0,0.4)":"none",transition:"all 0.2s"}}>
+                    Get Affiliate Licence — $297 once
+                  </button>
+                </div>
+                <div style={{background:"linear-gradient(135deg,#0a001a,#15002a)",border:"1.5px solid #6644cc",borderRadius:14,padding:24,marginBottom:16}}>
+                  <label style={{...lbl,color:"#9977ff"}}>White Label — your brand, your product</label>
+                  <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"8px 0 16px",lineHeight:1.6}}>$497 one-time. Your logo, your domain. Resell as your own tool. 40% commission. 80 credits/month.</p>
+                  <button onMouseEnter={()=>setHoveredBtn("wl2")} onMouseLeave={()=>setHoveredBtn(null)} onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_WHITELABEL_PRICE_ID,"payment")} style={{width:"100%",padding:"13px",background:hoveredBtn==="wl2"?"#7755dd":"#6644cc",color:"#fff",borderRadius:10,fontWeight:700,fontSize:14,border:"none",transform:hoveredBtn==="wl2"?"translateY(-1px)":"none",transition:"all 0.2s"}}>
+                    Get White Label — $497 once
                   </button>
                 </div>
                 <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
