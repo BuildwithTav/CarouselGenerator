@@ -1118,6 +1118,12 @@ Return ONLY valid JSON array:
       const newHistory = [entry, ...history].slice(0, 10);
       setHistory(newHistory); saveHistory(newHistory);
 
+      // Charge 10 credits for generation
+      if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
+        await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email, credits: 10 }) });
+        refreshUser();
+      }
+
     } catch { setErr("Generation failed — check your connection and try again. If the problem persists, try a shorter topic."); setView("setup"); }
   };
 
@@ -1214,6 +1220,11 @@ Return ONLY valid JSON, nothing else.` }
           saveHistory(updated);
           return updated;
         });
+        // Charge 5 credits for caption
+        if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
+          await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email, credits: 5 }) });
+          refreshUser();
+        }
       }
     } catch(e) { console.error("Caption failed:", e); alert("Caption generation failed — try again."); }
     setGeneratingCaption(false);
@@ -1231,7 +1242,13 @@ Return ONLY valid JSON, nothing else.` }
       const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:600, messages:[{ role:"user", content:`Rewrite this carousel slide for a ${btLabel3} whose audience is ${audDesc3}.\n\nInstruction: "${rewritePrompt}"\n\nCurrent slide:\n${JSON.stringify(slides[active],null,2)}\n\nVoice: ${voiceProfile||"Direct, honest, specific. No hype."}\n\nKeep same JSON structure. Improve only what the instruction asks. Return ONLY valid JSON object. No markdown.` }] }, 4, true);
       const raw = (d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
       const m = raw.match(/\{[\s\S]*\}/);
-      if (m) { const next=[...slides]; next[active]=sanitize(JSON.parse(m[0])); setSlides(next); setRewritePrompt(""); }
+      if (m) { const next=[...slides]; next[active]=sanitize(JSON.parse(m[0])); setSlides(next); setRewritePrompt("");
+        // Charge 5 credits for rewrite
+        if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
+          await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email, credits: 5 }) });
+          refreshUser();
+        }
+      }
       else { alert("Rewrite failed — try again."); }
     } catch(e) { console.error("Rewrite error:", e); alert("Rewrite failed — check your connection and try again."); }
     setRewriting(false);
@@ -1266,7 +1283,7 @@ Return ONLY valid JSON, nothing else.` }
       await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`, i===0);
       setDownloadDone(true); setTimeout(()=>setDownloadDone(false), 2000);
       if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
-        await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email }) });
+        await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email, credits: 5 }) });
         refreshUser();
       }
     } catch(e) { console.error(e); alert("Download failed — try again."); }
@@ -1386,7 +1403,7 @@ Return ONLY valid JSON, nothing else.` }
       setTimeout(()=>URL.revokeObjectURL(url),2000);
       if (isMobileDevice()) setTimeout(()=>alert("✓ Zip downloaded — open the Files app to find your slides."),1500);
       if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
-        await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email }) });
+        await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email, credits: 5 }) });
         refreshUser();
       }
     } catch(e){console.error("Zip failed:",e);alert("Download failed — try again.");}
@@ -1433,6 +1450,11 @@ Return ONLY a JSON array of ${needed} strings.`;
           if (!next[i].trim()) { next[i] = generated[gi++]; }
         }
         setQuoteInputs(next);
+        // Charge 10 credits for quote generation
+        if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
+          await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email, credits: 10 }) });
+          refreshUser();
+        }
       }
     } catch(e) { console.error("generateQuotes error:", e); alert("Quote error: " + e.message); }
     setGeneratingQuotes(false);
@@ -1717,7 +1739,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           if (blob) {
             zip.file(`quote-${i+1}.png`, blob);
             if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
-              await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email }) });
+              await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email, credits: 5 }) });
             }
           }
         } catch(e) { console.error("Quote", i+1, "failed:", e); }
@@ -2229,7 +2251,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                             setQuoteHistory(next);
                             try{localStorage.setItem("bwt_quote_history",JSON.stringify(next));}catch{}
                             if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
-                              await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email }) });
+                              await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email, credits: 5 }) });
                               refreshUser();
                             }
                           } catch(e) { alert("Download failed — try again."); }
