@@ -60,7 +60,7 @@ function emailFreeWelcome(firstName) {
 <div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;">
 <p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hi ${firstName},</p>
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">You're in. Welcome to Carousel Studio.</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">You've got <strong>6 free credits</strong> — enough to generate a few carousels and see exactly what this does for your content.</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">You've got <strong>60 credits</strong> — enough to generate a few carousels and see exactly what this does for your content.</p>
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 8px;font-weight:700;">Start here:</p>
 <div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;">
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;"><strong style="color:#BB9900;">1.</strong> Go to the <strong>Brand tab</strong> — upload your photo, add your handle, set your voice profile. Takes 2 minutes and every carousel you generate will look and sound like you.</p>
@@ -121,31 +121,31 @@ function emailCreditsExhausted(firstName) {
 <div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div>
 <div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;">
 <p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hi ${firstName},</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">You've used your 6 free credits. Hopefully you've seen what Carousel Studio can do.</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">You've used your 60 credits. Hopefully you've seen what Carousel Studio can do.</p>
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">If you want to keep going — and start earning from the tool at the same time — here's what upgrading gets you:</p>
 <div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:16px;">
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 4px;font-weight:700;">Starter — $20/month</p>
-<p style="font-size:15px;color:#0a0a0a;margin:0 0 4px;line-height:1.6;">20 credits. Clean downloads. Enough for any solo creator.</p>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 4px;line-height:1.6;">200 credits · 20 carousel generations. Clean downloads. Enough for any solo creator.</p>
 <p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">20% Tier 1 commission + 15% Tier 2 on your network</p>
 </div>
 <div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:16px;">
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 4px;font-weight:700;">Pro — $50/month</p>
-<p style="font-size:15px;color:#0a0a0a;margin:0 0 4px;line-height:1.6;">80 credits — around 40 carousels. Refer 3 people and Pro pays for itself.</p>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 4px;line-height:1.6;">800 credits · 80 carousel generations — around 40 carousels. Refer 4 people and Pro pays for itself.</p>
 <p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">30% Tier 1 commission + 15% Tier 2 on your network</p>
 </div>
 <div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:16px;">
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 4px;font-weight:700;">Agency — $100/month</p>
-<p style="font-size:15px;color:#0a0a0a;margin:0 0 4px;line-height:1.6;">300 credits. High enough volume to run content for multiple clients under one account.</p>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 4px;line-height:1.6;">3,000 credits · 300 carousel generations. High enough volume to run content for multiple clients under one account.</p>
 <p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">40% Tier 1 commission + 15% Tier 2 on your network</p>
 </div>
 <div style="background:#1a1800;border-radius:10px;padding:24px;margin-bottom:16px;border:1px solid rgba(187,153,0,0.3);">
 <p style="font-size:17px;color:#ffffff;margin:0 0 4px;font-weight:700;">Affiliate Licence — $297 once</p>
-<p style="font-size:15px;color:rgba(255,255,255,0.8);margin:0 0 4px;line-height:1.6;">Pay once. Use forever. 15 credits/month for demos and promos. No monthly fee ever.</p>
+<p style="font-size:15px;color:rgba(255,255,255,0.8);margin:0 0 4px;line-height:1.6;">Pay once. Use forever. 150 credits/month for demos. No monthly fee ever.</p>
 <p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">35% Tier 1 commission + 15% Tier 2 on your network — for life</p>
 </div>
 <div style="background:#12001a;border-radius:10px;padding:24px;margin-bottom:24px;border:1px solid rgba(153,119,255,0.3);">
 <p style="font-size:17px;color:#ffffff;margin:0 0 4px;font-weight:700;">White Label — $497 once</p>
-<p style="font-size:15px;color:rgba(255,255,255,0.8);margin:0 0 4px;line-height:1.6;">Your brand, your domain. Resell as your own product. 80 credits/month. No monthly fee ever.</p>
+<p style="font-size:15px;color:rgba(255,255,255,0.8);margin:0 0 4px;line-height:1.6;">Your brand, your domain. Resell as your own product. 800 credits · 80 carousel generations/month. No monthly fee ever.</p>
 <p style="font-size:15px;color:#9977ff;margin:0;font-weight:700;">40% Tier 1 commission + 15% Tier 2 on your network — for life</p>
 </div>
 <div style="text-align:center;margin:32px 0;"><a href="https://www.buildwithtav.co/carouselstudio" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">See All Plans →</a></div>
@@ -294,7 +294,7 @@ export async function POST(req) {
           marketing_consent: marketingConsent,
           plan: "free",
           credits_used: 0,
-          credits_limit: 6,
+          credits_limit: 60,
           downloads_used: 0,
           bonus_credits: 0,
           period_start: new Date().toISOString(),
@@ -415,7 +415,7 @@ export async function POST(req) {
 
       // Trigger credits exhausted email if free user just used last credit
       console.log("Credits check:", { plan: profile?.plan, newCreditsUsed, limit: profile?.credits_limit });
-      if (profile?.plan === "free" && newCreditsUsed >= (profile?.credits_limit || 6)) {
+      if (profile?.plan === "free" && newCreditsUsed >= (profile?.credits_limit || 60)) {
         console.log("Sending credits exhausted email to:", user.email);
         const firstName = user.email.split("@")[0];
         const exhaustedEmail = emailCreditsExhausted(firstName);
