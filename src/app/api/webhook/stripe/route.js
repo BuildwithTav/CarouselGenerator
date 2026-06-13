@@ -289,7 +289,7 @@ export async function POST(req) {
     const isBoost = priceId === process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID;
 
     if (isTopup || isBoost) {
-      const creditsToAdd = isTopup ? 15 : 30;
+      const creditsToAdd = isTopup ? 150 : 300;
       const { data: user } = await supabase.from("users").select("bonus_credits").eq("email", email).single();
       await supabase.from("users").upsert({ email, bonus_credits: (user?.bonus_credits || 0) + creditsToAdd }, { onConflict: "email" });
       await addTagToSysteme(email, "carousel-studio-credits");
@@ -405,7 +405,7 @@ export async function POST(req) {
 
     if (users?.length) {
       await supabase.from("users").update({
-        plan: "free", credits_limit: 6, credits_used: 0,
+        plan: "free", credits_limit: 60, credits_used: 0,
         affiliate_active: false, affiliate_tier: "none"
       }).eq("stripe_customer_id", customerId);
 
