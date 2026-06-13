@@ -25,7 +25,7 @@ export default function Privacy() {
           },
           {
             title: "4. Email Marketing",
-            body: "When you create an account, your email address may be added to our marketing list via Systeme.io. You will receive occasional updates about Carousel Studio and related products from Build with Tav.\n\nYou can unsubscribe at any time by clicking the unsubscribe link in any email or by contacting us at tav@buildwithtav.co."
+            body: "When you create an account and consent to marketing communications, your email address will be used to send you updates about Carousel Studio and related products from Build with Tav.\n\nYou can unsubscribe at any time by clicking the unsubscribe link in any email or by contacting us at tav@buildwithtav.co."
           },
           {
             title: "5. Third Party Services",
