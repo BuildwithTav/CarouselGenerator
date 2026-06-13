@@ -96,7 +96,7 @@ function emailPaidWelcome(firstName, planName, affiliateId, commissionRate) {
 <div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;">
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;font-weight:700;">How commissions work:</p>
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;">— You earn <strong style="color:#BB9900;">${commissionRate}%</strong> on every payment your referrals make</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;">— You earn <strong style="color:#BB9900;">8%</strong> on payments made by people your referrals refer</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;">— You earn <strong style="color:#BB9900;">15%</strong> on payments made by people your referrals refer</p>
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;">— Your rate applies to your entire network — upgrade your plan and everyone moves up with you</p>
 <p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">— Commissions are held for 30 days then paid out on the 10th of each month via Wise</p>
 </div>
@@ -126,27 +126,27 @@ function emailCreditsExhausted(firstName) {
 <div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:16px;">
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 4px;font-weight:700;">Starter — $20/month</p>
 <p style="font-size:15px;color:#0a0a0a;margin:0 0 4px;line-height:1.6;">20 credits. Clean downloads. Enough for any solo creator.</p>
-<p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">20% Tier 1 commission + 8% Tier 2 on your network</p>
+<p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">20% Tier 1 commission + 15% Tier 2 on your network</p>
 </div>
 <div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:16px;">
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 4px;font-weight:700;">Pro — $50/month</p>
 <p style="font-size:15px;color:#0a0a0a;margin:0 0 4px;line-height:1.6;">80 credits — around 40 carousels. Refer 3 people and Pro pays for itself.</p>
-<p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">30% Tier 1 commission + 8% Tier 2 on your network</p>
+<p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">30% Tier 1 commission + 15% Tier 2 on your network</p>
 </div>
 <div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:16px;">
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 4px;font-weight:700;">Agency — $100/month</p>
 <p style="font-size:15px;color:#0a0a0a;margin:0 0 4px;line-height:1.6;">300 credits. High enough volume to run content for multiple clients under one account.</p>
-<p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">40% Tier 1 commission + 8% Tier 2 on your network</p>
+<p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">40% Tier 1 commission + 15% Tier 2 on your network</p>
 </div>
 <div style="background:#1a1800;border-radius:10px;padding:24px;margin-bottom:16px;border:1px solid rgba(187,153,0,0.3);">
 <p style="font-size:17px;color:#ffffff;margin:0 0 4px;font-weight:700;">Affiliate Licence — $297 once</p>
 <p style="font-size:15px;color:rgba(255,255,255,0.8);margin:0 0 4px;line-height:1.6;">Pay once. Use forever. 15 credits/month for demos and promos. No monthly fee ever.</p>
-<p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">35% Tier 1 commission + 8% Tier 2 on your network — for life</p>
+<p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">35% Tier 1 commission + 15% Tier 2 on your network — for life</p>
 </div>
 <div style="background:#12001a;border-radius:10px;padding:24px;margin-bottom:24px;border:1px solid rgba(153,119,255,0.3);">
 <p style="font-size:17px;color:#ffffff;margin:0 0 4px;font-weight:700;">White Label — $497 once</p>
 <p style="font-size:15px;color:rgba(255,255,255,0.8);margin:0 0 4px;line-height:1.6;">Your brand, your domain. Resell as your own product. 80 credits/month. No monthly fee ever.</p>
-<p style="font-size:15px;color:#9977ff;margin:0;font-weight:700;">40% Tier 1 commission + 8% Tier 2 on your network — for life</p>
+<p style="font-size:15px;color:#9977ff;margin:0;font-weight:700;">40% Tier 1 commission + 15% Tier 2 on your network — for life</p>
 </div>
 <div style="text-align:center;margin:32px 0;"><a href="https://www.buildwithtav.co/carouselstudio" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">See All Plans →</a></div>
 <p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">If you need help, use the Help tab inside the app.<br><br>— Tav</p>
