@@ -276,7 +276,7 @@
           <li><span style="color:var(--gold)">20% affiliate commission</span></li>
           <li><span style="color:var(--gold)">15% Tier 2</span> on your network</li>
         </ul>
-        <a href="https://www.buildwithtav.co/carouselstudio" class="plan-btn plan-btn-dark">Get Starter</a>
+        <a href="https://studio.buildwithtav.co?checkout=starter" class="plan-btn plan-btn-dark">Get Starter</a>
       </div>
       <div class="plan-card featured">
         <div class="plan-badge">Best value</div>
@@ -291,7 +291,7 @@
           <li><span style="color:var(--gold);font-weight:700">Refer 4 = Pro pays for itself</span></li>
           <li><span style="color:var(--gold)">15% Tier 2</span> on your network</li>
         </ul>
-        <a href="https://www.buildwithtav.co/carouselstudio" class="plan-btn plan-btn-gold">Get Pro</a>
+        <a href="https://studio.buildwithtav.co?checkout=pro" class="plan-btn plan-btn-gold">Get Pro</a>
       </div>
       <div class="plan-card">
         <div class="plan-name">Agency</div>
@@ -304,7 +304,7 @@
           <li><span style="color:var(--gold)">40% affiliate commission</span></li>
           <li><span style="color:var(--gold)">15% Tier 2</span> on your network</li>
         </ul>
-        <a href="https://www.buildwithtav.co/carouselstudio" class="plan-btn plan-btn-dark">Get Agency</a>
+        <a href="https://studio.buildwithtav.co?checkout=agency" class="plan-btn plan-btn-dark">Get Agency</a>
       </div>
     </div>
     <div class="affiliate-hero">
@@ -324,7 +324,7 @@
       <div class="affiliate-price">
         <div class="amount">$297</div>
         <div class="once">one-time payment</div>
-        <a href="https://www.buildwithtav.co/carouselstudio" class="plan-btn plan-btn-gold" style="min-width:180px">Get Affiliate Licence</a>
+        <a href="https://studio.buildwithtav.co?checkout=affiliate" class="plan-btn plan-btn-gold" style="min-width:180px">Get Affiliate Licence</a>
       </div>
     </div>
   </div>
@@ -348,7 +348,7 @@
     <div class="wl-price">
       <div class="amount">$497</div>
       <div class="once">one-time payment</div>
-      <a href="https://www.buildwithtav.co/carouselstudio" class="wl-btn">Get White Label</a>
+      <a href="https://studio.buildwithtav.co?checkout=whitelabel" class="wl-btn">Get White Label</a>
     </div>
   </div>
 </section>
@@ -407,13 +407,15 @@
   (function() {
     const params = new URLSearchParams(window.location.search);
     const sa = params.get('sa');
-    if (!sa) return;
-    // Store in localStorage so the app picks it up
-    try { localStorage.setItem('cs_affiliate_ref', sa); } catch {}
-    // Update all links to studio.buildwithtav.co to include the ref
+    const checkout = params.get('checkout');
+    if (!sa && !checkout) return;
+    try {
+      if (sa) localStorage.setItem('cs_affiliate_ref', sa);
+      if (checkout) localStorage.setItem('cs_checkout_plan', checkout);
+    } catch {}
     document.querySelectorAll('a[href*="studio.buildwithtav.co"]').forEach(function(a) {
       const url = new URL(a.href);
-      url.searchParams.set('sa', sa);
+      if (sa) url.searchParams.set('sa', sa);
       a.href = url.toString();
     });
   })();
