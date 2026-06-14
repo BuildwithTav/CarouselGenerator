@@ -2729,16 +2729,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   </select>
                   <div style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:A.muted,fontSize:12}}>▼</div>
                 </div>
-                <div style={{marginTop:10,padding:"10px 14px",background:A.bg,border:`1px solid ${A.border}`,borderRadius:8}}>
-                  {(()=>{
-                    const h = loadHistory();
-                    const headlines = h.flatMap(e=>e.slides||[]).map(s=>s.headline||s.title).filter(Boolean).slice(0,3);
-                    const samples = headlines.length > 0 ? headlines : ["Your headlines will appear here as you generate"];
-                    return samples.map((t,i)=>(
-                      <div key={i} style={{fontFamily:`"${FONTS.find(f=>f.id===fontId)?.css||"Montserrat"}",sans-serif`,fontSize:15,fontWeight:700,color:i===0?A.text:A.muted,lineHeight:1.5,borderBottom:i<samples.length-1?`1px solid ${A.border}`:"none",paddingBottom:i<samples.length-1?6:0,marginBottom:i<samples.length-1?6:0}}>{t}</div>
-                    ));
-                  })()}
-                </div>
               </div>
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
