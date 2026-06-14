@@ -852,6 +852,18 @@ export default function App() {
   const [accentColor, setAccentColor] = useState(S?.accentColor||GOLD);
   const [customActiveSlot, setCustomActiveSlot] = useState(S?.customActiveSlot??null);
   const [fontId, setFontId] = useState(S?.fontId||"montserrat");
+  const [recentFonts, setRecentFonts] = useState(() => { try { return JSON.parse(localStorage.getItem("bwt_recent_fonts")||"[]"); } catch { return []; } });
+  const [recentQuoteFonts, setRecentQuoteFonts] = useState(() => { try { return JSON.parse(localStorage.getItem("bwt_recent_quote_fonts")||"[]"); } catch { return []; } });
+
+  const trackFont = (id, isQuote=false) => {
+    const key = isQuote ? "bwt_recent_quote_fonts" : "bwt_recent_fonts";
+    const setter = isQuote ? setRecentQuoteFonts : setRecentFonts;
+    setter(prev => {
+      const next = [id, ...prev.filter(f=>f!==id)].slice(0,5);
+      try { localStorage.setItem(key, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
   const [headlineStyle, setHeadlineStyle] = useState(S?.headlineStyle||"bold");
   const [showNums, setShowNums] = useState(S?.showNums??false);
   const [showAllUpdates, setShowAllUpdates] = useState(false);
@@ -1675,6 +1687,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
     ${signature?`<div class="sig">${esc(signature)}</div>`:""}
   </div>
   ${tHandle}
+  ${currentUser?.plan==="free"?`<div style="position:absolute;bottom:${Math.round(28*s)}px;left:0;right:0;text-align:center;z-index:10;"><span style="font-family:'Montserrat',sans-serif;font-size:${Math.round(22*s)}px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:3px;">studio.buildwithtav.co</span></div>`:""}
 </div>
 </body></html>`;
   };
@@ -1797,6 +1810,39 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           .cmd-hint{display:none!important}
           .desktop-edit-panel{display:none!important}
           .topic-row input{width:100%!important;flex:unset!important}
+
+          /* Brand tab */
+          .brand-grid{grid-template-columns:1fr!important}
+          .brand-color-grid{grid-template-columns:1fr 1fr!important}
+
+          /* Visual tab */
+          .visual-grid{grid-template-columns:1fr!important}
+          .visual-preview-col{display:none!important}
+
+          /* Help tab */
+          .help-grid{grid-template-columns:1fr!important}
+
+          /* Account tab */
+          .account-inner{padding:16px!important}
+
+          /* Upgrade view — plan cards 2 col on mobile */
+          .plan-cards-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}
+          .plan-cards-grid>div{padding:14px!important}
+          .plan-cards-grid .plan-price{font-size:18px!important}
+          .plan-cards-grid .plan-name{font-size:12px!important}
+          .plan-cards-grid .plan-credits{font-size:9px!important}
+          .plan-cards-grid button{padding:8px!important;font-size:10px!important}
+          .plan-cards-grid li{font-size:10px!important}
+
+          /* Affiliate and White Label boxes */
+          .aff-features-grid{grid-template-columns:1fr!important}
+
+          /* Top-ups */
+          .topup-row{flex-direction:column!important}
+
+          /* General spacing */
+          .tab-content{padding:16px 12px!important}
+          .upgrade-header{flex-direction:column!important;gap:8px!important}
         }
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         .topic-textarea{min-height:42px}
@@ -2116,8 +2162,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
               <div>
                 <label style={lbl}>Quote font</label>
+                {recentQuoteFonts.length>0&&(
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+                    {recentQuoteFonts.map(id=>{const f=FONTS.find(f=>f.id===id);if(!f)return null;return(
+                      <button key={id} onClick={()=>{setQuoteFont(id);trackFont(id,true);}} style={{background:quoteFont===id?A.text:A.bg,border:`1.5px solid ${quoteFont===id?GOLD:A.border}`,borderRadius:20,padding:"4px 12px",cursor:"pointer"}}>
+                        <span style={{fontFamily:`"${f.css}",serif`,fontSize:12,fontWeight:700,fontStyle:"italic",color:quoteFont===id?A.accentText:A.muted}}>{f.label}</span>
+                      </button>
+                    );})}
+                  </div>
+                )}
                 <div style={{position:"relative"}}>
-                  <select value={quoteFont} onChange={e=>setQuoteFont(e.target.value)} style={{width:"100%",padding:"10px 14px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,color:A.text,fontSize:14,fontFamily:`"${FONTS.find(f=>f.id===quoteFont)?.css||"Playfair Display"}",serif`,fontStyle:"italic",fontWeight:700,appearance:"none",cursor:"pointer",paddingRight:36}}>
+                  <select value={quoteFont} onChange={e=>{setQuoteFont(e.target.value);trackFont(e.target.value,true);}} style={{width:"100%",padding:"10px 14px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,color:A.text,fontSize:14,fontFamily:`"${FONTS.find(f=>f.id===quoteFont)?.css||"Playfair Display"}",serif`,fontStyle:"italic",fontWeight:700,appearance:"none",cursor:"pointer",paddingRight:36}}>
                     {FONTS.map(f=>(
                       <option key={f.id} value={f.id}>{f.label}</option>
                     ))}
@@ -2471,7 +2526,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         {nav==="brand"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Brand</h2>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:24,alignItems:"start"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:24,alignItems:"start"}} className="brand-grid">
               <div style={{display:"flex",flexDirection:"column",gap:20}}>
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
@@ -2588,7 +2643,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         {nav==="visual"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Visual</h2>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:24,alignItems:"start"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:24,alignItems:"start"}} className="visual-grid">
               <div style={{display:"flex",flexDirection:"column",gap:20}}>
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
@@ -2647,8 +2702,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Body font</label>
+                {recentFonts.length>0&&(
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+                    {recentFonts.map(id=>{const f=FONTS.find(f=>f.id===id);if(!f)return null;return(
+                      <button key={id} onClick={()=>{setFontId(id);trackFont(id);}} style={{background:fontId===id?A.text:A.bg,border:`1.5px solid ${fontId===id?GOLD:A.border}`,borderRadius:20,padding:"4px 12px",cursor:"pointer"}}>
+                        <span style={{fontFamily:`"${f.css}",sans-serif`,fontSize:12,fontWeight:700,color:fontId===id?A.accentText:A.muted}}>{f.label}</span>
+                      </button>
+                    );})}
+                  </div>
+                )}
                 <div style={{position:"relative"}}>
-                  <select value={fontId} onChange={e=>setFontId(e.target.value)} style={{width:"100%",padding:"10px 14px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,color:A.text,fontSize:14,fontFamily:`"${FONTS.find(f=>f.id===fontId)?.css||"Montserrat"}",sans-serif`,fontWeight:700,appearance:"none",cursor:"pointer",paddingRight:36}}>
+                  <select value={fontId} onChange={e=>{setFontId(e.target.value);trackFont(e.target.value);}} style={{width:"100%",padding:"10px 14px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,color:A.text,fontSize:14,fontFamily:`"${FONTS.find(f=>f.id===fontId)?.css||"Montserrat"}",sans-serif`,fontWeight:700,appearance:"none",cursor:"pointer",paddingRight:36}}>
                     {FONTS.map(f=>(
                       <option key={f.id} value={f.id} style={{fontFamily:`"${f.css}",sans-serif`,fontWeight:700}}>{f.label}</option>
                     ))}
@@ -3157,7 +3221,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:16}}>
                 <label style={lbl}>Need more credits this month?</label>
                 <p style={{fontSize:13,color:A.muted,margin:"8px 0 16px",lineHeight:1.6}}>One-time top-ups. Never expire.</p>
-                <div style={{display:"flex",gap:10}}>
+                <div style={{display:"flex",gap:10}} className="topup-row">
                   <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_TOPUP_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>150 credits</div><div style={{fontSize:12}}>$25 one-time</div></button>
                   <button className="topup-btn" onClick={()=>handleUpgrade(process.env.NEXT_PUBLIC_STRIPE_BOOST_PRICE_ID,"payment")} style={{flex:1,padding:"12px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:13,color:A.text,cursor:"pointer",textAlign:"center",position:"relative"}}><div style={{position:"absolute",top:-8,right:8,fontSize:9,fontWeight:700,padding:"2px 6px",background:GOLD,color:"#000",borderRadius:4}}>Best value</div><div style={{fontSize:16,fontWeight:800,marginBottom:2}}>300 credits</div><div style={{fontSize:12}}>$45 one-time</div></button>
                 </div>
@@ -3243,7 +3307,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 {(planLabel==="free"||planLabel==="starter"||planLabel==="pro"||planLabel==="agency")&&(
               <>
                 {/* 4 plans side by side always */}
-                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:12}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:12}} className="plan-cards-grid">
                   {/* Free */}
                   <div style={{background:A.surface,border:`1.5px solid ${planLabel==="free"?GOLD:A.border}`,borderRadius:14,padding:20,display:"flex",flexDirection:"column",position:"relative"}}>
                     {planLabel==="free"&&<div style={{position:"absolute",top:-10,left:12,background:GOLD,color:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:10}}>Current</div>}
