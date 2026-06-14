@@ -152,24 +152,23 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : "#0A0A0A";
   const slideBgWithOpacity = (opts.photoOpacity||100) < 100 ? "#FFFFFF" : slideBg;
   const coverHasImage = isCover && !!coverImageUrl;
+  const isPortrait = ratio === "portrait";
+  const W = 1080, H = isPortrait ? 1920 : 1350;
+  const layout = slide.layout || "standard";
+  const bgImageUrl = isCover ? coverImageUrl : (bgMode === "custom" ? templateBgUrl : null);
+  const forceLight = (coverHasImage || (bgMode === "custom" && bgImageUrl)) ? !(customColourDark??true) : false;
   const C = {
     bg: slideBg,
     accent,
-    text: coverHasImage ? "#FFFFFF" : (isDark ? "#FFFFFF" : "#0A0A0A"),
-    sub: coverHasImage ? "rgba(255,255,255,0.82)" : (isDark ? "rgba(255,255,255,0.72)" : "rgba(10,10,10,0.62)"),
-    dark: coverHasImage ? true : isDark,
+    text: forceLight ? "#0A0A0A" : (isDark ? "#FFFFFF" : "#0A0A0A"),
+    sub: forceLight ? "rgba(10,10,10,0.65)" : (isDark ? "rgba(255,255,255,0.72)" : "rgba(10,10,10,0.62)"),
+    dark: forceLight ? false : (coverHasImage ? true : isDark),
   };
 
   const hs = HEADLINE_STYLES.find(h => h.id === headlineStyle) || HEADLINE_STYLES[0];
   const baseFontObj = FONTS.find(f => f.id === fontId) || FONTS[0];
   const hlFont = hs.forceFont || baseFontObj.css;
   const bodyFont = baseFontObj.css;
-
-  const isPortrait = ratio === "portrait";
-  const W = 1080, H = isPortrait ? 1920 : 1350;
-  const layout = slide.layout || "standard";
-
-  const bgImageUrl = isCover ? coverImageUrl : (bgMode === "custom" ? templateBgUrl : null);
 
   const pillBg = bgImageUrl
     ? badgeArea === "light" ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.58)"
@@ -202,8 +201,8 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   }
 
   const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&family=Dancing+Script:wght@600;700&family=Raleway:wght@700;800;900&family=Lato:wght@700;900&family=Roboto:wght@700;900&family=Ubuntu:wght@700&family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@700;900&family=Crimson+Text:wght@700&family=Merriweather:wght@700;900&family=Bebas+Neue&family=Abril+Fatface&family=Pacifico&family=Josefin+Sans:wght@700&family=Quicksand:wght@700&family=DM+Serif+Display&family=Cormorant+Garamond:wght@700&family=Righteous&display=swap`;
-  const ts = (C.dark && !colourTextDark) || bgImageUrl ? "text-shadow:0 2px 28px rgba(0,0,0,0.95);" : "";
-  const ts2 = (C.dark && !colourTextDark) || bgImageUrl ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : "";
+  const ts = (C.dark && !colourTextDark) || bgImageUrl ? "text-shadow:0 2px 28px rgba(0,0,0,0.95);" : colourTextDark ? "text-shadow:0 2px 16px rgba(255,255,255,0.8);" : "";
+  const ts2 = (C.dark && !colourTextDark) || bgImageUrl ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : colourTextDark ? "text-shadow:0 1px 10px rgba(255,255,255,0.7);" : "";
 
   const BADGE_BOTTOM = 230;
   const topPad = isPortrait ? 300 : 270;
@@ -224,8 +223,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     .tr { top:44px; right:52px; border-top:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:${C.dark?0.4:0.7}; }
     .bl { bottom:44px; left:52px; border-bottom:2.5px solid ${C.accent}; border-left:2.5px solid ${C.accent}; opacity:${C.dark?0.4:0.7}; }
     .br { bottom:44px; right:52px; border-bottom:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:${C.dark?0.4:0.7}; }
-    .fade { position:absolute; bottom:0; left:0; right:0; height:45%; z-index:3; pointer-events:none;
-      background:linear-gradient(to bottom,transparent,rgba(0,0,0,0.65)); }
+    .fade { position:absolute; bottom:0; left:0; right:0; height:45%; z-index:3; pointer-events:none; }
     .badge { position:absolute; top:158px; left:80px; z-index:10;
       display:inline-flex; align-items:center; gap:14px;
       background:transparent; padding:10px 0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif!important; }
@@ -424,7 +422,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   ${C.dark||hasBg?'<div class="noise"></div>':""}
   <div class="bk tl"></div><div class="bk tr"></div>
   <div class="bk bl"></div><div class="bk br"></div>
-  ${C.dark||hasBg||bgMode==="colour"?'<div class="fade"></div>':""}
+  ${C.dark||hasBg||bgMode==="colour"?`<div class="fade" style="background:linear-gradient(to bottom,transparent,rgba(0,0,0,${Math.round((activeAlpha*0.65)*100)/100}));"></div>`:""}
   ${isCover ? "" : profileUrl ? `<div class="badge">
     <div class="av">${avHtml}</div>
     <div>
