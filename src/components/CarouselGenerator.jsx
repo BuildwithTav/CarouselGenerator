@@ -262,20 +262,20 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const layouts = {
     standard: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
-      .hl { font-size:${isPortrait?60:52}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; text-shadow:${forceLight?"0 2px 8px rgba(255,255,255,0.7)":C.dark?"0 2px 12px rgba(0,0,0,0.6)":"0 2px 8px rgba(255,255,255,0.5)"}; }
-      .body { text-shadow:${forceLight?"0 1px 6px rgba(255,255,255,0.6)":C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; ${ts2} font-family:'${bodyFont}',sans-serif; }
+      .hl { font-size:${isPortrait?60:52}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; text-shadow:${forceLight?"0 2px 8px rgba(255,255,255,0.7)":C.dark?"0 2px 12px rgba(0,0,0,0.6)":"0 2px 8px rgba(255,255,255,0.5)"}; }
+      .body { text-shadow:${forceLight?"0 1px 6px rgba(255,255,255,0.6)":C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
       .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?28:24}px; font-weight:800; color:${C.accent}; font-family:'${bodyFont}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; white-space:pre-wrap; }
     `,
     statement: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
-      .hl { font-size:${isPortrait?72:60}px; font-weight:800; line-height:1.1; letter-spacing:${hs.id==="upper"?"2px":"-2px"}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; }
+      .hl { font-size:${isPortrait?72:60}px; font-weight:800; line-height:1.1; letter-spacing:${hs.id==="upper"?"2px":"-2px"}; ${forceLight?"text-shadow:0 2px 8px rgba(255,255,255,0.7)":C.dark?"text-shadow:0 2px 12px rgba(0,0,0,0.6)":"text-shadow:0 2px 8px rgba(255,255,255,0.5)"} font-family:'${hlFont}',sans-serif; flex-shrink:0; }
       .body { text-shadow:${forceLight?"0 1px 6px rgba(255,255,255,0.6)":C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
     `,
     split: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; overflow:hidden; }
       .split-top { width:100%; text-align:center; z-index:4; margin-bottom:${isPortrait?24:16}px; flex-shrink:0; }
       .split-tag { display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"}; font-size:14px; font-weight:800; letter-spacing:2px; padding:8px 24px; border-radius:60px; font-family:'${bodyFont}',sans-serif; margin-bottom:16px; }
-      .split-hl { font-size:${isPortrait?52:42}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; color:${C.text}; }
+      .split-hl { font-size:${isPortrait?52:42}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${forceLight?"text-shadow:0 2px 8px rgba(255,255,255,0.7)":C.dark?"text-shadow:0 2px 12px rgba(0,0,0,0.6)":"text-shadow:0 2px 8px rgba(255,255,255,0.5)"} font-family:'${hlFont}',sans-serif; color:${C.text}; }
       .split-panels { width:100%; display:grid; grid-template-columns:1fr 1fr; z-index:3; flex:1; }
       .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 44px; text-align:center; gap:12px; overflow:hidden; }
       .panel:first-child { background:${C.accent}10; border-right:1px solid ${C.accent}28; }
@@ -287,7 +287,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     `,
     cards: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; overflow:hidden; }
-      .hl { font-size:${isPortrait?56:46}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} text-align:center; margin-bottom:4px; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; }
+      .hl { font-size:${isPortrait?56:46}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${forceLight?"text-shadow:0 2px 8px rgba(255,255,255,0.7)":C.dark?"text-shadow:0 2px 12px rgba(0,0,0,0.6)":"text-shadow:0 2px 8px rgba(255,255,255,0.5)"} text-align:center; margin-bottom:4px; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; }
       .cg { width:100%; display:flex; flex-direction:column; gap:${isPortrait?14:9}px; margin-top:20px; overflow:hidden; }
       .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:10px; padding:${isPortrait?22:14}px 24px; display:flex; align-items:flex-start; gap:16px; flex-shrink:0; }
       .cn { font-size:${isPortrait?28:20}px; font-weight:900; color:${C.accent}; font-family:'${bodyFont}',sans-serif; flex-shrink:0; width:36px; line-height:1; }
@@ -297,13 +297,13 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     quote: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
 
-      .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-style:italic; font-family:'${hlFont}',sans-serif; }
+      .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${forceLight?"text-shadow:0 2px 8px rgba(255,255,255,0.7)":C.dark?"text-shadow:0 2px 12px rgba(0,0,0,0.6)":"text-shadow:0 2px 8px rgba(255,255,255,0.5)"} font-style:italic; font-family:'${hlFont}',sans-serif; }
       .body { text-shadow:${forceLight?"0 1px 6px rgba(255,255,255,0.6)":C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
     `,
     hero: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; gap:24px; text-align:center; overflow:hidden; }
 
-      .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; }
+      .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${forceLight?"text-shadow:0 2px 8px rgba(255,255,255,0.7)":C.dark?"text-shadow:0 2px 12px rgba(0,0,0,0.6)":"text-shadow:0 2px 8px rgba(255,255,255,0.5)"} font-family:'${hlFont}',sans-serif; }
       .body { text-shadow:${forceLight?"0 1px 6px rgba(255,255,255,0.6)":C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; }
       .cb { width:100%; max-width:860px; padding:${isPortrait?30:24}px 50px; border-radius:12px; font-size:${isPortrait?28:24}px; font-weight:800; font-family:'${bodyFont}',sans-serif; text-align:center; background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
     `,
@@ -342,8 +342,8 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
         <div class="cover-content">
           ${coverBadgeHTML}
           ${slide.tag ? `<div style="margin-bottom:20px"><span class="tag">${esc(slide.tag.toUpperCase())}</span></div>` : ""}
-          <div style="font-size:${isPortrait?80:66}px;font-weight:800;line-height:1.1;letter-spacing:${hs.letterSpacing};${ts}font-family:'${hlFont}',sans-serif;color:${C.text};${isCentre?"text-align:center;":""}width:100%;white-space:pre-wrap;">${hl}</div>
-          ${slide.body ? `<div style="font-size:${isPortrait?32:26}px;line-height:1.6;color:${C.sub};margin-top:24px;font-family:'${bodyFont}',sans-serif;${ts2}${isCentre?"text-align:center;":""}">${accentHL(slide.body)}</div>` : ""}
+          <div style="font-size:${isPortrait?80:66}px;font-weight:800;line-height:1.1;letter-spacing:${hs.letterSpacing};${forceLight?"text-shadow:0 2px 8px rgba(255,255,255,0.7)":C.dark?"text-shadow:0 2px 12px rgba(0,0,0,0.6)":"text-shadow:0 2px 8px rgba(255,255,255,0.5)"}font-family:'${hlFont}',sans-serif;color:${C.text};${isCentre?"text-align:center;":""}width:100%;white-space:pre-wrap;">${hl}</div>
+          ${slide.body ? `<div style="font-size:${isPortrait?32:26}px;line-height:1.6;color:${C.sub};margin-top:24px;font-family:'${bodyFont}',sans-serif;${forceLight?"text-shadow:0 1px 6px rgba(255,255,255,0.6)":C.dark?"text-shadow:0 1px 8px rgba(0,0,0,0.5)":"text-shadow:0 1px 6px rgba(255,255,255,0.4)"}${isCentre?"text-align:center;":""}">${accentHL(slide.body)}</div>` : ""}
         </div>`;
     }
 
