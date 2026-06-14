@@ -3113,9 +3113,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <div style={{fontSize:11,color:A.muted,marginBottom:6}}>Your affiliate link</div>
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
                       <div style={{fontSize:12,color:A.text,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                        {"https://studio.buildwithtav.co?sa="+affiliateStats.affiliate_id}
+                        {"https://studio.buildwithtav.co/landing?sa="+affiliateStats.affiliate_id}
                       </div>
-                      <button onClick={()=>{try{navigator.clipboard.writeText("https://studio.buildwithtav.co?sa="+affiliateStats.affiliate_id);}catch{}}} style={{padding:"6px 12px",background:GOLD,color:"#000",borderRadius:6,fontWeight:700,fontSize:11,border:"none",flexShrink:0}}>Copy</button>
+                      <button onClick={()=>{try{navigator.clipboard.writeText("https://studio.buildwithtav.co/landing?sa="+affiliateStats.affiliate_id);}catch{}}} style={{padding:"6px 12px",background:GOLD,color:"#000",borderRadius:6,fontWeight:700,fontSize:11,border:"none",flexShrink:0}}>Copy</button>
                     </div>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
