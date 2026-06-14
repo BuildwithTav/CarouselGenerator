@@ -161,7 +161,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     bg: slideBg,
     accent,
     text: forceLight ? "#0A0A0A" : (isDark ? "#FFFFFF" : "#0A0A0A"),
-    sub: forceLight ? "rgba(10,10,10,0.65)" : (isDark ? "rgba(255,255,255,0.72)" : "rgba(10,10,10,0.62)"),
+    sub: forceLight ? "#0A0A0A" : (isDark ? "#FFFFFF" : "#0A0A0A"),
     dark: forceLight ? false : (coverHasImage ? true : isDark),
   };
 
@@ -177,7 +177,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const pillSub = bgImageUrl || C.dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)";
   const badgeTextColor = C.dark || bgImageUrl ? "#FFFFFF" : "#0A0A0A";
   const badgeSubColor = C.dark || bgImageUrl ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)";
-  const badgeTextShadow = bgImageUrl ? "text-shadow:0 1px 6px rgba(0,0,0,0.8);" : "";
+  const badgeTextShadow = bgImageUrl ? "" : "";
 
   function esc(s) { return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
@@ -201,8 +201,8 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   }
 
   const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&family=Dancing+Script:wght@600;700&family=Raleway:wght@700;800;900&family=Lato:wght@700;900&family=Roboto:wght@700;900&family=Ubuntu:wght@700&family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@700;900&family=Crimson+Text:wght@700&family=Merriweather:wght@700;900&family=Bebas+Neue&family=Abril+Fatface&family=Pacifico&family=Josefin+Sans:wght@700&family=Quicksand:wght@700&family=DM+Serif+Display&family=Cormorant+Garamond:wght@700&family=Righteous&display=swap`;
-  const ts = (C.dark && !colourTextDark) || bgImageUrl ? "text-shadow:0 2px 28px rgba(0,0,0,0.95);" : colourTextDark ? "text-shadow:0 2px 16px rgba(255,255,255,0.8);" : "";
-  const ts2 = (C.dark && !colourTextDark) || bgImageUrl ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : colourTextDark ? "text-shadow:0 1px 10px rgba(255,255,255,0.7);" : "";
+  const ts = (C.dark && !colourTextDark) || bgImageUrl ? "" : colourTextDark ? "" : "";
+  const ts2 = (C.dark && !colourTextDark) || bgImageUrl ? "" : colourTextDark ? "" : "";
 
   const BADGE_BOTTOM = 230;
   const topPad = isPortrait ? 300 : 270;
@@ -268,14 +268,14 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     `,
     statement: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
-      .hl { font-size:${isPortrait?72:60}px; font-weight:800; line-height:1.1; letter-spacing:${hs.id==="upper"?"2px":"-2px"}; ${forceLight?"text-shadow:0 2px 8px rgba(255,255,255,0.7)":C.dark?"text-shadow:0 2px 12px rgba(0,0,0,0.6)":"text-shadow:0 2px 8px rgba(255,255,255,0.5)"} font-family:'${hlFont}',sans-serif; flex-shrink:0; }
+      .hl { font-size:${isPortrait?72:60}px; font-weight:800; line-height:1.1; letter-spacing:${hs.id==="upper"?"2px":"-2px"};  font-family:'${hlFont}',sans-serif; flex-shrink:0; }
       .body { text-shadow:${forceLight?"0 1px 6px rgba(255,255,255,0.6)":C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
     `,
     split: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; overflow:hidden; }
       .split-top { width:100%; text-align:center; z-index:4; margin-bottom:${isPortrait?24:16}px; flex-shrink:0; }
       .split-tag { display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"}; font-size:14px; font-weight:800; letter-spacing:2px; padding:8px 24px; border-radius:60px; font-family:'${bodyFont}',sans-serif; margin-bottom:16px; }
-      .split-hl { font-size:${isPortrait?52:42}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${forceLight?"text-shadow:0 2px 8px rgba(255,255,255,0.7)":C.dark?"text-shadow:0 2px 12px rgba(0,0,0,0.6)":"text-shadow:0 2px 8px rgba(255,255,255,0.5)"} font-family:'${hlFont}',sans-serif; color:${C.text}; }
+      .split-hl { font-size:${isPortrait?52:42}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-family:'${hlFont}',sans-serif; color:${C.text}; }
       .split-panels { width:100%; display:grid; grid-template-columns:1fr 1fr; z-index:3; flex:1; }
       .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 44px; text-align:center; gap:12px; overflow:hidden; }
       .panel:first-child { background:${C.accent}10; border-right:1px solid ${C.accent}28; }
@@ -287,7 +287,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     `,
     cards: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; overflow:hidden; }
-      .hl { font-size:${isPortrait?56:46}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${forceLight?"text-shadow:0 2px 8px rgba(255,255,255,0.7)":C.dark?"text-shadow:0 2px 12px rgba(0,0,0,0.6)":"text-shadow:0 2px 8px rgba(255,255,255,0.5)"} text-align:center; margin-bottom:4px; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; }
+      .hl { font-size:${isPortrait?56:46}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  text-align:center; margin-bottom:4px; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; }
       .cg { width:100%; display:flex; flex-direction:column; gap:${isPortrait?14:9}px; margin-top:20px; overflow:hidden; }
       .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:10px; padding:${isPortrait?22:14}px 24px; display:flex; align-items:flex-start; gap:16px; flex-shrink:0; }
       .cn { font-size:${isPortrait?28:20}px; font-weight:900; color:${C.accent}; font-family:'${bodyFont}',sans-serif; flex-shrink:0; width:36px; line-height:1; }
@@ -297,13 +297,13 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     quote: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
 
-      .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${forceLight?"text-shadow:0 2px 8px rgba(255,255,255,0.7)":C.dark?"text-shadow:0 2px 12px rgba(0,0,0,0.6)":"text-shadow:0 2px 8px rgba(255,255,255,0.5)"} font-style:italic; font-family:'${hlFont}',sans-serif; }
+      .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-style:italic; font-family:'${hlFont}',sans-serif; }
       .body { text-shadow:${forceLight?"0 1px 6px rgba(255,255,255,0.6)":C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
     `,
     hero: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; gap:24px; text-align:center; overflow:hidden; }
 
-      .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${forceLight?"text-shadow:0 2px 8px rgba(255,255,255,0.7)":C.dark?"text-shadow:0 2px 12px rgba(0,0,0,0.6)":"text-shadow:0 2px 8px rgba(255,255,255,0.5)"} font-family:'${hlFont}',sans-serif; }
+      .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-family:'${hlFont}',sans-serif; }
       .body { text-shadow:${forceLight?"0 1px 6px rgba(255,255,255,0.6)":C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; }
       .cb { width:100%; max-width:860px; padding:${isPortrait?30:24}px 50px; border-radius:12px; font-size:${isPortrait?28:24}px; font-weight:800; font-family:'${bodyFont}',sans-serif; text-align:center; background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
     `,
@@ -342,8 +342,8 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
         <div class="cover-content">
           ${coverBadgeHTML}
           ${slide.tag ? `<div style="margin-bottom:20px"><span class="tag">${esc(slide.tag.toUpperCase())}</span></div>` : ""}
-          <div style="font-size:${isPortrait?80:66}px;font-weight:800;line-height:1.1;letter-spacing:${hs.letterSpacing};${forceLight?"text-shadow:0 2px 8px rgba(255,255,255,0.7)":C.dark?"text-shadow:0 2px 12px rgba(0,0,0,0.6)":"text-shadow:0 2px 8px rgba(255,255,255,0.5)"}font-family:'${hlFont}',sans-serif;color:${C.text};${isCentre?"text-align:center;":""}width:100%;white-space:pre-wrap;">${hl}</div>
-          ${slide.body ? `<div style="font-size:${isPortrait?32:26}px;line-height:1.6;color:${C.sub};margin-top:24px;font-family:'${bodyFont}',sans-serif;${forceLight?"text-shadow:0 1px 6px rgba(255,255,255,0.6)":C.dark?"text-shadow:0 1px 8px rgba(0,0,0,0.5)":"text-shadow:0 1px 6px rgba(255,255,255,0.4)"}${isCentre?"text-align:center;":""}">${accentHL(slide.body)}</div>` : ""}
+          <div style="font-size:${isPortrait?80:66}px;font-weight:800;line-height:1.1;letter-spacing:${hs.letterSpacing};font-family:'${hlFont}',sans-serif;color:${C.text};${isCentre?"text-align:center;":""}width:100%;white-space:pre-wrap;">${hl}</div>
+          ${slide.body ? `<div style="font-size:${isPortrait?32:26}px;line-height:1.6;color:${C.sub};margin-top:24px;font-family:'${bodyFont}',sans-serif;${isCentre?"text-align:center;":""}">${accentHL(slide.body)}</div>` : ""}
         </div>`;
     }
 
@@ -893,6 +893,7 @@ export default function App() {
   const [templatePhotos, setTemplatePhotos] = useState(S?.templatePhotos||[]);
   const [overlayDark, setOverlayDark] = useState(S?.overlayDark??75);
   const [photoOpacity, setPhotoOpacity] = useState(S?.photoOpacity??100);
+  const [templateOpacity, setTemplateOpacity] = useState(S?.templateOpacity??100);
 
   const [topic, setTopic] = useState("");
   const [inspirationImg, setInspirationImg] = useState(null);
@@ -985,7 +986,7 @@ export default function App() {
     const safeActiveCover = activeCoverPhoto?.startsWith('data:') ? '' : activeCoverPhoto;
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,quotePhotos,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
-           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,photoOpacity,ratio,bgColour,customColourDark,audienceType,customActiveSlot,textDensity});
+           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,photoOpacity,templateOpacity,ratio,bgColour,customColourDark,audienceType,customActiveSlot,textDensity});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
       bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType,customActiveSlot,textDensity,quotePhotos]);
@@ -1303,12 +1304,13 @@ Return ONLY valid JSON, nothing else.` }
   const slideOpts = useCallback((slideIdx) => ({
     fontId, headlineStyle, bgMode, templateBgUrl,
     overlayDark: slideOverlays[slideIdx]??overlayDark,
-    coverImageUrl: activeCoverPhoto, coverPosition, badgeArea, photoOpacity,
+    coverImageUrl: activeCoverPhoto, coverPosition, badgeArea,
+    photoOpacity: slideIdx === 0 ? photoOpacity : templateOpacity,
     profileUrl, name, handle, blueTick,
     websiteUrl: currentUser?.plan==="free" ? "studio.buildwithtav.co" : (showWebsite?website:""),
     showNums, ratio, accentColor, bgColour, customColourDark,
     coverImgPos, templateImgPos, gradientMode,
-  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,photoOpacity,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,customColourDark,slideOverlays,gradientMode,currentUser]);
+  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,photoOpacity,templateOpacity,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,customColourDark,slideOverlays,gradientMode,currentUser]);
 
   const downloadOne = async (i) => {
     if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
@@ -1502,7 +1504,7 @@ Return ONLY a JSON array of ${needed} strings.`;
     const bg = isDark ? "#0d0b08" : "#F8F4EE";
     const textColor = textColorOverride || (hasBgImg ? "#FFFFFF" : (isDark ? "#F5EDE0" : "#1a1208"));
     const subColor = hasBgImg ? "rgba(255,255,255,0.85)" : (isDark ? "rgba(245,237,224,0.7)" : "rgba(26,18,8,0.55)");
-    const textShadow = hasBgImg ? "text-shadow:0 2px 24px rgba(0,0,0,0.95),0 1px 8px rgba(0,0,0,0.8);" : "";
+    const textShadow = hasBgImg ? "" : "";
     const fontObj = FONTS.find(f => f.id === quoteFont) || FONTS[1];
     const sigFontObj = FONTS.find(f => f.id === quoteSigFont) || FONTS[5];
     const font = fontObj.css;
@@ -2768,9 +2770,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
-                <label style={lbl}>Photo opacity — {photoOpacity}%</label>
-                <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>How visible the background photo is. Lower = more faded, subtle background.</p>
-                <input type="range" min={10} max={100} value={photoOpacity} onChange={e=>setPhotoOpacity(+e.target.value)} style={{width:"100%",marginBottom:14}}/>
+                <label style={lbl}>Photo opacity — {templateOpacity}%</label>
+                <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>How visible the background photo is on slides 2 onwards. Lower = more faded.</p>
+                <input type="range" min={10} max={100} value={templateOpacity} onChange={e=>setTemplateOpacity(+e.target.value)} style={{width:"100%",marginBottom:14}}/>
                 <label style={lbl}>Photo overlay — {overlayDark}%</label>
                 <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>Applies to all slides. Can be adjusted per-slide in the edit panel after generation.</p>
                 <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
