@@ -139,7 +139,7 @@ async function sampleImageBrightness(imageUrl) {
 function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const {
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
-    coverImageUrl, coverPosition, badgeArea,
+    coverImageUrl, coverPosition, badgeArea, photoOpacity,
     profileUrl, name, handle, blueTick, websiteUrl, showNums,
     accentColor, ratio, coverImgPos, templateImgPos, bgColour, gradientMode,
   } = opts;
@@ -212,7 +212,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
     html, body { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; }
     .slide { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; box-shadow:inset 0 0 0 3px ${C.dark?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.15)"}; }
-    .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; object-position:${isCover?`${coverPos2.x}% ${coverPos2.y}%`:`${templatePos.x}% ${templatePos.y}%`}; }
+    .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; object-position:${isCover?`${coverPos2.x}% ${coverPos2.y}%`:`${templatePos.x}% ${templatePos.y}%`}; opacity:${(photoOpacity||100)/100}; }
     .bg-ov { position:absolute; inset:0; z-index:1; pointer-events:none; }
     .noise { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0.3;
       background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
@@ -891,7 +891,8 @@ export default function App() {
   const [bgMode, setBgMode] = useState(S?.bgMode||"dark");
   const [templateBgUrl, setTemplateBgUrl] = useState(S?.templateBgUrl||null);
   const [templatePhotos, setTemplatePhotos] = useState(S?.templatePhotos||[]);
-  const [overlayDark, setOverlayDark] = useState(S?.overlayDark??45);
+  const [overlayDark, setOverlayDark] = useState(S?.overlayDark??75);
+  const [photoOpacity, setPhotoOpacity] = useState(S?.photoOpacity??100);
 
   const [topic, setTopic] = useState("");
   const [inspirationImg, setInspirationImg] = useState(null);
@@ -983,7 +984,7 @@ export default function App() {
     const safeActiveCover = activeCoverPhoto?.startsWith('data:') ? '' : activeCoverPhoto;
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,quotePhotos,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
-           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,ratio,bgColour,audienceType,customActiveSlot,textDensity});
+           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,photoOpacity,ratio,bgColour,audienceType,customActiveSlot,textDensity});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
       bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType,customActiveSlot,textDensity,quotePhotos]);
@@ -1301,7 +1302,7 @@ Return ONLY valid JSON, nothing else.` }
   const slideOpts = useCallback((slideIdx) => ({
     fontId, headlineStyle, bgMode, templateBgUrl,
     overlayDark: slideOverlays[slideIdx]??overlayDark,
-    coverImageUrl: activeCoverPhoto, coverPosition, badgeArea,
+    coverImageUrl: activeCoverPhoto, coverPosition, badgeArea, photoOpacity,
     profileUrl, name, handle, blueTick,
     websiteUrl: currentUser?.plan==="free" ? "studio.buildwithtav.co" : (showWebsite?website:""),
     showNums, ratio, accentColor, bgColour,
@@ -2446,6 +2447,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     + Upload cover photo
                   </div>
                 )}
+                {activeCoverPhoto&&(
+                  <div style={{marginBottom:12}}>
+                    <label style={{...lbl,fontSize:11,marginBottom:6,display:"block"}}>Photo opacity — {photoOpacity}% <span style={{fontWeight:400,fontSize:9}}>(lower = more faded)</span></label>
+                    <input type="range" min={10} max={100} value={photoOpacity} onChange={e=>setPhotoOpacity(+e.target.value)} style={{width:"100%"}}/>
+                    <label style={{...lbl,fontSize:11,marginBottom:6,marginTop:10,display:"block"}}>Photo overlay — {overlayDark}% <span style={{fontWeight:400,fontSize:9}}>(higher = darker)</span></label>
+                    <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
+                  </div>
+                )}
                 <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
                 {(()=>{
                   const isPortraitPrev = ratio==="portrait";
@@ -2754,7 +2763,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
-                <label style={lbl}>Background Gradient — {overlayDark}%</label>
+                <label style={lbl}>Photo opacity — {photoOpacity}%</label>
+                <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>How visible the background photo is. Lower = more faded, subtle background.</p>
+                <input type="range" min={10} max={100} value={photoOpacity} onChange={e=>setPhotoOpacity(+e.target.value)} style={{width:"100%",marginBottom:14}}/>
+                <label style={lbl}>Photo overlay — {overlayDark}%</label>
                 <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>Applies to all slides. Can be adjusted per-slide in the edit panel after generation.</p>
                 <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
               </div>
@@ -2918,7 +2930,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
                 <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,padding:18,display:"flex",flexDirection:"column",gap:13}}>
                   <div style={{background:A.bg,borderRadius:9,border:`1.5px solid ${A.border}`,padding:"12px 14px",marginBottom:4}}>
-                    <label style={{...lbl,marginBottom:8}}>Background Gradient — {overlayDark}%</label>
+                    <label style={{...lbl,marginBottom:8}}>Photo overlay — {overlayDark}%</label>
                     <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
                   </div>
                   <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={{...inp,fontSize:16}}/></div>
@@ -3293,7 +3305,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           <div className="drawer-scroll" style={{overflowY:"auto",padding:"0 16px 40px",flex:1,WebkitOverflowScrolling:"touch"}}>
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             <div>
-              <label style={lbl}>Background Gradient — {overlayDark}%</label>
+              <label style={lbl}>Photo overlay — {overlayDark}%</label>
               <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
             </div>
             <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={{...inp,fontSize:16}}/></div>
