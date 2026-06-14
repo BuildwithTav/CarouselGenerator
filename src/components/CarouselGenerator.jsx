@@ -147,7 +147,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const templatePos = templateImgPos || {x:50,y:50};
 
   const accent = accentColor || GOLD;
-  const isDark = (bgMode === "colour" || bgMode === "custom" || !!coverImageUrl) ? (customColourDark??true) : bgMode !== "light";
+  const isDark = bgMode === "dark" ? true : bgMode === "light" ? false : (bgMode === "colour" || bgMode === "custom" || !!coverImageUrl) ? (customColourDark??true) : true;
   const colourTextDark = !isDark;
   const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : "#0A0A0A";
   const slideBgWithOpacity = (opts.photoOpacity||100) < 100 ? "#FFFFFF" : slideBg;
@@ -175,7 +175,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     : C.dark ? "rgba(0,0,0,0.62)" : "rgba(255,255,255,0.88)";
   const pillText = bgImageUrl || C.dark ? "#fff" : "#111";
   const pillSub = bgImageUrl || C.dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)";
-  const badgeTextColor = C.dark || bgImageUrl ? "#FFFFFF" : "#0A0A0A";
+  const badgeTextColor = forceLight ? "#0A0A0A" : (C.dark || bgImageUrl ? "#FFFFFF" : "#0A0A0A");
   const badgeSubColor = C.dark || bgImageUrl ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)";
   const badgeTextShadow = bgImageUrl ? "text-shadow:0 1px 6px rgba(0,0,0,0.8);" : "";
 
@@ -2790,7 +2790,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <label style={lbl}>Slide background (slides 2 onwards)</label>
                   <div style={{display:"flex",gap:8,marginBottom:bgMode==="custom"?14:8}}>
                     {BG_MODES.map(m=>(
-                      <button key={m.id} onClick={()=>setBgMode(m.id)} style={{flex:1,background:bgMode===m.id?A.text:A.bg,border:`1.5px solid ${bgMode===m.id?A.text:A.border}`,borderRadius:8,padding:"10px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                      <button key={m.id} onClick={()=>{setBgMode(m.id);if(m.id==="dark")setCustomColourDark(true);if(m.id==="light")setCustomColourDark(false);}} style={{flex:1,background:bgMode===m.id?A.text:A.bg,border:`1.5px solid ${bgMode===m.id?A.text:A.border}`,borderRadius:8,padding:"10px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
                         <span style={{fontSize:12,fontWeight:700,color:bgMode===m.id?A.accentText:A.text}}>{m.label}</span>
                         <span style={{fontSize:10,color:bgMode===m.id?"rgba(255,255,255,0.6)":A.muted}}>{m.desc}</span>
                       </button>
@@ -2801,13 +2801,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       <label style={lbl}>Pick a colour</label>
                       <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:10}}>
                         {BG_COLOUR_PRESETS.map(p=>(
-                          <button key={p.id} onClick={()=>setBgColour(p.hex)} title={p.label} style={{width:32,height:32,borderRadius:"50%",background:p.hex,border:bgColour===p.hex?`3px solid ${A.text}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0,boxShadow:["#F5F3EF","#FAF7F2","#FFFFFF"].includes(p.hex)?`inset 0 0 0 1px ${A.border}`:"none"}}/>
+                          <button key={p.id} onClick={()=>{setBgColour(p.hex);setBgMode("colour");}} title={p.label} style={{width:32,height:32,borderRadius:"50%",background:p.hex,border:bgColour===p.hex?`3px solid ${A.text}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0,boxShadow:["#F5F3EF","#FAF7F2","#FFFFFF"].includes(p.hex)?`inset 0 0 0 1px ${A.border}`:"none"}}/>
                         ))}
                         {bgCustomSlots.map((c,i)=>(
                           <div key={i} style={{position:"relative"}}>
                             {c ? (
                               <>
-                                <div onClick={()=>setBgColour(c)} style={{width:32,height:32,borderRadius:"50%",background:c,border:bgColour===c?`3px solid ${A.text}`:`2px solid ${A.border}`,cursor:"pointer",boxShadow:["#FFFFFF","#F5F3EF","#FAF7F2"].includes(c)?`inset 0 0 0 1px ${A.border}`:"none"}}/>
+                                <div onClick={()=>{setBgColour(c);setBgMode("colour");}} style={{width:32,height:32,borderRadius:"50%",background:c,border:bgColour===c?`3px solid ${A.text}`:`2px solid ${A.border}`,cursor:"pointer",boxShadow:["#FFFFFF","#F5F3EF","#FAF7F2"].includes(c)?`inset 0 0 0 1px ${A.border}`:"none"}}/>
                                 <div onClick={()=>{const s=[...bgCustomSlots];s[i]="";setBgCustomSlots(s);if(bgColour===c)setBgColour("#0A0A0A");}} style={{position:"absolute",top:-4,right:-4,width:14,height:14,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,lineHeight:1}}>×</div>
                               </>
                             ) : (
