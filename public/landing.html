@@ -402,4 +402,20 @@
 </footer>
 
 </body>
+<script>
+  // Capture affiliate ref code from URL and pass through to all app links
+  (function() {
+    const params = new URLSearchParams(window.location.search);
+    const sa = params.get('sa');
+    if (!sa) return;
+    // Store in localStorage so the app picks it up
+    try { localStorage.setItem('cs_affiliate_ref', sa); } catch {}
+    // Update all links to studio.buildwithtav.co to include the ref
+    document.querySelectorAll('a[href*="studio.buildwithtav.co"]').forEach(function(a) {
+      const url = new URL(a.href);
+      url.searchParams.set('sa', sa);
+      a.href = url.toString();
+    });
+  })();
+</script>
 </html>
