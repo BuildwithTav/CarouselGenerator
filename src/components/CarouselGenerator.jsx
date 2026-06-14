@@ -177,7 +177,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const pillSub = bgImageUrl || C.dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)";
   const badgeTextColor = C.dark || bgImageUrl ? "#FFFFFF" : "#0A0A0A";
   const badgeSubColor = C.dark || bgImageUrl ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)";
-  const badgeTextShadow = "";
+  const badgeTextShadow = bgImageUrl ? "text-shadow:0 1px 6px rgba(0,0,0,0.8);" : "";
 
   function esc(s) { return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
