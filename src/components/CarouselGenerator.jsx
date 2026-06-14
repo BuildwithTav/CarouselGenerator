@@ -150,7 +150,6 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const isDark = bgMode === "dark" ? true : bgMode === "light" ? false : (bgMode === "colour" || bgMode === "custom" || !!coverImageUrl) ? (customColourDark??true) : true;
   const colourTextDark = !isDark;
   const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : "#0A0A0A";
-  const slideBgWithOpacity = (opts.photoOpacity||100) < 100 ? "#FFFFFF" : slideBg;
   const coverHasImage = isCover && !!coverImageUrl;
   const isPortrait = ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1350;
@@ -212,7 +211,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     @import url('${gFonts}');
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
     html, body { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; }
-    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${slideBgWithOpacity}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; box-shadow:inset 0 0 0 3px ${C.dark?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.15)"}; }
+    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; box-shadow:inset 0 0 0 3px ${C.dark?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.15)"}; }
     .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; object-position:${isCover?`${coverPos2.x}% ${coverPos2.y}%`:`${templatePos.x}% ${templatePos.y}%`}; opacity:${(photoOpacity||100)/100}; }
     .bg-ov { position:absolute; inset:0; z-index:1; pointer-events:none; }
     .noise { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0.3;
