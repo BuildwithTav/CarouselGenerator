@@ -139,7 +139,7 @@ async function sampleImageBrightness(imageUrl) {
 function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const {
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
-    coverImageUrl, coverPosition, badgeArea, photoOpacity,
+    coverImageUrl, coverPosition, badgeArea, photoOpacity, customColourDark,
     profileUrl, name, handle, blueTick, websiteUrl, showNums,
     accentColor, ratio, coverImgPos, templateImgPos, bgColour, gradientMode,
   } = opts;
@@ -147,7 +147,8 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const templatePos = templateImgPos || {x:50,y:50};
 
   const accent = accentColor || GOLD;
-  const isDark = bgMode !== "light";
+  const isDark = bgMode === "colour" ? (customColourDark??true) : bgMode !== "light";
+  const colourTextDark = bgMode === "colour" && !(customColourDark??true);
   const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : "#0A0A0A";
   const coverHasImage = isCover && !!coverImageUrl;
   const C = {
@@ -917,6 +918,7 @@ export default function App() {
   const [customBgSlots, setCustomBgSlots] = useState(S?.customBgSlots||["","",""]);
   const [customAccentSlots, setCustomAccentSlots] = useState(S?.customAccentSlots||["","",""]);
   const [bgColour, setBgColour] = useState(S?.bgColour||"#1a1a2e");
+  const [customColourDark, setCustomColourDark] = useState(S?.customColourDark??true);
   const [slideCount, setSlideCount] = useState(6);
   const [err, setErr] = useState("");
   const [randomising, setRandomising] = useState(false);
@@ -984,7 +986,7 @@ export default function App() {
     const safeActiveCover = activeCoverPhoto?.startsWith('data:') ? '' : activeCoverPhoto;
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,quotePhotos,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
-           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,photoOpacity,ratio,bgColour,audienceType,customActiveSlot,textDensity});
+           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,photoOpacity,ratio,bgColour,customColourDark,audienceType,customActiveSlot,textDensity});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
       bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType,customActiveSlot,textDensity,quotePhotos]);
@@ -1305,9 +1307,9 @@ Return ONLY valid JSON, nothing else.` }
     coverImageUrl: activeCoverPhoto, coverPosition, badgeArea, photoOpacity,
     profileUrl, name, handle, blueTick,
     websiteUrl: currentUser?.plan==="free" ? "studio.buildwithtav.co" : (showWebsite?website:""),
-    showNums, ratio, accentColor, bgColour,
+    showNums, ratio, accentColor, bgColour, customColourDark,
     coverImgPos, templateImgPos, gradientMode,
-  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,slideOverlays,gradientMode,currentUser]);
+  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,photoOpacity,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,customColourDark,slideOverlays,gradientMode,currentUser]);
 
   const downloadOne = async (i) => {
     if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
@@ -2815,6 +2817,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       <div style={{display:"flex",gap:10,alignItems:"center"}}>
                         <input type="color" value={bgColour} onChange={e=>setBgColour(e.target.value)} style={{width:40,height:40,borderRadius:8,border:`1px solid ${A.border}`,cursor:"pointer",padding:2}}/>
                         <input value={bgColour} onChange={e=>setBgColour(e.target.value)} placeholder="#1a1a2e" style={{...inp,flex:1,fontSize:13}}/>
+                      </div>
+                      <div style={{display:"flex",gap:8,marginTop:12}}>
+                        <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>White text</button>
+                        <button onClick={()=>setCustomColourDark(false)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${!customColourDark?GOLD:A.border}`,background:!customColourDark?"#fff":A.bg,color:!customColourDark?"#000":A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>Dark text</button>
                       </div>
                     </div>
                   )}
