@@ -130,7 +130,7 @@ function emailCreditsExhausted(firstName) {
 </div>
 <div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:16px;">
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 4px;font-weight:700;">Pro — $50/month</p>
-<p style="font-size:15px;color:#0a0a0a;margin:0 0 4px;line-height:1.6;">800 credits · 80 carousel generations — around 40 carousels. Refer 4 people and Pro pays for itself.</p>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 4px;line-height:1.6;">800 credits · 80 carousel generations. Refer 4 people and Pro pays for itself.</p>
 <p style="font-size:15px;color:#BB9900;margin:0;font-weight:700;">30% Tier 1 commission + 15% Tier 2 on your network</p>
 </div>
 <div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:16px;">
