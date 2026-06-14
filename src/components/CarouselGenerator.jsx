@@ -1824,6 +1824,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
           /* Account tab */
           .account-inner{padding:16px!important}
+          .account-view{padding:0 14px!important}
+          .upgrade-view{padding:0 14px!important}
 
           /* Upgrade view — plan cards 2 col on mobile */
           .plan-cards-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}
@@ -3084,7 +3086,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         {/* UPGRADE TAB */}
         {/* ACCOUNT TAB */}
         {nav==="account"&&(
-          <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
+          <div className="account-view" style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
             <div style={{marginBottom:28}}>
               <h2 style={{fontSize:24,fontWeight:800,margin:"0 0 6px"}}>Account</h2>
               <p style={{color:A.muted,fontSize:14,margin:0}}>{currentUser?.email}</p>
@@ -3304,7 +3306,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
         {/* UPGRADE VIEW — accessible via upgrade pill only */}
         {nav==="upgrade"&&(
-          <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
+          <div className="upgrade-view" style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
             <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:28}}>
               <button onClick={()=>setNav("account")} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Back</button>
               <div>
