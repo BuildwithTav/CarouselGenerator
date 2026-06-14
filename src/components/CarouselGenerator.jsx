@@ -223,7 +223,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     .tr { top:44px; right:52px; border-top:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:${C.dark?0.4:0.7}; }
     .bl { bottom:44px; left:52px; border-bottom:2.5px solid ${C.accent}; border-left:2.5px solid ${C.accent}; opacity:${C.dark?0.4:0.7}; }
     .br { bottom:44px; right:52px; border-bottom:2.5px solid ${C.accent}; border-right:2.5px solid ${C.accent}; opacity:${C.dark?0.4:0.7}; }
-    .fade { position:absolute; bottom:0; left:0; right:0; height:45%; z-index:3; pointer-events:none; }
+    .fade { position:absolute; bottom:0; left:0; right:0; height:75%; z-index:3; pointer-events:none; }
     .badge { position:absolute; top:158px; left:80px; z-index:10;
       display:inline-flex; align-items:center; gap:14px;
       background:transparent; padding:10px 0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif!important; }
@@ -262,14 +262,14 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const layouts = {
     standard: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
-      .hl { font-size:${isPortrait?60:52}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; text-shadow:${C.dark?"0 2px 12px rgba(0,0,0,0.6)":"0 2px 8px rgba(255,255,255,0.5)"}; }
-      .body { text-shadow:${C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; ${ts2} font-family:'${bodyFont}',sans-serif; }
+      .hl { font-size:${isPortrait?60:52}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; text-shadow:${forceLight?"0 2px 8px rgba(255,255,255,0.7)":C.dark?"0 2px 12px rgba(0,0,0,0.6)":"0 2px 8px rgba(255,255,255,0.5)"}; }
+      .body { text-shadow:${forceLight?"0 1px 6px rgba(255,255,255,0.6)":C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; ${ts2} font-family:'${bodyFont}',sans-serif; }
       .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?28:24}px; font-weight:800; color:${C.accent}; font-family:'${bodyFont}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; white-space:pre-wrap; }
     `,
     statement: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
       .hl { font-size:${isPortrait?72:60}px; font-weight:800; line-height:1.1; letter-spacing:${hs.id==="upper"?"2px":"-2px"}; ${ts} font-family:'${hlFont}',sans-serif; flex-shrink:0; }
-      .body { text-shadow:${C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
+      .body { text-shadow:${forceLight?"0 1px 6px rgba(255,255,255,0.6)":C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
     `,
     split: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; overflow:hidden; }
@@ -298,13 +298,13 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
 
       .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-style:italic; font-family:'${hlFont}',sans-serif; }
-      .body { text-shadow:${C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
+      .body { text-shadow:${forceLight?"0 1px 6px rgba(255,255,255,0.6)":C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
     `,
     hero: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; gap:24px; text-align:center; overflow:hidden; }
 
       .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; ${ts} font-family:'${hlFont}',sans-serif; }
-      .body { text-shadow:${C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; }
+      .body { text-shadow:${forceLight?"0 1px 6px rgba(255,255,255,0.6)":C.dark?"0 1px 8px rgba(0,0,0,0.5)":"0 1px 6px rgba(255,255,255,0.4)"}; font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; }
       .cb { width:100%; max-width:860px; padding:${isPortrait?30:24}px 50px; border-radius:12px; font-size:${isPortrait?28:24}px; font-weight:800; font-family:'${bodyFont}',sans-serif; text-align:center; background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
     `,
   };
@@ -402,7 +402,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
   const hasBg = !!bgImageUrl;
   const overlayAlpha = (overlayDark||0)/100;
-  const coverOverlayAlpha = isCover ? Math.max(overlayAlpha, hasBg?0.55:0) : overlayAlpha;
+  const coverOverlayAlpha = overlayAlpha;
   const activeAlpha = isCover ? coverOverlayAlpha : overlayAlpha;
   const bgHtml = `
     ${hasBg ? `<img class="bg-img" src="${bgImageUrl}" />` : ""}
