@@ -1827,12 +1827,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
           /* Upgrade view — plan cards 2 col on mobile */
           .plan-cards-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}
-          .plan-cards-grid>div{padding:14px!important}
-          .plan-cards-grid .plan-price{font-size:18px!important}
-          .plan-cards-grid .plan-name{font-size:12px!important}
+          .plan-cards-grid>div{padding:12px 10px!important}
+          .plan-cards-grid .plan-price{font-size:17px!important}
+          .plan-cards-grid .plan-name{font-size:11px!important}
           .plan-cards-grid .plan-credits{font-size:9px!important}
           .plan-cards-grid button{padding:8px!important;font-size:10px!important}
-          .plan-cards-grid li{font-size:10px!important}
+          .plan-cards-grid li{font-size:10px!important;margin-bottom:4px!important}
 
           /* Affiliate and White Label boxes */
           .aff-features-grid{grid-template-columns:1fr!important}
@@ -1840,9 +1840,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
           /* Top-ups */
           .topup-row{flex-direction:column!important}
 
-          /* General spacing */
-          .tab-content{padding:16px 12px!important}
+          /* General tab content breathing room */
+          .tab-content{padding:16px 14px!important}
           .upgrade-header{flex-direction:column!important;gap:8px!important}
+
+          /* Make all surface boxes slightly more compact */
+          div[style*="padding:24"]{padding:16px!important}
+          div[style*="padding:20"]{padding:14px!important}
+          div[style*="padding:28"]{padding:16px!important}
+          div[style*="padding:32"]{padding:18px!important}
+          div[style*="marginBottom:16"]{margin-bottom:10px!important}
+          div[style*="marginBottom:28"]{margin-bottom:16px!important}
         }
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         .topic-textarea{min-height:42px}
