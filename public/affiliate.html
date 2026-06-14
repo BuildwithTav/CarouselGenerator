@@ -156,15 +156,92 @@
   .cta-note { font-size: 12px; color: rgba(0,0,0,0.45); margin-top: 12px; }
 
   @media (max-width: 768px) {
-    .referral-grid { grid-template-columns: repeat(2, 1fr); }
-    .t2-grid { grid-template-columns: 1fr; }
-    .summary-row { grid-template-columns: 1fr 1fr; }
-    .three-way { grid-template-columns: 1fr; }
-    .comparison { grid-template-columns: 1fr; }
-    .frank-hero { flex-direction: column; }
+    body { padding: 32px 16px; }
+    .container { max-width: 100%; }
+
+    /* Header */
+    .section-title { font-size: 26px; letter-spacing: -0.5px; }
+    .section-sub { font-size: 14px; margin-bottom: 32px; }
+
+    /* Frank hero */
+    .frank-hero { flex-direction: column; padding: 24px 20px; gap: 16px; }
+    .frank-left h2 { font-size: 20px; }
+    .frank-left p { font-size: 13px; }
+    .frank-tags { flex-wrap: wrap; gap: 6px; }
+    .frank-tag { font-size: 10px; padding: 3px 8px; }
     .frank-right { text-align: left; }
-    .section-title { font-size: 28px; }
+    .frank-right .big { font-size: 40px; }
+    .frank-right .sub { font-size: 12px; }
+
+    /* Step headers */
+    .step-header { flex-wrap: wrap; gap: 8px; }
+    .step-badge { font-size: 10px; padding: 4px 10px; }
+    .step-total { font-size: 14px; }
+    .step-line { display: none; }
+
+    /* Referral grid — 2 col on mobile */
+    .referral-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .ref-card { padding: 12px 10px; }
+    .ref-avatar { width: 32px; height: 32px; font-size: 14px; }
+    .ref-name { font-size: 11px; }
+    .ref-plan { font-size: 9px; }
+    .ref-earn { font-size: 15px; }
+    .ref-earn-label { font-size: 8px; }
+    .ref-network { font-size: 9px; }
+
+    /* Tier 2 */
+    .t2-visual { padding: 20px 16px; }
+    .t2-explanation { font-size: 13px; }
+    .t2-grid { grid-template-columns: 1fr; gap: 10px; }
+    .t2-card { padding: 16px; }
+    .t2-card .count { font-size: 28px; }
+    .t2-total { flex-direction: column; gap: 8px; }
+    .t2-total .val { font-size: 22px; }
+
+    /* Frank summary */
+    .frank-summary { padding: 20px 16px; }
+    .summary-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .summary-item .val { font-size: 20px; }
+    .summary-item .lbl { font-size: 10px; }
+    .summary-note { font-size: 12px; }
+
+    /* Section divider */
+    .section-divider { margin: 32px 0 24px; }
+    .section-divider h2 { font-size: 20px; white-space: normal; }
+    .section-divider .div-line { display: none; }
+
+    /* White Label */
+    .wl-hero { padding: 20px 16px; }
+    .wl-hero h3 { font-size: 18px; }
+    .wl-hero .wl-sub { font-size: 13px; margin-bottom: 16px; }
+    .wl-chain { flex-direction: column; gap: 8px; }
     .wl-arrow-wrap { display: none; }
+    .wl-node { padding: 14px 16px; }
+    .wl-node .wl-who { font-size: 12px; }
+    .wl-node .wl-detail { font-size: 10px; }
+    .wl-node .wl-earn { font-size: 14px; }
+    .wl-bombshell { flex-direction: column; padding: 16px; }
+    .wl-bombshell .bombshell-num { font-size: 28px; }
+
+    /* Three way */
+    .three-way { grid-template-columns: 1fr; gap: 12px; }
+    .three-card { padding: 20px; }
+    .three-card .main-earn { font-size: 28px; }
+
+    /* Comparison */
+    .comparison { grid-template-columns: 1fr; gap: 12px; }
+    .comp-card { padding: 20px; }
+    .comp-card .comp-price { font-size: 28px; }
+    .comp-bottom .cb-val { font-size: 18px; }
+
+    /* Commission rules box */
+    .step-header + p { font-size: 12px; }
+
+    /* CTA */
+    .cta { padding: 32px 20px; border-radius: 16px; }
+    .cta h2 { font-size: 24px; }
+    .cta p { font-size: 14px; }
+    .cta-btn { padding: 14px 24px; font-size: 14px; display: block; }
   }
 </style>
 </head>
