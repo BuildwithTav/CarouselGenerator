@@ -77,7 +77,7 @@ function emailFreeWelcome(firstName) {
 }
 
 function emailPaidWelcome(firstName, planName, affiliateId, commissionRate) {
-  const affiliateLink = `https://studio.buildwithtav.co?sa=${affiliateId}`;
+  const affiliateLink = `https://studio.buildwithtav.co/landing?sa=${affiliateId}`;
   return {
     subject: "Your affiliate link is ready — start earning",
     html: `<!DOCTYPE html>
