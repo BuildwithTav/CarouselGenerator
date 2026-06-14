@@ -202,8 +202,8 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   }
 
   const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&family=Dancing+Script:wght@600;700&family=Raleway:wght@700;800;900&family=Lato:wght@700;900&family=Roboto:wght@700;900&family=Ubuntu:wght@700&family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@700;900&family=Crimson+Text:wght@700&family=Merriweather:wght@700;900&family=Bebas+Neue&family=Abril+Fatface&family=Pacifico&family=Josefin+Sans:wght@700&family=Quicksand:wght@700&family=DM+Serif+Display&family=Cormorant+Garamond:wght@700&family=Righteous&display=swap`;
-  const ts = C.dark || bgImageUrl ? "text-shadow:0 2px 28px rgba(0,0,0,0.95);" : "";
-  const ts2 = C.dark || bgImageUrl ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : "";
+  const ts = (C.dark && !colourTextDark) || bgImageUrl ? "text-shadow:0 2px 28px rgba(0,0,0,0.95);" : "";
+  const ts2 = (C.dark && !colourTextDark) || bgImageUrl ? "text-shadow:0 1px 16px rgba(0,0,0,0.85);" : "";
 
   const BADGE_BOTTOM = 230;
   const topPad = isPortrait ? 300 : 270;
@@ -2471,7 +2471,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <div>
                       <label style={{...lbl,marginBottom:8}}>Preview</label>
                       <div style={{width:previewW,height:previewH,borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                        <SlidePreview slide={{headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={0} total={1} opts={{...slideOpts(0),ratio}} onClick={()=>{}} isActive={false} isCover={true}/>
+                        <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={0} total={1} opts={slideOpts(0)} onClick={()=>{}} isActive={false} isCover={true}/>
                       </div>
                     </div>
                   );
