@@ -795,8 +795,29 @@ export default function App() {
       const params = new URLSearchParams(window.location.search);
       const sa = params.get("sa");
       if (sa) localStorage.setItem("cs_affiliate_ref", sa);
+      const checkout = params.get("checkout");
+      if (checkout) localStorage.setItem("cs_checkout_plan", checkout);
     } catch {}
   }, []);
+
+  // Fire checkout automatically after login if checkout param was set
+  useEffect(() => {
+    if (!currentUser) return;
+    try {
+      const plan = localStorage.getItem("cs_checkout_plan");
+      if (!plan) return;
+      localStorage.removeItem("cs_checkout_plan");
+      const planMap = {
+        starter: { id: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID, mode: "subscription" },
+        pro: { id: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID, mode: "subscription" },
+        agency: { id: process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID, mode: "subscription" },
+        affiliate: { id: process.env.NEXT_PUBLIC_STRIPE_AFFILIATE_PRICE_ID, mode: "payment" },
+        whitelabel: { id: process.env.NEXT_PUBLIC_STRIPE_WHITELABEL_PRICE_ID, mode: "payment" },
+      };
+      const p = planMap[plan];
+      if (p) handleUpgrade(p.id, p.mode);
+    } catch {}
+  }, [currentUser]);
 
   const handleUpgrade = async (priceId, mode="subscription") => {
     setUpgrading(true);
@@ -2414,6 +2435,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                           <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                         </div>
                         {activeCoverPhoto===photo&&<div onClick={()=>setActiveCoverPhoto(null)} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700}}>×</div>}
+                        <div onClick={()=>{if(window.confirm("Remove this photo from your library? This cannot be undone.")){const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);if(activeCoverPhoto===photo)setActiveCoverPhoto(null);}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
                       </div>
                     ))}
                     <div onClick={()=>coverPhotoRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
@@ -2615,7 +2637,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                         <div onClick={()=>{setActiveCoverPhoto(p);sampleImageBrightness(p).then(setBadgeArea);}} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:`2px solid ${activeCoverPhoto===p?GOLD:A.border}`,cursor:"pointer"}}>
                           <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                         </div>
-                        <button onClick={()=>{const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);if(activeCoverPhoto===p)setActiveCoverPhoto(next[0]||null);}} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>×</button>
+                        <button onClick={()=>{if(window.confirm("Remove this photo from your library? This cannot be undone.")){const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);if(activeCoverPhoto===p)setActiveCoverPhoto(next[0]||null);}}} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>×</button>
                       </div>
                     ))}
                     {coverPhotos.length < 8 && (
