@@ -147,9 +147,10 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const templatePos = templateImgPos || {x:50,y:50};
 
   const accent = accentColor || GOLD;
-  const isDark = bgMode === "colour" ? (customColourDark??true) : bgMode !== "light";
-  const colourTextDark = bgMode === "colour" && !(customColourDark??true);
+  const isDark = (bgMode === "colour" || bgMode === "custom" || !!coverImageUrl) ? (customColourDark??true) : bgMode !== "light";
+  const colourTextDark = !isDark;
   const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : "#0A0A0A";
+  const slideBgWithOpacity = (opts.photoOpacity||100) < 100 ? "#FFFFFF" : slideBg;
   const coverHasImage = isCover && !!coverImageUrl;
   const C = {
     bg: slideBg,
@@ -212,7 +213,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     @import url('${gFonts}');
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
     html, body { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; }
-    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; box-shadow:inset 0 0 0 3px ${C.dark?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.15)"}; }
+    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${slideBgWithOpacity}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; box-shadow:inset 0 0 0 3px ${C.dark?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.15)"}; }
     .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; object-position:${isCover?`${coverPos2.x}% ${coverPos2.y}%`:`${templatePos.x}% ${templatePos.y}%`}; opacity:${(photoOpacity||100)/100}; }
     .bg-ov { position:absolute; inset:0; z-index:1; pointer-events:none; }
     .noise { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0.3;
@@ -2455,6 +2456,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <input type="range" min={10} max={100} value={photoOpacity} onChange={e=>setPhotoOpacity(+e.target.value)} style={{width:"100%"}}/>
                     <label style={{...lbl,fontSize:11,marginBottom:6,marginTop:10,display:"block"}}>Photo overlay — {overlayDark}% <span style={{fontWeight:400,fontSize:9}}>(higher = darker)</span></label>
                     <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
+                    <div style={{display:"flex",gap:8,marginTop:10}}>
+                      <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>White text</button>
+                      <button onClick={()=>setCustomColourDark(false)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${!customColourDark?GOLD:A.border}`,background:!customColourDark?"#fff":A.bg,color:!customColourDark?"#000":A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>Dark text</button>
+                    </div>
                   </div>
                 )}
                 <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
@@ -2869,6 +2874,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`,marginTop:16}}>
                     <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
                   </div>
+                  {bgMode==="custom"&&templateBgUrl&&(
+                    <div style={{display:"flex",gap:8,marginTop:12}}>
+                      <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>White text</button>
+                      <button onClick={()=>setCustomColourDark(false)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${!customColourDark?GOLD:A.border}`,background:!customColourDark?"#fff":A.bg,color:!customColourDark?"#000":A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>Dark text</button>
+                    </div>
+                  )}
                 </div>
               </div>
 
