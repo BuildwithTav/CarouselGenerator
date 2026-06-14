@@ -156,92 +156,112 @@
   .cta-note { font-size: 12px; color: rgba(0,0,0,0.45); margin-top: 12px; }
 
   @media (max-width: 768px) {
-    body { padding: 32px 16px; }
-    .container { max-width: 100%; }
+    body { padding: 24px 14px; overflow-x: hidden; }
+    * { box-sizing: border-box; }
+    .container { max-width: 100%; overflow-x: hidden; }
+
+    /* Prevent all overflow */
+    p, h1, h2, h3, h4, div, span, li { max-width: 100%; word-break: break-word; }
 
     /* Header */
-    .section-title { font-size: 26px; letter-spacing: -0.5px; }
-    .section-sub { font-size: 14px; margin-bottom: 32px; }
+    .section-title { font-size: 22px; letter-spacing: -0.5px; }
+    .section-sub { font-size: 13px; margin-bottom: 24px; max-width: 100%; }
 
     /* Frank hero */
-    .frank-hero { flex-direction: column; padding: 24px 20px; gap: 16px; }
-    .frank-left h2 { font-size: 20px; }
-    .frank-left p { font-size: 13px; }
-    .frank-tags { flex-wrap: wrap; gap: 6px; }
-    .frank-tag { font-size: 10px; padding: 3px 8px; }
+    .frank-hero { flex-direction: column; padding: 18px 14px; gap: 12px; }
+    .frank-left h2 { font-size: 17px; }
+    .frank-left p { font-size: 12px; max-width: 100%; margin-bottom: 10px; }
+    .frank-tags { flex-wrap: wrap; gap: 5px; }
+    .frank-tag { font-size: 9px; padding: 3px 7px; }
     .frank-right { text-align: left; }
-    .frank-right .big { font-size: 40px; }
-    .frank-right .sub { font-size: 12px; }
+    .frank-right .big { font-size: 34px; }
+    .frank-right .sub { font-size: 11px; }
+    .frank-right .sub2 { font-size: 10px; }
 
     /* Step headers */
-    .step-header { flex-wrap: wrap; gap: 8px; }
-    .step-badge { font-size: 10px; padding: 4px 10px; }
-    .step-total { font-size: 14px; }
+    .step-header { flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .step-badge { font-size: 10px; padding: 4px 10px; white-space: normal; line-height: 1.4; max-width: 100%; }
+    .step-total { font-size: 13px; white-space: nowrap; }
     .step-line { display: none; }
 
-    /* Referral grid — 2 col on mobile */
-    .referral-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .ref-card { padding: 12px 10px; }
-    .ref-avatar { width: 32px; height: 32px; font-size: 14px; }
-    .ref-name { font-size: 11px; }
-    .ref-plan { font-size: 9px; }
-    .ref-earn { font-size: 15px; }
+    /* Referral grid — 2 col */
+    .referral-grid { grid-template-columns: repeat(2, 1fr); gap: 7px; margin-bottom: 18px; }
+    .ref-card { padding: 10px 8px; border-radius: 10px; }
+    .ref-avatar { width: 26px; height: 26px; font-size: 12px; margin-bottom: 5px; }
+    .ref-name { font-size: 10px; margin-bottom: 2px; }
+    .ref-plan { font-size: 9px; margin-bottom: 5px; padding-bottom: 5px; }
+    .ref-earn { font-size: 14px; }
     .ref-earn-label { font-size: 8px; }
-    .ref-network { font-size: 9px; }
+    .ref-network { font-size: 8px; margin-top: 4px; }
+
+    /* Connector */
+    .connector-line { height: 18px; }
 
     /* Tier 2 */
-    .t2-visual { padding: 20px 16px; }
-    .t2-explanation { font-size: 13px; }
-    .t2-grid { grid-template-columns: 1fr; gap: 10px; }
-    .t2-card { padding: 16px; }
-    .t2-card .count { font-size: 28px; }
-    .t2-total { flex-direction: column; gap: 8px; }
-    .t2-total .val { font-size: 22px; }
+    .t2-visual { padding: 14px 12px; }
+    .t2-explanation { font-size: 12px; margin-bottom: 14px; }
+    .t2-grid { grid-template-columns: 1fr; gap: 7px; margin-bottom: 12px; }
+    .t2-card { padding: 12px; border-radius: 10px; }
+    .t2-card .count { font-size: 24px; }
+    .t2-card .desc { font-size: 10px; }
+    .t2-card .earn { font-size: 17px; }
+    .t2-total { flex-direction: column; gap: 6px; padding: 12px; }
+    .t2-total p { font-size: 12px; }
+    .t2-total .val { font-size: 20px; }
 
     /* Frank summary */
-    .frank-summary { padding: 20px 16px; }
-    .summary-row { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .summary-item .val { font-size: 20px; }
-    .summary-item .lbl { font-size: 10px; }
-    .summary-note { font-size: 12px; }
+    .frank-summary { padding: 14px 12px; }
+    .frank-summary h3 { font-size: 13px; margin-bottom: 12px; }
+    .summary-row { grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 12px; }
+    .summary-item { padding: 10px 7px; border-radius: 8px; }
+    .summary-item .val { font-size: 17px; }
+    .summary-item .lbl { font-size: 9px; }
+    .summary-note { font-size: 11px; padding-top: 12px; }
 
     /* Section divider */
-    .section-divider { margin: 32px 0 24px; }
-    .section-divider h2 { font-size: 20px; white-space: normal; }
+    .section-divider { margin: 24px 0 16px; }
+    .section-divider h2 { font-size: 17px; white-space: normal; text-align: center; }
     .section-divider .div-line { display: none; }
 
-    /* White Label */
-    .wl-hero { padding: 20px 16px; }
-    .wl-hero h3 { font-size: 18px; }
-    .wl-hero .wl-sub { font-size: 13px; margin-bottom: 16px; }
-    .wl-chain { flex-direction: column; gap: 8px; }
+    /* White Label — key fix: min-width removed */
+    .wl-hero { padding: 14px 12px; border-radius: 12px; }
+    .wl-hero h3 { font-size: 15px; margin-bottom: 5px; }
+    .wl-hero .wl-sub { font-size: 12px; margin-bottom: 12px; max-width: 100%; }
+    .wl-chain { flex-direction: column; gap: 7px; }
     .wl-arrow-wrap { display: none; }
-    .wl-node { padding: 14px 16px; }
-    .wl-node .wl-who { font-size: 12px; }
+    .wl-node { padding: 11px 12px; min-width: 0 !important; width: 100%; flex: none; border-radius: 10px; }
+    .wl-node .wl-who { font-size: 11px; }
     .wl-node .wl-detail { font-size: 10px; }
-    .wl-node .wl-earn { font-size: 14px; }
-    .wl-bombshell { flex-direction: column; padding: 16px; }
-    .wl-bombshell .bombshell-num { font-size: 28px; }
+    .wl-node .wl-earn { font-size: 13px; }
+    .wl-node .wl-earn-label { font-size: 9px; }
+    .wl-bombshell { flex-direction: column; padding: 12px; gap: 6px; border-radius: 10px; }
+    .wl-bombshell p { font-size: 12px; }
+    .wl-bombshell .bombshell-num { font-size: 24px; }
 
     /* Three way */
-    .three-way { grid-template-columns: 1fr; gap: 12px; }
-    .three-card { padding: 20px; }
-    .three-card .main-earn { font-size: 28px; }
+    .three-way { grid-template-columns: 1fr; gap: 9px; margin-bottom: 28px; }
+    .three-card { padding: 14px; border-radius: 12px; }
+    .three-card h4 { font-size: 12px; margin-bottom: 8px; }
+    .three-card .main-earn { font-size: 24px; }
+    .three-card .earn-sub { font-size: 10px; margin-bottom: 12px; }
+    .three-card ul li { font-size: 11px; padding: 3px 0; }
 
     /* Comparison */
-    .comparison { grid-template-columns: 1fr; gap: 12px; }
-    .comp-card { padding: 20px; }
-    .comp-card .comp-price { font-size: 28px; }
-    .comp-bottom .cb-val { font-size: 18px; }
-
-    /* Commission rules box */
-    .step-header + p { font-size: 12px; }
+    .comparison { grid-template-columns: 1fr; gap: 9px; margin-bottom: 28px; }
+    .comp-card { padding: 16px; border-radius: 12px; }
+    .comp-card h3 { font-size: 16px; }
+    .comp-card .comp-price { font-size: 24px; margin: 7px 0 12px; }
+    .comp-card ul li { font-size: 11px; }
+    .comp-bottom .cb-val { font-size: 16px; }
+    .comp-verdict { padding: 14px 16px; }
+    .comp-verdict p { font-size: 12px; line-height: 1.6; }
 
     /* CTA */
-    .cta { padding: 32px 20px; border-radius: 16px; }
-    .cta h2 { font-size: 24px; }
-    .cta p { font-size: 14px; }
-    .cta-btn { padding: 14px 24px; font-size: 14px; display: block; }
+    .cta { padding: 24px 14px; border-radius: 14px; }
+    .cta h2 { font-size: 20px; }
+    .cta p { font-size: 13px; margin-bottom: 18px; }
+    .cta-btn { padding: 13px 18px; font-size: 13px; display: block; text-align: center; }
+    .cta-note { font-size: 10px; margin-top: 10px; }
   }
 </style>
 </head>
