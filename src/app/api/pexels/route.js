@@ -54,3 +54,24 @@ export async function GET(request) {
   }
 }
 
+// POST — fetch a Pexels image server-side and return as base64
+// Called when user selects an image, before saving to library
+export async function POST(request) {
+  try {
+    const { imageUrl } = await request.json();
+    if (!imageUrl) return NextResponse.json({ error: "imageUrl required" }, { status: 400 });
+
+    const res = await fetch(imageUrl);
+    if (!res.ok) return NextResponse.json({ error: "Failed to fetch image" }, { status: 500 });
+
+    const contentType = res.headers.get("content-type") || "image/jpeg";
+    const buffer = await res.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString("base64");
+    const dataUrl = "data:" + contentType + ";base64," + base64;
+
+    return NextResponse.json({ dataUrl });
+  } catch (e) {
+    console.error("Pexels image proxy error:", e);
+    return NextResponse.json({ error: "Failed to proxy image" }, { status: 500 });
+  }
+}
