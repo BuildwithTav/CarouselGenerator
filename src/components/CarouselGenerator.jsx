@@ -150,11 +150,19 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const isDark = bgMode === "dark" ? true : bgMode === "light" ? false : (bgMode === "colour" || bgMode === "custom" || !!coverImageUrl) ? (customColourDark??true) : true;
   const colourTextDark = !isDark;
   const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : "#0A0A0A";
+  // For image/cover photo modes: if opacity < 100, white shows behind faded photo
+  const bgForOpacity = (bgMode === "custom" || (isCover && !!coverImageUrl)) && (photoOpacity||100) < 100 ? "#FFFFFF" : null;
   const coverHasImage = isCover && !!coverImageUrl;
   const isPortrait = ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1350;
   const layout = slide.layout || "standard";
-  const bgImageUrl = isCover ? coverImageUrl : (bgMode === "custom" ? templateBgUrl : null);
+  // Cover: use cover photo if set; else inherit Visual tab (but if Visual tab = "custom" image, fall back to no image on cover)
+  const bgImageUrl = isCover
+    ? (coverImageUrl || null)  // cover only uses its own photo, never the template image
+    : (bgMode === "custom" ? templateBgUrl : null);
+  // Cover slide background: if no cover photo, inherit slideBg from Visual tab setting (but "custom" mode falls to dark)
+  const coverFallbackBg = (!isCover || coverImageUrl) ? slideBg : (bgMode === "custom" ? "#0A0A0A" : slideBg);
+  const effectiveSlideBg = isCover ? coverFallbackBg : slideBg;
   const forceLight = (coverHasImage || (bgMode === "custom" && bgImageUrl)) ? !(customColourDark??true) : false;
   const C = {
     bg: slideBg,
@@ -177,6 +185,11 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const badgeTextColor = forceLight ? "#0A0A0A" : (C.dark || bgImageUrl ? "#FFFFFF" : "#0A0A0A");
   const badgeSubColor = C.dark || bgImageUrl ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)";
   const badgeTextShadow = bgImageUrl ? "text-shadow:0 1px 6px rgba(0,0,0,0.8);" : "";
+
+  // Pre-compute glow for use inside base CSS — based on bgImageUrl and bgMode
+  const hasPhotoOrColour = !!(bgImageUrl) || bgMode === "colour";
+  const glowHL = hasPhotoOrColour ? (forceLight ? "text-shadow:0 0 20px rgba(255,255,255,0.9),0 0 40px rgba(255,255,255,0.5);" : "text-shadow:0 0 20px rgba(0,0,0,0.9),0 0 40px rgba(0,0,0,0.5);") : "";
+  const glowBody = hasPhotoOrColour ? (forceLight ? "text-shadow:0 0 12px rgba(255,255,255,0.8);" : "text-shadow:0 0 12px rgba(0,0,0,0.8);") : "";
 
   function esc(s) { return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
@@ -210,8 +223,8 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const base = `
     @import url('${gFonts}');
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-    html, body { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; }
-    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${slideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; box-shadow:inset 0 0 0 3px ${C.dark?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.15)"}; }
+    html, body { width:${W}px; height:${H}px; overflow:hidden; background:${bgForOpacity||effectiveSlideBg}; }
+    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${bgForOpacity||effectiveSlideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; box-shadow:inset 0 0 0 3px ${C.dark?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.15)"}; }
     .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; object-position:${isCover?`${coverPos2.x}% ${coverPos2.y}%`:`${templatePos.x}% ${templatePos.y}%`}; opacity:${(photoOpacity||100)/100}; }
     .bg-ov { position:absolute; inset:0; z-index:1; pointer-events:none; }
     .noise { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0.3;
@@ -261,14 +274,14 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const layouts = {
     standard: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
-      .hl { font-size:${isPortrait?60:52}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; }
-      .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
+      .hl { font-size:${isPortrait?60:52}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; ${glowHL} }
+      .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
       .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?28:24}px; font-weight:800; color:${C.accent}; font-family:'${bodyFont}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; white-space:pre-wrap; }
     `,
     statement: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
       .hl { font-size:${isPortrait?72:60}px; font-weight:800; line-height:1.1; letter-spacing:${hs.id==="upper"?"2px":"-2px"};  font-family:'${hlFont}',sans-serif; flex-shrink:0; }
-      .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
+      .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
     `,
     split: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; overflow:hidden; }
@@ -297,13 +310,13 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
 
       .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-style:italic; font-family:'${hlFont}',sans-serif; }
-      .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; }
+      .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
     `,
     hero: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; gap:24px; text-align:center; overflow:hidden; }
 
       .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-family:'${hlFont}',sans-serif; }
-      .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; }
+      .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
       .cb { width:100%; max-width:860px; padding:${isPortrait?30:24}px 50px; border-radius:12px; font-size:${isPortrait?28:24}px; font-weight:800; font-family:'${bodyFont}',sans-serif; text-align:center; background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
     `,
   };
@@ -421,7 +434,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   ${C.dark||hasBg?'<div class="noise"></div>':""}
   <div class="bk tl"></div><div class="bk tr"></div>
   <div class="bk bl"></div><div class="bk br"></div>
-  ${C.dark||hasBg||bgMode==="colour"?`<div class="fade" style="background:linear-gradient(to bottom,transparent,rgba(0,0,0,${Math.round((activeAlpha*0.65)*100)/100}));"></div>`:""}
+  ${activeAlpha > 0 ? `<div class="fade" style="background:linear-gradient(to bottom,transparent,rgba(0,0,0,${Math.min(activeAlpha,0.95)}));"></div>` : ""}
   ${isCover ? "" : profileUrl ? `<div class="badge">
     <div class="av">${avHtml}</div>
     <div>
