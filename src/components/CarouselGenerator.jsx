@@ -1660,7 +1660,13 @@ Return ONLY a JSON array of ${needed} strings.`;
     const bg = isDark ? "#0d0b08" : "#F8F4EE";
     const textColor = textColorOverride || (hasBgImg ? "#FFFFFF" : (isDark ? "#F5EDE0" : "#1a1208"));
     const subColor = hasBgImg ? "rgba(255,255,255,0.85)" : (isDark ? "rgba(245,237,224,0.7)" : "rgba(26,18,8,0.55)");
-    const textShadow = "";
+    // Glow: on custom image only. Dark text → white glow. Light text → dark glow.
+    const quoteDarkText = cardTextColor === "#0A0A0A" || cardTextColor === "#1a1208" || cardTextColor === "#3a2520";
+    const textShadow = hasBgImg
+      ? (quoteDarkText
+          ? "text-shadow:0 0 20px rgba(255,255,255,0.9),0 0 40px rgba(255,255,255,0.5);"
+          : "text-shadow:0 0 20px rgba(0,0,0,0.9),0 0 40px rgba(0,0,0,0.5);")
+      : "";
     const fontObj = FONTS.find(f => f.id === quoteFont) || FONTS[1];
     const sigFontObj = FONTS.find(f => f.id === quoteSigFont) || FONTS[5];
     const font = fontObj.css;
