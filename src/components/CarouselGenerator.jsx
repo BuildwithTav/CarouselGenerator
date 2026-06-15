@@ -1078,13 +1078,13 @@ export default function App() {
   const [quoteSignature, setQuoteSignature] = useState("");
   const [quoteFont, setQuoteFont] = useState("playfair");
   const [quoteSigFont, setQuoteSigFont] = useState("dancing");
-  const [quoteBgMode, setQuoteBgMode] = useState("dark");
+  const [quoteBgMode, setQuoteBgMode] = useState("light");
   const [quoteBgCustomUrl, setQuoteBgCustomUrl] = useState(null);
   const [quotePhotos, setQuotePhotos] = useState(S?.quotePhotos||[]);
   const [textDensity, setTextDensity] = useState(S?.textDensity||"balanced");
   const [quoteOverlay, setQuoteOverlay] = useState(0);
   const [quotePhotoOpacity, setQuotePhotoOpacity] = useState(100);
-  const [quoteTemplate, setQuoteTemplate] = useState("classic");
+  const [quoteTemplate, setQuoteTemplate] = useState("raw");
   const [luxuryLabel, setLuxuryLabel] = useState("wisdom");
   const [showHandle, setShowHandle] = useState(true);
   const [quoteFormat, setQuoteFormat] = useState("instagram");
@@ -1092,7 +1092,7 @@ export default function App() {
   const [quoteMode, setQuoteMode] = useState("brand");
   const [quoteSlides, setQuoteSlides] = useState([]);
   const [downloadingQuotes, setDownloadingQuotes] = useState(false);
-  const [quoteTextColor, setQuoteTextColor] = useState("#FFFFFF");
+  const [quoteTextColor, setQuoteTextColor] = useState("#0A0A0A");
   const [quoteTextCustomSlots, setQuoteTextCustomSlots] = useState(["","",""]);
   const [expandedQuote, setExpandedQuote] = useState(null);
   const [quoteHistory, setQuoteHistory] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_quote_history")||"[]");}catch{return [];}});
@@ -2257,11 +2257,23 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       </div>
                       {isPexelsUser ? (
                         <button onClick={()=>setShowPexelsQuote(true)} style={{width:"100%",padding:"8px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                          🔍 Search Pexels
+                          🔍 Search 1000s of free backgrounds
                         </button>
                       ) : (
                         <div style={{width:"100%",padding:"8px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:11,textAlign:"center",opacity:0.6}}>
-                          🔍 Search Pexels — Pro+ only
+                          🔍 Search 1000s of free backgrounds — Pro+
+                        </div>
+                      )}
+                      {quoteBgCustomUrl&&(
+                        <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:8}}>
+                          <div>
+                            <label style={{...lbl,marginBottom:4}}>Photo opacity — {quotePhotoOpacity}%</label>
+                            <input type="range" min={10} max={100} value={quotePhotoOpacity} onChange={e=>setQuotePhotoOpacity(+e.target.value)} style={{width:"100%"}}/>
+                          </div>
+                          <div>
+                            <label style={{...lbl,marginBottom:4}}>Overlay darkness — {quoteOverlay}%</label>
+                            <input type="range" min={0} max={80} value={quoteOverlay} onChange={e=>setQuoteOverlay(+e.target.value)} style={{width:"100%"}}/>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -2335,11 +2347,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     }} style={{display:"none"}}/>
                     {isPexelsUser ? (
                       <button onClick={()=>setShowPexelsQuote(true)} style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                        🔍 Search Pexels backgrounds
+                        🔍 Search 1000s of free backgrounds
                       </button>
                     ) : (
                       <div title="Upgrade to Pro to search Pexels" style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:12,textAlign:"center",marginBottom:8,cursor:"not-allowed",opacity:0.6}}>
-                        🔍 Search Pexels — Pro+ only
+                        🔍 Search 1000s of free backgrounds — Pro+
                       </div>
                     )}
                     <p style={{color:A.muted,fontSize:11,margin:"0 0 10px",lineHeight:1.6}}>
@@ -2666,7 +2678,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
                 {isPexelsUser ? (
                   <button onClick={()=>setShowPexelsCover(true)} style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                    🔍 Search Pexels covers
+                    🔍 Search 1000s of free images
                   </button>
                 ) : (
                   <div title="Upgrade to Pro to search Pexels" style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:12,textAlign:"center",marginBottom:10,cursor:"not-allowed",opacity:0.6}}>
@@ -2873,7 +2885,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
                   {isPexelsUser ? (
                     <button onClick={()=>setShowPexelsCover(true)} style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                      🔍 Search Pexels covers
+                      🔍 Search 1000s of free images
                     </button>
                   ) : (
                     <div title="Upgrade to Pro to search Pexels" style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:12,textAlign:"center",marginBottom:10,cursor:"not-allowed",opacity:0.6}}>
@@ -3073,11 +3085,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       <p style={{color:A.muted,fontSize:11,margin:"0 0 8px",lineHeight:1.6}}>Safe zone: keep important elements within 80px from each edge. Recommended size: 1080×1350px.</p>
                       {isPexelsUser ? (
                         <button onClick={()=>setShowPexelsTemplate(true)} style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                          🔍 Search Pexels backgrounds
+                          🔍 Search 1000s of free backgrounds
                         </button>
                       ) : (
                         <div title="Upgrade to Pro to search Pexels" style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:12,textAlign:"center",marginBottom:10,cursor:"not-allowed",opacity:0.6}}>
-                          🔍 Search Pexels — Pro+ only
+                          🔍 Search 1000s of free backgrounds — Pro+
                         </div>
                       )}
                       <input ref={templateBgRef} type="file" accept="image/*" onChange={async e=>{
