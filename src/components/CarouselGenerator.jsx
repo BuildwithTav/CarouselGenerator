@@ -1660,13 +1660,7 @@ Return ONLY a JSON array of ${needed} strings.`;
     const bg = isDark ? "#0d0b08" : "#F8F4EE";
     const textColor = textColorOverride || (hasBgImg ? "#FFFFFF" : (isDark ? "#F5EDE0" : "#1a1208"));
     const subColor = hasBgImg ? "rgba(255,255,255,0.85)" : (isDark ? "rgba(245,237,224,0.7)" : "rgba(26,18,8,0.55)");
-    // Glow: on custom image only. Dark text → white glow. Light text → dark glow.
-    const quoteDarkText = cardTextColor === "#0A0A0A" || cardTextColor === "#1a1208" || cardTextColor === "#3a2520";
-    const textShadow = hasBgImg
-      ? (quoteDarkText
-          ? "text-shadow:0 0 20px rgba(255,255,255,0.9),0 0 40px rgba(255,255,255,0.5);"
-          : "text-shadow:0 0 20px rgba(0,0,0,0.9),0 0 40px rgba(0,0,0,0.5);")
-      : "";
+    const textShadow = ""; // placeholder — real value set after cardTextColor is declared below
     const fontObj = FONTS.find(f => f.id === quoteFont) || FONTS[1];
     const sigFontObj = FONTS.find(f => f.id === quoteSigFont) || FONTS[5];
     const font = fontObj.css;
@@ -1824,6 +1818,13 @@ Return ONLY a JSON array of ${needed} strings.`;
     const rawTextC = isDark ? "#FFFFFF" : "#0A0A0A";
     const cardTextColor = tmpl === "feminine" ? femText : textColor;
     const cardSubColor = tmpl === "feminine" ? (isDark?"rgba(245,237,232,0.7)":"rgba(58,37,32,0.6)") : subColor;
+    // Glow: on custom image only. Dark text → white glow. Light text → dark glow.
+    const quoteDarkText = cardTextColor === "#0A0A0A" || cardTextColor === "#1a1208" || cardTextColor === "#3a2520";
+    const quoteTextShadow = hasBgImg
+      ? (quoteDarkText
+          ? "text-shadow:0 0 20px rgba(255,255,255,0.9),0 0 40px rgba(255,255,255,0.5);"
+          : "text-shadow:0 0 20px rgba(0,0,0,0.9),0 0 40px rgba(0,0,0,0.5);")
+      : "";
     const rawHTML = `
       <div style="position:absolute;top:${Math.round(24*s)}px;left:${Math.round(24*s)}px;right:${Math.round(24*s)}px;height:${Math.round(18*s)}px;background:${rawTextC};z-index:3;pointer-events:none;border-radius:${Math.round(2*s)}px;"></div>
       <div style="position:absolute;bottom:${Math.round(90*s)}px;left:${Math.round(24*s)}px;right:${Math.round(24*s)}px;height:${Math.round(6*s)}px;background:${rawTextC};opacity:0.5;z-index:3;pointer-events:none;border-radius:${Math.round(2*s)}px;"></div>
@@ -1860,8 +1861,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 .bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:${(effectiveQuoteOpacity||100)/100};}
 .bg-ov{position:absolute;inset:0;z-index:1;pointer-events:none;}
 .content{position:relative;z-index:5;width:100%;display:flex;flex-direction:column;align-items:${isLeft?"flex-start":"center"};text-align:${isLeft?"left":"center"};}
-.quote{font-size:${quoteSz}px;font-weight:700;line-height:1.32;color:${cardTextColor};font-style:italic;font-family:'${font}',serif;text-align:${isLeft?"left":"center"};margin-bottom:${Math.round(60*s)}px;${textShadow}}
-.sig{font-size:${sigSz}px;font-weight:600;color:${cardTextColor};opacity:0.75;font-family:'${sigFont}',cursive,serif;${textShadow}text-align:${isLeft?"left":"center"};width:100%;}
+.quote{font-size:${quoteSz}px;font-weight:700;line-height:1.32;color:${cardTextColor};font-style:italic;font-family:'${font}',serif;text-align:${isLeft?"left":"center"};margin-bottom:${Math.round(60*s)}px;${quoteTextShadow}}
+.sig{font-size:${sigSz}px;font-weight:600;color:${cardTextColor};opacity:0.75;font-family:'${sigFont}',cursive,serif;${quoteTextShadow}text-align:${isLeft?"left":"center"};width:100%;}
 </style>
 </head><body>
 <div class="slide">
