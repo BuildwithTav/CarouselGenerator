@@ -1816,6 +1816,8 @@ Return ONLY a JSON array of ${needed} strings.`;
       </div>` : "";
 
     const rawTextC = isDark ? "#FFFFFF" : "#0A0A0A";
+    const cardTextColor = tmpl === "feminine" ? femText : textColor;
+    const cardSubColor = tmpl === "feminine" ? (isDark?"rgba(245,237,232,0.7)":"rgba(58,37,32,0.6)") : subColor;
     const rawHTML = `
       <div style="position:absolute;top:${Math.round(24*s)}px;left:${Math.round(24*s)}px;right:${Math.round(24*s)}px;height:${Math.round(18*s)}px;background:${rawTextC};z-index:3;pointer-events:none;border-radius:${Math.round(2*s)}px;"></div>
       <div style="position:absolute;bottom:${Math.round(90*s)}px;left:${Math.round(24*s)}px;right:${Math.round(24*s)}px;height:${Math.round(6*s)}px;background:${rawTextC};opacity:0.5;z-index:3;pointer-events:none;border-radius:${Math.round(2*s)}px;"></div>
@@ -1842,8 +1844,6 @@ Return ONLY a JSON array of ${needed} strings.`;
     const tDivider = { classic: classicDivider, luxury: luxuryDivider, feminine: feminineDivider, raw: rawDivider, custom: customDivider }[tmpl] || customDivider;
     const tHandle = { classic: classicHandle, luxury: luxuryHandle, feminine: feminineHandle, raw: rawHandle, custom: "" }[tmpl] || (showHandle&&handleStr?`<div style="position:absolute;bottom:${handleBottom}px;left:0;right:0;text-align:center;z-index:6;"><span style="color:${accent};font-size:${Math.round(26*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:3px;opacity:0.85;">${esc(handleStr)}</span></div>`:"");
     const cardBg = tmpl === "feminine" ? femBg : bg;
-    const cardTextColor = tmpl === "feminine" ? femText : textColor;
-    const cardSubColor = tmpl === "feminine" ? (isDark?"rgba(245,237,232,0.7)":"rgba(58,37,32,0.6)") : subColor;
 
     return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>
