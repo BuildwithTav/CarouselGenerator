@@ -1083,6 +1083,7 @@ export default function App() {
   const [quotePhotos, setQuotePhotos] = useState(S?.quotePhotos||[]);
   const [textDensity, setTextDensity] = useState(S?.textDensity||"balanced");
   const [quoteOverlay, setQuoteOverlay] = useState(0);
+  const [quotePhotoOpacity, setQuotePhotoOpacity] = useState(100);
   const [quoteTemplate, setQuoteTemplate] = useState("classic");
   const [luxuryLabel, setLuxuryLabel] = useState("wisdom");
   const [showHandle, setShowHandle] = useState(true);
@@ -1651,10 +1652,11 @@ Return ONLY a JSON array of ${needed} strings.`;
     setGeneratingQuotes(false);
   };
 
-  const buildQuoteHTML = (quoteText, sig, textColorOverride) => {
+  const buildQuoteHTML = (quoteText, sig, textColorOverride, opacityOverride) => {
     const accent = accentColor || GOLD;
     const isDark = quoteBgMode !== "light";
     const hasBgImg = quoteBgMode === "custom" && quoteBgCustomUrl;
+    const effectiveQuoteOpacity = opacityOverride !== undefined ? opacityOverride : quotePhotoOpacity;
     const bg = isDark ? "#0d0b08" : "#F8F4EE";
     const textColor = textColorOverride || (hasBgImg ? "#FFFFFF" : (isDark ? "#F5EDE0" : "#1a1208"));
     const subColor = hasBgImg ? "rgba(255,255,255,0.85)" : (isDark ? "rgba(245,237,224,0.7)" : "rgba(26,18,8,0.55)");
@@ -1849,7 +1851,7 @@ Return ONLY a JSON array of ${needed} strings.`;
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000":cardBg};}
 .slide{width:${W}px;height:${H}px;background:${hasBgImg?"transparent":cardBg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${contentPadTop}px ${contentPadX}px ${contentPadBottom}px;position:relative;}
-.bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
+.bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:${(effectiveQuoteOpacity||100)/100};}
 .bg-ov{position:absolute;inset:0;z-index:1;background:rgba(0,0,0,${(quoteOverlay||0)/100});}
 .content{position:relative;z-index:5;width:100%;display:flex;flex-direction:column;align-items:${isLeft?"flex-start":"center"};text-align:${isLeft?"left":"center"};}
 .quote{font-size:${quoteSz}px;font-weight:700;line-height:1.32;color:${cardTextColor};font-style:italic;font-family:'${font}',serif;text-align:${isLeft?"left":"center"};margin-bottom:${Math.round(60*s)}px;${textShadow}}
@@ -2241,11 +2243,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     <div>
                       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
                         {quotePhotos.map((p,i)=>(
-                          <div key={i} style={{position:"relative"}}>
-                            <div onClick={()=>setQuoteBgCustomUrl(p)} style={{width:48,height:48,borderRadius:8,overflow:"hidden",border:`2px solid ${quoteBgCustomUrl===p?GOLD:A.border}`,cursor:"pointer"}}>
+                          <div key={i} style={{position:"relative",flexShrink:0}}>
+                            <div onClick={()=>setQuoteBgCustomUrl(quoteBgCustomUrl===p?null:p)} style={{width:48,height:48,borderRadius:8,overflow:"hidden",border:`2px solid ${quoteBgCustomUrl===p?GOLD:A.border}`,cursor:"pointer"}}>
                               <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                             </div>
-                            <button onClick={()=>{const next=quotePhotos.filter((_,j)=>j!==i);setQuotePhotos(next);if(quoteBgCustomUrl===p)setQuoteBgCustomUrl(next[0]||null);}} style={{position:"absolute",top:-5,right:-5,width:16,height:16,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0,border:"none",cursor:"pointer"}}>×</button>
+                            {quoteBgCustomUrl===p&&<div onClick={()=>setQuoteBgCustomUrl(null)} style={{position:"absolute",top:-4,right:-4,width:14,height:14,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
+                            <div onClick={()=>{if(window.confirm("Remove this image from your library? This cannot be undone.")){const next=quotePhotos.filter((_,j)=>j!==i);setQuotePhotos(next);if(quoteBgCustomUrl===p)setQuoteBgCustomUrl(next[0]||null);}}} style={{position:"absolute",bottom:-4,right:-4,width:14,height:14,borderRadius:"50%",background:"#333",color:"#fff",fontSize:7,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
                           </div>
                         ))}
                         {quotePhotos.length < 10 && (
@@ -2297,11 +2300,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <div>
                     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
                       {quotePhotos.map((p,i)=>(
-                        <div key={i} style={{position:"relative"}}>
-                          <div onClick={()=>setQuoteBgCustomUrl(p)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:`2px solid ${quoteBgCustomUrl===p?GOLD:A.border}`,cursor:"pointer"}}>
+                        <div key={i} style={{position:"relative",flexShrink:0}}>
+                          <div onClick={()=>setQuoteBgCustomUrl(quoteBgCustomUrl===p?null:p)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:`2px solid ${quoteBgCustomUrl===p?GOLD:A.border}`,cursor:"pointer"}}>
                             <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                           </div>
-                          <button onClick={()=>{const next=quotePhotos.filter((_,j)=>j!==i);setQuotePhotos(next);if(quoteBgCustomUrl===p)setQuoteBgCustomUrl(next[0]||null);}} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0,border:"none",cursor:"pointer"}}>×</button>
+                          {quoteBgCustomUrl===p&&<div onClick={()=>setQuoteBgCustomUrl(null)} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
+                          <div onClick={()=>{if(window.confirm("Remove this image from your library? This cannot be undone.")){const next=quotePhotos.filter((_,j)=>j!==i);setQuotePhotos(next);if(quoteBgCustomUrl===p)setQuoteBgCustomUrl(next[0]||null);}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
                         </div>
                       ))}
                       {quotePhotos.length < 10 && (
@@ -2323,7 +2327,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                           const data = await res.json();
                           if (data.url) {
                             setQuoteBgCustomUrl(data.url);
-                            setQuotePhotos(prev => [data.url, ...prev.filter(p=>p!==data.url)].slice(0,8));
+                            setQuotePhotos(prev => [data.url, ...prev.filter(p=>p!==data.url)].slice(0,10));
                           }
                         } catch(err) { console.error('Quote BG upload failed:', err); }
                       };
@@ -2338,10 +2342,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                         🔍 Search Pexels — Pro+ only
                       </div>
                     )}
-                    <p style={{color:A.muted,fontSize:11,margin:"0 0 12px",lineHeight:1.6}}>
-                      Save up to 8 backgrounds. Click to select. Safe zone: keep text within 80px of edges.<br/>
+                    <p style={{color:A.muted,fontSize:11,margin:"0 0 10px",lineHeight:1.6}}>
+                      Save up to 10 backgrounds. Click to select. Safe zone: keep text within 80px of edges.<br/>
                       Recommended: <strong>{quoteFormat==="portrait"?"1080×1920px":"1080×1350px"}</strong>
                     </p>
+                    <div style={{marginBottom:10}}>
+                      <label style={lbl}>Photo opacity — {quotePhotoOpacity}% <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(lower = more faded)</span></label>
+                      <input type="range" min={10} max={100} value={quotePhotoOpacity} onChange={e=>setQuotePhotoOpacity(+e.target.value)}/>
+                    </div>
                     <div style={{marginBottom:12}}>
                       <label style={lbl}>Overlay darkness — {quoteOverlay}% <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(0% = no overlay)</span></label>
                       <input type="range" min={0} max={80} value={quoteOverlay} onChange={e=>setQuoteOverlay(+e.target.value)}/>
@@ -3046,10 +3054,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
                           {templatePhotos.map((photo,i)=>(
                             <div key={i} style={{position:"relative",flexShrink:0}}>
-                              <div onClick={()=>setTemplateBgUrl(photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:templateBgUrl===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
+                              <div onClick={()=>setTemplateBgUrl(templateBgUrl===photo?null:photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:templateBgUrl===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
                                 <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                               </div>
-                              <button onClick={()=>removeFromSharedLibrary(photo)} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0,border:"none",cursor:"pointer"}}>×</button>
+                              {templateBgUrl===photo&&<div onClick={()=>setTemplateBgUrl(null)} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
+                              <div onClick={()=>{if(window.confirm("Remove this image from your library? This cannot be undone.")){removeFromSharedLibrary(photo);}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
                             </div>
                           ))}
                           {templatePhotos.length < 10 && (
