@@ -1702,7 +1702,7 @@ Return ONLY a JSON array of ${needed} strings.`;
       </div>`;
     const classicHandle = showHandle&&handleStr ? `
       <div style="position:absolute;bottom:${Math.round(100*s)}px;left:0;right:0;text-align:center;z-index:6;">
-        <span style="color:${cardTextColor};font-size:${Math.round(24*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:${Math.round(3*s)}px;opacity:0.75;">${esc(handleStr)}</span>
+        <span style="color:${textColor};font-size:${Math.round(24*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:${Math.round(3*s)}px;opacity:0.75;">${esc(handleStr)}</span>
       </div>` : "";
 
     const luxuryHTML = `
@@ -1826,11 +1826,11 @@ Return ONLY a JSON array of ${needed} strings.`;
       <div style="width:100%;height:${Math.round(2*s)}px;background:${rawTextC};opacity:0.12;margin-bottom:${Math.round(52*s)}px;"></div>`;
     const rawLabel = `
       <div style="margin-bottom:${Math.round(32*s)}px;width:100%;padding-left:${Math.round(20*s)}px;">
-        <span style="font-size:${Math.round(22*s)}px;letter-spacing:${Math.round(10*s)}px;text-transform:uppercase;font-family:'${font}',sans-serif;font-weight:700;color:${cardTextColor};opacity:0.4;">${luxuryLabel||"Truth"}</span>
+        <span style="font-size:${Math.round(22*s)}px;letter-spacing:${Math.round(10*s)}px;text-transform:uppercase;font-family:'${font}',sans-serif;font-weight:700;color:${textColor};opacity:0.4;">${luxuryLabel||"Truth"}</span>
       </div>`;
     const rawHandle = showHandle&&handleStr ? `
       <div style="position:absolute;bottom:${Math.round(100*s)}px;left:${Math.round(60*s)}px;z-index:6;">
-        <span style="color:${cardTextColor};font-size:${Math.round(22*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;opacity:0.6;letter-spacing:${Math.round(3*s)}px;">${esc(handleStr)}</span>
+        <span style="color:${textColor};font-size:${Math.round(22*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;opacity:0.6;letter-spacing:${Math.round(3*s)}px;">${esc(handleStr)}</span>
       </div>` : "";
 
     const customDivider = `
