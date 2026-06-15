@@ -1849,17 +1849,17 @@ Return ONLY a JSON array of ${needed} strings.`;
 <style>
 @import url('${gFonts}');
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000":cardBg};}
-.slide{width:${W}px;height:${H}px;background:${hasBgImg?"transparent":cardBg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${contentPadTop}px ${contentPadX}px ${contentPadBottom}px;position:relative;}
+html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
+.slide{width:${W}px;height:${H}px;background:${cardBg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${contentPadTop}px ${contentPadX}px ${contentPadBottom}px;position:relative;}
 .bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:${(effectiveQuoteOpacity||100)/100};}
-.bg-ov{position:absolute;inset:0;z-index:1;background:rgba(0,0,0,${(quoteOverlay||0)/100});}
+.bg-ov{position:absolute;inset:0;z-index:1;pointer-events:none;}
 .content{position:relative;z-index:5;width:100%;display:flex;flex-direction:column;align-items:${isLeft?"flex-start":"center"};text-align:${isLeft?"left":"center"};}
 .quote{font-size:${quoteSz}px;font-weight:700;line-height:1.32;color:${cardTextColor};font-style:italic;font-family:'${font}',serif;text-align:${isLeft?"left":"center"};margin-bottom:${Math.round(60*s)}px;${textShadow}}
 .sig{font-size:${sigSz}px;font-weight:600;color:${cardTextColor};opacity:0.75;font-family:'${sigFont}',cursive,serif;${textShadow}text-align:${isLeft?"left":"center"};width:100%;}
 </style>
 </head><body>
 <div class="slide">
-  ${hasBgImg?`<img class="bg-img" src="${quoteBgCustomUrl}" /><div class="bg-ov"></div>`:""}
+  ${hasBgImg?`<img class="bg-img" src="${quoteBgCustomUrl}" />${(quoteOverlay||0)>0?`<div class="bg-ov" style="background:linear-gradient(to top,rgba(0,0,0,${Math.min((quoteOverlay/100)*0.95,0.92)}) 0%,rgba(0,0,0,${Math.min((quoteOverlay/100)*0.4,0.5)}) 50%,rgba(0,0,0,0) 100%)"></div>`:""}`:""}
   ${tExtras}
   <div class="content">
     ${tmpl==="raw"?rawLabel:""}
@@ -2255,6 +2255,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                           <div onClick={()=>quotePhotoRef.current?.click()} style={{width:48,height:48,borderRadius:8,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
                         )}
                       </div>
+                      <p style={{color:A.muted,fontSize:11,margin:"0 0 8px",lineHeight:1.5}}>Upload and save up to 10 custom images.</p>
                       {isPexelsUser ? (
                         <button onClick={()=>setShowPexelsQuote(true)} style={{width:"100%",padding:"8px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                           🔍 Search 1000s of free backgrounds
@@ -2355,7 +2356,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       </div>
                     )}
                     <p style={{color:A.muted,fontSize:11,margin:"0 0 10px",lineHeight:1.6}}>
-                      Save up to 10 backgrounds. Click to select. Safe zone: keep text within 80px of edges.<br/>
+                      Upload and save up to 10 custom images. Click to select. Safe zone: keep text within 80px of edges.<br/>
                       Recommended: <strong>{quoteFormat==="portrait"?"1080×1920px":"1080×1350px"}</strong>
                     </p>
                     <div style={{marginBottom:10}}>
@@ -2868,7 +2869,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               <div style={{position:"sticky",top:80}}>
                 <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                   <label style={lbl}>Cover photo library</label>
-                  <p style={{color:A.muted,fontSize:12,margin:"0 0 12px",lineHeight:1.6}}>Save up to 8 photos. Pick one per generation. Used on cover slide only.</p>
+                  <p style={{color:A.muted,fontSize:12,margin:"0 0 12px",lineHeight:1.6}}>Upload and save up to 10 images. Pick one per generation. Used on cover slide only.</p>
                   <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
                     {coverPhotos.map((p,i)=>(
                       <div key={i} style={{position:"relative"}}>
@@ -3079,7 +3080,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                         </div>
                       ) : (
                         <div onClick={()=>templateBgRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:"12px",cursor:"pointer",textAlign:"center",marginBottom:8}}>
-                          <span style={{fontSize:12,fontWeight:600,color:A.muted}}>Upload background images (up to 10)</span>
+                          <span style={{fontSize:12,fontWeight:600,color:A.muted}}>Upload and save up to 10 custom images</span>
                         </div>
                       )}
                       <p style={{color:A.muted,fontSize:11,margin:"0 0 8px",lineHeight:1.6}}>Safe zone: keep important elements within 80px from each edge. Recommended size: 1080×1350px.</p>
