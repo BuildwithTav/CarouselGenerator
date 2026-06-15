@@ -169,7 +169,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     accent,
     text: forceLight ? "#0A0A0A" : (isDark ? "#FFFFFF" : "#0A0A0A"),
     sub: forceLight ? "#0A0A0A" : (isDark ? "#FFFFFF" : "#0A0A0A"),
-    dark: forceLight ? false : (coverHasImage ? true : isDark),
+    dark: forceLight ? false : isDark,
   };
 
   const hs = HEADLINE_STYLES.find(h => h.id === headlineStyle) || HEADLINE_STYLES[0];
@@ -876,7 +876,7 @@ export default function App() {
   const [otherType, setOtherType] = useState(S?.otherType||"");
   const [coverPhotos, setCoverPhotos] = useState(S?.coverPhotos||[]);
   const [activeCoverPhoto, setActiveCoverPhoto] = useState(S?.activeCoverPhoto||null);
-  const [coverPosition, setCoverPosition] = useState(S?.coverPosition||"bottom");
+  const [coverPosition, setCoverPosition] = useState(S?.coverPosition||"centre");
   const [badgeArea, setBadgeArea] = useState(null);
 
   const [accentSwatch, setAccentSwatch] = useState(S?.accentSwatch||"gold");
@@ -900,7 +900,7 @@ export default function App() {
   const [headlineStyle, setHeadlineStyle] = useState(S?.headlineStyle||"bold");
   const [showNums, setShowNums] = useState(S?.showNums??false);
   const [showAllUpdates, setShowAllUpdates] = useState(false);
-  const [bgMode, setBgMode] = useState(S?.bgMode||"dark");
+  const [bgMode, setBgMode] = useState(S?.bgMode||"light");
   const [templateBgUrl, setTemplateBgUrl] = useState(S?.templateBgUrl||null);
   const [templatePhotos, setTemplatePhotos] = useState(S?.templatePhotos||[]);
   const [overlayDark, setOverlayDark] = useState(S?.overlayDark??75);
@@ -2482,9 +2482,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   return (
                     <div>
                       <label style={{...lbl,marginBottom:8}}>Preview</label>
-                      <div style={{width:previewW,height:previewH,borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                      <div style={{padding:8,background:A.bg,borderRadius:12,border:`1.5px solid ${A.border}`}}><div style={{width:previewW,height:previewH,borderRadius:8,overflow:"hidden"}}>
                         <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={0} total={1} opts={slideOpts(0)} onClick={()=>{}} isActive={false} isCover={true}/>
-                      </div>
+                      </div></div>
                     </div>
                   );
                 })()}
@@ -2883,9 +2883,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     }} style={{display:"none"}}/>
                     </div>
                   )}
-                  <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`,marginTop:16}}>
+                  <div style={{padding:8,background:A.bg,borderRadius:12,border:`1.5px solid ${A.border}`,marginTop:16}}><div style={{borderRadius:8,overflow:"hidden"}}>
                     <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
-                  </div>
+                  </div></div>
                   {bgMode==="custom"&&templateBgUrl&&(
                     <div style={{display:"flex",gap:8,marginTop:12}}>
                       <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>White text</button>
