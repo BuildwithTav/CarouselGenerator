@@ -53,3 +53,4 @@ export async function GET(request) {
     return NextResponse.json({ error: "Failed to fetch from Pexels" }, { status: 500 });
   }
 }
+
