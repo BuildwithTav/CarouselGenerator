@@ -518,6 +518,50 @@ export async function POST(req) {
       return NextResponse.json({ success: true });
     }
 
+    // ── ADMIN ACTIONS ──────────────────────────────────────────
+    if (action === "admin_get_users") {
+      const { data: users } = await supabase.from("users").select("*").order("created_at", { ascending: false }).limit(300);
+      return NextResponse.json({ users: users || [] });
+    }
+
+    if (action === "admin_get_commissions") {
+      const { data: commissions } = await supabase.from("commissions").select("*").order("created_at", { ascending: false }).limit(300);
+      return NextResponse.json({ commissions: commissions || [] });
+    }
+
+    if (action === "admin_get_payouts") {
+      const { data: payouts } = await supabase.from("payout_requests").select("*").order("requested_at", { ascending: false }).limit(100);
+      return NextResponse.json({ payouts: payouts || [] });
+    }
+
+    if (action === "admin_update_user") {
+      const { email: targetEmail, plan: newPlan, add_credits } = body;
+      const { data: user } = await supabase.from("users").select("*").eq("email", targetEmail).single();
+      if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      const updates = {};
+      if (newPlan && newPlan !== user.plan) {
+        const planCredits = { free: 60, starter: 200, pro: 800, agency: 3000, affiliate_licence: 150, white_label: 800 };
+        const planTiers = { starter: 20, pro: 30, agency: 40, affiliate_licence: 35, white_label: 40 };
+        updates.plan = newPlan;
+        updates.credits_limit = planCredits[newPlan] || 60;
+        updates.affiliate_active = newPlan !== "free";
+        updates.affiliate_tier = planTiers[newPlan] || 0;
+      }
+      if (add_credits && parseInt(add_credits) > 0) {
+        updates.bonus_credits = (user.bonus_credits || 0) + parseInt(add_credits);
+      }
+      if (Object.keys(updates).length > 0) {
+        await supabase.from("users").update(updates).eq("email", targetEmail);
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    if (action === "admin_mark_payout_paid") {
+      const { payout_id } = body;
+      await supabase.from("payout_requests").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", payout_id);
+      return NextResponse.json({ ok: true });
+    }
+
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
   } catch (e) {
