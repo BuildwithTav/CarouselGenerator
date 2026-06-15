@@ -1024,7 +1024,7 @@ export default function App() {
   const [showAllUpdates, setShowAllUpdates] = useState(false);
   const [bgMode, setBgMode] = useState(S?.bgMode||"light");
   const [templateBgUrl, setTemplateBgUrl] = useState(S?.templateBgUrl||null);
-  const [templatePhotos, setTemplatePhotos] = useState(S?.templatePhotos||[]);
+  const [templatePhotos, setTemplatePhotos] = useState(S?.coverPhotos||S?.templatePhotos||[]);
   const [overlayDark, setOverlayDark] = useState(S?.overlayDark??75);
   const [photoOpacity, setPhotoOpacity] = useState(S?.photoOpacity??100);
   const [templateOpacity, setTemplateOpacity] = useState(S?.templateOpacity??100);
@@ -1100,6 +1100,27 @@ export default function App() {
   const [templateImgPos, setTemplateImgPos] = useState({x:50,y:50});
   const [isDraggingCover, setIsDraggingCover] = useState(false);
   const [isDraggingTemplate, setIsDraggingTemplate] = useState(false);
+  // Keep cover and template photo libraries in sync
+  useEffect(() => {
+    if (coverPhotos.length > 0 && templatePhotos.length === 0) {
+      setTemplatePhotos(coverPhotos);
+    }
+  }, []);
+
+  const addToSharedLibrary = async (url) => {
+    const next = [url, ...coverPhotos.filter(p => p !== url)].slice(0, 10);
+    setCoverPhotos(next);
+    setTemplatePhotos(next);
+  };
+
+  const removeFromSharedLibrary = (url) => {
+    const next = coverPhotos.filter(p => p !== url);
+    setCoverPhotos(next);
+    setTemplatePhotos(next);
+    if (activeCoverPhoto === url) setActiveCoverPhoto(next[0] || null);
+    if (templateBgUrl === url) setTemplateBgUrl(next[0] || null);
+  };
+
   const profileRef = useRef(null);
   const coverDragRef = useRef(null);
   const templateDragRef = useRef(null);
@@ -1133,9 +1154,7 @@ export default function App() {
   };
 
   const addCoverPhoto = async (url) => {
-    // Show immediately as base64 for instant preview (don't save to localStorage yet)
     sampleImageBrightness(url).then(setBadgeArea);
-    // Upload to Blob first, then update state with real URL
     try {
       const res = await fetch('/api/upload-photo', {
         method: 'POST',
@@ -1144,20 +1163,21 @@ export default function App() {
       });
       const data = await res.json();
       if (data.url) {
-        // Only save real Blob URL to state (and therefore localStorage)
-        const next = [data.url, ...coverPhotos.filter(p => !p.startsWith('data:'))].slice(0, 8);
+        const next = [data.url, ...coverPhotos.filter(p => !p.startsWith('data:'))].slice(0, 10);
         setCoverPhotos(next);
+        setTemplatePhotos(next);
         setActiveCoverPhoto(data.url);
       } else {
-        // Fallback - use base64 in state but it won't persist properly
-        const next = [url, ...coverPhotos].slice(0, 8);
+        const next = [url, ...coverPhotos].slice(0, 10);
         setCoverPhotos(next);
+        setTemplatePhotos(next);
         setActiveCoverPhoto(url);
       }
     } catch(e) {
       console.error('Cover upload failed:', e);
-      const next = [url, ...coverPhotos].slice(0, 8);
+      const next = [url, ...coverPhotos].slice(0, 10);
       setCoverPhotos(next);
+      setTemplatePhotos(next);
       setActiveCoverPhoto(url);
     }
   };
@@ -2212,11 +2232,37 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 </div>
                 <div>
                   <label style={lbl}>Background</label>
-                  <div style={{display:"flex",gap:8}}>
+                  <div style={{display:"flex",gap:8,marginBottom:quoteBgMode==="custom"?10:0}}>
                     {[["dark","Dark"],["light","Light"],["custom","Custom"]].map(([id,label])=>(
                       <button key={id} onClick={()=>setQuoteBgMode(id)} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                     ))}
                   </div>
+                  {quoteBgMode==="custom"&&(
+                    <div>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
+                        {quotePhotos.map((p,i)=>(
+                          <div key={i} style={{position:"relative"}}>
+                            <div onClick={()=>setQuoteBgCustomUrl(p)} style={{width:48,height:48,borderRadius:8,overflow:"hidden",border:`2px solid ${quoteBgCustomUrl===p?GOLD:A.border}`,cursor:"pointer"}}>
+                              <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                            </div>
+                            <button onClick={()=>{const next=quotePhotos.filter((_,j)=>j!==i);setQuotePhotos(next);if(quoteBgCustomUrl===p)setQuoteBgCustomUrl(next[0]||null);}} style={{position:"absolute",top:-5,right:-5,width:16,height:16,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0,border:"none",cursor:"pointer"}}>×</button>
+                          </div>
+                        ))}
+                        {quotePhotos.length < 10 && (
+                          <div onClick={()=>quotePhotoRef.current?.click()} style={{width:48,height:48,borderRadius:8,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
+                        )}
+                      </div>
+                      {isPexelsUser ? (
+                        <button onClick={()=>setShowPexelsQuote(true)} style={{width:"100%",padding:"8px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                          🔍 Search Pexels
+                        </button>
+                      ) : (
+                        <div style={{width:"100%",padding:"8px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:11,textAlign:"center",opacity:0.6}}>
+                          🔍 Search Pexels — Pro+ only
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               {(()=>{
@@ -2258,7 +2304,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                           <button onClick={()=>{const next=quotePhotos.filter((_,j)=>j!==i);setQuotePhotos(next);if(quoteBgCustomUrl===p)setQuoteBgCustomUrl(next[0]||null);}} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0,border:"none",cursor:"pointer"}}>×</button>
                         </div>
                       ))}
-                      {quotePhotos.length < 8 && (
+                      {quotePhotos.length < 10 && (
                         <div onClick={()=>quotePhotoRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:28}}>+</div>
                       )}
                     </div>
@@ -2812,7 +2858,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                         <button onClick={()=>{if(window.confirm("Remove this photo from your library? This cannot be undone.")){const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);if(activeCoverPhoto===p)setActiveCoverPhoto(next[0]||null);}}} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>×</button>
                       </div>
                     ))}
-                    {coverPhotos.length < 8 && (
+                    {coverPhotos.length < 10 && (
                       <div onClick={()=>coverPhotoRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:28}}>+</div>
                     )}
                   </div>
@@ -2999,17 +3045,20 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       {templatePhotos.length > 0 ? (
                         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
                           {templatePhotos.map((photo,i)=>(
-                            <div key={i} onClick={()=>setTemplateBgUrl(photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:templateBgUrl===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0}}>
-                              <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                            <div key={i} style={{position:"relative",flexShrink:0}}>
+                              <div onClick={()=>setTemplateBgUrl(photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:templateBgUrl===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
+                                <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                              </div>
+                              <button onClick={()=>removeFromSharedLibrary(photo)} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0,border:"none",cursor:"pointer"}}>×</button>
                             </div>
                           ))}
-                          {templatePhotos.length < 8 && (
+                          {templatePhotos.length < 10 && (
                             <div onClick={()=>templateBgRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
                           )}
                         </div>
                       ) : (
                         <div onClick={()=>templateBgRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:"12px",cursor:"pointer",textAlign:"center",marginBottom:8}}>
-                          <span style={{fontSize:12,fontWeight:600,color:A.muted}}>Upload background images (up to 8)</span>
+                          <span style={{fontSize:12,fontWeight:600,color:A.muted}}>Upload background images (up to 10)</span>
                         </div>
                       )}
                       <p style={{color:A.muted,fontSize:11,margin:"0 0 8px",lineHeight:1.6}}>Safe zone: keep important elements within 80px from each edge. Recommended size: 1080×1350px.</p>
@@ -3037,7 +3086,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                           const data = await res.json();
                           if (data.url) {
                             setTemplateBgUrl(data.url);
-                            setTemplatePhotos(prev => [data.url, ...prev.filter(p=>p!==data.url)].slice(0,8));
+                            const next = [data.url, ...coverPhotos.filter(p=>p!==data.url)].slice(0,10);
+                            setCoverPhotos(next);
+                            setTemplatePhotos(next);
                           }
                         } catch(err) { console.error('Template upload failed:', err); }
                       };
@@ -3680,13 +3731,16 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             const data = await res.json();
             if (data.url) {
               setTemplateBgUrl(data.url);
-              setTemplatePhotos(prev=>[data.url,...prev.filter(p=>p!==data.url)].slice(0,8));
+              const next = [data.url,...coverPhotos.filter(p=>p!==data.url)].slice(0,10);
+              setCoverPhotos(next); setTemplatePhotos(next);
             } else {
-              setTemplatePhotos(prev=>[url,...prev.filter(p=>p!==url)].slice(0,8));
+              const next = [url,...coverPhotos.filter(p=>p!==url)].slice(0,10);
+              setCoverPhotos(next); setTemplatePhotos(next);
             }
           } catch(e) {
             console.error("Template Pexels save failed:",e);
-            setTemplatePhotos(prev=>[url,...prev.filter(p=>p!==url)].slice(0,8));
+            const next = [url,...coverPhotos.filter(p=>p!==url)].slice(0,10);
+            setCoverPhotos(next); setTemplatePhotos(next);
           }
         }}
         A={A}
