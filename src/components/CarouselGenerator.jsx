@@ -1843,7 +1843,7 @@ Return ONLY a JSON array of ${needed} strings.`;
     const tExtras = { classic: classicHTML, luxury: luxuryHTML, feminine: feminineHTML, raw: rawHTML, custom: "" }[tmpl] || "";
     const tDivider = { classic: classicDivider, luxury: luxuryDivider, feminine: feminineDivider, raw: rawDivider, custom: customDivider }[tmpl] || customDivider;
     const tHandle = { classic: classicHandle, luxury: luxuryHandle, feminine: feminineHandle, raw: rawHandle, custom: "" }[tmpl] || (showHandle&&handleStr?`<div style="position:absolute;bottom:${handleBottom}px;left:0;right:0;text-align:center;z-index:6;"><span style="color:${accent};font-size:${Math.round(26*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:3px;opacity:0.85;">${esc(handleStr)}</span></div>`:"");
-    const cardBg = tmpl === "feminine" ? femBg : bg;
+    const cardBg = tmpl === "feminine" ? femBg : hasBgImg ? "#FFFFFF" : bg;
 
     return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>
