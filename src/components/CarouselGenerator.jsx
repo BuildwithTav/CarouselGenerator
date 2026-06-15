@@ -1052,7 +1052,7 @@ export default function App() {
   const [customBgSlots, setCustomBgSlots] = useState(S?.customBgSlots||["","",""]);
   const [customAccentSlots, setCustomAccentSlots] = useState(S?.customAccentSlots||["","",""]);
   const [bgColour, setBgColour] = useState(S?.bgColour||"#1a1a2e");
-  const [customColourDark, setCustomColourDark] = useState(S?.customColourDark??true);
+  const [customColourDark, setCustomColourDark] = useState(S?.customColourDark??(S?.bgMode==="light"?false:true));
   const [slideCount, setSlideCount] = useState(6);
   const [err, setErr] = useState("");
   const [randomising, setRandomising] = useState(false);
@@ -1082,8 +1082,8 @@ export default function App() {
   const [quoteBgCustomUrl, setQuoteBgCustomUrl] = useState(null);
   const [quotePhotos, setQuotePhotos] = useState(S?.quotePhotos||[]);
   const [textDensity, setTextDensity] = useState(S?.textDensity||"balanced");
-  const [quoteOverlay, setQuoteOverlay] = useState(0);
-  const [quotePhotoOpacity, setQuotePhotoOpacity] = useState(100);
+  const [quoteOverlay, setQuoteOverlay] = useState(50);
+  const [quotePhotoOpacity, setQuotePhotoOpacity] = useState(75);
   const [quoteTemplate, setQuoteTemplate] = useState("raw");
   const [luxuryLabel, setLuxuryLabel] = useState("wisdom");
   const [showHandle, setShowHandle] = useState(true);
@@ -2243,7 +2243,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   <label style={lbl}>Background</label>
                   <div style={{display:"flex",gap:8,marginBottom:quoteBgMode==="custom"?10:0}}>
                     {[["dark","Dark"],["light","Light"],["custom","Custom"]].map(([id,label])=>(
-                      <button key={id} onClick={()=>setQuoteBgMode(id)} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
+                      <button key={id} onClick={()=>{setQuoteBgMode(id);if(id==="dark")setQuoteTextColor("#FFFFFF");if(id==="light")setQuoteTextColor("#0A0A0A");}} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                     ))}
                   </div>
                   {quoteBgMode==="custom"&&(
@@ -2313,7 +2313,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 <label style={lbl}>Background</label>
                 <div style={{display:"flex",gap:8,marginBottom:quoteBgMode==="custom"?14:0}}>
                   {[["dark","Dark"],["light","Light"],["custom","Custom"]].map(([id,label])=>(
-                    <button key={id} onClick={()=>setQuoteBgMode(id)} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
+                    <button key={id} onClick={()=>{setQuoteBgMode(id);if(id==="dark")setQuoteTextColor("#FFFFFF");if(id==="light")setQuoteTextColor("#0A0A0A");}} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                   ))}
                 </div>
                 {quoteBgMode==="custom"&&(
@@ -2659,7 +2659,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         <div onClick={()=>setActiveCoverPhoto(activeCoverPhoto===photo?null:photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:activeCoverPhoto===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
                           <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                         </div>
-                        {activeCoverPhoto===photo&&<div onClick={()=>setActiveCoverPhoto(null)} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700}}>×</div>}
+                        {activeCoverPhoto===photo&&<div onClick={()=>{setActiveCoverPhoto(null);if(bgMode==="dark"||bgMode==="colour"||bgMode==="custom")setCustomColourDark(true);else setCustomColourDark(false);}} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700}}>×</div>}
                         <div onClick={()=>{if(window.confirm("Remove this photo from your library? This cannot be undone.")){const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);if(activeCoverPhoto===photo)setActiveCoverPhoto(null);}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
                       </div>
                     ))}
@@ -2677,12 +2677,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     <input type="range" min={10} max={100} value={photoOpacity} onChange={e=>setPhotoOpacity(+e.target.value)} style={{width:"100%"}}/>
                     <label style={{...lbl,fontSize:11,marginBottom:6,marginTop:10,display:"block"}}>Photo overlay — {overlayDark}% <span style={{fontWeight:400,fontSize:9}}>(higher = darker)</span></label>
                     <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
-                    <div style={{display:"flex",gap:8,marginTop:10}}>
-                      <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>White text</button>
-                      <button onClick={()=>setCustomColourDark(false)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${!customColourDark?GOLD:A.border}`,background:!customColourDark?"#fff":A.bg,color:!customColourDark?"#000":A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>Dark text</button>
-                    </div>
                   </div>
                 )}
+                <div style={{display:"flex",gap:8,marginBottom:12}}>
+                  <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>White text</button>
+                  <button onClick={()=>setCustomColourDark(false)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${!customColourDark?GOLD:A.border}`,background:!customColourDark?"#fff":A.bg,color:!customColourDark?"#000":A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>Dark text</button>
+                </div>
                 <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
                 {isPexelsUser ? (
                   <button onClick={()=>setShowPexelsCover(true)} style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
