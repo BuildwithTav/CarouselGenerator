@@ -170,8 +170,18 @@ function PexelsModal({ open, onClose, onSelect, A, GOLD }) {
 
   const pxHandleSelect = async (photo) => {
     setPxSelecting(photo.id);
-    try { await onSelect(photo.url); onClose(); }
-    catch(e) { console.error("Pexels select failed:", e); }
+    try {
+      // Proxy the image through our server to avoid CORS issues
+      const proxyRes = await fetch("/api/pexels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: photo.url }),
+      });
+      const proxyData = await proxyRes.json();
+      if (!proxyData.dataUrl) throw new Error("Proxy failed");
+      await onSelect(proxyData.dataUrl);
+      onClose();
+    } catch(e) { console.error("Pexels select failed:", e); }
     setPxSelecting(null);
   };
 
