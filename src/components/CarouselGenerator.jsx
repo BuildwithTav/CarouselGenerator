@@ -1,6 +1,5 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
-import PexelsModal from "@/components/PexelsModal";
 
 const GOLD = "#C9A84C";
 const STORAGE_KEY = "bwt_v11";
@@ -133,6 +132,118 @@ async function sampleImageBrightness(imageUrl) {
     img.onerror = () => resolve(null);
     img.src = imageUrl;
   });
+}
+
+// ─── PEXELS MODAL ────────────────────────────────────────────────────────────
+
+function PexelsModal({ open, onClose, onSelect, A, GOLD }) {
+  const [pxQuery, setPxQuery] = useState("");
+  const [pxResults, setPxResults] = useState([]);
+  const [pxLoading, setPxLoading] = useState(false);
+  const [pxError, setPxError] = useState("");
+  const [pxPage, setPxPage] = useState(1);
+  const [pxHasMore, setPxHasMore] = useState(false);
+  const [pxSelecting, setPxSelecting] = useState(null);
+  const pxInputRef = useRef(null);
+
+  useEffect(() => {
+    if (open) { setTimeout(() => pxInputRef.current?.focus(), 100); }
+    else { setPxQuery(""); setPxResults([]); setPxError(""); setPxPage(1); setPxHasMore(false); setPxSelecting(null); }
+  }, [open]);
+
+  if (!open) return null;
+
+  const pxSearch = async (q, p = 1) => {
+    if (!q.trim()) return;
+    setPxLoading(true); setPxError("");
+    if (p === 1) setPxResults([]);
+    try {
+      const res = await fetch("/api/pexels?" + new URLSearchParams({ query: q.trim(), per_page: "20", page: String(p) }));
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setPxResults(prev => p === 1 ? data.photos : [...prev, ...data.photos]);
+      setPxHasMore(!!data.next_page);
+      setPxPage(p);
+    } catch(e) { setPxError("Search failed — check your connection and try again."); }
+    setPxLoading(false);
+  };
+
+  const pxHandleSelect = async (photo) => {
+    setPxSelecting(photo.id);
+    try { await onSelect(photo.url); onClose(); }
+    catch(e) { console.error("Pexels select failed:", e); }
+    setPxSelecting(null);
+  };
+
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:3000,padding:16}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#FFF",borderRadius:16,width:"100%",maxWidth:720,maxHeight:"85vh",display:"flex",flexDirection:"column",boxShadow:"0 24px 80px rgba(0,0,0,0.3)"}}>
+        <div style={{padding:"20px 20px 16px",borderBottom:"1px solid #E8E5E0",flexShrink:0}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+            <div>
+              <div style={{fontSize:16,fontWeight:800,color:"#0A0A0A"}}>Search Pexels</div>
+              <div style={{fontSize:11,color:"#8A8780",marginTop:2}}>Free high-quality backgrounds · Photos by <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer" style={{color:GOLD,textDecoration:"none"}}>Pexels</a></div>
+            </div>
+            <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,color:"#8A8780",cursor:"pointer",padding:4}}>✕</button>
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <input
+              ref={pxInputRef}
+              value={pxQuery}
+              onChange={e=>setPxQuery(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&pxSearch(pxQuery)}
+              placeholder="dark background, bokeh, nature, abstract..."
+              style={{flex:1,padding:"10px 14px",background:"#F5F3EF",border:"1.5px solid #E8E5E0",borderRadius:9,color:"#0A0A0A",fontSize:14,fontFamily:"inherit",outline:"none"}}
+            />
+            <button
+              onClick={()=>pxSearch(pxQuery)}
+              disabled={pxLoading||!pxQuery.trim()}
+              style={{padding:"10px 20px",background:pxQuery.trim()?"#0A0A0A":"#E8E5E0",color:"#FFF",borderRadius:9,fontWeight:700,fontSize:13,border:"none",cursor:pxQuery.trim()?"pointer":"default",display:"flex",alignItems:"center",gap:6,flexShrink:0}}
+            >
+              {pxLoading&&pxPage===1?"Searching...":"Search"}
+            </button>
+          </div>
+        </div>
+        <div style={{flex:1,overflowY:"auto",padding:16}}>
+          {pxError&&<div style={{textAlign:"center",padding:"40px 0",color:"#c0392b",fontSize:13}}>{pxError}</div>}
+          {!pxError&&pxResults.length===0&&!pxLoading&&(
+            <div style={{textAlign:"center",padding:"60px 0",color:"#8A8780",fontSize:13}}>
+              {pxQuery?"No results — try a different search":"Search for backgrounds above"}
+            </div>
+          )}
+          {pxLoading&&pxPage===1&&<div style={{textAlign:"center",padding:"40px 0",color:"#8A8780",fontSize:13}}>Searching...</div>}
+          {pxResults.length>0&&(
+            <>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:16}}>
+                {pxResults.map(photo=>(
+                  <div
+                    key={photo.id}
+                    onClick={()=>!pxSelecting&&pxHandleSelect(photo)}
+                    style={{position:"relative",borderRadius:8,overflow:"hidden",aspectRatio:"3/4",cursor:pxSelecting?"wait":"pointer",border:"2px solid #E8E5E0",transition:"transform 0.15s"}}
+                    onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.02)";e.currentTarget.style.borderColor=GOLD;}}
+                    onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)";e.currentTarget.style.borderColor="#E8E5E0";}}
+                  >
+                    <img src={photo.thumb} alt={photo.alt} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} loading="lazy"/>
+                    {pxSelecting===photo.id&&(
+                      <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:700}}>Adding...</div>
+                    )}
+                    <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px 6px 6px",background:"linear-gradient(to bottom,transparent,rgba(0,0,0,0.7))",fontSize:9,color:"rgba(255,255,255,0.7)",fontWeight:600}}>
+                      {photo.photographer}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {pxHasMore&&(
+                <button onClick={()=>pxSearch(pxQuery,pxPage+1)} disabled={pxLoading} style={{width:"100%",padding:"12px",background:"#F5F3EF",border:"1.5px solid #E8E5E0",borderRadius:9,color:"#0A0A0A",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                  {pxLoading?"Loading...":"Load more"}
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─── SLIDE HTML BUILDER ───────────────────────────────────
