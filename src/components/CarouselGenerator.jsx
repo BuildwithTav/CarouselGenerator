@@ -3301,6 +3301,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
             )}
 
             <p style={{fontSize:11,color:A.muted,textAlign:"center",margin:"0 0 16px",lineHeight:1.6}}>Secure payment via Stripe. Questions? <a href="mailto:tav@buildwithtav.co" style={{color:GOLD,textDecoration:"none"}}>tav@buildwithtav.co</a> · <a href="/terms" target="_blank" style={{color:GOLD,textDecoration:"none"}}>Terms</a> · <a href="/privacy" target="_blank" style={{color:GOLD,textDecoration:"none"}}>Privacy</a></p>
+            {currentUser?.is_admin&&(
+              <a href="/admin" target="_blank" rel="noopener noreferrer" style={{display:"block",textAlign:"center",padding:"11px",background:"#1a0a00",border:`1.5px solid ${GOLD}`,color:GOLD,borderRadius:10,fontWeight:700,fontSize:13,textDecoration:"none",marginBottom:10}}>
+                Admin Panel →
+              </a>
+            )}
             <button onClick={logout} style={{width:"100%",padding:"13px",background:"none",border:`1.5px solid ${A.border}`,color:A.muted,borderRadius:10,fontWeight:600,fontSize:14}}>
               Sign out
             </button>
