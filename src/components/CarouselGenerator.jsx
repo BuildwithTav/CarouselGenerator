@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
+import PexelsModal from "@/components/PexelsModal";
 
 const GOLD = "#C9A84C";
 const STORAGE_KEY = "bwt_v11";
@@ -1815,6 +1816,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
   );
 
   const planLabel = currentUser?.plan === "agency" ? "agency" : currentUser?.plan === "pro" ? "pro" : currentUser?.plan === "starter" ? "starter" : currentUser?.plan === "affiliate_licence" ? "affiliate_licence" : currentUser?.plan === "white_label" ? "white_label" : "free";
+  const isPexelsUser = ["pro","agency","affiliate_licence","white_label"].includes(planLabel);
+  const [showPexelsCover, setShowPexelsCover] = useState(false);
+  const [showPexelsTemplate, setShowPexelsTemplate] = useState(false);
+  const [showPexelsQuote, setShowPexelsQuote] = useState(false);
   const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
   const BURGER_ITEMS = [["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
   const MAIN_NAV = [["generate","Generate"],["quotes","Quotes"]];
@@ -2157,6 +2162,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       };
                       reader.readAsDataURL(file);
                     }} style={{display:"none"}}/>
+                    {isPexelsUser ? (
+                      <button onClick={()=>setShowPexelsQuote(true)} style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                        🔍 Search Pexels backgrounds
+                      </button>
+                    ) : (
+                      <div title="Upgrade to Pro to search Pexels" style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:12,textAlign:"center",marginBottom:8,cursor:"not-allowed",opacity:0.6}}>
+                        🔍 Search Pexels — Pro+ only
+                      </div>
+                    )}
                     <p style={{color:A.muted,fontSize:11,margin:"0 0 12px",lineHeight:1.6}}>
                       Save up to 8 backgrounds. Click to select. Safe zone: keep text within 80px of edges.<br/>
                       Recommended: <strong>{quoteFormat==="portrait"?"1080×1920px":"1080×1350px"}</strong>
@@ -2475,6 +2489,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   </div>
                 )}
                 <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
+                {isPexelsUser ? (
+                  <button onClick={()=>setShowPexelsCover(true)} style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                    🔍 Search Pexels covers
+                  </button>
+                ) : (
+                  <div title="Upgrade to Pro to search Pexels" style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:12,textAlign:"center",marginBottom:10,cursor:"not-allowed",opacity:0.6}}>
+                    🔍 Search Pexels — Pro+ only
+                  </div>
+                )}
                 {(()=>{
                   const isPortraitPrev = ratio==="portrait";
                   const previewW = isPortraitPrev ? 180 : 280;
@@ -2673,6 +2696,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     )}
                   </div>
                   <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
+                  {isPexelsUser ? (
+                    <button onClick={()=>setShowPexelsCover(true)} style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                      🔍 Search Pexels covers
+                    </button>
+                  ) : (
+                    <div title="Upgrade to Pro to search Pexels" style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:12,textAlign:"center",marginBottom:10,cursor:"not-allowed",opacity:0.6}}>
+                      🔍 Search Pexels — Pro+ only
+                    </div>
+                  )}
                   <label style={{...lbl,marginTop:14}}>Badge & hook position on cover</label>
                   <div style={{display:"flex",gap:8,marginBottom:14}}>
                     {COVER_POSITIONS.map(p=>(
@@ -2859,7 +2891,16 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                           <span style={{fontSize:12,fontWeight:600,color:A.muted}}>Upload background images (up to 8)</span>
                         </div>
                       )}
-                      <p style={{color:A.muted,fontSize:11,margin:"0 0 12px",lineHeight:1.6}}>Safe zone: keep important elements within 80px from each edge. Recommended size: 1080×1350px.</p>
+                      <p style={{color:A.muted,fontSize:11,margin:"0 0 8px",lineHeight:1.6}}>Safe zone: keep important elements within 80px from each edge. Recommended size: 1080×1350px.</p>
+                      {isPexelsUser ? (
+                        <button onClick={()=>setShowPexelsTemplate(true)} style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                          🔍 Search Pexels backgrounds
+                        </button>
+                      ) : (
+                        <div title="Upgrade to Pro to search Pexels" style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:12,textAlign:"center",marginBottom:10,cursor:"not-allowed",opacity:0.6}}>
+                          🔍 Search Pexels — Pro+ only
+                        </div>
+                      )}
                       <input ref={templateBgRef} type="file" accept="image/*" onChange={async e=>{
                       const file = e.target.files[0]; if(!file) return;
                       const reader = new FileReader();
@@ -3497,6 +3538,65 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
 
 
+      <PexelsModal
+        open={showPexelsCover}
+        onClose={()=>setShowPexelsCover(false)}
+        onSelect={async (url)=>{ await addCoverPhoto(url); }}
+        A={A}
+        GOLD={GOLD}
+      />
+      <PexelsModal
+        open={showPexelsTemplate}
+        onClose={()=>setShowPexelsTemplate(false)}
+        onSelect={async (url)=>{
+          setTemplateBgUrl(url);
+          try {
+            const res = await fetch("/api/upload-photo", {
+              method:"POST",
+              headers:{"Content-Type":"application/json"},
+              body: JSON.stringify({ imageData: url, filename: `template-pexels-${Date.now()}.jpg` }),
+            });
+            const data = await res.json();
+            if (data.url) {
+              setTemplateBgUrl(data.url);
+              setTemplatePhotos(prev=>[data.url,...prev.filter(p=>p!==data.url)].slice(0,8));
+            } else {
+              setTemplatePhotos(prev=>[url,...prev.filter(p=>p!==url)].slice(0,8));
+            }
+          } catch(e) {
+            console.error("Template Pexels save failed:",e);
+            setTemplatePhotos(prev=>[url,...prev.filter(p=>p!==url)].slice(0,8));
+          }
+        }}
+        A={A}
+        GOLD={GOLD}
+      />
+      <PexelsModal
+        open={showPexelsQuote}
+        onClose={()=>setShowPexelsQuote(false)}
+        onSelect={async (url)=>{
+          setQuoteBgCustomUrl(url);
+          try {
+            const res = await fetch("/api/upload-photo", {
+              method:"POST",
+              headers:{"Content-Type":"application/json"},
+              body: JSON.stringify({ imageData: url, filename: `quotebg-pexels-${Date.now()}.jpg` }),
+            });
+            const data = await res.json();
+            if (data.url) {
+              setQuoteBgCustomUrl(data.url);
+              setQuotePhotos(prev=>[data.url,...prev.filter(p=>p!==data.url)].slice(0,8));
+            } else {
+              setQuotePhotos(prev=>[url,...prev.filter(p=>p!==url)].slice(0,8));
+            }
+          } catch(e) {
+            console.error("Quote Pexels save failed:",e);
+            setQuotePhotos(prev=>[url,...prev.filter(p=>p!==url)].slice(0,8));
+          }
+        }}
+        A={A}
+        GOLD={GOLD}
+      />
       <footer style={{borderTop:`1px solid ${A.border}`,padding:"14px 32px",textAlign:"center",marginTop:60}}>
         <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,fontWeight:700,textDecoration:"none",fontSize:12}}>BuildWithTav</a>
         <span style={{color:A.muted,fontSize:12}}> · </span>
