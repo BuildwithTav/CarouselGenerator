@@ -261,7 +261,7 @@ function PexelsModal({ open, onClose, onSelect, A, GOLD }) {
 function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const {
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
-    coverImageUrl, coverPosition, badgeArea, photoOpacity, customColourDark,
+    coverImageUrl, coverPosition, badgeArea, photoOpacity, customColourDark, slideTextDark,
     profileUrl, name, handle, blueTick, websiteUrl, showNums,
     accentColor, ratio, coverImgPos, templateImgPos, bgColour, gradientMode,
   } = opts;
