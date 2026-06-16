@@ -2649,64 +2649,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               <input ref={inspirationRef} type="file" accept="image/*" onChange={e=>readFile(e,url=>{setInspirationImg(url);setTopic("Reading screenshot...");setAngle("");setErr("");extractTopicFromImage(url);}) } style={{display:"none"}}/>
             </div>
 
-            <div className="cover-format-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
-              <div>
-                <label style={lbl}>Cover <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional)</span></label>
-                {coverPhotos.length > 0 && (
-                  <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12,marginTop:8}}>
-                    {coverPhotos.map((photo,i)=>(
-                      <div key={i} style={{position:"relative",flexShrink:0}}>
-                        <div onClick={()=>setActiveCoverPhoto(activeCoverPhoto===photo?null:photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:activeCoverPhoto===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
-                          <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                        </div>
-                        {activeCoverPhoto===photo&&<div onClick={()=>{setActiveCoverPhoto(null);if(bgMode==="dark"||bgMode==="colour"||bgMode==="custom")setCustomColourDark(true);else setCustomColourDark(false);}} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700}}>×</div>}
-                        <div onClick={()=>{if(window.confirm("Remove this photo from your library? This cannot be undone.")){const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);if(activeCoverPhoto===photo){setActiveCoverPhoto(null);if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);}}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
-                      </div>
-                    ))}
-                    <div onClick={()=>coverPhotoRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
-                  </div>
-                )}
-                {coverPhotos.length === 0 && (
-                  <div onClick={()=>coverPhotoRef.current?.click()} style={{marginTop:8,marginBottom:12,padding:"12px",border:`2px dashed ${A.border}`,borderRadius:10,textAlign:"center",cursor:"pointer",color:A.muted,fontSize:13}}>
-                    + Upload cover photo
-                  </div>
-                )}
-                {activeCoverPhoto&&(
-                  <div style={{marginBottom:12}}>
-                    <label style={{...lbl,fontSize:11,marginBottom:6,display:"block"}}>Photo opacity — {photoOpacity}% <span style={{fontWeight:400,fontSize:9}}>(lower = more faded)</span></label>
-                    <input type="range" min={10} max={100} value={photoOpacity} onChange={e=>setPhotoOpacity(+e.target.value)} style={{width:"100%"}}/>
-                    <label style={{...lbl,fontSize:11,marginBottom:6,marginTop:10,display:"block"}}>Photo overlay — {overlayDark}% <span style={{fontWeight:400,fontSize:9}}>(higher = darker)</span></label>
-                    <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
-                  </div>
-                )}
-                <div style={{display:"flex",gap:8,marginBottom:12}}>
-                  <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>White text</button>
-                  <button onClick={()=>setCustomColourDark(false)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${!customColourDark?GOLD:A.border}`,background:!customColourDark?"#fff":A.bg,color:!customColourDark?"#000":A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>Dark text</button>
-                </div>
-                <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
-                {isPexelsUser ? (
-                  <button onClick={()=>setShowPexelsCover(true)} style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                    🔍 Search 1000s of free images
-                  </button>
-                ) : (
-                  <div title="Upgrade to Pro to search Pexels" style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:12,textAlign:"center",marginBottom:10,cursor:"not-allowed",opacity:0.6}}>
-                    🔍 Search Pexels — Pro+ only
-                  </div>
-                )}
-                {(()=>{
-                  const isPortraitPrev = ratio==="portrait";
-                  const previewW = isPortraitPrev ? 180 : 280;
-                  const previewH = Math.round((isPortraitPrev?1920:1350)*(previewW/1080));
-                  return (
-                    <div>
-                      <label style={{...lbl,marginBottom:8}}>Preview</label>
-                      <div style={{padding:8,background:A.bg,borderRadius:12,border:`1.5px solid ${A.border}`}}><div style={{width:previewW,height:previewH,borderRadius:8,overflow:"hidden"}}>
-                        <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={0} total={1} opts={slideOpts(0)} onClick={()=>{}} isActive={false} isCover={true}/>
-                      </div></div>
-                    </div>
-                  );
-                })()}
-              </div>
+            <div className="cover-format-grid" style={{display:"grid",gridTemplateColumns:"1fr",gap:16,marginBottom:20}}>
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
                 <div>
                   <label style={lbl}>Text density</label>
@@ -2879,11 +2822,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   <p style={{color:A.muted,fontSize:12,margin:"0 0 12px",lineHeight:1.6}}>Upload and save up to 10 images. Pick one per generation. Used on cover slide only.</p>
                   <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
                     {coverPhotos.map((p,i)=>(
-                      <div key={i} style={{position:"relative"}}>
-                        <div onClick={()=>{setActiveCoverPhoto(p);sampleImageBrightness(p).then(setBadgeArea);}} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:`2px solid ${activeCoverPhoto===p?GOLD:A.border}`,cursor:"pointer"}}>
+                      <div key={i} style={{position:"relative",flexShrink:0}}>
+                        <div onClick={()=>{if(activeCoverPhoto===p){setActiveCoverPhoto(null);if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);}else{setActiveCoverPhoto(p);sampleImageBrightness(p).then(result=>{setBadgeArea(result);if(result==="light")setCustomColourDark(false);else setCustomColourDark(true);});}}} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:activeCoverPhoto===p?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
                           <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                         </div>
-                        <button onClick={()=>{if(window.confirm("Remove this photo from your library? This cannot be undone.")){const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);if(activeCoverPhoto===p)setActiveCoverPhoto(next[0]||null);}}} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>×</button>
+                        {activeCoverPhoto===p&&<div onClick={()=>{setActiveCoverPhoto(null);if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);}} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
+                        <div onClick={()=>{if(window.confirm("Remove this photo from your library? This cannot be undone.")){const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);setTemplatePhotos(next);if(activeCoverPhoto===p){setActiveCoverPhoto(next[0]||null);if(!next[0]){if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);}}}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
                       </div>
                     ))}
                     {coverPhotos.length < 10 && (
@@ -2900,7 +2844,19 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       🔍 Search Pexels — Pro+ only
                     </div>
                   )}
-                  <label style={{...lbl,marginTop:14}}>Badge & hook position on cover</label>
+                  {activeCoverPhoto&&(
+                    <div style={{marginBottom:12}}>
+                      <label style={{...lbl,fontSize:11,marginBottom:6,display:"block"}}>Photo opacity — {photoOpacity}% <span style={{fontWeight:400,fontSize:9}}>(lower = more faded)</span></label>
+                      <input type="range" min={10} max={100} value={photoOpacity} onChange={e=>setPhotoOpacity(+e.target.value)} style={{width:"100%"}}/>
+                      <label style={{...lbl,fontSize:11,marginBottom:6,marginTop:10,display:"block"}}>Photo overlay — {overlayDark}% <span style={{fontWeight:400,fontSize:9}}>(higher = darker)</span></label>
+                      <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
+                    </div>
+                  )}
+                  <div style={{display:"flex",gap:8,marginBottom:14}}>
+                    <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>White text</button>
+                    <button onClick={()=>setCustomColourDark(false)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${!customColourDark?GOLD:A.border}`,background:!customColourDark?"#fff":A.bg,color:!customColourDark?"#000":A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>Dark text</button>
+                  </div>
+                  <label style={{...lbl,marginTop:4}}>Badge & hook position on cover</label>
                   <div style={{display:"flex",gap:8,marginBottom:14}}>
                     {COVER_POSITIONS.map(p=>(
                       <button key={p.id} onClick={()=>setCoverPosition(p.id)} style={{flex:1,background:coverPosition===p.id?A.text:A.bg,border:`1.5px solid ${coverPosition===p.id?A.text:A.border}`,borderRadius:8,padding:"8px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
