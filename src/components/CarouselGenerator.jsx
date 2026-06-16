@@ -271,7 +271,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const accent = accentColor || GOLD;
   const isDark = bgMode === "dark" ? true : bgMode === "light" ? false : (bgMode === "colour" || bgMode === "custom" || !!coverImageUrl) ? (customColourDark??true) : true;
   const colourTextDark = !isDark;
-  const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : "#0A0A0A";
+  const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : (bgMode === "custom" && !bgImageUrl) ? "#F5F3EF" : "#0A0A0A";
   // For image/cover photo modes: if opacity < 100, white shows behind faded photo
   const bgForOpacity = (bgMode === "custom" || (isCover && !!coverImageUrl)) && (photoOpacity||100) < 100 ? "#FFFFFF" : null;
   const coverHasImage = isCover && !!coverImageUrl;
@@ -305,7 +305,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const pillText = bgImageUrl || C.dark ? "#fff" : "#111";
   const pillSub = bgImageUrl || C.dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)";
   const badgeTextColor = forceLight ? "#0A0A0A" : (C.dark || bgImageUrl ? "#FFFFFF" : "#0A0A0A");
-  const badgeSubColor = C.dark || bgImageUrl ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)";
+  const badgeSubColor = forceLight ? "rgba(0,0,0,0.55)" : (C.dark || bgImageUrl ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)");
   const badgeTextShadow = bgImageUrl ? (forceLight ? "text-shadow:0 0 12px rgba(255,255,255,0.9);" : "text-shadow:0 1px 6px rgba(0,0,0,0.8);") : "";
 
   // Pre-compute glow for use inside base CSS — based on bgImageUrl and bgMode
@@ -1118,8 +1118,8 @@ export default function App() {
     const next = coverPhotos.filter(p => p !== url);
     setCoverPhotos(next);
     setTemplatePhotos(next);
-    if (activeCoverPhoto === url) setActiveCoverPhoto(next[0] || null);
-    if (templateBgUrl === url) setTemplateBgUrl(next[0] || null);
+    if (activeCoverPhoto === url) { setActiveCoverPhoto(next[0] || null); if(!next[0]){if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);} }
+    if (templateBgUrl === url) { setTemplateBgUrl(next[0] || null); if(!next[0]) setCustomColourDark(false); }
   };
 
   const profileRef = useRef(null);
@@ -3077,7 +3077,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                               <div onClick={()=>setTemplateBgUrl(templateBgUrl===photo?null:photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:templateBgUrl===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
                                 <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                               </div>
-                              {templateBgUrl===photo&&<div onClick={()=>setTemplateBgUrl(null)} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
+                              {templateBgUrl===photo&&<div onClick={()=>{setTemplateBgUrl(null);setCustomColourDark(false);}} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
                               <div onClick={()=>{if(window.confirm("Remove this image from your library? This cannot be undone.")){removeFromSharedLibrary(photo);}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
                             </div>
                           ))}
