@@ -1054,6 +1054,7 @@ export default function App() {
   const [customAccentSlots, setCustomAccentSlots] = useState(S?.customAccentSlots||["","",""]);
   const [bgColour, setBgColour] = useState(S?.bgColour||"#1a1a2e");
   const [customColourDark, setCustomColourDark] = useState(S?.customColourDark??(S?.bgMode==="light"?false:true));
+  const [slideTextDark, setSlideTextDark] = useState(S?.slideTextDark??(S?.bgMode==="light"?false:true));
   const [slideCount, setSlideCount] = useState(6);
   const [err, setErr] = useState("");
   const [randomising, setRandomising] = useState(false);
