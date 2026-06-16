@@ -284,7 +284,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     ? (coverImageUrl || null)  // cover only uses its own photo, never the template image
     : (bgMode === "custom" ? templateBgUrl : null);
   // Cover slide background: if no cover photo, inherit slideBg from Visual tab setting (but "custom" mode falls to dark)
-  const coverFallbackBg = (!isCover || coverImageUrl) ? slideBg : (bgMode === "custom" ? "#0A0A0A" : slideBg);
+  const coverFallbackBg = (!isCover || coverImageUrl) ? slideBg : (bgMode === "custom" && !opts.templateBgUrl ? "#F5F3EF" : bgMode === "custom" ? "#0A0A0A" : slideBg);
   const effectiveSlideBg = isCover ? coverFallbackBg : slideBg;
   const forceLight = (coverHasImage || (bgMode === "custom" && bgImageUrl)) ? !(customColourDark??true) : false;
   const C = {
