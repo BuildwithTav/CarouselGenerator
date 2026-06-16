@@ -2243,7 +2243,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   <label style={lbl}>Background</label>
                   <div style={{display:"flex",gap:8,marginBottom:quoteBgMode==="custom"?10:0}}>
                     {[["dark","Dark"],["light","Light"],["custom","Custom"]].map(([id,label])=>(
-                      <button key={id} onClick={()=>{setQuoteBgMode(id);if(id==="dark")setQuoteTextColor("#FFFFFF");if(id==="light")setQuoteTextColor("#0A0A0A");}} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
+                      <button key={id} onClick={()=>{setQuoteBgMode(id);if(id==="dark")setQuoteTextColor("#FFFFFF");if(id==="light")setQuoteTextColor("#0A0A0A");if(id==="custom")setQuoteTextColor("#FFFFFF");}} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                     ))}
                   </div>
                   {quoteBgMode==="custom"&&(
@@ -2313,7 +2313,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 <label style={lbl}>Background</label>
                 <div style={{display:"flex",gap:8,marginBottom:quoteBgMode==="custom"?14:0}}>
                   {[["dark","Dark"],["light","Light"],["custom","Custom"]].map(([id,label])=>(
-                    <button key={id} onClick={()=>{setQuoteBgMode(id);if(id==="dark")setQuoteTextColor("#FFFFFF");if(id==="light")setQuoteTextColor("#0A0A0A");}} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
+                    <button key={id} onClick={()=>{setQuoteBgMode(id);if(id==="dark")setQuoteTextColor("#FFFFFF");if(id==="light")setQuoteTextColor("#0A0A0A");if(id==="custom")setQuoteTextColor("#FFFFFF");}} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                   ))}
                 </div>
                 {quoteBgMode==="custom"&&(
@@ -2865,14 +2865,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       </button>
                     ))}
                   </div>
-                  {activeCoverPhoto&&(()=>{
+                  {(()=>{
                     const coverSlide = {headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null};
                     return (
                       <div>
                         <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
                           <SlidePreview slide={coverSlide} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
                         </div>
-                        <p style={{color:A.muted,fontSize:11,marginTop:8}}>Switch position above to see how badge and headline sit on your photo.</p>
+                        <p style={{color:A.muted,fontSize:11,marginTop:8}}>{activeCoverPhoto?"Switch position above to see how badge and headline sit on your photo.":"No cover photo selected — preview shows your slide background defaults."}</p>
                       </div>
                     );
                   })()}
