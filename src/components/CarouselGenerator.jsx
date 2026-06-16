@@ -271,7 +271,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const accent = accentColor || GOLD;
   const isDark = bgMode === "dark" ? true : bgMode === "light" ? false : (bgMode === "colour" || bgMode === "custom" || !!coverImageUrl) ? (customColourDark??true) : true;
   const colourTextDark = !isDark;
-  const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : (bgMode === "custom" && !opts.templateBgUrl && !opts.coverImageUrl) ? "#F5F3EF" : "#0A0A0A";
+  const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : (bgMode === "custom" && !opts.templateBgUrl && !(isCover && opts.coverImageUrl)) ? "#F5F3EF" : "#0A0A0A";
   // For image/cover photo modes: if opacity < 100, white shows behind faded photo
   const bgForOpacity = (bgMode === "custom" || (isCover && !!coverImageUrl)) && (photoOpacity||100) < 100 ? "#FFFFFF" : null;
   const coverHasImage = isCover && !!coverImageUrl;
