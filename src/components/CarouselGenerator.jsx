@@ -270,7 +270,8 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
   const accent = accentColor || GOLD;
   const noImage = bgMode === "custom" && !opts.templateBgUrl && !(isCover ? !!coverImageUrl : false);
-  const isDark = bgMode === "dark" ? true : bgMode === "light" ? false : noImage ? false : (bgMode === "colour" || bgMode === "custom" || !!coverImageUrl) ? (customColourDark??true) : true;
+  const effectiveColourDark = isCover ? (customColourDark??true) : (slideTextDark??true);
+  const isDark = bgMode === "dark" ? true : bgMode === "light" ? false : noImage ? false : (bgMode === "colour" || bgMode === "custom" || !!coverImageUrl) ? effectiveColourDark : true;
   const colourTextDark = !isDark;
   const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : (bgMode === "custom" && !opts.templateBgUrl && !(isCover && opts.coverImageUrl)) ? "#F5F3EF" : "#0A0A0A";
   // For image/cover photo modes: if opacity < 100, white shows behind faded photo
@@ -286,7 +287,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   // Cover slide background: if no cover photo, inherit slideBg from Visual tab setting (but "custom" mode falls to dark)
   const coverFallbackBg = (!isCover || coverImageUrl) ? slideBg : (bgMode === "custom" && !opts.templateBgUrl ? "#F5F3EF" : bgMode === "custom" ? "#0A0A0A" : slideBg);
   const effectiveSlideBg = isCover ? coverFallbackBg : slideBg;
-  const forceLight = (coverHasImage || (bgMode === "custom" && bgImageUrl)) ? !(customColourDark??true) : false;
+  const forceLight = (coverHasImage || (bgMode === "custom" && bgImageUrl)) ? !effectiveColourDark : false;
   const C = {
     bg: slideBg,
     accent,
@@ -1144,7 +1145,7 @@ export default function App() {
     const safeActiveCover = activeCoverPhoto?.startsWith('data:') ? '' : activeCoverPhoto;
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,quotePhotos,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
-           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,photoOpacity,templateOpacity,ratio,bgColour,customColourDark,audienceType,customActiveSlot,textDensity});
+           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,photoOpacity,templateOpacity,ratio,bgColour,customColourDark,slideTextDark,audienceType,customActiveSlot,textDensity});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
       bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType,customActiveSlot,textDensity,quotePhotos]);
@@ -1465,9 +1466,9 @@ Return ONLY valid JSON, nothing else.` }
     photoOpacity: slideIdx === 0 ? photoOpacity : templateOpacity,
     profileUrl, name, handle, blueTick,
     websiteUrl: currentUser?.plan==="free" ? "studio.buildwithtav.co" : (showWebsite?website:""),
-    showNums, ratio, accentColor, bgColour, customColourDark,
+    showNums, ratio, accentColor, bgColour, customColourDark, slideTextDark,
     coverImgPos, templateImgPos, gradientMode,
-  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,photoOpacity,templateOpacity,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,customColourDark,slideOverlays,gradientMode,currentUser]);
+  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,photoOpacity,templateOpacity,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,customColourDark,slideTextDark,slideOverlays,gradientMode,currentUser]);
 
   const downloadOne = async (i) => {
     if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
@@ -3020,10 +3021,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         <input type="color" value={bgColour} onChange={e=>setBgColour(e.target.value)} style={{width:40,height:40,borderRadius:8,border:`1px solid ${A.border}`,cursor:"pointer",padding:2}}/>
                         <input value={bgColour} onChange={e=>setBgColour(e.target.value)} placeholder="#1a1a2e" style={{...inp,flex:1,fontSize:13}}/>
                       </div>
-                      <div style={{display:"flex",gap:8,marginTop:12}}>
-                        <button onClick={()=>setSlideTextDark(true)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${slideTextDark?GOLD:A.border}`,background:slideTextDark?A.text:A.bg,color:slideTextDark?A.accentText:A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>White text</button>
-                        <button onClick={()=>setSlideTextDark(false)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${!slideTextDark?GOLD:A.border}`,background:!slideTextDark?"#fff":A.bg,color:!slideTextDark?"#000":A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>Dark text</button>
-                      </div>
+
                     </div>
                   )}
                   {bgMode==="custom"&&(
