@@ -3030,7 +3030,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
                           {templatePhotos.map((photo,i)=>(
                             <div key={i} style={{position:"relative",flexShrink:0}}>
-                              <div onClick={()=>setTemplateBgUrl(templateBgUrl===photo?null:photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:templateBgUrl===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
+                              <div onClick={()=>{if(templateBgUrl===photo){setTemplateBgUrl(null);setCustomColourDark(false);}else setTemplateBgUrl(photo);}} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:templateBgUrl===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
                                 <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                               </div>
                               {templateBgUrl===photo&&<div onClick={()=>{setTemplateBgUrl(null);setCustomColourDark(false);}} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
