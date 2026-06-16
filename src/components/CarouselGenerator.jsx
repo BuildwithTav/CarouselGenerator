@@ -309,7 +309,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const badgeTextShadow = bgImageUrl ? (forceLight ? "text-shadow:0 0 12px rgba(255,255,255,0.9);" : "text-shadow:0 1px 6px rgba(0,0,0,0.8);") : "";
 
   // Pre-compute glow for use inside base CSS — based on bgImageUrl and bgMode
-  const hasPhotoOrColour = !!(bgImageUrl) || bgMode === "colour";
+  const hasPhotoOrColour = !!(bgImageUrl);
   const glowHL = hasPhotoOrColour ? (forceLight ? "text-shadow:0 0 20px rgba(255,255,255,0.9),0 0 40px rgba(255,255,255,0.5);" : "text-shadow:0 0 20px rgba(0,0,0,0.9),0 0 40px rgba(0,0,0,0.5);") : "";
   const glowBody = hasPhotoOrColour ? (forceLight ? "text-shadow:0 0 12px rgba(255,255,255,0.8);" : "text-shadow:0 0 12px rgba(0,0,0,0.8);") : "";
 
@@ -2856,6 +2856,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>White text</button>
                     <button onClick={()=>setCustomColourDark(false)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${!customColourDark?GOLD:A.border}`,background:!customColourDark?"#fff":A.bg,color:!customColourDark?"#000":A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>Dark text</button>
                   </div>
+                  {(()=>{
+                    const coverSlide = {headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null};
+                    return (
+                      <div style={{marginBottom:14}}>
+                        <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                          <SlidePreview slide={coverSlide} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
+                        </div>
+                        <p style={{color:A.muted,fontSize:11,marginTop:8}}>{activeCoverPhoto?"Select a position below to adjust badge and headline placement.":"No cover photo selected — showing your background defaults as set in the Visual tab."}</p>
+                      </div>
+                    );
+                  })()}
                   <label style={{...lbl,marginTop:4}}>Badge & hook position on cover</label>
                   <div style={{display:"flex",gap:8,marginBottom:14}}>
                     {COVER_POSITIONS.map(p=>(
@@ -2865,17 +2876,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       </button>
                     ))}
                   </div>
-                  {(()=>{
-                    const coverSlide = {headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null};
-                    return (
-                      <div>
-                        <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                          <SlidePreview slide={coverSlide} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
-                        </div>
-                        <p style={{color:A.muted,fontSize:11,marginTop:8}}>{activeCoverPhoto?"Switch position above to see how badge and headline sit on your photo.":"No cover photo selected — preview shows your slide background defaults."}</p>
-                      </div>
-                    );
-                  })()}
                 </div>
               </div>
 
