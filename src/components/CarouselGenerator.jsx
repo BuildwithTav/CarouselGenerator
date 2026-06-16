@@ -1120,7 +1120,7 @@ export default function App() {
     setCoverPhotos(next);
     setTemplatePhotos(next);
     if (activeCoverPhoto === url) { setActiveCoverPhoto(next[0] || null); if(!next[0]){if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);} }
-    if (templateBgUrl === url) { setTemplateBgUrl(next[0] || null); if(!next[0]) setCustomColourDark(false); }
+    if (templateBgUrl === url) { setTemplateBgUrl(next[0] || null); if(!next[0]) setSlideTextDark(false); }
   };
 
   const profileRef = useRef(null);
@@ -3020,8 +3020,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         <input value={bgColour} onChange={e=>setBgColour(e.target.value)} placeholder="#1a1a2e" style={{...inp,flex:1,fontSize:13}}/>
                       </div>
                       <div style={{display:"flex",gap:8,marginTop:12}}>
-                        <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>White text</button>
-                        <button onClick={()=>setCustomColourDark(false)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${!customColourDark?GOLD:A.border}`,background:!customColourDark?"#fff":A.bg,color:!customColourDark?"#000":A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>Dark text</button>
+                        <button onClick={()=>setSlideTextDark(true)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${slideTextDark?GOLD:A.border}`,background:slideTextDark?A.text:A.bg,color:slideTextDark?A.accentText:A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>White text</button>
+                        <button onClick={()=>setSlideTextDark(false)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${!slideTextDark?GOLD:A.border}`,background:!slideTextDark?"#fff":A.bg,color:!slideTextDark?"#000":A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>Dark text</button>
                       </div>
                     </div>
                   )}
@@ -3031,10 +3031,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
                           {templatePhotos.map((photo,i)=>(
                             <div key={i} style={{position:"relative",flexShrink:0}}>
-                              <div onClick={()=>{if(templateBgUrl===photo){setTemplateBgUrl(null);setCustomColourDark(false);}else setTemplateBgUrl(photo);}} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:templateBgUrl===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
+                              <div onClick={()=>{if(templateBgUrl===photo){setTemplateBgUrl(null);setSlideTextDark(false);}else setTemplateBgUrl(photo);}} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:templateBgUrl===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
                                 <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                               </div>
-                              {templateBgUrl===photo&&<div onClick={()=>{setTemplateBgUrl(null);setCustomColourDark(false);}} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
+                              {templateBgUrl===photo&&<div onClick={()=>{setTemplateBgUrl(null);setSlideTextDark(false);}} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
                               <div onClick={()=>{if(window.confirm("Remove this image from your library? This cannot be undone.")){removeFromSharedLibrary(photo);}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
                             </div>
                           ))}
@@ -3087,8 +3087,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   </div></div>
                   <p style={{color:A.muted,fontSize:11,marginTop:8}}>{bgMode==="custom"&&templateBgUrl?"Image selected — use White/Dark text to match.":bgMode==="custom"?"No image selected — showing background defaults.":`Preview reflects your ${bgMode} background setting.`}</p>
                   <div style={{display:"flex",gap:8,marginTop:10}}>
-                    <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>White text</button>
-                    <button onClick={()=>setCustomColourDark(false)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${!customColourDark?GOLD:A.border}`,background:!customColourDark?"#fff":A.bg,color:!customColourDark?"#000":A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>Dark text</button>
+                    <button onClick={()=>setSlideTextDark(true)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${slideTextDark?GOLD:A.border}`,background:slideTextDark?A.text:A.bg,color:slideTextDark?A.accentText:A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>White text</button>
+                    <button onClick={()=>setSlideTextDark(false)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${!slideTextDark?GOLD:A.border}`,background:!slideTextDark?"#fff":A.bg,color:!slideTextDark?"#000":A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>Dark text</button>
                   </div>
                 </div>
               </div>
