@@ -172,7 +172,7 @@
       <span class="nav-logo-sub">by BuildWithTav</span>
     </div>
   </a>
-  <a href="https://studio.buildwithtav.co" class="nav-cta">Start Free →</a>
+  <a href="https://studio.buildwithtav.co" class="nav-cta" target="_top">Start Free →</a>
 </nav>
 
 <section class="hero">
@@ -181,7 +181,7 @@
       <div class="hero-badge">AI-Powered Carousel Generator</div>
       <h1>Carousels that <span>stop the scroll.</span><br>Built in <span>seconds.</span></h1>
       <p class="hero-sub">Tell it your topic. It handles the strategy, slides, copy and design — in your brand voice. Up to 8 slides. Ready in under 30 seconds.</p>
-      <a href="https://studio.buildwithtav.co" class="hero-btn">Start Free — No credit card needed →</a>
+      <a href="https://studio.buildwithtav.co" class="hero-btn" target="_top">Start Free — No credit card needed →</a>
       <p class="hero-note"><span style="color:var(--gold);font-weight:700">6 carousel generations free.</span> No credit card. No commitment.</p>
     </div>
     <div class="hero-img">
@@ -263,7 +263,7 @@
           <li>Quote cards & captions</li>
           <li>Studio branding on downloads</li>
         </ul>
-        <a href="https://studio.buildwithtav.co" class="plan-btn plan-btn-dark">Start Free</a>
+        <a href="https://studio.buildwithtav.co" class="plan-btn plan-btn-dark" target="_top">Start Free</a>
       </div>
       <div class="plan-card">
         <div class="plan-name">Starter</div>
@@ -386,16 +386,16 @@
   <div class="cta-inner">
     <h2>Ready to create carousels that <span style="color:var(--gold)">actually perform?</span></h2>
     <p>Free to start. No credit card. No commitment. Just better content.</p>
-    <a href="https://studio.buildwithtav.co" class="hero-btn">Start Free — No credit card needed →</a>
+    <a href="https://studio.buildwithtav.co" class="hero-btn" target="_top">Start Free — No credit card needed →</a>
     <p style="font-size:12px;color:var(--muted);margin-top:16px"><span style="color:var(--gold);font-weight:700">6 carousel generations free.</span> Upgrade anytime.</p>
   </div>
 </section>
 
 <footer>
-  <a href="https://studio.buildwithtav.co" style="color:var(--gold);font-weight:800;font-family:'Montserrat',sans-serif;font-size:14px">Carousel Studio</a>
+  <a href="https://studio.buildwithtav.co" style="color:var(--gold);font-weight:800;font-family:'Montserrat',sans-serif;font-size:14px" target="_top">Carousel Studio</a>
   <div class="footer-links">
-    <a href="https://studio.buildwithtav.co/terms">Terms</a>
-    <a href="https://studio.buildwithtav.co/privacy">Privacy</a>
+    <a href="https://studio.buildwithtav.co/terms" target="_top">Terms</a>
+    <a href="https://studio.buildwithtav.co/privacy" target="_top">Privacy</a>
     <a href="mailto:tav@buildwithtav.co">Contact</a>
     <a href="https://www.buildwithtav.co">BuildWithTav</a>
   </div>
@@ -417,6 +417,7 @@
       const url = new URL(a.href);
       if (sa) url.searchParams.set('sa', sa);
       a.href = url.toString();
+      a.target = '_top';
     });
   })();
 </script>
