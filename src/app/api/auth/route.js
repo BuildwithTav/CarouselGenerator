@@ -96,11 +96,19 @@ async function addToSysteme(email, tagName) {
         body: JSON.stringify({ tagId })
       });
     } else {
-      await fetch("https://api.systeme.io/api/contacts", {
+      const create = await fetch("https://api.systeme.io/api/contacts", {
         method: "POST",
         headers: { "X-API-Key": SYSTEME_API_KEY, "Content-Type": "application/json" },
-        body: JSON.stringify({ email, tags: [{ id: tagId }] })
+        body: JSON.stringify({ email })
       });
+      const created = await create.json();
+      if (created?.id) {
+        await fetch(`https://api.systeme.io/api/contacts/${created.id}/tags`, {
+          method: "POST",
+          headers: { "X-API-Key": SYSTEME_API_KEY, "Content-Type": "application/json" },
+          body: JSON.stringify({ tagId })
+        });
+      }
     }
   } catch(e) { console.error("Systeme sync error:", e); }
 }
