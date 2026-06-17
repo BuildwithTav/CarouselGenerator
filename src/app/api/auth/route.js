@@ -198,7 +198,7 @@ export async function POST(req) {
         await sendEmail(user.email, subject, html);
 
         // Add to Systeme
-        addToSysteme(user.email, "carousel-studio-free");
+        await addToSysteme(user.email, "carousel-studio-free");
 
       } else if (existing.plan !== "free" && existing.affiliate_id && existing.affiliate_active && !existing.affiliate_welcome_email_sent) {
         // Returning paid user who hasn't had welcome email yet
