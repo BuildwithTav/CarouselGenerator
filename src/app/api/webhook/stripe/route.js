@@ -69,24 +69,43 @@ function emailUpgradeConfirmed(firstName, planName, planPrice, commissionRate) {
 
 async function addTagToSysteme(email, tag) {
   try {
+    const tagsRes = await fetch("https://api.systeme.io/api/tags?limit=100", {
+      headers: { "X-API-Key": SYSTEME_API_KEY, "Accept": "application/json" }
+    });
+    const tagsData = await tagsRes.json();
+    let tagObj = tagsData?.items?.find(t => t.name === tag);
+    if (!tagObj) {
+      const create = await fetch("https://api.systeme.io/api/tags", {
+        method: "POST",
+        headers: { "X-API-Key": SYSTEME_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ name: tag })
+      });
+      tagObj = await create.json();
+    }
+    if (!tagObj?.id) return;
+
     const check = await fetch(`https://api.systeme.io/api/contacts?email=${encodeURIComponent(email)}`, {
       headers: { "X-API-Key": SYSTEME_API_KEY, "Accept": "application/json" }
     });
     const checkData = await check.json();
-    const existing = checkData?.items?.[0];
-    if (existing) {
-      const tagsRes = await fetch("https://api.systeme.io/api/tags?limit=100", {
-        headers: { "X-API-Key": SYSTEME_API_KEY, "Accept": "application/json" }
+    let contactId = checkData?.items?.[0]?.id;
+
+    if (!contactId) {
+      const createContact = await fetch("https://api.systeme.io/api/contacts", {
+        method: "POST",
+        headers: { "X-API-Key": SYSTEME_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
       });
-      const tagsData = await tagsRes.json();
-      const tagObj = tagsData?.items?.find(t => t.name === tag);
-      if (tagObj) {
-        await fetch(`https://api.systeme.io/api/contacts/${existing.id}/tags`, {
-          method: "POST",
-          headers: { "X-API-Key": SYSTEME_API_KEY, "Content-Type": "application/json" },
-          body: JSON.stringify({ tagId: tagObj.id })
-        });
-      }
+      const createdContact = await createContact.json();
+      contactId = createdContact?.id;
+    }
+
+    if (contactId) {
+      await fetch(`https://api.systeme.io/api/contacts/${contactId}/tags`, {
+        method: "POST",
+        headers: { "X-API-Key": SYSTEME_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ tagId: tagObj.id })
+      });
     }
   } catch(e) { console.error("Systeme tag error:", e); }
 }
