@@ -370,7 +370,8 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     .av-i { font-size:44px; font-weight:900; color:${C.accent}; font-family:'${hlFont}',sans-serif; }
     .bn { font-size:22px; font-weight:800; color:${badgeTextColor}; line-height:1.2; font-family:'${bodyFont}',sans-serif; ${badgeTextShadow} }
     .bh { font-size:15px; color:${badgeSubColor}; font-family:'${bodyFont}',sans-serif; ${badgeTextShadow} }
-    .tick { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; background:#1D9BF0; border-radius:50%; font-size:10px; color:#fff; margin-left:5px; vertical-align:middle; }
+    .tick { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; background:#1D9BF0; border-radius:50%; margin-left:5px; vertical-align:middle; position:relative; }
+    .tick-mark { position:absolute; width:7px; height:4px; border-left:2px solid #fff; border-bottom:2px solid #fff; transform:rotate(-45deg); top:6px; left:5px; }
     .wm { position:absolute; bottom:28px; right:38px; z-index:3;
       font-size:${Math.floor(H*0.18)}px; font-weight:900; line-height:1;
       color:${C.dark?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.035)"};
@@ -453,7 +454,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
         ${profileUrl?`<img src="${profileUrl}"  style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;object-fit:cover;"/>`:`<span style="font-size:32px;font-weight:900;color:${C.accent};font-family:'${hlFont}',sans-serif;">${esc((name||"?")[0].toUpperCase())}</span>`}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-start;">
-        <div style="font-size:20px;font-weight:800;color:${pillText};line-height:1.2;font-family:'${bodyFont}',sans-serif;${badgeTextShadow}">${esc(name||"Your Brand")}${blueTick?` <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:#1D9BF0;border-radius:50%;margin-left:5px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`:""}</div>
+        <div style="font-size:20px;font-weight:800;color:${pillText};line-height:1.2;font-family:'${bodyFont}',sans-serif;${badgeTextShadow}">${esc(name||"Your Brand")}${blueTick?` <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:#1D9BF0;border-radius:50%;margin-left:5px;position:relative;"><span style="position:absolute;width:7px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);top:6px;left:5px;"></span></span>`:""}</div>
         <div style="font-size:15px;color:${pillSub};font-family:'${bodyFont}',sans-serif;${badgeTextShadow}">${esc(handle||"@yourhandle")}</div>
       </div>
     </div>`;
@@ -562,7 +563,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   ${isCover ? "" : profileUrl ? `<div class="badge">
     <div class="av">${avHtml}</div>
     <div>
-      <div class="bn">${esc(name||"Your Brand")}${blueTick?` <span class="tick"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`:""}</div>
+      <div class="bn">${esc(name||"Your Brand")}${blueTick?` <span class="tick"><span class="tick-mark"></span></span>`:""}</div>
       <div class="bh">${esc(handle||"@yourhandle")}</div>
     </div>
   </div>` : ""}
@@ -976,6 +977,12 @@ export default function App() {
     } catch {}
     setAffiliateLoading(false);
   };
+
+  useEffect(() => {
+    if (nav === "account" && currentUser && currentUser.plan !== "free") {
+      loadAffiliateStats();
+    }
+  }, [nav, currentUser?.plan, currentUser?.affiliate_active]);
 
   const submitPayoutRequest = async () => {
     setPayoutSubmitting(true);
