@@ -984,6 +984,45 @@ export default function App() {
     }
   }, [nav, currentUser?.plan, currentUser?.affiliate_active]);
 
+  // ADMIN-ONLY brand preset functions — only ever called from is_admin-gated UI, touches a separate localStorage key only
+  const saveAdminPreset = () => {
+    const trimmed = adminPresetName.trim();
+    if (!trimmed) { alert("Give this preset a name first."); return; }
+    const snapshot = {
+      id: Date.now().toString(),
+      label: trimmed,
+      profileUrl, name, handle, blueTick, website, showWebsite, voiceProfile, businessType,
+      headlineStyle, bgMode, bgColour, customColourDark, slideTextDark, accentColor, fontId,
+      templateBgUrl, photoOpacity, templateOpacity, overlayDark,
+    };
+    const next = [...adminPresets.filter(p=>p.label!==trimmed), snapshot];
+    setAdminPresets(next);
+    try { localStorage.setItem("bwt_admin_presets", JSON.stringify(next)); } catch {}
+    setAdminActivePreset(snapshot.id);
+    setAdminPresetName("");
+  };
+
+  const loadAdminPreset = (id) => {
+    const p = adminPresets.find(x=>x.id===id);
+    if (!p) return;
+    setProfileUrl(p.profileUrl||""); setName(p.name||""); setHandle(p.handle||"");
+    setBlueTick(p.blueTick??false); setWebsite(p.website||""); setShowWebsite(p.showWebsite??false);
+    setVoiceProfile(p.voiceProfile||""); setBusinessType(p.businessType||"marketer");
+    setHeadlineStyle(p.headlineStyle); setBgMode(p.bgMode); setBgColour(p.bgColour);
+    setCustomColourDark(p.customColourDark); setSlideTextDark(p.slideTextDark);
+    setAccentColor(p.accentColor); setFontId(p.fontId); setTemplateBgUrl(p.templateBgUrl||null);
+    setPhotoOpacity(p.photoOpacity); setTemplateOpacity(p.templateOpacity); setOverlayDark(p.overlayDark);
+    setAdminActivePreset(id);
+  };
+
+  const deleteAdminPreset = (id) => {
+    if (!confirm("Delete this preset?")) return;
+    const next = adminPresets.filter(p=>p.id!==id);
+    setAdminPresets(next);
+    try { localStorage.setItem("bwt_admin_presets", JSON.stringify(next)); } catch {}
+    if (adminActivePreset===id) setAdminActivePreset(null);
+  };
+
   const submitPayoutRequest = async () => {
     setPayoutSubmitting(true);
     try {
@@ -1004,6 +1043,12 @@ export default function App() {
   const [showWebsite, setShowWebsite] = useState(S?.showWebsite??false);
   const [voiceProfile, setVoiceProfile] = useState(S?.voiceProfile||"");
   const [businessType, setBusinessType] = useState(S?.businessType||"marketer");
+  // ADMIN-ONLY brand presets — isolated feature, separate storage key, zero effect on normal users
+  const [adminPresets, setAdminPresets] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("bwt_admin_presets")||"[]"); } catch { return []; }
+  });
+  const [adminPresetName, setAdminPresetName] = useState("");
+  const [adminActivePreset, setAdminActivePreset] = useState(null);
   const [otherType, setOtherType] = useState(S?.otherType||"");
   const [coverPhotos, setCoverPhotos] = useState(S?.coverPhotos||[]);
   const [activeCoverPhoto, setActiveCoverPhoto] = useState(S?.activeCoverPhoto||null);
@@ -2758,6 +2803,24 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         {nav==="brand"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Brand</h2>
+            {currentUser?.is_admin&&(
+              <div style={{background:"#1a1500",border:`1.5px solid ${GOLD}`,borderRadius:12,padding:16,marginBottom:20}}>
+                <label style={{...lbl,color:GOLD}}>Admin — Brand Presets</label>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10,marginBottom:10}}>
+                  {adminPresets.map(p=>(
+                    <div key={p.id} style={{display:"flex",alignItems:"center",gap:4,background:adminActivePreset===p.id?GOLD:A.bg,border:`1px solid ${A.border}`,borderRadius:8,padding:"4px 4px 4px 10px"}}>
+                      <span onClick={()=>loadAdminPreset(p.id)} style={{cursor:"pointer",fontSize:12,fontWeight:700,color:adminActivePreset===p.id?"#000":A.text}}>{p.label}</span>
+                      <button onClick={()=>deleteAdminPreset(p.id)} style={{background:"none",border:"none",color:adminActivePreset===p.id?"#000":A.muted,cursor:"pointer",fontSize:12,padding:"2px 6px"}}>×</button>
+                    </div>
+                  ))}
+                  {adminPresets.length===0&&<span style={{fontSize:12,color:A.muted}}>No presets saved yet.</span>}
+                </div>
+                <div style={{display:"flex",gap:8}}>
+                  <input value={adminPresetName} onChange={e=>setAdminPresetName(e.target.value)} placeholder="Preset name e.g. Client X" style={{...inp,flex:1}}/>
+                  <button onClick={saveAdminPreset} style={{padding:"8px 16px",background:GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:12,border:"none",whiteSpace:"nowrap"}}>Save Current</button>
+                </div>
+              </div>
+            )}
             <div style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:24,alignItems:"start"}} className="brand-grid">
               <div style={{display:"flex",flexDirection:"column",gap:20}}>
 
