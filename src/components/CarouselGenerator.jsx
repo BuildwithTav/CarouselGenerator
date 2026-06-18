@@ -333,7 +333,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     const before = hs.transform==="uppercase"?text.slice(0,i).toUpperCase():text.slice(0,i);
     const accentPart = hs.transform==="uppercase"?full.toUpperCase():full;
     const after = hs.transform==="uppercase"?text.slice(i+full.length).toUpperCase():text.slice(i+full.length);
-    return `${esc(before)}<span style="color:${C.accent}">${esc(accentPart)}</span>${esc(after)}`;
+    return `${esc(before)}<span style="color:${C.accent};text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 3px rgba(0,0,0,0.4)">${esc(accentPart)}</span>${esc(after)}`;
   }
 
   const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&family=Dancing+Script:wght@600;700&family=Raleway:wght@700;800;900&family=Lato:wght@700;900&family=Roboto:wght@700;900&family=Ubuntu:wght@700&family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@700;900&family=Crimson+Text:wght@700&family=Merriweather:wght@700;900&family=Bebas+Neue&family=Abril+Fatface&family=Pacifico&family=Josefin+Sans:wght@700&family=Quicksand:wght@700&family=DM+Serif+Display&family=Cormorant+Garamond:wght@700&family=Righteous&display=swap`;
@@ -453,7 +453,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
         ${profileUrl?`<img src="${profileUrl}"  style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;object-fit:cover;"/>`:`<span style="font-size:32px;font-weight:900;color:${C.accent};font-family:'${hlFont}',sans-serif;">${esc((name||"?")[0].toUpperCase())}</span>`}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-start;">
-        <div style="font-size:20px;font-weight:800;color:${pillText};line-height:1.2;font-family:'${bodyFont}',sans-serif;${badgeTextShadow}">${esc(name||"Your Brand")}${blueTick?` <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:#1D9BF0;border-radius:50%;font-size:10px;color:#fff;margin-left:5px;">✓</span>`:""}</div>
+        <div style="font-size:20px;font-weight:800;color:${pillText};line-height:1.2;font-family:'${bodyFont}',sans-serif;${badgeTextShadow}">${esc(name||"Your Brand")}${blueTick?` <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:#1D9BF0;border-radius:50%;margin-left:5px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`:""}</div>
         <div style="font-size:15px;color:${pillSub};font-family:'${bodyFont}',sans-serif;${badgeTextShadow}">${esc(handle||"@yourhandle")}</div>
       </div>
     </div>`;
@@ -562,7 +562,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   ${isCover ? "" : profileUrl ? `<div class="badge">
     <div class="av">${avHtml}</div>
     <div>
-      <div class="bn">${esc(name||"Your Brand")}${blueTick?` <span class="tick">✓</span>`:""}</div>
+      <div class="bn">${esc(name||"Your Brand")}${blueTick?` <span class="tick"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`:""}</div>
       <div class="bh">${esc(handle||"@yourhandle")}</div>
     </div>
   </div>` : ""}
@@ -1075,6 +1075,7 @@ export default function App() {
   const [generatingCaption, setGeneratingCaption] = useState(false);
   const [showCaption, setShowCaption] = useState(false);
   const [captionCopied, setCaptionCopied] = useState(false);
+  const [affiliateLinkCopied, setAffiliateLinkCopied] = useState(false);
   const [history, setHistory] = useState(loadHistory());
 
   const [quoteInputs, setQuoteInputs] = useState(["","",""]);
@@ -3375,7 +3376,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       <div style={{fontSize:12,color:A.text,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                         {"https://studio.buildwithtav.co/landing?sa="+affiliateStats.affiliate_id}
                       </div>
-                      <button onClick={()=>{try{navigator.clipboard.writeText("https://studio.buildwithtav.co/landing?sa="+affiliateStats.affiliate_id);}catch{}}} style={{padding:"6px 12px",background:GOLD,color:"#000",borderRadius:6,fontWeight:700,fontSize:11,border:"none",flexShrink:0}}>Copy</button>
+                      <button onClick={()=>{try{navigator.clipboard.writeText("https://studio.buildwithtav.co/landing?sa="+affiliateStats.affiliate_id);setAffiliateLinkCopied(true);setTimeout(()=>setAffiliateLinkCopied(false),2000);}catch{}}} style={{padding:"6px 12px",background:affiliateLinkCopied?"#27ae60":GOLD,color:affiliateLinkCopied?"#fff":"#000",borderRadius:6,fontWeight:700,fontSize:11,border:"none",flexShrink:0,transition:"background 0.2s"}}>{affiliateLinkCopied?"✓ Copied":"Copy"}</button>
                     </div>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
