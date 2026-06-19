@@ -2129,9 +2129,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
   const [showPexelsCover, setShowPexelsCover] = useState(false);
   const [showPexelsTemplate, setShowPexelsTemplate] = useState(false);
   const [showPexelsQuote, setShowPexelsQuote] = useState(false);
-  const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],["templates","Templates"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
+  const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],...(currentUser?.is_admin?[["templates","Templates"]]:[]),["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
   const BURGER_ITEMS = [["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
-  const MAIN_NAV = [["generate","Generate"],["quotes","Quotes"],["templates","Templates"]];
+  const MAIN_NAV = [["generate","Generate"],["quotes","Quotes"],...(currentUser?.is_admin?[["templates","Templates"]]:[])];
 
   return (
     <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"Plus Jakarta Sans,system-ui,sans-serif"}}>
