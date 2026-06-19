@@ -1015,8 +1015,12 @@ export default function App() {
     const imgTag = (src, w, h, objPos="50% 50%", extra="") =>
       `<img src="${src}" style="width:${w};height:${h};object-fit:cover;object-position:${objPos};display:block;${extra}"/>`;
 
-    const badgeHtml = profUrl ? `<div style="position:absolute;top:calc(65% - 54px);left:50%;transform:translateX(-50%);width:108px;height:108px;border-radius:50%;overflow:hidden;border:4px solid #fff;z-index:3;">${imgTag(profUrl,"100%","100%")}</div>` : "";
-    const profileBadgeSmall = profUrl ? `<div style="display:flex;align-items:center;gap:16px;margin-bottom:28px;"><div style="width:72px;height:72px;border-radius:50%;overflow:hidden;border:2px solid rgba(0,0,0,0.15);flex-shrink:0;">${imgTag(profUrl,"100%","100%")}</div><div><div style="font-size:32px;font-weight:800;color:#0a0a0a;">${nm||""}</div><div style="font-size:26px;color:rgba(0,0,0,0.4);">@${handleClean}</div></div></div>` : "";
+    const tickSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="#1D9BF0" style="flex-shrink:0;"><circle cx="12" cy="12" r="12"/><path d="M9 12l2 2 4-4" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`;
+    // Cover divider badge — row style, sits on the divider line
+    const badgeHtml = profUrl ? `<div style="position:absolute;top:calc(65% - 40px);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:20px;background:rgba(0,0,0,0.55);backdrop-filter:blur(8px);border-radius:60px;padding:12px 28px 12px 12px;z-index:3;white-space:nowrap;"><div style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:3px solid #fff;flex-shrink:0;">${imgTag(profUrl,"100%","100%")}</div><div style="display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:32px;font-weight:800;color:#fff;">${nm||""}</span>${tickSvg}</div><div style="font-size:24px;color:rgba(255,255,255,0.65);">@${handleClean}</div></div></div>` : "";
+    // Body slide badge — row style, top left, light or dark version
+    const profileBadgeDark = profUrl ? `<div style="display:flex;align-items:center;gap:16px;margin-bottom:32px;"><div style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,0.2);flex-shrink:0;">${imgTag(profUrl,"100%","100%")}</div><div style="display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:30px;font-weight:800;color:#fff;">${nm||""}</span>${tickSvg}</div><div style="font-size:24px;color:rgba(255,255,255,0.55);">@${handleClean}</div></div></div>` : "";
+    const profileBadgeSmall = profUrl ? `<div style="display:flex;align-items:center;gap:20px;margin-bottom:36px;"><div style="width:88px;height:88px;border-radius:50%;overflow:hidden;border:2px solid rgba(0,0,0,0.12);flex-shrink:0;">${imgTag(profUrl,"100%","100%")}</div><div style="display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:32px;font-weight:800;color:#0a0a0a;">${nm||""}</span>${tickSvg}</div><div style="font-size:26px;color:rgba(0,0,0,0.45);">@${handleClean}</div></div></div>` : "";
     const handleTag = handleClean ? `<div style="font-size:30px;color:${accent};font-weight:700;margin-top:16px;">@${handleClean}</div>` : "";
 
     let inner = "";
@@ -1148,11 +1152,11 @@ export default function App() {
             </div>
           </div>`;
       } else {
-        // theme-page, theme-split body slides — dark, handle top left, large text
+        // theme-page, theme-split body slides — dark, profile badge top left, large text
         inner = `
           <div style="position:absolute;inset:0;background:#000;">
-            ${handleClean?`<div style="position:absolute;top:50px;left:60px;font-size:30px;color:${accent};font-weight:700;z-index:2;">@${handleClean}</div>`:""}
-            <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:80px;padding-top:${handleClean?"130px":"80px"};gap:24px;">
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:60px 80px;gap:24px;">
+              ${profileBadgeDark}
               <div style="${hs}font-size:${(slide.headline||"").length>50?"96":"120"}px;color:${textCol};line-height:1.05;">${slide.headline||""}</div>
               ${slide.bodyText?`<div style="font-size:46px;color:rgba(255,255,255,0.7);line-height:1.55;">${slide.bodyText}</div>`:""}
             </div>
@@ -3414,10 +3418,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                               <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}}/>
                             )}
 
-                            {/* Profile badge on cover divider */}
+                            {/* Profile badge on cover divider — row style */}
                             {isCover&&profileUrl&&["clean-pro","theme-page","theme-split"].includes(tmplSelected)&&(
-                              <div style={{position:"absolute",top:"calc(65% - 10px)",left:"50%",transform:"translateX(-50%)",width:20,height:20,borderRadius:"50%",overflow:"hidden",border:"2px solid #fff",zIndex:3}}>
-                                <img src={profileUrl} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                              <div style={{position:"absolute",top:"calc(65% - 12px)",left:"50%",transform:"translateX(-50%)",display:"flex",alignItems:"center",gap:4,background:"rgba(0,0,0,0.6)",borderRadius:20,padding:"3px 8px 3px 3px",zIndex:3,whiteSpace:"nowrap"}}>
+                                <div style={{width:18,height:18,borderRadius:"50%",overflow:"hidden",border:"1.5px solid #fff",flexShrink:0}}>
+                                  <img src={profileUrl} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                                </div>
+                                {name&&<span style={{fontSize:6,fontWeight:800,color:"#fff"}}>{name}</span>}
                               </div>
                             )}
 
@@ -3467,10 +3474,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                               <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",padding:"8px 8px 6px"}}>
                                 {profileUrl&&(
                                   <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:6}}>
-                                    <div style={{width:12,height:12,borderRadius:"50%",overflow:"hidden",border:"1px solid rgba(0,0,0,0.1)",flexShrink:0}}>
+                                    <div style={{width:14,height:14,borderRadius:"50%",overflow:"hidden",border:"1px solid rgba(0,0,0,0.1)",flexShrink:0}}>
                                       <img src={profileUrl} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                                     </div>
-                                    <div style={{fontSize:6,color:"rgba(0,0,0,0.5)",fontWeight:700}}>{name||"Your Name"}</div>
+                                    <div style={{display:"flex",flexDirection:"column"}}>
+                                      <div style={{fontSize:6,color:"rgba(0,0,0,0.8)",fontWeight:800,lineHeight:1.1}}>{name||"Your Name"}</div>
+                                      <div style={{fontSize:5,color:"rgba(0,0,0,0.4)",lineHeight:1.1}}>@{(handle||"").replace("@","")}</div>
+                                    </div>
                                   </div>
                                 )}
                                 <div style={{fontSize:7,fontWeight:900,color:"#0a0a0a",lineHeight:1.2,...headlineStyle,fontSize:7}}>{slide.headline||""}</div>
