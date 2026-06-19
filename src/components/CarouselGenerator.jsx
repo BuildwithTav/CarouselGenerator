@@ -399,50 +399,50 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const layouts = {
     standard: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
-      .hl { font-size:${isPortrait?60:52}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; ${glowHL} }
-      .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
-      .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?28:24}px; font-weight:800; color:${C.accent}; font-family:'${bodyFont}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; white-space:pre-wrap; }
+      .hl { font-size:${isPortrait?72:62}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; ${glowHL} }
+      .body { font-size:${isPortrait?40:34}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
+      .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?34:28}px; font-weight:800; color:${C.accent}; font-family:'${bodyFont}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; white-space:pre-wrap; }
     `,
     statement: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
-      .hl { font-size:${isPortrait?72:60}px; font-weight:800; line-height:1.1; letter-spacing:${hs.id==="upper"?"2px":"-2px"};  font-family:'${hlFont}',sans-serif; flex-shrink:0; }
-      .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
+      .hl { font-size:${isPortrait?82:68}px; font-weight:800; line-height:1.1; letter-spacing:${hs.id==="upper"?"2px":"-2px"};  font-family:'${hlFont}',sans-serif; flex-shrink:0; }
+      .body { font-size:${isPortrait?40:34}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
     `,
     split: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; overflow:hidden; }
       .split-top { width:100%; text-align:center; z-index:4; margin-bottom:${isPortrait?24:16}px; flex-shrink:0; }
       .split-tag { display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"}; font-size:14px; font-weight:800; letter-spacing:2px; padding:8px 24px; border-radius:60px; font-family:'${bodyFont}',sans-serif; margin-bottom:16px; }
-      .split-hl { font-size:${isPortrait?52:42}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-family:'${hlFont}',sans-serif; color:${C.text}; }
+      .split-hl { font-size:${isPortrait?62:50}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-family:'${hlFont}',sans-serif; color:${C.text}; }
       .split-panels { width:100%; display:grid; grid-template-columns:1fr 1fr; z-index:3; flex:1; }
       .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 44px; text-align:center; gap:12px; overflow:hidden; }
       .panel:first-child { background:${C.accent}10; border-right:1px solid ${C.accent}28; }
-      .pl { font-size:${isPortrait?44:36}px; font-weight:900; font-family:'${hlFont}',sans-serif; line-height:1.1; color:${C.text}; }
+      .pl { font-size:${isPortrait?54:44}px; font-weight:900; font-family:'${hlFont}',sans-serif; line-height:1.1; color:${C.text}; }
       .pa { color:${C.accent}; }
-      .ps { font-size:${isPortrait?24:20}px; color:${C.sub}; font-family:'${bodyFont}',sans-serif; line-height:1.4; }
+      .ps { font-size:${isPortrait?30:24}px; color:${C.sub}; font-family:'${bodyFont}',sans-serif; line-height:1.4; }
       .vs { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:6; width:80px; height:80px; border-radius:50%; background:${C.bg}; border:1.5px solid ${C.accent}44; display:flex; align-items:center; justify-content:center; }
       .vt { font-size:26px; font-weight:900; color:${C.accent}; font-family:'${bodyFont}',sans-serif; }
     `,
     cards: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; overflow:hidden; }
-      .hl { font-size:${isPortrait?56:46}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  text-align:center; margin-bottom:4px; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; }
+      .hl { font-size:${isPortrait?66:54}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  text-align:center; margin-bottom:4px; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; }
       .cg { width:100%; display:flex; flex-direction:column; gap:${isPortrait?14:9}px; margin-top:20px; overflow:hidden; }
       .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:10px; padding:${isPortrait?22:14}px 24px; display:flex; align-items:flex-start; gap:16px; flex-shrink:0; }
-      .cn { font-size:${isPortrait?28:20}px; font-weight:900; color:${C.accent}; font-family:'${bodyFont}',sans-serif; flex-shrink:0; width:36px; line-height:1; }
-      .ct { font-size:${isPortrait?25:19}px; color:${C.text}; font-family:'${bodyFont}',sans-serif; line-height:1.35; font-weight:600; }
-      .cs { font-size:${isPortrait?20:16}px; color:${C.sub}; margin-top:2px; font-family:'${bodyFont}',sans-serif; }
+      .cn { font-size:${isPortrait?34:24}px; font-weight:900; color:${C.accent}; font-family:'${bodyFont}',sans-serif; flex-shrink:0; width:36px; line-height:1; }
+      .ct { font-size:${isPortrait?32:24}px; color:${C.text}; font-family:'${bodyFont}',sans-serif; line-height:1.35; font-weight:600; }
+      .cs { font-size:${isPortrait?26:20}px; color:${C.sub}; margin-top:2px; font-family:'${bodyFont}',sans-serif; }
     `,
     quote: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
 
       .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-style:italic; font-family:'${hlFont}',sans-serif; }
-      .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
+      .body { font-size:${isPortrait?38:32}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
     `,
     hero: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; gap:24px; text-align:center; overflow:hidden; }
 
-      .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-family:'${hlFont}',sans-serif; }
-      .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
-      .cb { width:100%; max-width:860px; padding:${isPortrait?30:24}px 50px; border-radius:12px; font-size:${isPortrait?28:24}px; font-weight:800; font-family:'${bodyFont}',sans-serif; text-align:center; background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
+      .hl { font-size:${isPortrait?68:56}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-family:'${hlFont}',sans-serif; }
+      .body { font-size:${isPortrait?38:32}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
+      .cb { width:100%; max-width:860px; padding:${isPortrait?30:24}px 50px; border-radius:12px; font-size:${isPortrait?34:28}px; font-weight:800; font-family:'${bodyFont}',sans-serif; text-align:center; background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
     `,
   };
 
@@ -1302,7 +1302,7 @@ VOICE: ${voice}
 AUDIENCE: ${audienceDesc}
 TOPIC: "${topicStr}"${briefSection}${inspiration}
 SLIDES: ${slideCount}${narrativeStyle}
-TEXT DENSITY: ${textDensity === "concise" ? "PUNCHY — keep body text to 1 short punchy sentence max. Prioritise impact over explanation. Less is more." : textDensity === "detailed" ? "DEPTH — use 2-3 sentences for body text. Explain the insight fully. Give context and specifics." : "BALANCED — 1-2 sentences for body text. Clear and direct. Every word earns its place."}
+TEXT DENSITY: ${textDensity === "concise" ? "PUNCHY — body text must be 80 characters maximum. One short punchy sentence. No exceptions. Count characters strictly." : textDensity === "detailed" ? "DEPTH — body text must be 160 characters maximum. Up to 3 short sentences. Explain the insight clearly but stay tight." : "BALANCED — body text must be 120 characters maximum. 1-2 sentences. Clear and direct. Every word earns its place."}
 
 NARRATIVE ARC: hook → reality → insight → shift → advice → CTA
 
