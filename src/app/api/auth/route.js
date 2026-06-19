@@ -62,6 +62,20 @@ function emailCreditsExhausted(firstName) {
   };
 }
 
+function emailNewReferral(firstName, referralEmail) {
+  return {
+    subject: "Someone just joined via your link 👀",
+    html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f5f3ef;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;"><div style="max-width:600px;margin:0 auto;padding:40px 24px;"><div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div><div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;"><p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hey ${firstName},</p><p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Someone just signed up to Carousel Studio using your affiliate link.</p><p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">They're on the free plan right now — but if they upgrade, you'll earn <strong style="color:#BB9900;">recurring monthly commission for as long as they stay subscribed.</strong></p><p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">And remember — you also earn commission on everyone they refer too.</p><p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Keep sharing your link.</p><div style="text-align:center;margin:32px 0;"><a href="https://studio.buildwithtav.co" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">View Your Dashboard →</a></div><p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">— Tav</p></div><p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p></div></body></html>`
+  };
+}
+
+function emailCommissionEarned(firstName, amount, planName, commissionRate) {
+  return {
+    subject: "💰 You just earned a commission",
+    html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f5f3ef;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;"><div style="max-width:600px;margin:0 auto;padding:40px 24px;"><div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div><div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;"><p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hey ${firstName},</p><p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">A referral just upgraded to <strong>${planName}</strong> via your Carousel Studio link.</p><div style="background:#0a0a0a;border-radius:12px;padding:28px;margin-bottom:24px;text-align:center;"><p style="font-size:48px;font-weight:900;color:#BB9900;margin:0 0 4px;font-family:Georgia,serif;">$${amount}</p><p style="font-size:14px;color:rgba(255,255,255,0.6);margin:0;">commission earned</p></div><p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">As long as they stay subscribed, that commission <strong style="color:#BB9900;">repeats every month</strong>. You've just earned a lifetime monthly commission based on their continued subscription.</p><p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">On top of that, you also earn commission on <strong>everyone they refer</strong> too — so every person you bring in could bring in more.</p><div style="background:#f5f3ef;border-radius:10px;padding:20px;margin-bottom:24px;"><p style="font-size:14px;color:#7a7875;margin:0;line-height:1.6;">This commission is pending for 30 days, then moves to available for withdrawal. Results may vary based on referral retention.</p></div><div style="text-align:center;margin:32px 0;"><a href="https://studio.buildwithtav.co" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">View Your Dashboard →</a></div><p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">— Tav</p></div><p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p></div></body></html>`
+  };
+}
+
 async function getOrCreateTag(tagName) {
   try {
     const res = await fetch("https://api.systeme.io/api/tags?limit=100", {
@@ -204,6 +218,17 @@ export async function POST(req) {
         // Send free welcome email
         const { subject, html } = emailFreeWelcome(resolvedFirstName);
         await sendEmail(user.email, subject, html);
+
+        // Notify affiliate of new referral signup
+        if (resolvedRef) {
+          try {
+            const { data: affiliateUser } = await supabase.from("users").select("email, first_name").eq("affiliate_id", resolvedRef).single();
+            if (affiliateUser?.email) {
+              const { subject: aSubject, html: aHtml } = emailNewReferral(affiliateUser.first_name || "there", user.email);
+              await sendEmail(affiliateUser.email, aSubject, aHtml, true);
+            }
+          } catch {}
+        }
 
         // Add to Systeme
         await addToSysteme(user.email, "carousel-studio-free");
