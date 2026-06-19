@@ -921,6 +921,15 @@ export default function App() {
   const [affiliateLoading, setAffiliateLoading] = useState(false);
   const [showPayoutForm, setShowPayoutForm] = useState(false);
   const [payoutMethod, setPayoutMethod] = useState("bank");
+  // Templates tab state
+  const [tmplSelected, setTmplSelected] = useState(null); // which template family selected
+  const [tmplSlideCount, setTmplSlideCount] = useState(6);
+  const [tmplSlides, setTmplSlides] = useState(Array(6).fill(null).map(()=>({image:null, imagePos:{x:50,y:50}, headline:"", subline:""})));
+  const [tmplFont, setTmplFont] = useState("Bebas Neue");
+  const [tmplTextColour, setTmplTextColour] = useState("#ffffff");
+  const [tmplAccent, setTmplAccent] = useState("#BB9900");
+  const [tmplSuggesting, setTmplSuggesting] = useState(null); // slide index being suggested
+  const [tmplDownloading, setTmplDownloading] = useState(false);
   const [payoutDetails, setPayoutDetails] = useState({});
   const [payoutSubmitting, setPayoutSubmitting] = useState(false);
   const [payoutSuccess, setPayoutSuccess] = useState(false);
@@ -983,6 +992,100 @@ export default function App() {
       loadAffiliateStats();
     }
   }, [nav, currentUser?.plan, currentUser?.affiliate_active]);
+
+  // Build full-resolution HTML for template slide export
+  function buildTmplSlideHTML(slide, idx, total, tmpl, font, textCol, accent, profUrl, hdl, nm) {
+    const imgData = slide.image ? `url('${slide.image}')` : "none";
+    const px = slide.imagePos?.x||50;
+    const py = slide.imagePos?.y||50;
+    const handleClean = (hdl||"").replace("@","");
+    const hasImage = !!slide.image;
+
+    let innerHTML = "";
+
+    if (tmpl==="breaking-news") {
+      innerHTML = `
+        <div style="position:absolute;inset:0;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:80px;gap:30px;">
+          <div style="background:${accent};color:#000;font-size:32px;font-weight:900;padding:10px 40px;border-radius:8px;letter-spacing:4px;font-family:'Oswald',sans-serif;">BREAKING</div>
+          <div style="font-family:'${font}',sans-serif;font-size:110px;font-weight:900;color:${textCol};text-align:center;line-height:1.05;">${slide.headline||""}</div>
+          ${slide.subline?`<div style="font-size:48px;color:rgba(255,255,255,0.7);text-align:center;line-height:1.4;">${slide.subline}</div>`:""}
+          ${handleClean?`<div style="font-size:36px;color:${accent};font-weight:700;margin-top:20px;">@${handleClean}</div>`:""}
+        </div>`;
+    } else if (tmpl==="comparison") {
+      innerHTML = `
+        <div style="position:absolute;inset:0;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px;gap:24px;">
+          <div style="font-family:'${font}',sans-serif;font-size:100px;font-weight:900;color:${textCol};text-align:center;line-height:1.05;">${slide.headline||""}</div>
+          ${slide.subline?`<div style="font-size:52px;color:${accent};text-align:center;font-weight:800;">${slide.subline}</div>`:""}
+          ${handleClean?`<div style="font-size:32px;color:rgba(255,255,255,0.5);margin-top:30px;">@${handleClean}</div>`:""}
+        </div>`;
+    } else if (tmpl==="listicle") {
+      innerHTML = `
+        <div style="position:absolute;inset:0;background:#000;display:flex;align-items:center;padding:80px;gap:50px;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:280px;color:${accent};line-height:1;flex-shrink:0;opacity:0.9;">0${idx+1}</div>
+          <div style="flex:1;">
+            <div style="font-family:'${font}',sans-serif;font-size:90px;font-weight:900;color:${textCol};line-height:1.1;">${slide.headline||""}</div>
+            ${slide.subline?`<div style="font-size:46px;color:rgba(255,255,255,0.6);margin-top:20px;line-height:1.4;">${slide.subline}</div>`:""}
+          </div>
+        </div>
+        ${handleClean?`<div style="position:absolute;bottom:40px;right:60px;font-size:30px;color:${accent};font-weight:700;">@${handleClean}</div>`:""}`;
+    } else if (tmpl==="quote-series") {
+      innerHTML = `
+        <div style="position:absolute;inset:0;${hasImage?`background:${imgData} ${px}% ${py}%/cover no-repeat;`:"background:#000;"}">
+          ${hasImage?`<div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);"></div>`:""}
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:80px;gap:30px;">
+            <div style="font-family:'${font}',sans-serif;font-size:${slide.headline&&slide.headline.length>60?"80":"100"}px;font-weight:900;color:${textCol};text-align:center;line-height:1.2;">"${slide.headline||""}"</div>
+            ${slide.subline?`<div style="font-size:42px;color:${accent};text-align:center;font-weight:700;">${slide.subline}</div>`:""}
+            ${handleClean?`<div style="font-size:34px;color:rgba(255,255,255,0.6);margin-top:40px;">— @${handleClean}</div>`:""}
+          </div>
+        </div>`;
+    } else if (tmpl==="cover-clean" && idx===0) {
+      // Cover slide — image top, gradient, badge on divider, text bottom
+      innerHTML = `
+        <div style="position:absolute;inset:0;background:#000;">
+          ${hasImage?`<div style="position:absolute;top:0;left:0;width:100%;height:62%;background:${imgData} ${px}% ${py}%/cover no-repeat;"></div>`:""}
+          <div style="position:absolute;top:0;left:0;width:100%;height:70%;background:linear-gradient(to bottom,transparent 50%,#000 100%);"></div>
+          ${profUrl?`<div style="position:absolute;top:calc(62% - 54px);left:50%;transform:translateX(-50%);width:108px;height:108px;border-radius:50%;overflow:hidden;border:4px solid #fff;z-index:2;"><img src="${profUrl}" style="width:100%;height:100%;object-fit:cover;"/></div>`:""}
+          <div style="position:absolute;bottom:0;left:0;width:100%;padding:${profUrl?"100px":"60px"} 80px 80px;display:flex;flex-direction:column;align-items:center;gap:16px;">
+            ${nm?`<div style="font-size:36px;color:rgba(255,255,255,0.8);font-weight:700;">${nm}</div>`:""}
+            <div style="font-family:'${font}',sans-serif;font-size:110px;font-weight:900;color:${textCol};text-align:center;line-height:1.05;">${slide.headline||""}</div>
+            ${slide.subline?`<div style="font-size:46px;color:${accent};text-align:center;">${slide.subline}</div>`:""}
+            ${handleClean?`<div style="font-size:34px;color:rgba(255,255,255,0.5);margin-top:16px;">@${handleClean}</div>`:""}
+          </div>
+        </div>`;
+    } else {
+      // cover-clean body slides + image-series slides — plain dark with large text, handle top left
+      const isImageSeries = tmpl==="image-series";
+      innerHTML = `
+        <div style="position:absolute;inset:0;background:#000;">
+          ${isImageSeries&&hasImage?`<div style="position:absolute;top:0;left:0;width:100%;height:60%;background:${imgData} ${px}% ${py}%/cover no-repeat;"></div>`:""}
+          ${isImageSeries&&hasImage?`<div style="position:absolute;top:0;left:0;width:100%;height:70%;background:linear-gradient(to bottom,transparent 40%,#000 100%);"></div>`:""}
+          ${isImageSeries&&profUrl&&hasImage?`<div style="position:absolute;top:calc(60% - 54px);left:50%;transform:translateX(-50%);width:108px;height:108px;border-radius:50%;overflow:hidden;border:4px solid #fff;z-index:2;"><img src="${profUrl}" style="width:100%;height:100%;object-fit:cover;"/></div>`:""}
+          ${handleClean?`<div style="position:absolute;top:50px;left:60px;font-size:34px;color:${accent};font-weight:700;z-index:3;">@${handleClean}</div>`:""}
+          <div style="position:absolute;${isImageSeries&&hasImage?"bottom:0;padding-bottom:80px;":"top:0;"}left:0;width:100%;height:${isImageSeries&&hasImage?"45%":"100%"};display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 80px;gap:20px;">
+            <div style="font-family:'${font}',sans-serif;font-size:${slide.headline&&slide.headline.length>40?"100":"130"}px;font-weight:900;color:${textCol};text-align:center;line-height:1.05;">${slide.headline||""}</div>
+            ${slide.subline?`<div style="font-size:46px;color:rgba(255,255,255,0.7);text-align:center;line-height:1.4;">${slide.subline}</div>`:""}
+          </div>
+        </div>`;
+    }
+
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Barlow+Condensed:wght@800&family=Archivo+Black&family=Playfair+Display:wght@900&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}</style></head><body style="width:1080px;height:1350px;overflow:hidden;position:relative;background:#000;">${innerHTML}<div style="position:absolute;top:30px;right:40px;background:rgba(0,0,0,0.6);border-radius:8px;padding:6px 14px;font-size:28px;color:#fff;font-weight:700;font-family:sans-serif;">${idx+1}/${total}</div></body></html>`;
+  }
+
+  // Template slide AI suggest function
+  const tmplSuggestSlide = async (idx) => {
+    setTmplSuggesting(idx);
+    try {
+      const context = tmplSlides.map((s,i)=>s.headline?`Slide ${i+1}: "${s.headline}"`:"").filter(Boolean).join(", ");
+      const r = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:80, messages:[{ role:"user", content:`You are writing text for slide ${idx+1} of a ${tmplSelected} carousel for a ${businessType||"digital marketer"} called ${name||"the creator"}. Voice: ${voiceProfile||"direct, honest, punchy"}. ${context?`Other slides: ${context}.`:""} Write ONE punchy headline, max 60 characters. Return ONLY the headline text, nothing else, no quotes.` }] });
+      const text = r?.content?.[0]?.text?.trim()||"";
+      if (text) {
+        const next = [...tmplSlides];
+        next[idx] = {...next[idx], headline: text};
+        setTmplSlides(next);
+      }
+    } catch {}
+    setTmplSuggesting(null);
+  };
 
   // ADMIN-ONLY brand preset functions — only ever called from is_admin-gated UI, touches a separate localStorage key only
   const saveAdminPreset = () => {
@@ -2026,9 +2129,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
   const [showPexelsCover, setShowPexelsCover] = useState(false);
   const [showPexelsTemplate, setShowPexelsTemplate] = useState(false);
   const [showPexelsQuote, setShowPexelsQuote] = useState(false);
-  const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
+  const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],["templates","Templates"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
   const BURGER_ITEMS = [["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
-  const MAIN_NAV = [["generate","Generate"],["quotes","Quotes"]];
+  const MAIN_NAV = [["generate","Generate"],["quotes","Quotes"],["templates","Templates"]];
 
   return (
     <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"Plus Jakarta Sans,system-ui,sans-serif"}}>
@@ -2800,6 +2903,213 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           </div>
         )}
 
+        {nav==="templates"&&(
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%",paddingBottom:40}}>
+            <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px"}}>Templates</h2>
+            <p style={{fontSize:14,color:A.muted,margin:"0 0 24px"}}>More control. Less AI. Pick a template, add your content, download.</p>
+
+            {/* Template Selector */}
+            {!tmplSelected&&(
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:16}}>
+                {[
+                  {id:"image-series",label:"Theme Page — Image Series",desc:"Bold cover + 5 slides, each with its own image. Gradient fade into black. Profile badge on divider."},
+                  {id:"cover-clean",label:"Theme Page — Cover + Clean",desc:"Bold cover image, then clean plain dark slides with large spaced text. Most popular IG theme page format."},
+                  {id:"breaking-news",label:"Breaking News",desc:"Black background, bold pill label, punchy headline. No images needed. Perfect for facts and announcements."},
+                  {id:"comparison",label:"Comparison / Split",desc:"Left vs Right. Two columns per slide. CEO vs Employee. Old Way vs New Way. Highly shareable format."},
+                  {id:"listicle",label:"Listicle / Countdown",desc:"Large number left, fact right. Clean numbered format. 1 through 6. Saves and shares well."},
+                  {id:"quote-series",label:"Quote Series",desc:"One powerful quote per slide. Full image or plain dark background. Handle bottom. Minimal. Elegant."},
+                ].map(t=>(
+                  <div key={t.id} onClick={()=>{setTmplSelected(t.id);setTmplSlides(Array(tmplSlideCount).fill(null).map(()=>({image:null,imagePos:{x:50,y:50},headline:"",subline:""})));}} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,cursor:"pointer",transition:"border-color 0.2s"}} onMouseEnter={e=>e.currentTarget.style.borderColor=GOLD} onMouseLeave={e=>e.currentTarget.style.borderColor=A.border}>
+                    <div style={{fontSize:13,fontWeight:800,marginBottom:8,color:A.text}}>{t.label}</div>
+                    <div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>{t.desc}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Template Builder */}
+            {tmplSelected&&(
+              <div>
+                {/* Back + template name */}
+                <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+                  <button onClick={()=>setTmplSelected(null)} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Back</button>
+                  <span style={{fontSize:14,fontWeight:700,color:GOLD}}>{["image-series","cover-clean"].includes(tmplSelected)?"Theme Page":tmplSelected==="breaking-news"?"Breaking News":tmplSelected==="comparison"?"Comparison":tmplSelected==="listicle"?"Listicle":"Quote Series"}</span>
+                </div>
+
+                {/* Global settings row */}
+                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:16,marginBottom:20,display:"flex",flexWrap:"wrap",gap:16,alignItems:"flex-end"}}>
+                  {/* Slide count */}
+                  <div>
+                    <label style={lbl}>Slides</label>
+                    <div style={{display:"flex",alignItems:"center",gap:10,marginTop:6}}>
+                      <button onClick={()=>{const n=Math.max(2,tmplSlideCount-1);setTmplSlideCount(n);setTmplSlides(s=>{const next=[...s];while(next.length<n)next.push({image:null,imagePos:{x:50,y:50},headline:"",subline:""});return next.slice(0,n);});}} style={{width:28,height:28,borderRadius:6,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                      <span style={{fontWeight:800,fontSize:16,minWidth:16,textAlign:"center"}}>{tmplSlideCount}</span>
+                      <button onClick={()=>{const n=Math.min(6,tmplSlideCount+1);setTmplSlideCount(n);setTmplSlides(s=>{const next=[...s];while(next.length<n)next.push({image:null,imagePos:{x:50,y:50},headline:"",subline:""});return next.slice(0,n);});}} style={{width:28,height:28,borderRadius:6,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+                      <span style={{fontSize:11,color:A.muted}}>max 6</span>
+                    </div>
+                  </div>
+                  {/* Font picker */}
+                  <div style={{flex:1,minWidth:200}}>
+                    <label style={lbl}>Display Font</label>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:6}}>
+                      {["Bebas Neue","Anton","Oswald","Barlow Condensed","Archivo Black","Playfair Display"].map(f=>(
+                        <button key={f} onClick={()=>setTmplFont(f)} style={{padding:"6px 12px",borderRadius:8,border:`1.5px solid ${tmplFont===f?GOLD:A.border}`,background:tmplFont===f?"#1a1500":A.bg,color:tmplFont===f?GOLD:A.muted,fontSize:13,cursor:"pointer",fontFamily:`'${f}',sans-serif`,fontWeight:700}}>{f}</button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Text colour */}
+                  <div>
+                    <label style={lbl}>Text Colour</label>
+                    <div style={{display:"flex",gap:8,marginTop:6,alignItems:"center"}}>
+                      {["#ffffff","#000000","#BB9900","#e74c3c","#3498db","#2ecc71"].map(c=>(
+                        <div key={c} onClick={()=>setTmplTextColour(c)} style={{width:24,height:24,borderRadius:"50%",background:c,border:`2px solid ${tmplTextColour===c?GOLD:"transparent"}`,cursor:"pointer"}}/>
+                      ))}
+                      <input type="color" value={tmplTextColour} onChange={e=>setTmplTextColour(e.target.value)} style={{width:28,height:28,borderRadius:6,border:`1px solid ${A.border}`,background:"none",cursor:"pointer",padding:2}}/>
+                    </div>
+                  </div>
+                  {/* Accent colour */}
+                  <div>
+                    <label style={lbl}>Accent</label>
+                    <div style={{display:"flex",gap:8,marginTop:6,alignItems:"center"}}>
+                      {["#BB9900","#e74c3c","#ff6b35","#3498db","#ffffff","#9b59b6"].map(c=>(
+                        <div key={c} onClick={()=>setTmplAccent(c)} style={{width:24,height:24,borderRadius:"50%",background:c,border:`2px solid ${tmplAccent===c?GOLD:"transparent"}`,cursor:"pointer"}}/>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Per-slide inputs */}
+                <div style={{display:"flex",flexDirection:"column",gap:16,marginBottom:24}}>
+                  {tmplSlides.slice(0,tmplSlideCount).map((slide,idx)=>{
+                    const needsImage = ["image-series","cover-clean","quote-series"].includes(tmplSelected) && (tmplSelected!=="cover-clean" || idx===0);
+                    return (
+                      <div key={idx} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:16}}>
+                        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+                          <span style={{fontFamily:`'Bebas Neue',sans-serif`,fontSize:18,color:GOLD,minWidth:28}}>0{idx+1}</span>
+                          <span style={{fontSize:13,fontWeight:700,color:A.text}}>{idx===0?"Cover Slide":`Slide ${idx+1}`}</span>
+                        </div>
+                        <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                          {/* Image upload if needed */}
+                          {needsImage&&(
+                            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                              <div onClick={()=>{const inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.onchange=async e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{const next=[...tmplSlides];next[idx]={...next[idx],image:ev.target.result};setTmplSlides(next);};reader.readAsDataURL(file);};inp.click();}} style={{width:80,height:80,borderRadius:10,border:`1.5px dashed ${slide.image?GOLD:A.border}`,background:A.bg,overflow:"hidden",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                {slide.image?<img src={slide.image} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:A.muted,fontSize:22}}>+</span>}
+                              </div>
+                              {slide.image&&(
+                                <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                                  <div style={{display:"flex",gap:4,justifyContent:"center"}}>
+                                    <button onClick={()=>{const next=[...tmplSlides];next[idx]={...next[idx],imagePos:{x:next[idx].imagePos.x,y:Math.max(0,next[idx].imagePos.y-10)}};setTmplSlides(next);}} style={{width:22,height:22,borderRadius:4,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:10,cursor:"pointer"}}>↑</button>
+                                  </div>
+                                  <div style={{display:"flex",gap:4,justifyContent:"center"}}>
+                                    <button onClick={()=>{const next=[...tmplSlides];next[idx]={...next[idx],imagePos:{x:Math.max(0,next[idx].imagePos.x-10),y:next[idx].imagePos.y}};setTmplSlides(next);}} style={{width:22,height:22,borderRadius:4,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:10,cursor:"pointer"}}>←</button>
+                                    <button onClick={()=>{const next=[...tmplSlides];next[idx]={...next[idx],imagePos:{x:next[idx].imagePos.x,y:Math.min(100,next[idx].imagePos.y+10)}};setTmplSlides(next);}} style={{width:22,height:22,borderRadius:4,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:10,cursor:"pointer"}}>↓</button>
+                                    <button onClick={()=>{const next=[...tmplSlides];next[idx]={...next[idx],imagePos:{x:Math.min(100,next[idx].imagePos.x+10),y:next[idx].imagePos.y}};setTmplSlides(next);}} style={{width:22,height:22,borderRadius:4,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:10,cursor:"pointer"}}>→</button>
+                                  </div>
+                                  <button onClick={()=>{const next=[...tmplSlides];next[idx]={...next[idx],image:null,imagePos:{x:50,y:50}};setTmplSlides(next);}} style={{fontSize:10,color:A.muted,background:"none",border:"none",cursor:"pointer",textAlign:"center"}}>Remove</button>
+                                </div>
+                              )}
+                              {/* Pick from cover library */}
+                              {coverPhotos?.length>0&&(
+                                <div style={{display:"flex",gap:4,flexWrap:"wrap",maxWidth:180}}>
+                                  {coverPhotos.slice(0,4).map((p,pi)=>(
+                                    <div key={pi} onClick={()=>{const next=[...tmplSlides];next[idx]={...next[idx],image:p,imagePos:{x:50,y:50}};setTmplSlides(next);}} style={{width:32,height:32,borderRadius:6,overflow:"hidden",cursor:"pointer",border:`1px solid ${A.border}`}}>
+                                      <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                                    </div>
+                                  ))}
+                                  <span style={{fontSize:10,color:A.muted,alignSelf:"center"}}>from library</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {/* Text inputs */}
+                          <div style={{flex:1,minWidth:180,display:"flex",flexDirection:"column",gap:8}}>
+                            <div style={{position:"relative"}}>
+                              <input value={slide.headline} onChange={e=>{const next=[...tmplSlides];next[idx]={...next[idx],headline:e.target.value};setTmplSlides(next);}} placeholder={idx===0?"Hook headline...":"Slide headline..."} style={{...inp,paddingRight:80,fontFamily:`'${tmplFont}',sans-serif`}}/>
+                              <button onClick={()=>tmplSuggestSlide(idx)} disabled={tmplSuggesting===idx} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"3px 8px",borderRadius:6,cursor:"pointer",whiteSpace:"nowrap"}}>{tmplSuggesting===idx?"...":"✨ Suggest"}</button>
+                            </div>
+                            <input value={slide.subline} onChange={e=>{const next=[...tmplSlides];next[idx]={...next[idx],subline:e.target.value};setTmplSlides(next);}} placeholder="Sub-line or fact (optional)..." style={{...inp,fontSize:13}}/>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Preview + Download */}
+                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                  <p style={{fontSize:13,color:A.muted,margin:"0 0 16px"}}>Preview and download your slides. Each slide renders as a 1080×1350px PNG.</p>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:20}}>
+                    {tmplSlides.slice(0,tmplSlideCount).map((slide,idx)=>(
+                      <div key={idx} style={{position:"relative",width:135,height:169,borderRadius:8,overflow:"hidden",background:"#000",border:`1px solid ${A.border}`,flexShrink:0}}>
+                        {/* Mini preview */}
+                        {slide.image&&["image-series","cover-clean","quote-series"].includes(tmplSelected)&&(tmplSelected!=="cover-clean"||idx===0)&&(
+                          <img src={slide.image} style={{position:"absolute",top:0,left:0,width:"100%",height:tmplSelected==="cover-clean"&&idx===0?"60%":["cover-clean"].includes(tmplSelected)?"0":"60%",objectFit:"cover",objectPosition:`${slide.imagePos.x}% ${slide.imagePos.y}%`}}/>
+                        )}
+                        {/* Gradient */}
+                        {(tmplSelected==="image-series"||(tmplSelected==="cover-clean"&&idx===0)||tmplSelected==="quote-series")&&slide.image&&(
+                          <div style={{position:"absolute",bottom:0,left:0,width:"100%",height:"50%",background:"linear-gradient(to bottom,transparent,#000)"}}/>
+                        )}
+                        {/* Dark zone */}
+                        <div style={{position:"absolute",bottom:0,left:0,width:"100%",padding:"8px 8px 6px",background:["image-series","quote-series"].includes(tmplSelected)||( tmplSelected==="cover-clean"&&idx===0)?"transparent":"#000"}}>
+                          {/* Profile badge on divider */}
+                          {profileUrl&&["image-series","cover-clean"].includes(tmplSelected)&&(idx===0||tmplSelected==="image-series")&&slide.image&&(
+                            <div style={{position:"absolute",bottom:"calc(40% - 10px)",left:"50%",transform:"translateX(-50%)",width:20,height:20,borderRadius:"50%",overflow:"hidden",border:"2px solid #fff"}}>
+                              <img src={profileUrl} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                            </div>
+                          )}
+                          {slide.headline&&<div style={{fontFamily:`'${tmplFont}',sans-serif`,fontSize:11,fontWeight:900,color:tmplTextColour,lineHeight:1.1,textAlign:"center",textShadow:"0 1px 4px rgba(0,0,0,0.8)"}}>{slide.headline}</div>}
+                          {slide.subline&&<div style={{fontSize:8,color:"rgba(255,255,255,0.7)",marginTop:2,textAlign:"center"}}>{slide.subline}</div>}
+                          {handle&&<div style={{fontSize:7,color:tmplAccent,marginTop:3,textAlign:"center",fontWeight:700}}>@{handle.replace("@","")}</div>}
+                        </div>
+                        {/* Comparison layout specific */}
+                        {tmplSelected==="comparison"&&(
+                          <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",justifyContent:"center",padding:8,gap:4}}>
+                            {slide.headline&&<div style={{fontFamily:`'${tmplFont}',sans-serif`,fontSize:10,fontWeight:900,color:tmplTextColour,textAlign:"center",lineHeight:1.1}}>{slide.headline}</div>}
+                            {slide.subline&&<div style={{fontSize:8,color:tmplAccent,textAlign:"center",fontWeight:700}}>{slide.subline}</div>}
+                          </div>
+                        )}
+                        {/* Listicle layout */}
+                        {tmplSelected==="listicle"&&(
+                          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",padding:8,gap:6}}>
+                            <div style={{fontFamily:`'Bebas Neue',sans-serif`,fontSize:32,color:tmplAccent,lineHeight:1,flexShrink:0}}>0{idx+1}</div>
+                            <div style={{flex:1}}>
+                              {slide.headline&&<div style={{fontFamily:`'${tmplFont}',sans-serif`,fontSize:9,fontWeight:900,color:tmplTextColour,lineHeight:1.2}}>{slide.headline}</div>}
+                              {slide.subline&&<div style={{fontSize:7,color:"rgba(255,255,255,0.6)",marginTop:2}}>{slide.subline}</div>}
+                            </div>
+                          </div>
+                        )}
+                        {/* Breaking news layout */}
+                        {tmplSelected==="breaking-news"&&(
+                          <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",padding:10,gap:6}}>
+                            <div style={{background:tmplAccent,color:"#000",fontSize:7,fontWeight:900,padding:"2px 8px",borderRadius:3,letterSpacing:1,textTransform:"uppercase"}}>BREAKING</div>
+                            {slide.headline&&<div style={{fontFamily:`'${tmplFont}',sans-serif`,fontSize:11,fontWeight:900,color:tmplTextColour,textAlign:"center",lineHeight:1.1}}>{slide.headline}</div>}
+                            {slide.subline&&<div style={{fontSize:8,color:"rgba(255,255,255,0.7)",textAlign:"center",marginTop:2}}>{slide.subline}</div>}
+                          </div>
+                        )}
+                        <div style={{position:"absolute",top:4,right:4,background:"rgba(0,0,0,0.6)",borderRadius:4,padding:"1px 4px",fontSize:7,color:"#fff",fontWeight:700}}>{idx+1}/{tmplSlideCount}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                    <button onClick={async()=>{
+                      setTmplDownloading(true);
+                      try {
+                        for(let idx=0;idx<tmplSlideCount;idx++){
+                          const slide=tmplSlides[idx];
+                          const html=buildTmplSlideHTML(slide,idx,tmplSlideCount,tmplSelected,tmplFont,tmplTextColour,tmplAccent,profileUrl,handle,name);
+                          const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({html,width:1080,height:1350})});
+                          if(res.ok){const blob=await res.blob();const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`slide-${idx+1}.png`;a.click();}
+                        }
+                      } catch(e){console.error(e);}
+                      setTmplDownloading(false);
+                    }} style={{flex:1,padding:"14px",background:GOLD,color:"#000",borderRadius:10,fontWeight:800,fontSize:14,border:"none",cursor:"pointer"}}>{tmplDownloading?"Downloading...":"↓ Download All Slides"}</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {nav==="brand"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Brand</h2>
@@ -3288,6 +3598,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         )}
       </div>
 
+
         {nav==="help"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:960,margin:"0 auto"}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Help & Support</h2>
@@ -3762,8 +4073,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             )}
           </div>
         )}
-
-
 
       <PexelsModal
         open={showPexelsCover}
