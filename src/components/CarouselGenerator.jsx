@@ -134,134 +134,12 @@ async function sampleImageBrightness(imageUrl) {
   });
 }
 
-// ─── PEXELS MODAL ────────────────────────────────────────────────────────────
-
-function PexelsModal({ open, onClose, onSelect, A, GOLD }) {
-  const [pxQuery, setPxQuery] = useState("");
-  const [pxResults, setPxResults] = useState([]);
-  const [pxLoading, setPxLoading] = useState(false);
-  const [pxError, setPxError] = useState("");
-  const [pxPage, setPxPage] = useState(1);
-  const [pxHasMore, setPxHasMore] = useState(false);
-  const [pxSelecting, setPxSelecting] = useState(null);
-  const pxInputRef = useRef(null);
-
-  useEffect(() => {
-    if (open) { setTimeout(() => pxInputRef.current?.focus(), 100); }
-    else { setPxQuery(""); setPxResults([]); setPxError(""); setPxPage(1); setPxHasMore(false); setPxSelecting(null); }
-  }, [open]);
-
-  if (!open) return null;
-
-  const pxSearch = async (q, p = 1) => {
-    if (!q.trim()) return;
-    setPxLoading(true); setPxError("");
-    if (p === 1) setPxResults([]);
-    try {
-      const res = await fetch("/api/pexels?" + new URLSearchParams({ query: q.trim(), per_page: "20", page: String(p) }));
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setPxResults(prev => p === 1 ? data.photos : [...prev, ...data.photos]);
-      setPxHasMore(!!data.next_page);
-      setPxPage(p);
-    } catch(e) { setPxError("Search failed — check your connection and try again."); }
-    setPxLoading(false);
-  };
-
-  const pxHandleSelect = async (photo) => {
-    setPxSelecting(photo.id);
-    try {
-      // Proxy the image through our server to avoid CORS issues
-      const proxyRes = await fetch("/api/pexels", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrl: photo.url }),
-      });
-      const proxyData = await proxyRes.json();
-      if (!proxyData.dataUrl) throw new Error("Proxy failed");
-      await onSelect(proxyData.dataUrl);
-      onClose();
-    } catch(e) { console.error("Pexels select failed:", e); }
-    setPxSelecting(null);
-  };
-
-  return (
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:3000,padding:16}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#FFF",borderRadius:16,width:"100%",maxWidth:720,maxHeight:"85vh",display:"flex",flexDirection:"column",boxShadow:"0 24px 80px rgba(0,0,0,0.3)"}}>
-        <div style={{padding:"20px 20px 16px",borderBottom:"1px solid #E8E5E0",flexShrink:0}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-            <div>
-              <div style={{fontSize:16,fontWeight:800,color:"#0A0A0A"}}>Search Pexels</div>
-              <div style={{fontSize:11,color:"#8A8780",marginTop:2}}>Free high-quality backgrounds · Photos by <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer" style={{color:GOLD,textDecoration:"none"}}>Pexels</a></div>
-            </div>
-            <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,color:"#8A8780",cursor:"pointer",padding:4}}>✕</button>
-          </div>
-          <div style={{display:"flex",gap:8}}>
-            <input
-              ref={pxInputRef}
-              value={pxQuery}
-              onChange={e=>setPxQuery(e.target.value)}
-              onKeyDown={e=>e.key==="Enter"&&pxSearch(pxQuery)}
-              placeholder="dark background, bokeh, nature, abstract..."
-              style={{flex:1,padding:"10px 14px",background:"#F5F3EF",border:"1.5px solid #E8E5E0",borderRadius:9,color:"#0A0A0A",fontSize:14,fontFamily:"inherit",outline:"none"}}
-            />
-            <button
-              onClick={()=>pxSearch(pxQuery)}
-              disabled={pxLoading||!pxQuery.trim()}
-              style={{padding:"10px 20px",background:pxQuery.trim()?"#0A0A0A":"#E8E5E0",color:"#FFF",borderRadius:9,fontWeight:700,fontSize:13,border:"none",cursor:pxQuery.trim()?"pointer":"default",display:"flex",alignItems:"center",gap:6,flexShrink:0}}
-            >
-              {pxLoading&&pxPage===1?"Searching...":"Search"}
-            </button>
-          </div>
-        </div>
-        <div style={{flex:1,overflowY:"auto",padding:16}}>
-          {pxError&&<div style={{textAlign:"center",padding:"40px 0",color:"#c0392b",fontSize:13}}>{pxError}</div>}
-          {!pxError&&pxResults.length===0&&!pxLoading&&(
-            <div style={{textAlign:"center",padding:"60px 0",color:"#8A8780",fontSize:13}}>
-              {pxQuery?"No results — try a different search":"Search for backgrounds above"}
-            </div>
-          )}
-          {pxLoading&&pxPage===1&&<div style={{textAlign:"center",padding:"40px 0",color:"#8A8780",fontSize:13}}>Searching...</div>}
-          {pxResults.length>0&&(
-            <>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:16}}>
-                {pxResults.map(photo=>(
-                  <div
-                    key={photo.id}
-                    onClick={()=>!pxSelecting&&pxHandleSelect(photo)}
-                    style={{position:"relative",borderRadius:8,overflow:"hidden",aspectRatio:"3/4",cursor:pxSelecting?"wait":"pointer",border:"2px solid #E8E5E0",transition:"transform 0.15s"}}
-                    onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.02)";e.currentTarget.style.borderColor=GOLD;}}
-                    onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)";e.currentTarget.style.borderColor="#E8E5E0";}}
-                  >
-                    <img src={photo.thumb} alt={photo.alt} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} loading="lazy"/>
-                    {pxSelecting===photo.id&&(
-                      <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:700}}>Adding...</div>
-                    )}
-                    <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px 6px 6px",background:"linear-gradient(to bottom,transparent,rgba(0,0,0,0.7))",fontSize:9,color:"rgba(255,255,255,0.7)",fontWeight:600}}>
-                      {photo.photographer}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {pxHasMore&&(
-                <button onClick={()=>pxSearch(pxQuery,pxPage+1)} disabled={pxLoading} style={{width:"100%",padding:"12px",background:"#F5F3EF",border:"1.5px solid #E8E5E0",borderRadius:9,color:"#0A0A0A",fontWeight:700,fontSize:13,cursor:"pointer"}}>
-                  {pxLoading?"Loading...":"Load more"}
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── SLIDE HTML BUILDER ───────────────────────────────────
 
 function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const {
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
-    coverImageUrl, coverPosition, badgeArea, photoOpacity, customColourDark, slideTextDark,
+    coverImageUrl, coverPosition, badgeArea, photoOpacity, customColourDark,
     profileUrl, name, handle, blueTick, websiteUrl, showNums,
     accentColor, ratio, coverImgPos, templateImgPos, bgColour, gradientMode,
   } = opts;
@@ -269,11 +147,9 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const templatePos = templateImgPos || {x:50,y:50};
 
   const accent = accentColor || GOLD;
-  const noImage = bgMode === "custom" && !opts.templateBgUrl && !(isCover ? !!coverImageUrl : false);
-  const effectiveColourDark = isCover ? (customColourDark??true) : (slideTextDark??true);
-  const isDark = bgMode === "dark" ? true : bgMode === "light" ? false : noImage ? false : (bgMode === "colour" || bgMode === "custom" || !!coverImageUrl) ? effectiveColourDark : true;
+  const isDark = bgMode === "dark" ? true : bgMode === "light" ? false : (bgMode === "colour" || bgMode === "custom" || !!coverImageUrl) ? (customColourDark??true) : true;
   const colourTextDark = !isDark;
-  const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : (bgMode === "custom" && !opts.templateBgUrl && !(isCover && opts.coverImageUrl)) ? "#F5F3EF" : "#0A0A0A";
+  const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : "#0A0A0A";
   // For image/cover photo modes: if opacity < 100, white shows behind faded photo
   const bgForOpacity = (bgMode === "custom" || (isCover && !!coverImageUrl)) && (photoOpacity||100) < 100 ? "#FFFFFF" : null;
   const coverHasImage = isCover && !!coverImageUrl;
@@ -285,9 +161,9 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     ? (coverImageUrl || null)  // cover only uses its own photo, never the template image
     : (bgMode === "custom" ? templateBgUrl : null);
   // Cover slide background: if no cover photo, inherit slideBg from Visual tab setting (but "custom" mode falls to dark)
-  const coverFallbackBg = (!isCover || coverImageUrl) ? slideBg : (bgMode === "custom" && !opts.templateBgUrl ? "#F5F3EF" : bgMode === "custom" ? "#0A0A0A" : slideBg);
+  const coverFallbackBg = (!isCover || coverImageUrl) ? slideBg : (bgMode === "custom" ? "#0A0A0A" : slideBg);
   const effectiveSlideBg = isCover ? coverFallbackBg : slideBg;
-  const forceLight = (coverHasImage || (bgMode === "custom" && bgImageUrl)) ? !effectiveColourDark : false;
+  const forceLight = (coverHasImage || (bgMode === "custom" && bgImageUrl)) ? !(customColourDark??true) : false;
   const C = {
     bg: slideBg,
     accent,
@@ -307,11 +183,11 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const pillText = bgImageUrl || C.dark ? "#fff" : "#111";
   const pillSub = bgImageUrl || C.dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)";
   const badgeTextColor = forceLight ? "#0A0A0A" : (C.dark || bgImageUrl ? "#FFFFFF" : "#0A0A0A");
-  const badgeSubColor = forceLight ? "rgba(0,0,0,0.55)" : (C.dark || bgImageUrl ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)");
+  const badgeSubColor = C.dark || bgImageUrl ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)";
   const badgeTextShadow = bgImageUrl ? (forceLight ? "text-shadow:0 0 12px rgba(255,255,255,0.9);" : "text-shadow:0 1px 6px rgba(0,0,0,0.8);") : "";
 
   // Pre-compute glow for use inside base CSS — based on bgImageUrl and bgMode
-  const hasPhotoOrColour = !!(bgImageUrl);
+  const hasPhotoOrColour = !!(bgImageUrl) || bgMode === "colour";
   const glowHL = hasPhotoOrColour ? (forceLight ? "text-shadow:0 0 20px rgba(255,255,255,0.9),0 0 40px rgba(255,255,255,0.5);" : "text-shadow:0 0 20px rgba(0,0,0,0.9),0 0 40px rgba(0,0,0,0.5);") : "";
   const glowBody = hasPhotoOrColour ? (forceLight ? "text-shadow:0 0 12px rgba(255,255,255,0.8);" : "text-shadow:0 0 12px rgba(0,0,0,0.8);") : "";
 
@@ -333,7 +209,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     const before = hs.transform==="uppercase"?text.slice(0,i).toUpperCase():text.slice(0,i);
     const accentPart = hs.transform==="uppercase"?full.toUpperCase():full;
     const after = hs.transform==="uppercase"?text.slice(i+full.length).toUpperCase():text.slice(i+full.length);
-    return `${esc(before)}<span style="color:${C.accent};text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 3px rgba(0,0,0,0.4)">${esc(accentPart)}</span>${esc(after)}`;
+    return `${esc(before)}<span style="color:${C.accent}">${esc(accentPart)}</span>${esc(after)}`;
   }
 
   const gFonts = `https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Poppins:wght@700;800;900&family=Inter:wght@700;800;900&family=Oswald:wght@600;700&family=Dancing+Script:wght@600;700&family=Raleway:wght@700;800;900&family=Lato:wght@700;900&family=Roboto:wght@700;900&family=Ubuntu:wght@700&family=Nunito:wght@700;800;900&family=Source+Sans+3:wght@700;900&family=Crimson+Text:wght@700&family=Merriweather:wght@700;900&family=Bebas+Neue&family=Abril+Fatface&family=Pacifico&family=Josefin+Sans:wght@700&family=Quicksand:wght@700&family=DM+Serif+Display&family=Cormorant+Garamond:wght@700&family=Righteous&display=swap`;
@@ -370,8 +246,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     .av-i { font-size:44px; font-weight:900; color:${C.accent}; font-family:'${hlFont}',sans-serif; }
     .bn { font-size:22px; font-weight:800; color:${badgeTextColor}; line-height:1.2; font-family:'${bodyFont}',sans-serif; ${badgeTextShadow} }
     .bh { font-size:15px; color:${badgeSubColor}; font-family:'${bodyFont}',sans-serif; ${badgeTextShadow} }
-    .tick { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; background:#1D9BF0; border-radius:50%; margin-left:5px; vertical-align:middle; position:relative; }
-    .tick-mark { position:absolute; width:7px; height:4px; border-left:2px solid #fff; border-bottom:2px solid #fff; transform:rotate(-45deg); top:6px; left:5px; }
+    .tick { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; background:#1D9BF0; border-radius:50%; font-size:10px; color:#fff; margin-left:5px; vertical-align:middle; }
     .wm { position:absolute; bottom:28px; right:38px; z-index:3;
       font-size:${Math.floor(H*0.18)}px; font-weight:900; line-height:1;
       color:${C.dark?"rgba(255,255,255,0.03)":"rgba(0,0,0,0.035)"};
@@ -399,50 +274,50 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const layouts = {
     standard: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
-      .hl { font-size:${isPortrait?72:62}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; ${glowHL} }
-      .body { font-size:${isPortrait?40:34}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
-      .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?34:28}px; font-weight:800; color:${C.accent}; font-family:'${bodyFont}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; white-space:pre-wrap; }
+      .hl { font-size:${isPortrait?60:52}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing}; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; ${glowHL} }
+      .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:860px; margin-top:28px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
+      .cta { margin-top:36px; border:1px solid ${C.accent}44; background:${C.accent}16; padding:22px 60px; border-radius:8px; font-size:${isPortrait?28:24}px; font-weight:800; color:${C.accent}; font-family:'${bodyFont}',sans-serif; width:100%; max-width:860px; text-align:center; flex-shrink:0; white-space:pre-wrap; }
     `,
     statement: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
-      .hl { font-size:${isPortrait?82:68}px; font-weight:800; line-height:1.1; letter-spacing:${hs.id==="upper"?"2px":"-2px"};  font-family:'${hlFont}',sans-serif; flex-shrink:0; }
-      .body { font-size:${isPortrait?40:34}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
+      .hl { font-size:${isPortrait?72:60}px; font-weight:800; line-height:1.1; letter-spacing:${hs.id==="upper"?"2px":"-2px"};  font-family:'${hlFont}',sans-serif; flex-shrink:0; }
+      .body { font-size:${isPortrait?32:28}px; line-height:1.65; color:${C.sub}; max-width:800px; margin-top:28px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
     `,
     split: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; overflow:hidden; }
       .split-top { width:100%; text-align:center; z-index:4; margin-bottom:${isPortrait?24:16}px; flex-shrink:0; }
       .split-tag { display:inline-block; background:${C.accent}; color:${C.dark?"#000":"#fff"}; font-size:14px; font-weight:800; letter-spacing:2px; padding:8px 24px; border-radius:60px; font-family:'${bodyFont}',sans-serif; margin-bottom:16px; }
-      .split-hl { font-size:${isPortrait?62:50}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-family:'${hlFont}',sans-serif; color:${C.text}; }
+      .split-hl { font-size:${isPortrait?52:42}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-family:'${hlFont}',sans-serif; color:${C.text}; }
       .split-panels { width:100%; display:grid; grid-template-columns:1fr 1fr; z-index:3; flex:1; }
       .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 44px; text-align:center; gap:12px; overflow:hidden; }
       .panel:first-child { background:${C.accent}10; border-right:1px solid ${C.accent}28; }
-      .pl { font-size:${isPortrait?54:44}px; font-weight:900; font-family:'${hlFont}',sans-serif; line-height:1.1; color:${C.text}; }
+      .pl { font-size:${isPortrait?44:36}px; font-weight:900; font-family:'${hlFont}',sans-serif; line-height:1.1; color:${C.text}; }
       .pa { color:${C.accent}; }
-      .ps { font-size:${isPortrait?30:24}px; color:${C.sub}; font-family:'${bodyFont}',sans-serif; line-height:1.4; }
+      .ps { font-size:${isPortrait?24:20}px; color:${C.sub}; font-family:'${bodyFont}',sans-serif; line-height:1.4; }
       .vs { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:6; width:80px; height:80px; border-radius:50%; background:${C.bg}; border:1.5px solid ${C.accent}44; display:flex; align-items:center; justify-content:center; }
       .vt { font-size:26px; font-weight:900; color:${C.accent}; font-family:'${bodyFont}',sans-serif; }
     `,
     cards: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; overflow:hidden; }
-      .hl { font-size:${isPortrait?66:54}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  text-align:center; margin-bottom:4px; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; }
+      .hl { font-size:${isPortrait?56:46}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  text-align:center; margin-bottom:4px; font-family:'${hlFont}',sans-serif; flex-shrink:0; white-space:pre-wrap; }
       .cg { width:100%; display:flex; flex-direction:column; gap:${isPortrait?14:9}px; margin-top:20px; overflow:hidden; }
       .card { background:${C.dark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)"}; border:1px solid ${C.accent}28; border-radius:10px; padding:${isPortrait?22:14}px 24px; display:flex; align-items:flex-start; gap:16px; flex-shrink:0; }
-      .cn { font-size:${isPortrait?34:24}px; font-weight:900; color:${C.accent}; font-family:'${bodyFont}',sans-serif; flex-shrink:0; width:36px; line-height:1; }
-      .ct { font-size:${isPortrait?32:24}px; color:${C.text}; font-family:'${bodyFont}',sans-serif; line-height:1.35; font-weight:600; }
-      .cs { font-size:${isPortrait?26:20}px; color:${C.sub}; margin-top:2px; font-family:'${bodyFont}',sans-serif; }
+      .cn { font-size:${isPortrait?28:20}px; font-weight:900; color:${C.accent}; font-family:'${bodyFont}',sans-serif; flex-shrink:0; width:36px; line-height:1; }
+      .ct { font-size:${isPortrait?25:19}px; color:${C.text}; font-family:'${bodyFont}',sans-serif; line-height:1.35; font-weight:600; }
+      .cs { font-size:${isPortrait?20:16}px; color:${C.sub}; margin-top:2px; font-family:'${bodyFont}',sans-serif; }
     `,
     quote: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:${topPad}px 90px ${botPad}px; text-align:center; overflow:hidden; }
 
       .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-style:italic; font-family:'${hlFont}',sans-serif; }
-      .body { font-size:${isPortrait?38:32}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
+      .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:760px; margin-top:28px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
     `,
     hero: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; gap:24px; text-align:center; overflow:hidden; }
 
-      .hl { font-size:${isPortrait?68:56}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-family:'${hlFont}',sans-serif; }
-      .body { font-size:${isPortrait?38:32}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
-      .cb { width:100%; max-width:860px; padding:${isPortrait?30:24}px 50px; border-radius:12px; font-size:${isPortrait?34:28}px; font-weight:800; font-family:'${bodyFont}',sans-serif; text-align:center; background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
+      .hl { font-size:${isPortrait?58:48}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-family:'${hlFont}',sans-serif; }
+      .body { font-size:${isPortrait?30:26}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
+      .cb { width:100%; max-width:860px; padding:${isPortrait?30:24}px 50px; border-radius:12px; font-size:${isPortrait?28:24}px; font-weight:800; font-family:'${bodyFont}',sans-serif; text-align:center; background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
     `,
   };
 
@@ -454,7 +329,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
         ${profileUrl?`<img src="${profileUrl}"  style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;object-fit:cover;"/>`:`<span style="font-size:32px;font-weight:900;color:${C.accent};font-family:'${hlFont}',sans-serif;">${esc((name||"?")[0].toUpperCase())}</span>`}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-start;">
-        <div style="font-size:20px;font-weight:800;color:${pillText};line-height:1.2;font-family:'${bodyFont}',sans-serif;${badgeTextShadow}">${esc(name||"Your Brand")}${blueTick?` <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:#1D9BF0;border-radius:50%;margin-left:5px;position:relative;"><span style="position:absolute;width:7px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);top:6px;left:5px;"></span></span>`:""}</div>
+        <div style="font-size:20px;font-weight:800;color:${pillText};line-height:1.2;font-family:'${bodyFont}',sans-serif;${badgeTextShadow}">${esc(name||"Your Brand")}${blueTick?` <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:#1D9BF0;border-radius:50%;font-size:10px;color:#fff;margin-left:5px;">✓</span>`:""}</div>
         <div style="font-size:15px;color:${pillSub};font-family:'${bodyFont}',sans-serif;${badgeTextShadow}">${esc(handle||"@yourhandle")}</div>
       </div>
     </div>`;
@@ -563,7 +438,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   ${isCover ? "" : profileUrl ? `<div class="badge">
     <div class="av">${avHtml}</div>
     <div>
-      <div class="bn">${esc(name||"Your Brand")}${blueTick?` <span class="tick"><span class="tick-mark"></span></span>`:""}</div>
+      <div class="bn">${esc(name||"Your Brand")}${blueTick?` <span class="tick">✓</span>`:""}</div>
       <div class="bh">${esc(handle||"@yourhandle")}</div>
     </div>
   </div>` : ""}
@@ -915,69 +790,12 @@ export default function App() {
     }
   };
 
-  const [profileUrl, setProfileUrl] = useState(S?.profileUrl||null);
-  const [name, setName] = useState(S?.name||"");
-  const [handle, setHandle] = useState(S?.handle||"");
-  const [blueTick, setBlueTick] = useState(S?.blueTick??false);
-  const [website, setWebsite] = useState(S?.website||"");
-  const [showWebsite, setShowWebsite] = useState(S?.showWebsite??false);
-  const [voiceProfile, setVoiceProfile] = useState(S?.voiceProfile||"");
-  const [businessType, setBusinessType] = useState(S?.businessType||"marketer");
-  const [otherType, setOtherType] = useState(S?.otherType||"");
-  const [coverPhotos, setCoverPhotos] = useState(S?.coverPhotos||[]);
-  const [activeCoverPhoto, setActiveCoverPhoto] = useState(S?.activeCoverPhoto||null);
-  const [coverPosition, setCoverPosition] = useState(S?.coverPosition||"centre");
-  const [badgeArea, setBadgeArea] = useState(null);
-  const [accentSwatch, setAccentSwatch] = useState(S?.accentSwatch||"gold");
-  const [accentCustomSlots, setAccentCustomSlots] = useState(S?.accentCustomSlots||["","",""]);
-  const [bgCustomSlots, setBgCustomSlots] = useState(S?.bgCustomSlots||["","",""]);
-  const [accentColor, setAccentColor] = useState(S?.accentColor||GOLD);
-  const [customActiveSlot, setCustomActiveSlot] = useState(S?.customActiveSlot??null);
-  const [fontId, setFontId] = useState(S?.fontId||"montserrat");
-  const [recentFonts, setRecentFonts] = useState(()=>{ try{return JSON.parse(localStorage.getItem("bwt_recent_fonts")||"[]");}catch{return[];} });
-  const [recentQuoteFonts, setRecentQuoteFonts] = useState(()=>{ try{return JSON.parse(localStorage.getItem("bwt_recent_quote_fonts")||"[]");}catch{return[];} });
-  const trackFont = (id, isQuote=false) => {
-    const key = isQuote?"bwt_recent_quote_fonts":"bwt_recent_fonts";
-    const setter = isQuote?setRecentQuoteFonts:setRecentFonts;
-    setter(prev=>{ const next=[id,...prev.filter(f=>f!==id)].slice(0,5); try{localStorage.setItem(key,JSON.stringify(next));}catch{} return next; });
-  };
-  const [headlineStyle, setHeadlineStyle] = useState(S?.headlineStyle||"bold");
-  const [showNums, setShowNums] = useState(S?.showNums??false);
-  const [showAllUpdates, setShowAllUpdates] = useState(false);
-  const [bgMode, setBgMode] = useState(S?.bgMode||"light");
-  const [templateBgUrl, setTemplateBgUrl] = useState(S?.templateBgUrl||null);
-  const [templatePhotos, setTemplatePhotos] = useState(S?.templatePhotos||[]);
-  const [overlayDark, setOverlayDark] = useState(S?.overlayDark??75);
-  const [photoOpacity, setPhotoOpacity] = useState(S?.photoOpacity??100);
-  const [templateOpacity, setTemplateOpacity] = useState(S?.templateOpacity??100);
-  const [topic, setTopic] = useState("");
-  const [inspirationImg, setInspirationImg] = useState(null);
-  const [ratio, setRatio] = useState(S?.ratio||"instagram");
-  const [menuOpen, setMenuOpen] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
   const [hoveredBtn, setHoveredBtn] = useState(null);
   const [affiliateStats, setAffiliateStats] = useState(null);
   const [affiliateLoading, setAffiliateLoading] = useState(false);
   const [showPayoutForm, setShowPayoutForm] = useState(false);
   const [payoutMethod, setPayoutMethod] = useState("bank");
-  // Templates tab state
-  const [tmplSelected, setTmplSelected] = useState(null);
-  const [tmplSlideCount, setTmplSlideCount] = useState(6);
-  const [tmplSlides, setTmplSlides] = useState(Array(12).fill(null).map(()=>({image:null,image2:null,imagePos:{x:50,y:50},image2Pos:{x:50,y:50},headline:"",subline:"",bodyText:"",accentText:"",number:6,topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:"",pillText:""})));
-  const [tmplEffect, setTmplEffect] = useState("gold");
-  const [tmplFont, setTmplFont] = useState("'Bebas Neue'");
-  const [tmplPrimary, setTmplPrimary] = useState("#BB9900");
-  const [tmplSecondary, setTmplSecondary] = useState("#ffffff");
-  const [tmplBg, setTmplBg] = useState("white");
-  const [tmplFontStyle, setTmplFontStyle] = useState("Inter");
-  const [tmplRawBox, setTmplRawBox] = useState("white");
-  const [tmplRawPos, setTmplRawPos] = useState("bottom");
-  const [tmplListicleNum, setTmplListicleNum] = useState(6);
-  const [tmplBrief, setTmplBrief] = useState("");
-  const [tmplSuggesting, setTmplSuggesting] = useState(null);
-  const [tmplDownloading, setTmplDownloading] = useState(false);
-  const [tmplDownloadingIdx, setTmplDownloadingIdx] = useState(null);
-  const [tmplActiveSlide, setTmplActiveSlide] = useState(0);
   const [payoutDetails, setPayoutDetails] = useState({});
   const [payoutSubmitting, setPayoutSubmitting] = useState(false);
   const [payoutSuccess, setPayoutSuccess] = useState(false);
@@ -992,18 +810,6 @@ export default function App() {
       const checkout = params.get("checkout");
       if (checkout) localStorage.setItem("cs_checkout_plan", checkout);
     } catch {}
-  }, []);
-
-  // Load Google Fonts for Templates canvas rendering
-  useEffect(() => {
-    const id = "tmpl-gfonts";
-    if (!document.getElementById(id)) {
-      const link = document.createElement("link");
-      link.id = id;
-      link.rel = "stylesheet";
-      link.href = "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Teko:wght@700&family=Barlow+Condensed:wght@800;900&family=Archivo+Black&family=Playfair+Display:ital,wght@0,900;1,900&family=Alfa+Slab+One&display=swap";
-      document.head.appendChild(link);
-    }
   }, []);
 
   // Fire checkout automatically after login if checkout param was set
@@ -1047,187 +853,84 @@ export default function App() {
     setAffiliateLoading(false);
   };
 
-  useEffect(() => {
-    if (nav === "account" && currentUser && currentUser.plan !== "free") {
-      loadAffiliateStats();
-    }
-  }, [nav, currentUser?.plan, currentUser?.affiliate_active]);
+  const submitPayoutRequest = async () => {
+    setPayoutSubmitting(true);
+    try {
+      const amount = parseFloat(affiliateStats?.available || 0);
+      if (amount < 30) { alert("Minimum withdrawal is $30."); setPayoutSubmitting(false); return; }
+      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"request-payout", amount, payoutMethod, payoutDetails }) });
+      const d = await r.json();
+      if (d.success) { setPayoutSuccess(true); setShowPayoutForm(false); }
+      else alert("Something went wrong — try again.");
+    } catch { alert("Something went wrong — try again."); }
+    setPayoutSubmitting(false);
+  };
+  const [profileUrl, setProfileUrl] = useState(S?.profileUrl||null);
+  const [name, setName] = useState(S?.name||"");
+  const [handle, setHandle] = useState(S?.handle||"");
+  const [blueTick, setBlueTick] = useState(S?.blueTick??false);
+  const [website, setWebsite] = useState(S?.website||"");
+  const [showWebsite, setShowWebsite] = useState(S?.showWebsite??false);
+  const [voiceProfile, setVoiceProfile] = useState(S?.voiceProfile||"");
+  const [businessType, setBusinessType] = useState(S?.businessType||"marketer");
+  const [otherType, setOtherType] = useState(S?.otherType||"");
+  const [coverPhotos, setCoverPhotos] = useState(S?.coverPhotos||[]);
+  const [activeCoverPhoto, setActiveCoverPhoto] = useState(S?.activeCoverPhoto||null);
+  const [coverPosition, setCoverPosition] = useState(S?.coverPosition||"centre");
+  const [badgeArea, setBadgeArea] = useState(null);
 
-  // ================================================================
-  // useDebouncedValue — prevents flash on every keystroke (GPT recommendation)
-  // ================================================================
-  function useDebouncedValue(value, delay) {
-    const [dv, setDv] = useState(value);
-    useEffect(()=>{
-      const t = setTimeout(()=>setDv(value), delay||150);
-      return ()=>clearTimeout(t);
-    }, [value, delay]);
-    return dv;
-  }
+  const [accentSwatch, setAccentSwatch] = useState(S?.accentSwatch||"gold");
+  const [accentCustomSlots, setAccentCustomSlots] = useState(S?.accentCustomSlots||["","",""]);
+  const [bgCustomSlots, setBgCustomSlots] = useState(S?.bgCustomSlots||["","",""]); 
+  const [accentColor, setAccentColor] = useState(S?.accentColor||GOLD);
+  const [customActiveSlot, setCustomActiveSlot] = useState(S?.customActiveSlot??null);
+  const [fontId, setFontId] = useState(S?.fontId||"montserrat");
+  const [recentFonts, setRecentFonts] = useState(() => { try { return JSON.parse(localStorage.getItem("bwt_recent_fonts")||"[]"); } catch { return []; } });
+  const [recentQuoteFonts, setRecentQuoteFonts] = useState(() => { try { return JSON.parse(localStorage.getItem("bwt_recent_quote_fonts")||"[]"); } catch { return []; } });
 
-  // ================================================================
-  // buildTmplHTML — generates HTML string sent to Puppeteer /api/render-slide
-  // Same pipeline as Generate tab. No canvas. Fonts/images handled server-side.
-  // ================================================================
-  function buildTmplHTML(slide, idx, total, tmpl, opts) {
-    const {effect, font, primary, secondary, bg, fontStyle, rawBox, rawPos,
-           listicleNum, profUrl, nm, hdl, showTick, isFree} = opts;
-    const W=1080, H=1350, SAFE=60;
-    const isCover=idx===0;
-    const fontFamily=(font||"Bebas Neue").replace(/'/g,"");
+  const trackFont = (id, isQuote=false) => {
+    const key = isQuote ? "bwt_recent_quote_fonts" : "bwt_recent_fonts";
+    const setter = isQuote ? setRecentQuoteFonts : setRecentFonts;
+    setter(prev => {
+      const next = [id, ...prev.filter(f=>f!==id)].slice(0,5);
+      try { localStorage.setItem(key, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+  const [headlineStyle, setHeadlineStyle] = useState(S?.headlineStyle||"bold");
+  const [showNums, setShowNums] = useState(S?.showNums??false);
+  const [showAllUpdates, setShowAllUpdates] = useState(false);
+  const [bgMode, setBgMode] = useState(S?.bgMode||"light");
+  const [templateBgUrl, setTemplateBgUrl] = useState(S?.templateBgUrl||null);
+  const [templatePhotos, setTemplatePhotos] = useState(S?.templatePhotos||[]);
+  const [overlayDark, setOverlayDark] = useState(S?.overlayDark??75);
+  const [photoOpacity, setPhotoOpacity] = useState(S?.photoOpacity??100);
+  const [templateOpacity, setTemplateOpacity] = useState(S?.templateOpacity??100);
 
-    function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-
-    const gFonts="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Teko:wght@700&family=Barlow+Condensed:wght@800;900&family=Archivo+Black&family=Playfair+Display:ital,wght@0,900;1,900&family=Alfa+Slab+One&family=Inter:wght@400;600;700;800&display=swap";
-
-    function effectCSS(eff,pri,sec){
-      if(eff==="gold") return "background:linear-gradient(180deg,"+sec+" 0%,#ffe44d 20%,"+pri+" 50%,#7a5800 80%,#ffe066 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 4px 8px rgba(140,100,0,0.5));";
-      if(eff==="chrome") return "background:linear-gradient(180deg,"+sec+" 0%,#ddd 20%,#777 45%,#bbb 65%,#444 85%,#ccc 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
-      if(eff==="fire") return "background:linear-gradient(180deg,"+sec+" 0%,#ffff00 15%,#ff6600 40%,#cc0000 75%,#660000 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
-      if(eff==="ice") return "background:linear-gradient(180deg,"+sec+" 0%,#d0f0ff 30%,"+pri+" 65%,#1a6090 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
-      if(eff==="neon") return "-webkit-text-fill-color:#fff;color:#fff;text-shadow:0 0 10px "+pri+",0 0 20px "+pri+",0 0 40px "+pri+",0 0 80px "+pri+";";
-      if(eff==="3d") return "color:#fff;text-shadow:1px 1px 0 #555,2px 2px 0 #444,3px 3px 0 #333,4px 4px 0 #222,5px 5px 0 #111,6px 6px 8px rgba(0,0,0,0.4);";
-      if(eff==="outline") return "-webkit-text-stroke:4px "+pri+";-webkit-text-fill-color:transparent;color:transparent;";
-      return "-webkit-text-fill-color:"+sec+";color:"+sec+";text-shadow:0 2px 8px rgba(0,0,0,0.6);";
-    }
-
-    function badge(dark){
-      const tc=dark?"#fff":"#0a0a0a", sc=dark?"rgba(255,255,255,0.55)":"rgba(0,0,0,0.45)";
-      const tick=showTick
-        ? "<span style='display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#1D9BF0;border-radius:50%;margin-left:8px;vertical-align:middle;flex-shrink:0;'><span style='display:block;width:8px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);margin-top:-2px;'></span></span>"
-        : "";
-      const av=profUrl
-        ? "<img src='"+esc(profUrl)+"' style='width:100%;height:100%;object-fit:cover;border-radius:50%;'/>"
-        : "<div style='width:100%;height:100%;background:#4a6a9a;border-radius:50%;'></div>";
-      return "<div style='display:flex;align-items:center;gap:18px;'>"
-        +"<div style='width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid #fff;flex-shrink:0;background:#4a6a9a;'>"+av+"</div>"
-        +"<div style='display:flex;flex-direction:column;gap:4px;'>"
-        +"<div style='display:flex;align-items:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;font-weight:800;color:"+tc+";text-shadow:0 1px 6px rgba(0,0,0,0.5);'>"+esc(nm||"")+tick+"</div>"
-        +"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:28px;color:"+sc+";text-shadow:0 1px 4px rgba(0,0,0,0.4);'>"+esc(hdl||"")+"</div>"
-        +"</div></div>";
-    }
-
-    const grad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 32%,rgba(0,0,0,0.06) 50%,rgba(0,0,0,0.28) 60%,rgba(0,0,0,0.58) 68%,rgba(0,0,0,0.82) 76%,rgba(0,0,0,0.94) 84%,rgba(0,0,0,0.98) 91%,rgba(0,0,0,1) 100%)";
-    const chevron="<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+primary+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+primary+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>";
-    const website="<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>";
-    const wm=isFree?"<div style='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-20deg);font-size:72px;font-weight:900;color:rgba(255,255,255,0.12);white-space:nowrap;z-index:20;pointer-events:none;'>studio.buildwithtav.co</div>":"";
-    const counter="<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+(idx+1)+"/"+total+"</div>";
-
-    function imgTag(s){
-      if(!s.image) return "";
-      const px=(s.imagePos&&s.imagePos.x)||50, py=(s.imagePos&&s.imagePos.y)||50;
-      return "<img src='"+esc(s.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+px+"% "+py+"%;z-index:0;'/>";
-    }
-
-    function darkFadeCover(s){
-      return "<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"
-        +imgTag(s)
-        +"<div style='position:absolute;inset:0;background:"+grad+";z-index:1;'></div>"
-        +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.638)+"px;white-space:nowrap;'>"+badge(true)+"</div>"
-        +"<div style='position:absolute;z-index:5;left:54px;right:54px;top:"+Math.round(H*0.748)+"px;height:5px;background:linear-gradient(to right,transparent 0%,"+primary+" 5%,"+primary+" 95%,transparent 100%);'></div>"
-        +"<div style='position:absolute;z-index:5;left:80px;right:80px;top:"+Math.round(H*0.800)+"px;bottom:"+Math.round(H*0.10)+"px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;overflow:hidden;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:116px;font-weight:900;line-height:1.05;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectCSS(effect,primary,secondary)+"'>"+esc((s.headline||"").toUpperCase())+"</div>"
-        +(s.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;color:"+secondary+";text-align:center;font-weight:600;max-width:100%;'>"+esc(s.subline)+"</div>":"")
-        +"</div>"
-        +website+(isCover?chevron:"")+counter+wm
-        +"</div>";
-    }
-
-    let body="";
-
-    if(tmpl==="dark-fade"){
-      body=darkFadeCover(slide);
-
-    } else if(tmpl==="listicle" && isCover){
-      const cf="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 25%,rgba(0,0,0,0.62) 45%,rgba(0,0,0,0.98) 60%,rgba(0,0,0,0.98) 72%,rgba(0,0,0,0.62) 88%,rgba(0,0,0,0) 100%)";
-      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"
-        +imgTag(slide)
-        +"<div style='position:absolute;inset:0;background:"+cf+";z-index:1;'></div>"
-        +"<div style='position:absolute;top:52px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
-        +"<div style='position:absolute;z-index:5;left:"+SAFE+"px;top:"+Math.round(H*0.36)+"px;width:320px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:480px;font-weight:900;line-height:0.85;"+effectCSS(effect,primary,secondary)+"'>"+(listicleNum||6)+"</div>"
-        +"<div style='width:320px;height:5px;background:"+primary+";margin-top:20px;'></div>"
-        +"</div>"
-        +"<div style='position:absolute;z-index:5;left:"+(SAFE+336)+"px;right:"+SAFE+"px;top:"+Math.round(H*0.40)+"px;display:flex;flex-direction:column;gap:16px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:46px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.3;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase())+"</div>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:116px;font-weight:900;color:"+secondary+";line-height:1.05;word-break:break-word;'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div>"
-        +"</div>"
-        +(slide.subline?"<div style='position:absolute;bottom:"+Math.round(H*0.185)+"px;left:0;right:0;text-align:center;z-index:5;font-size:34px;color:rgba(255,255,255,0.6);'>"+esc(slide.subline)+"</div>":"")
-        +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"
-        +chevron+counter+wm+"</div>";
-
-    } else if(tmpl==="listicle" && !isCover){
-      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#0a0a0a;overflow:hidden;'>"
-        +"<div style='position:absolute;top:52px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
-        +"<div style='position:absolute;inset:0;z-index:5;display:flex;align-items:center;padding:0 "+SAFE+"px;gap:60px;padding-top:180px;'>"
-        +"<div style='flex-shrink:0;width:280px;display:flex;flex-direction:column;gap:20px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:340px;font-weight:900;line-height:1;"+effectCSS(effect,primary,secondary)+"'>"+String(idx).padStart(2,"0")+"</div>"
-        +"<div style='width:280px;height:5px;background:"+primary+";'></div>"
-        +"</div>"
-        +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:24px;'>"
-        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:72px;font-weight:900;color:"+secondary+";line-height:1.1;text-transform:uppercase;word-break:break-word;'>"+esc(slide.headline.toUpperCase())+"</div>":"")
-        +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:48px;color:rgba(255,255,255,0.7);line-height:1.5;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
-        +"</div></div>"
-        +website+counter+wm+"</div>";
-
-    } else if(tmpl==="clean-pro" && isCover){
-      body=darkFadeCover(slide);
-
-    } else if(tmpl==="clean-pro" && !isCover){
-      const isW=bg==="white", bgC=isW?"#ffffff":"#0a0a0a", tM=isW?"#0a0a0a":"#ffffff";
-      const tS=isW?"rgba(0,0,0,0.5)":"rgba(255,255,255,0.5)", dC=isW?"rgba(0,0,0,0.08)":"rgba(255,255,255,0.08)";
-      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;'>"
-        +"<div style='position:absolute;top:"+SAFE+"px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
-        +"<div style='position:absolute;top:"+(SAFE+100+30)+"px;left:"+SAFE+"px;right:"+SAFE+"px;height:1.5px;background:"+dC+";z-index:5;'></div>"
-        +"<div style='position:absolute;top:"+(SAFE+100+60)+"px;left:"+(SAFE+30)+"px;right:"+(SAFE+30)+"px;z-index:5;display:flex;flex-direction:column;gap:28px;'>"
-        +(slide.headline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:72px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
-        +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:48px;color:"+tS+";line-height:1.6;word-break:break-word;'>"+esc(slide.bodyText).replace(/\n/g,"<br/>")+"</div>":"")
-        +(slide.accentText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:52px;font-weight:700;color:"+primary+";line-height:1.3;word-break:break-word;'>"+esc(slide.accentText)+"</div>":"")
-        +(slide.accentText?"<div style='width:100px;height:4px;background:"+primary+";'></div>":"")
-        +"</div>"
-        +"<div style='position:absolute;bottom:40px;right:"+SAFE+"px;z-index:5;font-size:28px;color:"+tS+";'>"+(idx+1)+"/"+total+"</div>"
-        +wm+"</div>";
-
-    } else if(tmpl==="storytelling"){
-      const isW=bg==="white", bgC=isW?"#ffffff":"#0a0a0a", tC=isW?"#0a0a0a":"#ffffff";
-      const stI=fontStyle==="Playfair Display", stF=fontStyle||"Inter";
-      const sw=isCover
-        ? "<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+(isW?"rgba(0,0,0,0.3)":"rgba(255,255,255,0.3)")+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+(isW?"rgba(0,0,0,0.3)":"rgba(255,255,255,0.3)")+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>"
-        : "";
-      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;'>"
-        +"<div style='position:absolute;top:"+SAFE+"px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
-        +"<div style='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:200px 120px;z-index:5;'>"
-        +"<div style='font-family:"+stF+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;"+(stI?"font-style:italic;":"")+"font-weight:400;color:"+tC+";line-height:1.7;text-align:center;'>"
-        +esc(slide.storyText||"").replace(/\n\n/g,"</p><p style='margin-top:1.2em;'>").replace(/\n/g,"<br/>")
-        +"</div></div>"+sw+counter+wm+"</div>";
-
-    } else if(tmpl==="raw"){
-      const isWB=rawBox==="white", bBg=isWB?"rgba(255,255,255,0.97)":"rgba(0,0,0,0.93)", tCR=isWB?"#0a0a0a":"#ffffff";
-      const stI=fontStyle==="Playfair Display", stF=fontStyle||"Inter";
-      const pos=rawPos==="bottom"?"bottom:100px;left:50%;transform:translateX(-50%);":"top:50%;left:50%;transform:translate(-50%,-50%);";
-      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#1a1a1a;overflow:hidden;'>"
-        +imgTag(slide)
-        +"<div style='position:absolute;"+pos+"max-width:80%;z-index:5;background:"+bBg+";padding:40px 50px;'>"
-        +"<div style='font-family:"+stF+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:40px;"+(stI?"font-style:italic;":"")+"font-weight:400;color:"+tCR+";line-height:1.5;white-space:pre-wrap;word-break:break-word;'>"+esc(slide.rawText||"")+"</div>"
-        +"</div>"+counter+wm+"</div>";
-    }
-
-    return "<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
-  }
-
+  const [topic, setTopic] = useState("");
+  const [inspirationImg, setInspirationImg] = useState(null);
+  const [ratio, setRatio] = useState(S?.ratio||"instagram");
+  const [menuOpen, setMenuOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
-
   useEffect(()=>{
-    const prevent = e => { if(editDrawerOpen) e.preventDefault(); };
-    document.addEventListener('touchmove', prevent, {passive:false});
+    const prevent = e => {
+      // Allow scroll inside the drawer scrollable area
+      const drawerScroll = document.querySelector('.drawer-scroll');
+      if(drawerScroll && drawerScroll.contains(e.target)) return;
+      e.preventDefault();
+    };
+    if(editDrawerOpen){
+      document.addEventListener('touchmove', prevent, {passive:false});
+    } else {
+      document.removeEventListener('touchmove', prevent);
+    }
     return()=>{ document.removeEventListener('touchmove', prevent); };
   },[editDrawerOpen]);
   const [gradientMode, setGradientMode] = useState("dark");
   const [customBgSlots, setCustomBgSlots] = useState(S?.customBgSlots||["","",""]);
   const [customAccentSlots, setCustomAccentSlots] = useState(S?.customAccentSlots||["","",""]);
   const [bgColour, setBgColour] = useState(S?.bgColour||"#1a1a2e");
-  const [customColourDark, setCustomColourDark] = useState(S?.customColourDark??(S?.bgMode==="light"?false:true));
-  const [slideTextDark, setSlideTextDark] = useState(S?.slideTextDark??(S?.bgMode==="light"?false:true));
+  const [customColourDark, setCustomColourDark] = useState(S?.customColourDark??true);
   const [slideCount, setSlideCount] = useState(6);
   const [err, setErr] = useState("");
   const [randomising, setRandomising] = useState(false);
@@ -1247,20 +950,18 @@ export default function App() {
   const [generatingCaption, setGeneratingCaption] = useState(false);
   const [showCaption, setShowCaption] = useState(false);
   const [captionCopied, setCaptionCopied] = useState(false);
-  const [affiliateLinkCopied, setAffiliateLinkCopied] = useState(false);
   const [history, setHistory] = useState(loadHistory());
 
   const [quoteInputs, setQuoteInputs] = useState(["","",""]);
   const [quoteSignature, setQuoteSignature] = useState("");
   const [quoteFont, setQuoteFont] = useState("playfair");
   const [quoteSigFont, setQuoteSigFont] = useState("dancing");
-  const [quoteBgMode, setQuoteBgMode] = useState("light");
+  const [quoteBgMode, setQuoteBgMode] = useState("dark");
   const [quoteBgCustomUrl, setQuoteBgCustomUrl] = useState(null);
   const [quotePhotos, setQuotePhotos] = useState(S?.quotePhotos||[]);
   const [textDensity, setTextDensity] = useState(S?.textDensity||"balanced");
-  const [quoteOverlay, setQuoteOverlay] = useState(50);
-  const [quotePhotoOpacity, setQuotePhotoOpacity] = useState(75);
-  const [quoteTemplate, setQuoteTemplate] = useState("raw");
+  const [quoteOverlay, setQuoteOverlay] = useState(0);
+  const [quoteTemplate, setQuoteTemplate] = useState("classic");
   const [luxuryLabel, setLuxuryLabel] = useState("wisdom");
   const [showHandle, setShowHandle] = useState(true);
   const [quoteFormat, setQuoteFormat] = useState("instagram");
@@ -1268,7 +969,7 @@ export default function App() {
   const [quoteMode, setQuoteMode] = useState("brand");
   const [quoteSlides, setQuoteSlides] = useState([]);
   const [downloadingQuotes, setDownloadingQuotes] = useState(false);
-  const [quoteTextColor, setQuoteTextColor] = useState("#0A0A0A");
+  const [quoteTextColor, setQuoteTextColor] = useState("#FFFFFF");
   const [quoteTextCustomSlots, setQuoteTextCustomSlots] = useState(["","",""]);
   const [expandedQuote, setExpandedQuote] = useState(null);
   const [quoteHistory, setQuoteHistory] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_quote_history")||"[]");}catch{return [];}});
@@ -1276,28 +977,26 @@ export default function App() {
   const [coverImgPos, setCoverImgPos] = useState({x:50,y:50});
   const [templateImgPos, setTemplateImgPos] = useState({x:50,y:50});
   const [isDraggingCover, setIsDraggingCover] = useState(false);
+
+  // ── Templates tab state ──────────────────────────────────────────────────
+  const [tmplSelected, setTmplSelected] = useState(null);
+  const [tmplActiveSlide, setTmplActiveSlide] = useState(0);
+  const [tmplSlideCount, setTmplSlideCount] = useState(6);
+  const [tmplSlides, setTmplSlides] = useState(Array(12).fill(null).map(()=>({image:null,imagePos:{x:50,y:50},headline:"",subline:"",bodyText:"",accentText:"",topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:""})));
+  const [tmplEffect, setTmplEffect] = useState("gold");
+  const [tmplFont, setTmplFont] = useState("Bebas Neue");
+  const [tmplPrimary, setTmplPrimary] = useState("#BB9900");
+  const [tmplSecondary, setTmplSecondary] = useState("#ffffff");
+  const [tmplBg, setTmplBg] = useState("white");
+  const [tmplFontStyle, setTmplFontStyle] = useState("Inter");
+  const [tmplRawBox, setTmplRawBox] = useState("white");
+  const [tmplRawPos, setTmplRawPos] = useState("bottom");
+  const [tmplListicleNum, setTmplListicleNum] = useState(6);
+  const [tmplBrief, setTmplBrief] = useState("");
+  const [tmplSuggesting, setTmplSuggesting] = useState(null);
+  const [tmplDownloading, setTmplDownloading] = useState(false);
+  const [tmplDownloadingIdx, setTmplDownloadingIdx] = useState(null);
   const [isDraggingTemplate, setIsDraggingTemplate] = useState(false);
-  // Keep cover and template photo libraries in sync
-  useEffect(() => {
-    if (coverPhotos.length > 0 && templatePhotos.length === 0) {
-      setTemplatePhotos(coverPhotos);
-    }
-  }, []);
-
-  const addToSharedLibrary = async (url) => {
-    const next = [url, ...coverPhotos.filter(p => p !== url)].slice(0, 10);
-    setCoverPhotos(next);
-    setTemplatePhotos(next);
-  };
-
-  const removeFromSharedLibrary = (url) => {
-    const next = coverPhotos.filter(p => p !== url);
-    setCoverPhotos(next);
-    setTemplatePhotos(next);
-    if (activeCoverPhoto === url) { setActiveCoverPhoto(next[0] || null); if(!next[0]){if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);} }
-    if (templateBgUrl === url) { setTemplateBgUrl(next[0] || null); if(!next[0]) setSlideTextDark(false); }
-  };
-
   const profileRef = useRef(null);
   const coverDragRef = useRef(null);
   const templateDragRef = useRef(null);
@@ -1318,7 +1017,7 @@ export default function App() {
     const safeActiveCover = activeCoverPhoto?.startsWith('data:') ? '' : activeCoverPhoto;
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,quotePhotos,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
-           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,photoOpacity,templateOpacity,ratio,bgColour,customColourDark,slideTextDark,audienceType,customActiveSlot,textDensity});
+           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,photoOpacity,templateOpacity,ratio,bgColour,customColourDark,audienceType,customActiveSlot,textDensity});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
       bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType,customActiveSlot,textDensity,quotePhotos]);
@@ -1331,7 +1030,9 @@ export default function App() {
   };
 
   const addCoverPhoto = async (url) => {
+    // Show immediately as base64 for instant preview (don't save to localStorage yet)
     sampleImageBrightness(url).then(setBadgeArea);
+    // Upload to Blob first, then update state with real URL
     try {
       const res = await fetch('/api/upload-photo', {
         method: 'POST',
@@ -1340,21 +1041,20 @@ export default function App() {
       });
       const data = await res.json();
       if (data.url) {
-        const next = [data.url, ...coverPhotos.filter(p => !p.startsWith('data:'))].slice(0, 10);
+        // Only save real Blob URL to state (and therefore localStorage)
+        const next = [data.url, ...coverPhotos.filter(p => !p.startsWith('data:'))].slice(0, 8);
         setCoverPhotos(next);
-        setTemplatePhotos(next);
         setActiveCoverPhoto(data.url);
       } else {
-        const next = [url, ...coverPhotos].slice(0, 10);
+        // Fallback - use base64 in state but it won't persist properly
+        const next = [url, ...coverPhotos].slice(0, 8);
         setCoverPhotos(next);
-        setTemplatePhotos(next);
         setActiveCoverPhoto(url);
       }
     } catch(e) {
       console.error('Cover upload failed:', e);
-      const next = [url, ...coverPhotos].slice(0, 10);
+      const next = [url, ...coverPhotos].slice(0, 8);
       setCoverPhotos(next);
-      setTemplatePhotos(next);
       setActiveCoverPhoto(url);
     }
   };
@@ -1422,7 +1122,7 @@ VOICE: ${voice}
 AUDIENCE: ${audienceDesc}
 TOPIC: "${topicStr}"${briefSection}${inspiration}
 SLIDES: ${slideCount}${narrativeStyle}
-TEXT DENSITY: ${textDensity === "concise" ? "PUNCHY — body text must be 80 characters maximum. One short punchy sentence. No exceptions. Count characters strictly." : textDensity === "detailed" ? "DEPTH — body text must be 160 characters maximum. Up to 3 short sentences. Explain the insight clearly but stay tight." : "BALANCED — body text must be 120 characters maximum. 1-2 sentences. Clear and direct. Every word earns its place."}
+TEXT DENSITY: ${textDensity === "concise" ? "PUNCHY — keep body text to 1 short punchy sentence max. Prioritise impact over explanation. Less is more." : textDensity === "detailed" ? "DEPTH — use 2-3 sentences for body text. Explain the insight fully. Give context and specifics." : "BALANCED — 1-2 sentences for body text. Clear and direct. Every word earns its place."}
 
 NARRATIVE ARC: hook → reality → insight → shift → advice → CTA
 
@@ -1639,9 +1339,9 @@ Return ONLY valid JSON, nothing else.` }
     photoOpacity: slideIdx === 0 ? photoOpacity : templateOpacity,
     profileUrl, name, handle, blueTick,
     websiteUrl: currentUser?.plan==="free" ? "studio.buildwithtav.co" : (showWebsite?website:""),
-    showNums, ratio, accentColor, bgColour, customColourDark, slideTextDark,
+    showNums, ratio, accentColor, bgColour, customColourDark,
     coverImgPos, templateImgPos, gradientMode,
-  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,photoOpacity,templateOpacity,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,customColourDark,slideTextDark,slideOverlays,gradientMode,currentUser]);
+  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,photoOpacity,templateOpacity,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,customColourDark,slideOverlays,gradientMode,currentUser]);
 
   const downloadOne = async (i) => {
     if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
@@ -1828,15 +1528,14 @@ Return ONLY a JSON array of ${needed} strings.`;
     setGeneratingQuotes(false);
   };
 
-  const buildQuoteHTML = (quoteText, sig, textColorOverride, opacityOverride) => {
+  const buildQuoteHTML = (quoteText, sig, textColorOverride) => {
     const accent = accentColor || GOLD;
     const isDark = quoteBgMode !== "light";
     const hasBgImg = quoteBgMode === "custom" && quoteBgCustomUrl;
-    const effectiveQuoteOpacity = opacityOverride !== undefined ? opacityOverride : quotePhotoOpacity;
     const bg = isDark ? "#0d0b08" : "#F8F4EE";
     const textColor = textColorOverride || (hasBgImg ? "#FFFFFF" : (isDark ? "#F5EDE0" : "#1a1208"));
     const subColor = hasBgImg ? "rgba(255,255,255,0.85)" : (isDark ? "rgba(245,237,224,0.7)" : "rgba(26,18,8,0.55)");
-    const textShadow = ""; // placeholder — real value set after cardTextColor is declared below
+    const textShadow = "";
     const fontObj = FONTS.find(f => f.id === quoteFont) || FONTS[1];
     const sigFontObj = FONTS.find(f => f.id === quoteSigFont) || FONTS[5];
     const font = fontObj.css;
@@ -1878,7 +1577,7 @@ Return ONLY a JSON array of ${needed} strings.`;
       </div>`;
     const classicHandle = showHandle&&handleStr ? `
       <div style="position:absolute;bottom:${Math.round(100*s)}px;left:0;right:0;text-align:center;z-index:6;">
-        <span style="color:${textColor};font-size:${Math.round(24*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:${Math.round(3*s)}px;opacity:0.75;">${esc(handleStr)}</span>
+        <span style="color:${subColor};font-size:${Math.round(24*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:${Math.round(3*s)}px;opacity:0.85;">${esc(handleStr)}</span>
       </div>` : "";
 
     const luxuryHTML = `
@@ -1992,15 +1691,6 @@ Return ONLY a JSON array of ${needed} strings.`;
       </div>` : "";
 
     const rawTextC = isDark ? "#FFFFFF" : "#0A0A0A";
-    const cardTextColor = tmpl === "feminine" ? femText : textColor;
-    const cardSubColor = tmpl === "feminine" ? (isDark?"rgba(245,237,232,0.7)":"rgba(58,37,32,0.6)") : subColor;
-    // Glow: on custom image only. Dark text → white glow. Light text → dark glow.
-    const quoteDarkText = cardTextColor === "#0A0A0A" || cardTextColor === "#1a1208" || cardTextColor === "#3a2520";
-    const quoteTextShadow = hasBgImg
-      ? (quoteDarkText
-          ? "text-shadow:0 0 20px rgba(255,255,255,0.9),0 0 40px rgba(255,255,255,0.5);"
-          : "text-shadow:0 0 20px rgba(0,0,0,0.9),0 0 40px rgba(0,0,0,0.5);")
-      : "";
     const rawHTML = `
       <div style="position:absolute;top:${Math.round(24*s)}px;left:${Math.round(24*s)}px;right:${Math.round(24*s)}px;height:${Math.round(18*s)}px;background:${rawTextC};z-index:3;pointer-events:none;border-radius:${Math.round(2*s)}px;"></div>
       <div style="position:absolute;bottom:${Math.round(90*s)}px;left:${Math.round(24*s)}px;right:${Math.round(24*s)}px;height:${Math.round(6*s)}px;background:${rawTextC};opacity:0.5;z-index:3;pointer-events:none;border-radius:${Math.round(2*s)}px;"></div>
@@ -2009,11 +1699,11 @@ Return ONLY a JSON array of ${needed} strings.`;
       <div style="width:100%;height:${Math.round(2*s)}px;background:${rawTextC};opacity:0.12;margin-bottom:${Math.round(52*s)}px;"></div>`;
     const rawLabel = `
       <div style="margin-bottom:${Math.round(32*s)}px;width:100%;padding-left:${Math.round(20*s)}px;">
-        <span style="font-size:${Math.round(22*s)}px;letter-spacing:${Math.round(10*s)}px;text-transform:uppercase;font-family:'${font}',sans-serif;font-weight:700;color:${textColor};opacity:0.4;">${luxuryLabel||"Truth"}</span>
+        <span style="font-size:${Math.round(22*s)}px;letter-spacing:${Math.round(10*s)}px;text-transform:uppercase;font-family:'${font}',sans-serif;font-weight:700;color:${rawTextC};opacity:0.4;">${luxuryLabel||"Truth"}</span>
       </div>`;
     const rawHandle = showHandle&&handleStr ? `
       <div style="position:absolute;bottom:${Math.round(100*s)}px;left:${Math.round(60*s)}px;z-index:6;">
-        <span style="color:${textColor};font-size:${Math.round(22*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;opacity:0.6;letter-spacing:${Math.round(3*s)}px;">${esc(handleStr)}</span>
+        <span style="color:${rawTextC};font-size:${Math.round(22*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;opacity:0.6;letter-spacing:${Math.round(3*s)}px;">${esc(handleStr)}</span>
       </div>` : "";
 
     const customDivider = `
@@ -2026,23 +1716,25 @@ Return ONLY a JSON array of ${needed} strings.`;
     const tExtras = { classic: classicHTML, luxury: luxuryHTML, feminine: feminineHTML, raw: rawHTML, custom: "" }[tmpl] || "";
     const tDivider = { classic: classicDivider, luxury: luxuryDivider, feminine: feminineDivider, raw: rawDivider, custom: customDivider }[tmpl] || customDivider;
     const tHandle = { classic: classicHandle, luxury: luxuryHandle, feminine: feminineHandle, raw: rawHandle, custom: "" }[tmpl] || (showHandle&&handleStr?`<div style="position:absolute;bottom:${handleBottom}px;left:0;right:0;text-align:center;z-index:6;"><span style="color:${accent};font-size:${Math.round(26*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:3px;opacity:0.85;">${esc(handleStr)}</span></div>`:"");
-    const cardBg = tmpl === "feminine" ? femBg : hasBgImg ? "#FFFFFF" : bg;
+    const cardBg = tmpl === "feminine" ? femBg : bg;
+    const cardTextColor = tmpl === "feminine" ? femText : textColor;
+    const cardSubColor = tmpl === "feminine" ? (isDark?"rgba(245,237,232,0.7)":"rgba(58,37,32,0.6)") : subColor;
 
     return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>
 @import url('${gFonts}');
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
-.slide{width:${W}px;height:${H}px;background:${cardBg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${contentPadTop}px ${contentPadX}px ${contentPadBottom}px;position:relative;}
-.bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:${(effectiveQuoteOpacity||100)/100};}
-.bg-ov{position:absolute;inset:0;z-index:1;pointer-events:none;}
+html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000":cardBg};}
+.slide{width:${W}px;height:${H}px;background:${hasBgImg?"transparent":cardBg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${contentPadTop}px ${contentPadX}px ${contentPadBottom}px;position:relative;}
+.bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
+.bg-ov{position:absolute;inset:0;z-index:1;background:rgba(0,0,0,${(quoteOverlay||0)/100});}
 .content{position:relative;z-index:5;width:100%;display:flex;flex-direction:column;align-items:${isLeft?"flex-start":"center"};text-align:${isLeft?"left":"center"};}
-.quote{font-size:${quoteSz}px;font-weight:700;line-height:1.32;color:${cardTextColor};font-style:italic;font-family:'${font}',serif;text-align:${isLeft?"left":"center"};margin-bottom:${Math.round(60*s)}px;${quoteTextShadow}}
-.sig{font-size:${sigSz}px;font-weight:600;color:${cardTextColor};opacity:0.75;font-family:'${sigFont}',cursive,serif;${quoteTextShadow}text-align:${isLeft?"left":"center"};width:100%;}
+.quote{font-size:${quoteSz}px;font-weight:700;line-height:1.32;color:${cardTextColor};font-style:italic;font-family:'${font}',serif;text-align:${isLeft?"left":"center"};margin-bottom:${Math.round(60*s)}px;${textShadow}}
+.sig{font-size:${sigSz}px;font-weight:600;color:${cardSubColor};font-family:'${sigFont}',cursive,serif;${textShadow}text-align:${isLeft?"left":"center"};width:100%;}
 </style>
 </head><body>
 <div class="slide">
-  ${hasBgImg?`<img class="bg-img" src="${quoteBgCustomUrl}" />${(quoteOverlay||0)>0?`<div class="bg-ov" style="background:linear-gradient(to top,rgba(0,0,0,${Math.min((quoteOverlay/100)*0.95,0.92)}) 0%,rgba(0,0,0,${Math.min((quoteOverlay/100)*0.4,0.5)}) 50%,rgba(0,0,0,0) 100%)"></div>`:""}`:""}
+  ${hasBgImg?`<img class="bg-img" src="${quoteBgCustomUrl}" /><div class="bg-ov"></div>`:""}
   ${tExtras}
   <div class="content">
     ${tmpl==="raw"?rawLabel:""}
@@ -2132,6 +1824,140 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
     setDownloadingQuotes(false);
   };
 
+  // ── useDebouncedValue — prevents preview flash on every keystroke ────────
+  function useDebouncedValue(value, delay) {
+    const [dv, setDv] = useState(value);
+    useEffect(()=>{ const t=setTimeout(()=>setDv(value),delay||300); return()=>clearTimeout(t); },[value,delay]);
+    return dv;
+  }
+
+  // ── buildTmplHTML — generates HTML sent to Puppeteer /api/render-slide ──
+  function buildTmplHTML(slide, idx, total, tmpl, opts) {
+    const {effect,font,primary,secondary,bg,fontStyle,rawBox,rawPos,listicleNum,profUrl,nm,hdl,showTick,isFree}=opts;
+    const W=1080,H=1350,SAFE=60,isCover=idx===0;
+    const fontFamily=(font||"Bebas Neue").replace(/'/g,"");
+    function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+    const gFonts="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Teko:wght@700&family=Barlow+Condensed:wght@800;900&family=Archivo+Black&family=Playfair+Display:ital,wght@0,900;1,900&family=Alfa+Slab+One&family=Inter:wght@400;600;700;800&display=swap";
+    function effectCSS(eff,pri,sec){
+      if(eff==="gold") return"background:linear-gradient(180deg,"+sec+" 0%,#ffe44d 20%,"+pri+" 50%,#7a5800 80%,#ffe066 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 4px 8px rgba(140,100,0,0.5));";
+      if(eff==="chrome") return"background:linear-gradient(180deg,"+sec+" 0%,#ddd 20%,#777 45%,#bbb 65%,#444 85%,#ccc 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
+      if(eff==="fire") return"background:linear-gradient(180deg,"+sec+" 0%,#ffff00 15%,#ff6600 40%,#cc0000 75%,#660000 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
+      if(eff==="ice") return"background:linear-gradient(180deg,"+sec+" 0%,#d0f0ff 30%,"+pri+" 65%,#1a6090 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
+      if(eff==="neon") return"-webkit-text-fill-color:#fff;color:#fff;text-shadow:0 0 10px "+pri+",0 0 20px "+pri+",0 0 40px "+pri+",0 0 80px "+pri+";";
+      if(eff==="3d") return"color:#fff;text-shadow:1px 1px 0 #555,2px 2px 0 #444,3px 3px 0 #333,4px 4px 0 #222,5px 5px 0 #111,6px 6px 8px rgba(0,0,0,0.4);";
+      if(eff==="outline") return"-webkit-text-stroke:4px "+pri+";-webkit-text-fill-color:transparent;color:transparent;";
+      return"-webkit-text-fill-color:"+sec+";color:"+sec+";text-shadow:0 2px 8px rgba(0,0,0,0.6);";
+    }
+    function badge(dark){
+      const tc=dark?"#fff":"#0a0a0a",sc=dark?"rgba(255,255,255,0.55)":"rgba(0,0,0,0.45)";
+      const tick=showTick?"<span style='display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#1D9BF0;border-radius:50%;margin-left:8px;vertical-align:middle;flex-shrink:0;'><span style='display:block;width:8px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);margin-top:-2px;'></span></span>":"";
+      const av=profUrl?"<img src='"+esc(profUrl)+"' style='width:100%;height:100%;object-fit:cover;border-radius:50%;'/>"  :"<div style='width:100%;height:100%;background:#4a6a9a;border-radius:50%;'></div>";
+      return"<div style='display:flex;align-items:center;gap:18px;'><div style='width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid #fff;flex-shrink:0;background:#4a6a9a;'>"+av+"</div><div style='display:flex;flex-direction:column;gap:4px;'><div style='display:flex;align-items:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;font-weight:800;color:"+tc+";text-shadow:0 1px 6px rgba(0,0,0,0.5);'>"+esc(nm||"")+tick+"</div><div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:28px;color:"+sc+";text-shadow:0 1px 4px rgba(0,0,0,0.4);'>"+esc(hdl||"")+"</div></div></div>";
+    }
+    const grad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 32%,rgba(0,0,0,0.06) 50%,rgba(0,0,0,0.28) 60%,rgba(0,0,0,0.58) 68%,rgba(0,0,0,0.82) 76%,rgba(0,0,0,0.94) 84%,rgba(0,0,0,0.98) 91%,rgba(0,0,0,1) 100%)";
+    const chevron="<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+primary+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+primary+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>";
+    const website="<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>";
+    const wm=isFree?"<div style='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-20deg);font-size:72px;font-weight:900;color:rgba(255,255,255,0.12);white-space:nowrap;z-index:20;pointer-events:none;'>studio.buildwithtav.co</div>":"";
+    const counter="<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+(idx+1)+"/"+total+"</div>";
+    function imgTag(s){if(!s||!s.image)return"";const px=(s.imagePos&&s.imagePos.x)||50,py=(s.imagePos&&s.imagePos.y)||50;return"<img src='"+esc(s.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+px+"% "+py+"%;z-index:0;'/>";}
+    function darkFadeCover(s){
+      return"<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(s)
+        +"<div style='position:absolute;inset:0;background:"+grad+";z-index:1;'></div>"
+        +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.638)+"px;white-space:nowrap;'>"+badge(true)+"</div>"
+        +"<div style='position:absolute;z-index:5;left:54px;right:54px;top:"+Math.round(H*0.748)+"px;height:5px;background:linear-gradient(to right,transparent 0%,"+primary+" 5%,"+primary+" 95%,transparent 100%);'></div>"
+        +"<div style='position:absolute;z-index:5;left:80px;right:80px;top:"+Math.round(H*0.800)+"px;bottom:"+Math.round(H*0.10)+"px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;overflow:hidden;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:116px;font-weight:900;line-height:1.05;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectCSS(effect,primary,secondary)+"'>"+esc((s.headline||"").toUpperCase())+"</div>"
+        +(s.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;color:"+secondary+";text-align:center;font-weight:600;max-width:100%;'>"+esc(s.subline)+"</div>":"")
+        +"</div>"+website+(isCover?chevron:"")+counter+wm+"</div>";
+    }
+    let body="";
+    if(tmpl==="dark-fade"){body=darkFadeCover(slide);}
+    else if(tmpl==="listicle"&&isCover){
+      const cf="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 25%,rgba(0,0,0,0.62) 45%,rgba(0,0,0,0.98) 60%,rgba(0,0,0,0.98) 72%,rgba(0,0,0,0.62) 88%,rgba(0,0,0,0) 100%)";
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(slide)
+        +"<div style='position:absolute;inset:0;background:"+cf+";z-index:1;'></div>"
+        +"<div style='position:absolute;top:52px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
+        +"<div style='position:absolute;z-index:5;left:"+SAFE+"px;top:"+Math.round(H*0.36)+"px;width:320px;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:480px;font-weight:900;line-height:0.85;"+effectCSS(effect,primary,secondary)+"'>"+(listicleNum||6)+"</div>"
+        +"<div style='width:320px;height:5px;background:"+primary+";margin-top:20px;'></div></div>"
+        +"<div style='position:absolute;z-index:5;left:"+(SAFE+336)+"px;right:"+SAFE+"px;top:"+Math.round(H*0.40)+"px;display:flex;flex-direction:column;gap:16px;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:46px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.3;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase())+"</div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:116px;font-weight:900;color:"+secondary+";line-height:1.05;word-break:break-word;'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div></div>"
+        +(slide.subline?"<div style='position:absolute;bottom:"+Math.round(H*0.185)+"px;left:0;right:0;text-align:center;z-index:5;font-size:34px;color:rgba(255,255,255,0.6);'>"+esc(slide.subline)+"</div>":"")
+        +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"+chevron+counter+wm+"</div>";
+    }
+    else if(tmpl==="listicle"&&!isCover){
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#0a0a0a;overflow:hidden;'>"
+        +"<div style='position:absolute;top:52px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
+        +"<div style='position:absolute;inset:0;z-index:5;display:flex;align-items:center;padding:0 "+SAFE+"px;gap:60px;padding-top:180px;'>"
+        +"<div style='flex-shrink:0;width:280px;display:flex;flex-direction:column;gap:20px;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:340px;font-weight:900;line-height:1;"+effectCSS(effect,primary,secondary)+"'>"+String(idx).padStart(2,"0")+"</div>"
+        +"<div style='width:280px;height:5px;background:"+primary+";'></div></div>"
+        +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:24px;'>"
+        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:72px;font-weight:900;color:"+secondary+";line-height:1.1;text-transform:uppercase;word-break:break-word;'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:48px;color:rgba(255,255,255,0.7);line-height:1.5;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
+        +"</div></div>"+website+counter+wm+"</div>";
+    }
+    else if(tmpl==="clean-pro"&&isCover){body=darkFadeCover(slide);}
+    else if(tmpl==="clean-pro"&&!isCover){
+      const isW=bg==="white",bgC=isW?"#ffffff":"#0a0a0a",tM=isW?"#0a0a0a":"#ffffff";
+      const tS=isW?"rgba(0,0,0,0.5)":"rgba(255,255,255,0.5)",dC=isW?"rgba(0,0,0,0.08)":"rgba(255,255,255,0.08)";
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;'>"
+        +"<div style='position:absolute;top:"+SAFE+"px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
+        +"<div style='position:absolute;top:"+(SAFE+100+30)+"px;left:"+SAFE+"px;right:"+SAFE+"px;height:1.5px;background:"+dC+";z-index:5;'></div>"
+        +"<div style='position:absolute;top:"+(SAFE+100+60)+"px;left:"+(SAFE+30)+"px;right:"+(SAFE+30)+"px;z-index:5;display:flex;flex-direction:column;gap:28px;'>"
+        +(slide.headline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:72px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
+        +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:48px;color:"+tS+";line-height:1.6;word-break:break-word;'>"+esc(slide.bodyText).replace(/\n/g,"<br/>")+"</div>":"")
+        +(slide.accentText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:52px;font-weight:700;color:"+primary+";line-height:1.3;word-break:break-word;'>"+esc(slide.accentText)+"</div>":"")
+        +(slide.accentText?"<div style='width:100px;height:4px;background:"+primary+";'></div>":"")
+        +"</div><div style='position:absolute;bottom:40px;right:"+SAFE+"px;z-index:5;font-size:28px;color:"+tS+";'>"+(idx+1)+"/"+total+"</div>"+wm+"</div>";
+    }
+    else if(tmpl==="storytelling"){
+      const isW=bg==="white",bgC=isW?"#ffffff":"#0a0a0a",tC=isW?"#0a0a0a":"#ffffff";
+      const stI=fontStyle==="Playfair Display",stF=fontStyle||"Inter";
+      const sw=isCover?"<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+(isW?"rgba(0,0,0,0.3)":"rgba(255,255,255,0.3)")+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+(isW?"rgba(0,0,0,0.3)":"rgba(255,255,255,0.3)")+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>":"";
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;'>"
+        +"<div style='position:absolute;top:"+SAFE+"px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
+        +"<div style='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:200px 120px;z-index:5;'>"
+        +"<div style='font-family:"+stF+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;"+(stI?"font-style:italic;":"")+"font-weight:400;color:"+tC+";line-height:1.7;text-align:center;'>"
+        +esc(slide.storyText||"").replace(/\n\n/g,"</p><p style='margin-top:1.2em;'>").replace(/\n/g,"<br/>")
+        +"</div></div>"+sw+counter+wm+"</div>";
+    }
+    else if(tmpl==="raw"){
+      const isWB=rawBox==="white",bBg=isWB?"rgba(255,255,255,0.97)":"rgba(0,0,0,0.93)",tCR=isWB?"#0a0a0a":"#ffffff";
+      const stI=fontStyle==="Playfair Display",stF=fontStyle||"Inter";
+      const pos=rawPos==="bottom"?"bottom:100px;left:50%;transform:translateX(-50%);":"top:50%;left:50%;transform:translate(-50%,-50%);";
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#1a1a1a;overflow:hidden;'>"+imgTag(slide)
+        +"<div style='position:absolute;"+pos+"max-width:80%;z-index:5;background:"+bBg+";padding:40px 50px;'>"
+        +"<div style='font-family:"+stF+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:40px;"+(stI?"font-style:italic;":"")+"font-weight:400;color:"+tCR+";line-height:1.5;white-space:pre-wrap;word-break:break-word;'>"+esc(slide.rawText||"")+"</div>"
+        +"</div>"+counter+wm+"</div>";
+    }
+    return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
+  }
+
+  // ── Template AI suggest ──────────────────────────────────────────────────
+  const tmplSuggestSlide = async (idx, tmpl, brief, slides, slideCount) => {
+    setTmplSuggesting(idx);
+    try {
+      const context=slides.slice(0,slideCount).map((s,i)=>{const t=tmpl==="storytelling"?s.storyText:s.bodyText;return t?`Slide ${i+1}: "${t.substring(0,60)}"`:""}).filter(Boolean).join("; ");
+      const prompt=tmpl==="listicle"
+        ?`Write ONE specific punchy point for slide ${idx+1} of a listicle carousel. Topic: "${brief||"general"}". ${context?`Already covered: ${context}.`:""} Max 80 chars. Return ONLY the text.`
+        :tmpl==="storytelling"
+        ?`Write ONE paragraph continuing a personal story carousel (slide ${idx+1}). Story brief: "${brief||"personal journey"}". ${context?`Story so far: ${context}.`:""} Max 120 chars. First person, specific details only. Return ONLY the text.`
+        :`Write ONE clear body text point for slide ${idx+1} of an informative carousel about "${brief||"this topic"}". ${context?`Previous: ${context}.`:""} Max 100 chars. Return ONLY the text.`;
+      const r=await fetchWithRetry({model:"claude-sonnet-4-6",max_tokens:80,messages:[{role:"user",content:prompt}]});
+      const text=r?.content?.[0]?.text?.trim()||"";
+      if(text){
+        setTmplSlides(prev=>{const next=[...prev];const field=tmpl==="storytelling"?"storyText":"bodyText";next[idx]={...next[idx],[field]:text};return next;});
+        if(currentUser?.email){
+          await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:5})});
+          setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));
+        }
+      }
+    }catch(e){console.error(e);}
+    setTmplSuggesting(null);
+  };
+
   const A = { bg:"#F5F3EF", surface:"#FFF", border:"#E8E5E0", text:"#0A0A0A", muted:"#8A8780", accentText:"#FFF", input:"#FFF" };
   const inp = { width:"100%", background:A.input, border:`1.5px solid ${A.border}`, borderRadius:10, padding:"11px 14px", color:A.text, fontSize:14, fontFamily:"inherit" };
   const lbl = { display:"block", fontSize:10, fontWeight:700, letterSpacing:3, textTransform:"uppercase", color:A.muted, marginBottom:7 };
@@ -2142,13 +1968,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
   );
 
   const planLabel = currentUser?.plan === "agency" ? "agency" : currentUser?.plan === "pro" ? "pro" : currentUser?.plan === "starter" ? "starter" : currentUser?.plan === "affiliate_licence" ? "affiliate_licence" : currentUser?.plan === "white_label" ? "white_label" : "free";
-  const isPexelsUser = ["pro","agency","affiliate_licence","white_label"].includes(planLabel);
-  const [showPexelsCover, setShowPexelsCover] = useState(false);
-  const [showPexelsTemplate, setShowPexelsTemplate] = useState(false);
-  const [showPexelsQuote, setShowPexelsQuote] = useState(false);
   const NAV_ITEMS = [["generate","Generate"],...(currentUser?.is_admin?[["templates","Templates"]]:[]),["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
   const BURGER_ITEMS = [["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
   const MAIN_NAV = [["generate","Generate"],...(currentUser?.is_admin?[["templates","Templates"]]:[])];
+
 
   return (
     <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"Plus Jakarta Sans,system-ui,sans-serif"}}>
@@ -2417,51 +2240,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 </div>
                 <div>
                   <label style={lbl}>Background</label>
-                  <div style={{display:"flex",gap:8,marginBottom:quoteBgMode==="custom"?10:0}}>
+                  <div style={{display:"flex",gap:8}}>
                     {[["dark","Dark"],["light","Light"],["custom","Custom"]].map(([id,label])=>(
-                      <button key={id} onClick={()=>{setQuoteBgMode(id);if(id==="dark")setQuoteTextColor("#FFFFFF");if(id==="light")setQuoteTextColor("#0A0A0A");if(id==="custom")setQuoteTextColor("#FFFFFF");}} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
+                      <button key={id} onClick={()=>setQuoteBgMode(id)} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                     ))}
                   </div>
-                  {quoteBgMode==="custom"&&(
-                    <div>
-                      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
-                        {quotePhotos.map((p,i)=>(
-                          <div key={i} style={{position:"relative",flexShrink:0}}>
-                            <div onClick={()=>setQuoteBgCustomUrl(quoteBgCustomUrl===p?null:p)} style={{width:48,height:48,borderRadius:8,overflow:"hidden",border:`2px solid ${quoteBgCustomUrl===p?GOLD:A.border}`,cursor:"pointer"}}>
-                              <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                            </div>
-                            {quoteBgCustomUrl===p&&<div onClick={()=>{setQuoteBgCustomUrl(null);setQuoteTextColor("#FFFFFF");}} style={{position:"absolute",top:-4,right:-4,width:14,height:14,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
-                            <div onClick={()=>{if(window.confirm("Remove this image from your library? This cannot be undone.")){const next=quotePhotos.filter((_,j)=>j!==i);setQuotePhotos(next);if(quoteBgCustomUrl===p){setQuoteBgCustomUrl(next[0]||null);if(!next[0])setQuoteTextColor("#FFFFFF");}}}} style={{position:"absolute",bottom:-4,right:-4,width:14,height:14,borderRadius:"50%",background:"#333",color:"#fff",fontSize:7,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
-                          </div>
-                        ))}
-                        {quotePhotos.length < 10 && (
-                          <div onClick={()=>quotePhotoRef.current?.click()} style={{width:48,height:48,borderRadius:8,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
-                        )}
-                      </div>
-                      <p style={{color:A.muted,fontSize:11,margin:"0 0 8px",lineHeight:1.5}}>Upload and save up to 10 custom images.</p>
-                      {isPexelsUser ? (
-                        <button onClick={()=>setShowPexelsQuote(true)} style={{width:"100%",padding:"8px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                          🔍 Search 1000s of free backgrounds
-                        </button>
-                      ) : (
-                        <div style={{width:"100%",padding:"8px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:11,textAlign:"center",opacity:0.6}}>
-                          🔍 Search 1000s of free backgrounds — Pro+
-                        </div>
-                      )}
-                      {quoteBgCustomUrl&&(
-                        <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:8}}>
-                          <div>
-                            <label style={{...lbl,marginBottom:4}}>Photo opacity — {quotePhotoOpacity}%</label>
-                            <input type="range" min={10} max={100} value={quotePhotoOpacity} onChange={e=>setQuotePhotoOpacity(+e.target.value)} style={{width:"100%"}}/>
-                          </div>
-                          <div>
-                            <label style={{...lbl,marginBottom:4}}>Overlay darkness — {quoteOverlay}%</label>
-                            <input type="range" min={0} max={80} value={quoteOverlay} onChange={e=>setQuoteOverlay(+e.target.value)} style={{width:"100%"}}/>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
               {(()=>{
@@ -2489,22 +2272,21 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 <label style={lbl}>Background</label>
                 <div style={{display:"flex",gap:8,marginBottom:quoteBgMode==="custom"?14:0}}>
                   {[["dark","Dark"],["light","Light"],["custom","Custom"]].map(([id,label])=>(
-                    <button key={id} onClick={()=>{setQuoteBgMode(id);if(id==="dark")setQuoteTextColor("#FFFFFF");if(id==="light")setQuoteTextColor("#0A0A0A");if(id==="custom")setQuoteTextColor("#FFFFFF");}} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
+                    <button key={id} onClick={()=>setQuoteBgMode(id)} style={{flex:1,background:quoteBgMode===id?A.text:A.bg,border:`1.5px solid ${quoteBgMode===id?A.text:A.border}`,color:quoteBgMode===id?A.accentText:A.muted,padding:"7px",borderRadius:7,fontSize:11,fontWeight:700}}>{label}</button>
                   ))}
                 </div>
                 {quoteBgMode==="custom"&&(
                   <div>
                     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
                       {quotePhotos.map((p,i)=>(
-                        <div key={i} style={{position:"relative",flexShrink:0}}>
-                          <div onClick={()=>setQuoteBgCustomUrl(quoteBgCustomUrl===p?null:p)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:`2px solid ${quoteBgCustomUrl===p?GOLD:A.border}`,cursor:"pointer"}}>
+                        <div key={i} style={{position:"relative"}}>
+                          <div onClick={()=>setQuoteBgCustomUrl(p)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:`2px solid ${quoteBgCustomUrl===p?GOLD:A.border}`,cursor:"pointer"}}>
                             <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                           </div>
-                          {quoteBgCustomUrl===p&&<div onClick={()=>{setQuoteBgCustomUrl(null);setQuoteTextColor("#FFFFFF");}} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
-                          <div onClick={()=>{if(window.confirm("Remove this image from your library? This cannot be undone.")){const next=quotePhotos.filter((_,j)=>j!==i);setQuotePhotos(next);if(quoteBgCustomUrl===p){setQuoteBgCustomUrl(next[0]||null);if(!next[0])setQuoteTextColor("#FFFFFF");}}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
+                          <button onClick={()=>{const next=quotePhotos.filter((_,j)=>j!==i);setQuotePhotos(next);if(quoteBgCustomUrl===p)setQuoteBgCustomUrl(next[0]||null);}} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0,border:"none",cursor:"pointer"}}>×</button>
                         </div>
                       ))}
-                      {quotePhotos.length < 10 && (
+                      {quotePhotos.length < 8 && (
                         <div onClick={()=>quotePhotoRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:28}}>+</div>
                       )}
                     </div>
@@ -2523,29 +2305,16 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           const data = await res.json();
                           if (data.url) {
                             setQuoteBgCustomUrl(data.url);
-                            setQuotePhotos(prev => [data.url, ...prev.filter(p=>p!==data.url)].slice(0,10));
+                            setQuotePhotos(prev => [data.url, ...prev.filter(p=>p!==data.url)].slice(0,8));
                           }
                         } catch(err) { console.error('Quote BG upload failed:', err); }
                       };
                       reader.readAsDataURL(file);
                     }} style={{display:"none"}}/>
-                    {isPexelsUser ? (
-                      <button onClick={()=>setShowPexelsQuote(true)} style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                        🔍 Search 1000s of free backgrounds
-                      </button>
-                    ) : (
-                      <div title="Upgrade to Pro to search Pexels" style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:12,textAlign:"center",marginBottom:8,cursor:"not-allowed",opacity:0.6}}>
-                        🔍 Search 1000s of free backgrounds — Pro+
-                      </div>
-                    )}
-                    <p style={{color:A.muted,fontSize:11,margin:"0 0 10px",lineHeight:1.6}}>
-                      Upload and save up to 10 custom images. Click to select. Safe zone: keep text within 80px of edges.<br/>
+                    <p style={{color:A.muted,fontSize:11,margin:"0 0 12px",lineHeight:1.6}}>
+                      Save up to 8 backgrounds. Click to select. Safe zone: keep text within 80px of edges.<br/>
                       Recommended: <strong>{quoteFormat==="portrait"?"1080×1920px":"1080×1350px"}</strong>
                     </p>
-                    <div style={{marginBottom:10}}>
-                      <label style={lbl}>Photo opacity — {quotePhotoOpacity}% <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(lower = more faded)</span></label>
-                      <input type="range" min={10} max={100} value={quotePhotoOpacity} onChange={e=>setQuotePhotoOpacity(+e.target.value)}/>
-                    </div>
                     <div style={{marginBottom:12}}>
                       <label style={lbl}>Overlay darkness — {quoteOverlay}% <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(0% = no overlay)</span></label>
                       <input type="range" min={0} max={80} value={quoteOverlay} onChange={e=>setQuoteOverlay(+e.target.value)}/>
@@ -2825,7 +2594,55 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               <input ref={inspirationRef} type="file" accept="image/*" onChange={e=>readFile(e,url=>{setInspirationImg(url);setTopic("Reading screenshot...");setAngle("");setErr("");extractTopicFromImage(url);}) } style={{display:"none"}}/>
             </div>
 
-            <div className="cover-format-grid" style={{display:"grid",gridTemplateColumns:"1fr",gap:16,marginBottom:20}}>
+            <div className="cover-format-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
+              <div>
+                <label style={lbl}>Cover <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional)</span></label>
+                {coverPhotos.length > 0 && (
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12,marginTop:8}}>
+                    {coverPhotos.map((photo,i)=>(
+                      <div key={i} style={{position:"relative",flexShrink:0}}>
+                        <div onClick={()=>setActiveCoverPhoto(activeCoverPhoto===photo?null:photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:activeCoverPhoto===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
+                          <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                        </div>
+                        {activeCoverPhoto===photo&&<div onClick={()=>setActiveCoverPhoto(null)} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700}}>×</div>}
+                        <div onClick={()=>{if(window.confirm("Remove this photo from your library? This cannot be undone.")){const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);if(activeCoverPhoto===photo)setActiveCoverPhoto(null);}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
+                      </div>
+                    ))}
+                    <div onClick={()=>coverPhotoRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
+                  </div>
+                )}
+                {coverPhotos.length === 0 && (
+                  <div onClick={()=>coverPhotoRef.current?.click()} style={{marginTop:8,marginBottom:12,padding:"12px",border:`2px dashed ${A.border}`,borderRadius:10,textAlign:"center",cursor:"pointer",color:A.muted,fontSize:13}}>
+                    + Upload cover photo
+                  </div>
+                )}
+                {activeCoverPhoto&&(
+                  <div style={{marginBottom:12}}>
+                    <label style={{...lbl,fontSize:11,marginBottom:6,display:"block"}}>Photo opacity — {photoOpacity}% <span style={{fontWeight:400,fontSize:9}}>(lower = more faded)</span></label>
+                    <input type="range" min={10} max={100} value={photoOpacity} onChange={e=>setPhotoOpacity(+e.target.value)} style={{width:"100%"}}/>
+                    <label style={{...lbl,fontSize:11,marginBottom:6,marginTop:10,display:"block"}}>Photo overlay — {overlayDark}% <span style={{fontWeight:400,fontSize:9}}>(higher = darker)</span></label>
+                    <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
+                    <div style={{display:"flex",gap:8,marginTop:10}}>
+                      <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>White text</button>
+                      <button onClick={()=>setCustomColourDark(false)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${!customColourDark?GOLD:A.border}`,background:!customColourDark?"#fff":A.bg,color:!customColourDark?"#000":A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>Dark text</button>
+                    </div>
+                  </div>
+                )}
+                <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
+                {(()=>{
+                  const isPortraitPrev = ratio==="portrait";
+                  const previewW = isPortraitPrev ? 180 : 280;
+                  const previewH = Math.round((isPortraitPrev?1920:1350)*(previewW/1080));
+                  return (
+                    <div>
+                      <label style={{...lbl,marginBottom:8}}>Preview</label>
+                      <div style={{padding:8,background:A.bg,borderRadius:12,border:`1.5px solid ${A.border}`}}><div style={{width:previewW,height:previewH,borderRadius:8,overflow:"hidden"}}>
+                        <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={0} total={1} opts={slideOpts(0)} onClick={()=>{}} isActive={false} isCover={true}/>
+                      </div></div>
+                    </div>
+                  );
+                })()}
+              </div>
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
                 <div>
                   <label style={lbl}>Text density</label>
@@ -2923,43 +2740,33 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         {nav==="templates"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:1100,margin:"0 auto",width:"100%",paddingBottom:60}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 4px"}}>Templates</h2>
-            <p style={{fontSize:14,color:A.muted,margin:"0 0 24px"}}>Pick a design, add your content, download. You're in control.</p>
-
-            {/* TEMPLATE PICKER */}
+            <p style={{fontSize:14,color:A.muted,margin:"0 0 24px"}}>Pick a design, add your content, download.</p>
             {!tmplSelected&&(
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:16}}>
                 {[
-                  {id:"dark-fade",label:"Dark Fade",desc:"Bold photo cover with smooth gradient fade. Badge, headline and subline.",emoji:"🌑"},
-                  {id:"listicle",label:"Listicle",desc:"Hook cover with big number left, topic right. Body slides numbered. Up to 11 points.",emoji:"🔢"},
-                  {id:"clean-pro",label:"Clean Pro",desc:"Dark Fade cover, then clean white or black body slides. Informative, professional.",emoji:"✨"},
-                  {id:"storytelling",label:"Storytelling",desc:"Pure text on white or black. Badge top left. Dead centre paragraph. AI writes from a brief.",emoji:"📖"},
-                  {id:"raw",label:"Raw",desc:"Your photo. Tight text box over it. No badge. No polish. Authentic, unfiltered.",emoji:"📱"},
+                  {id:"dark-fade",label:"Dark Fade",desc:"Bold photo cover, gradient fade, badge, headline, subline.",emoji:"🌑"},
+                  {id:"listicle",label:"Listicle",desc:"Big number left, topic right. Body slides numbered. Up to 11 points.",emoji:"🔢"},
+                  {id:"clean-pro",label:"Clean Pro",desc:"Dark Fade cover then clean white or black body slides.",emoji:"✨"},
+                  {id:"storytelling",label:"Storytelling",desc:"Pure text on white or black. Badge top left. Dead centre paragraph.",emoji:"📖"},
+                  {id:"raw",label:"Raw",desc:"Your photo. Tight text box. No badge. Authentic, unfiltered.",emoji:"📱"},
                 ].map(t=>(
                   <div key={t.id} onClick={()=>{
-                    setTmplSelected(t.id);
-                    setTmplActiveSlide(0);
-                    // Set default placeholder content per template
-                    const defaults = Array(12).fill(null).map((_,i)=>{
-                      const base={image:null,image2:null,imagePos:{x:50,y:50},image2Pos:{x:50,y:50},headline:"",subline:"",bodyText:"",accentText:"",topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:"",pillText:""};
-                      if(t.id==="dark-fade"){
-                        base.headline=i===0?"Stop posting singles. Start posting carousels.":"";
-                        base.subline=i===0?"The algorithm rewards every swipe.":"";
-                      }
+                    setTmplSelected(t.id); setTmplActiveSlide(0);
+                    const defaults=Array(12).fill(null).map((_,i)=>{
+                      const base={image:null,imagePos:{x:50,y:50},headline:"",subline:"",bodyText:"",accentText:"",topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:""};
+                      if(t.id==="dark-fade"){base.headline=i===0?"Stop posting singles. Start posting carousels.":"";base.subline=i===0?"The algorithm rewards every swipe.":"";}
                       if(t.id==="listicle"&&i===0){base.topicLine="PLACES YOU MUST VISIT BEFORE";base.subject="2026 ENDS";base.subline="Swipe to see them all.";}
                       if(t.id==="listicle"&&i>0){base.headline=["Santorini, Greece","Kyoto, Japan","Amalfi Coast, Italy","Bali, Indonesia","Patagonia, Argentina","Cape Town, South Africa","Iceland","Machu Picchu, Peru","The Maldives","New Zealand","Morocco"][i-1]||"";base.bodyText=["Sunsets you won't find anywhere else.","Cherry blossom and centuries of culture.","The most dramatic coastline in Europe.","Temples, rice fields, and world-class surf.","Mountains that look computer generated.","Beaches, wine, wildlife. All in one place.","Northern lights every clear night.","Lost city of the Incas. Nothing like it.","Overwater bungalows. Turquoise lagoons.","Lord of the Rings meets real adventure.","Deserts, medinas, and mint tea."][i-1]||"";}
                       if(t.id==="clean-pro"&&i===0){base.headline="Most coaches are sleeping on this.";base.subline="The feature that changes everything.";}
-                      if(t.id==="clean-pro"&&i>0){base.headline=["The timing is everything.","Your DMs are a free lead machine.","Most coaches have no idea this exists.","Set it up once. Let it run forever.","Here's exactly how to do it."][i-1]||"";base.bodyText=["Someone just followed you. They're curious right now. Your message hits instantly.","Instagram now auto-DMs every new follower. No manual outreach. No copy/paste.","It captures the lead the moment they follow. Before they scroll past you.","Five minutes of setup. Automated outreach to every new follower indefinitely.","Go to Settings → Creators → Automated Responses. Turn it on. Write your DM."][i-1]||"";base.accentText=["That's the highest-intent moment you'll ever get.","That's a free lead machine.","Most coaches have no idea this feature exists.","Your ad drives the follow. This captures the lead.","You're already paying for the follower. Don't waste them."][i-1]||"";}
+                      if(t.id==="clean-pro"&&i>0){base.headline=["The timing is everything.","Your DMs are a free lead machine.","Most coaches have no idea this exists.","Set it up once. Let it run forever.","Here's exactly how to do it."][i-1]||"";base.bodyText=["Someone just followed you. They're curious right now.","Instagram now auto-DMs every new follower. No manual outreach.","It captures the lead the moment they follow.","Five minutes of setup. Automated outreach indefinitely.","Settings → Creators → Automated Responses. Turn it on."][i-1]||"";base.accentText=["That's the highest-intent moment you'll ever get.","That's a free lead machine.","Most coaches have no idea this feature exists.","Your ad drives the follow. This captures the lead.","You're already paying for the follower. Don't waste them."][i-1]||"";}
                       if(t.id==="storytelling"){base.storyText=["I went bankrupt at 25.\n\nNot the kind you read about in business books. The kind where you can't look your mum in the eye.","Her name is Carol. She raised three of us on her own. No shortcuts. Just sacrifice.\n\nAnd I'd thrown it all away.","I spent three years on bail waiting for a trial that kept getting cancelled.\n\nCOVID hit. Courts closed. I just had to wait.","The day I got my tag off, I sat in my car for twenty minutes.\n\nNo music. No phone. Just silence.","I found digital marketing while I was still on tag.\n\nI made my first sale at 3am on a Tuesday. I cried.","That's why I built this. Not to flex. To show you what's possible when you stop waiting for permission."][i]||"";}
                       if(t.id==="raw"){base.rawText=["The day I got my tag off, I sat in my car for 20 minutes.\n\nNo music. No phone.\n\nJust silence.","Most people wait for the perfect moment.\n\nThere isn't one.\n\nStart anyway.","Nobody tells you how lonely the rebuild is.\n\nThey only see the result.","You don't need more information.\n\nYou need to start.","Done is better than perfect.\n\nAlways.","Your story is your strategy."][i]||"";}
                       return base;
                     });
-                    setTmplSlides(defaults);
-                    setTmplSlideCount(t.id==="listicle"?7:6);
-                    setTmplBrief("");
-                  }}
-                    style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,cursor:"pointer",transition:"border-color 0.2s,transform 0.15s"}}
-                    onMouseEnter={e=>{e.currentTarget.style.borderColor=GOLD;e.currentTarget.style.transform="translateY(-2px)";}}
-                    onMouseLeave={e=>{e.currentTarget.style.borderColor=A.border;e.currentTarget.style.transform="translateY(0)";}}>
+                    setTmplSlides(defaults); setTmplSlideCount(t.id==="listicle"?7:6); setTmplBrief("");
+                  }} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,cursor:"pointer",transition:"border-color 0.2s,transform 0.15s"}}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor=GOLD;e.currentTarget.style.transform="translateY(-2px)";}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor=A.border;e.currentTarget.style.transform="translateY(0)";}}>
                     <div style={{fontSize:28,marginBottom:8}}>{t.emoji}</div>
                     <div style={{fontSize:14,fontWeight:800,color:A.text,marginBottom:6}}>{t.label}</div>
                     <div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>{t.desc}</div>
@@ -2967,386 +2774,177 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 ))}
               </div>
             )}
-
-            {/* TEMPLATE BUILDER */}
             {tmplSelected&&(()=>{
-              const isListicle = tmplSelected==="listicle";
-              const isCleanPro = tmplSelected==="clean-pro";
-              const isStory = tmplSelected==="storytelling";
-              const isRaw = tmplSelected==="raw";
-              const isDarkFade = tmplSelected==="dark-fade";
-              const hasAI = isListicle||isCleanPro||isStory;
-              const maxSlides = isListicle?12:6;
-              const isFree = currentUser?.plan==="free";
-              const activeSlide = tmplActiveSlide||0;
-              const slide = tmplSlides[activeSlide]||{};
-
-              const opts = {
-                effect:tmplEffect, font:tmplFont, primary:tmplPrimary, secondary:tmplSecondary,
-                bg:tmplBg, fontStyle:tmplFontStyle, rawBox:tmplRawBox, rawPos:tmplRawPos,
-                listicleNum:tmplListicleNum, profUrl:profileUrl, nm:name, hdl:handle,
-                showTick:blueTick, isFree
-              };
-
-              // Debounced values for preview — prevents flash on every keystroke
-              const debouncedSlides = useDebouncedValue(tmplSlides, 300);
-              const debouncedOpts = useDebouncedValue(opts, 300);
-
-              // Generate preview HTML for active slide (debounced)
-              const previewHTML = buildTmplHTML(
-                debouncedSlides[activeSlide]||{},
-                activeSlide, tmplSlideCount, tmplSelected, debouncedOpts
-              );
-
-              // Generate thumb HTML for each slide (debounced)
-              const thumbHTMLs = debouncedSlides.slice(0,tmplSlideCount).map((s,i)=>
-                buildTmplHTML(s||{},i,tmplSlideCount,tmplSelected,debouncedOpts)
-              );
-
-              // Puppeteer download — same pipeline as Generate tab
-              const downloadSlide = async (idx) => {
+              const isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade";
+              const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:6,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
+              const opts={effect:tmplEffect,font:tmplFont,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree};
+              const dSlides=useDebouncedValue(tmplSlides,300),dOpts=useDebouncedValue(opts,300);
+              const previewHTML=buildTmplHTML(dSlides[activeSlide]||{},activeSlide,tmplSlideCount,tmplSelected,dOpts);
+              const thumbHTMLs=dSlides.slice(0,tmplSlideCount).map((s,i)=>buildTmplHTML(s||{},i,tmplSlideCount,tmplSelected,dOpts));
+              const downloadSlide=async(idx)=>{
                 if(!canGenerate()){setNav("upgrade");return;}
                 setTmplDownloadingIdx(idx);
-                try {
-                  const html = buildTmplHTML(tmplSlides[idx],idx,tmplSlideCount,tmplSelected,opts);
-                  const res = await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html,width:1080,height:1350})});
-                  const data = await res.json();
-                  if(!data.image) throw new Error(data.error||"Render failed");
-                  const bytes=atob(data.image), arr=new Uint8Array(bytes.length);
-                  for(let j=0;j<bytes.length;j++) arr[j]=bytes.charCodeAt(j);
+                try{
+                  const html=buildTmplHTML(tmplSlides[idx],idx,tmplSlideCount,tmplSelected,opts);
+                  const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html,width:1080,height:1350})});
+                  const data=await res.json();
+                  if(!data.image)throw new Error(data.error||"Render failed");
+                  const bytes=atob(data.image),arr=new Uint8Array(bytes.length);
+                  for(let j=0;j<bytes.length;j++)arr[j]=bytes.charCodeAt(j);
                   const url=URL.createObjectURL(new Blob([arr],{type:"image/png"}));
-                  const a=document.createElement("a");a.href=url;a.download=`${tmplSelected}-slide-${idx+1}.png`;a.click();
-                  URL.revokeObjectURL(url);
+                  const a=document.createElement("a");a.href=url;a.download=`${tmplSelected}-slide-${idx+1}.png`;a.click();URL.revokeObjectURL(url);
                   await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:5})});
                   setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));
-                } catch(e){console.error(e);alert("Download failed — please try again");}
+                }catch(e){console.error(e);alert("Download failed — try again");}
                 setTmplDownloadingIdx(null);
               };
-
-              const downloadAll = async () => {
+              const downloadAll=async()=>{
                 if(!canGenerate()){setNav("upgrade");return;}
                 setTmplDownloading(true);
-                try {
+                try{
                   for(let i=0;i<tmplSlideCount;i++){
                     const html=buildTmplHTML(tmplSlides[i],i,tmplSlideCount,tmplSelected,opts);
                     const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html,width:1080,height:1350})});
-                    const data=await res.json();
-                    if(!data.image) continue;
-                    const bytes=atob(data.image), arr=new Uint8Array(bytes.length);
-                    for(let j=0;j<bytes.length;j++) arr[j]=bytes.charCodeAt(j);
+                    const data=await res.json();if(!data.image)continue;
+                    const bytes=atob(data.image),arr=new Uint8Array(bytes.length);
+                    for(let j=0;j<bytes.length;j++)arr[j]=bytes.charCodeAt(j);
                     const url=URL.createObjectURL(new Blob([arr],{type:"image/png"}));
-                    const a=document.createElement("a");a.href=url;a.download=`${tmplSelected}-slide-${i+1}.png`;a.click();
-                    URL.revokeObjectURL(url);
+                    const a=document.createElement("a");a.href=url;a.download=`${tmplSelected}-slide-${i+1}.png`;a.click();URL.revokeObjectURL(url);
                     await new Promise(r=>setTimeout(r,400));
                   }
                   await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:10})});
                   setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+10}));
-                } catch(e){console.error(e);}
+                }catch(e){console.error(e);}
                 setTmplDownloading(false);
               };
-
-              const updateSlide = (field, val) => {
-                setTmplSlides(prev=>{const next=[...prev];next[activeSlide]={...next[activeSlide],[field]:val};return next;});
-              };
-
-              return (
-                <div>
-                  {/* Header */}
-                  <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
-                    <button onClick={()=>setTmplSelected(null)} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Templates</button>
-                    <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Dark Fade":isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":"Raw"}</span>
-                    {isFree&&<span style={{fontSize:11,color:"#e74c3c",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>Free plan — watermark on exports</span>}
-                  </div>
-
-                  {/* Main layout — mirror Generate preview */}
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:28,alignItems:"start"}}>
-
-                    {/* LEFT — large preview + thumbnails + download */}
-                    <div>
-                      {/* Main preview — HTML iframe, same output as Puppeteer export */}
-                      <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12}}>
-                        <div style={{position:"relative",width:"100%",paddingBottom:"125%"}}>
-                          <iframe
-                            key={`preview-${activeSlide}`}
-                            srcDoc={previewHTML}
-                            style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",border:"none",borderRadius:8,transform:"none"}}
-                            scrolling="no"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Thumbnail strip — iframes scaled down */}
-                      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-                        {thumbHTMLs.map((html,idx)=>(
-                          <div key={idx} onClick={()=>setTmplActiveSlide(idx)} style={{cursor:"pointer",position:"relative",flexShrink:0,width:86,height:108,borderRadius:6,overflow:"hidden",border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}>
-                            <iframe
-                              srcDoc={html}
-                              style={{width:1080,height:1350,border:"none",transform:"scale(0.0796)",transformOrigin:"top left",pointerEvents:"none"}}
-                              scrolling="no"
-                            />
-                            <div style={{position:"absolute",bottom:3,right:4,background:"rgba(0,0,0,0.7)",borderRadius:3,padding:"1px 5px",fontSize:9,color:"#fff",fontWeight:700,zIndex:2}}>{idx+1}</div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Download buttons */}
-                      <div style={{display:"flex",gap:8,marginBottom:8}}>
-                        <button onClick={()=>downloadSlide(activeSlide)} disabled={tmplDownloadingIdx===activeSlide} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                          {tmplDownloadingIdx===activeSlide?<><Spin c={A.text}/>Downloading...</>:`↓ Slide ${activeSlide+1}`}
-                        </button>
-                        <button onClick={downloadAll} disabled={tmplDownloading} style={{flex:2,background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,padding:"10px",borderRadius:9,fontSize:13,fontWeight:800,border:`1px solid ${GOLD}33`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                          {tmplDownloading?<><Spin/>Downloading...</>:`↓ Download All ${tmplSlideCount}`}
-                        </button>
+              const updateSlide=(field,val)=>setTmplSlides(prev=>{const next=[...prev];next[activeSlide]={...next[activeSlide],[field]:val};return next;});
+              return(<div>
+                <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+                  <button onClick={()=>setTmplSelected(null)} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Templates</button>
+                  <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Dark Fade":isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":"Raw"}</span>
+                  {isFree&&<span style={{fontSize:11,color:"#e74c3c",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>Free plan — watermark on exports</span>}
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:28,alignItems:"start"}}>
+                  <div>
+                    <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12}}>
+                      <div style={{position:"relative",width:"100%",paddingBottom:"125%"}}>
+                        <iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",border:"none",borderRadius:8}} scrolling="no"/>
                       </div>
                     </div>
-
-                    {/* RIGHT — controls panel */}
-                    <div style={{display:"flex",flexDirection:"column",gap:12}}>
-
-                      {/* Slide selector */}
-                      <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
-                        <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:10}}>Slide {activeSlide+1} of {tmplSlideCount}</div>
-                        <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:12}}>
-                          {tmplSlides.slice(0,tmplSlideCount).map((_,i)=>(
-                            <button key={i} onClick={()=>setTmplActiveSlide(i)} style={{width:27,height:27,borderRadius:6,background:activeSlide===i?A.text:A.surface,border:`1.5px solid ${activeSlide===i?GOLD:A.border}`,color:activeSlide===i?A.accentText:A.muted,fontSize:12,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
-                          ))}
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+                      {thumbHTMLs.map((html,idx)=>(
+                        <div key={idx} onClick={()=>setTmplActiveSlide(idx)} style={{cursor:"pointer",position:"relative",flexShrink:0,width:86,height:108,borderRadius:6,overflow:"hidden",border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}>
+                          <iframe srcDoc={html} style={{width:1080,height:1350,border:"none",transform:"scale(0.0796)",transformOrigin:"top left",pointerEvents:"none"}} scrolling="no"/>
+                          <div style={{position:"absolute",bottom:3,right:4,background:"rgba(0,0,0,0.7)",borderRadius:3,padding:"1px 5px",fontSize:9,color:"#fff",fontWeight:700,zIndex:2}}>{idx+1}</div>
                         </div>
-
-                        {/* Slide count */}
-                        <div style={{display:"flex",alignItems:"center",gap:8}}>
-                          <span style={{fontSize:11,color:A.muted}}>Slides:</span>
-                          <button onClick={()=>setTmplSlideCount(s=>Math.max(2,s-1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>−</button>
-                          <span style={{fontWeight:800,fontSize:14}}>{tmplSlideCount}</span>
-                          <button onClick={()=>setTmplSlideCount(s=>Math.min(maxSlides,s+1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>+</button>
-                          <span style={{fontSize:10,color:A.muted}}>max {maxSlides}</span>
-                          {isListicle&&(
-                            <>
-                              <span style={{fontSize:11,color:A.muted,marginLeft:8}}>№:</span>
-                              <button onClick={()=>setTmplListicleNum(n=>Math.max(1,n-1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>−</button>
-                              <span style={{fontWeight:800,fontSize:14,color:GOLD}}>{tmplListicleNum}</span>
-                              <button onClick={()=>setTmplListicleNum(n=>Math.min(11,n+1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>+</button>
-                            </>
-                          )}
-                        </div>
+                      ))}
+                    </div>
+                    <div style={{display:"flex",gap:8}}>
+                      <button onClick={()=>downloadSlide(activeSlide)} disabled={tmplDownloadingIdx===activeSlide} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                        {tmplDownloadingIdx===activeSlide?<><Spin c={A.text}/>Downloading...</>:`↓ Slide ${activeSlide+1}`}
+                      </button>
+                      <button onClick={downloadAll} disabled={tmplDownloading} style={{flex:2,background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,padding:"10px",borderRadius:9,fontSize:13,fontWeight:800,border:`1px solid ${GOLD}33`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                        {tmplDownloading?<><Spin/>Downloading...</>:`↓ Download All ${tmplSlideCount}`}
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                    <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
+                      <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:10}}>Slide {activeSlide+1} of {tmplSlideCount}</div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:12}}>
+                        {tmplSlides.slice(0,tmplSlideCount).map((_,i)=>(
+                          <button key={i} onClick={()=>setTmplActiveSlide(i)} style={{width:27,height:27,borderRadius:6,background:activeSlide===i?A.text:A.surface,border:`1.5px solid ${activeSlide===i?GOLD:A.border}`,color:activeSlide===i?A.accentText:A.muted,fontSize:12,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
+                        ))}
                       </div>
-
-                      {/* AI Brief */}
-                      {hasAI&&(
-                        <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
-                          <label style={{...lbl,color:GOLD,marginBottom:6}}>AI Brief</label>
-                          <textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={3} placeholder={isStory?"What's your story? Include names, places, feelings, turning point...":isListicle?"What's your list about? e.g. 6 travel spots for digital nomads":"What's this carousel about?"} style={{...inp,fontSize:12,lineHeight:1.5}}/>
-                          <div style={{fontSize:10,color:A.muted,marginTop:4}}>The more specific, the better. Powers ✨ AI Suggest on each slide.</div>
-                        </div>
-                      )}
-
-                      {/* Style controls */}
-                      {!isRaw&&!isStory&&(
-                        <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
-                          <label style={lbl}>Text Effect</label>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-                            {[["gold","GOLD"],["chrome","CHROME"],["neon","NEON"],["fire","FIRE"],["3d","3D"],["outline","OUTLINE"],["ice","ICE"],["clean","CLEAN"]].map(([id,label])=>(
-                              <button key={id} onClick={()=>setTmplEffect(id)} style={{padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplEffect===id?GOLD:A.border}`,background:tmplEffect===id?"#1a1500":A.bg,color:tmplEffect===id?GOLD:A.muted,fontSize:12,fontWeight:900,cursor:"pointer"}}>{label}</button>
-                            ))}
-                          </div>
-                          <label style={lbl}>Font</label>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-                            {[["'Bebas Neue'","BEBAS"],["'Anton'","ANTON"],["'Oswald'","OSWALD"],["'Teko'","TEKO"],["'Barlow Condensed'","BARLOW"],["'Archivo Black'","ARCHIVO"],["'Playfair Display'","Playfair"],["'Alfa Slab One'","Alfa Slab"]].map(([id,label])=>(
-                              <button key={id} onClick={()=>setTmplFont(id)} style={{padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplFont===id?GOLD:A.border}`,background:tmplFont===id?"#1a1500":A.bg,color:tmplFont===id?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:id}}>{label}</button>
-                            ))}
-                          </div>
-                          <label style={lbl}>Primary Colour</label>
-                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                            <input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{width:32,height:32,borderRadius:6,border:`1px solid ${A.border}`,background:"none",cursor:"pointer",padding:2,flexShrink:0}}/>
-                            <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,width:90,fontFamily:"monospace",fontSize:13,textTransform:"uppercase"}}/>
-                            <span style={{fontSize:10,color:A.muted}}>Effect · line · chevron</span>
-                          </div>
-                          <label style={lbl}>Secondary Colour</label>
-                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                            <input type="color" value={tmplSecondary} onChange={e=>setTmplSecondary(e.target.value)} style={{width:32,height:32,borderRadius:6,border:`1px solid ${A.border}`,background:"none",cursor:"pointer",padding:2,flexShrink:0}}/>
-                            <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} style={{...inp,width:90,fontFamily:"monospace",fontSize:13,textTransform:"uppercase"}}/>
-                            <span style={{fontSize:10,color:A.muted}}>Text · subline · gradient</span>
-                          </div>
-                          {isCleanPro&&(
-                            <>
-                              <label style={lbl}>Body Slide Background</label>
-                              <div style={{display:"flex",gap:8}}>
-                                {["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Story/Raw style controls */}
-                      {(isStory||isRaw)&&(
-                        <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
-                          {isStory&&(
-                            <>
-                              <label style={lbl}>Background</label>
-                              <div style={{display:"flex",gap:8}}>
-                                {["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}
-                              </div>
-                            </>
-                          )}
-                          {isRaw&&(
-                            <>
-                              <label style={lbl}>Text Box</label>
-                              <div style={{display:"flex",gap:8}}>
-                                {["white","black"].map(m=><button key={m} onClick={()=>setTmplRawBox(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawBox===m?GOLD:A.border}`,background:tmplRawBox===m?"#1a1500":A.bg,color:tmplRawBox===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}
-                              </div>
-                              <label style={lbl}>Text Position</label>
-                              <div style={{display:"flex",gap:8}}>
-                                {["bottom","centre"].map(m=><button key={m} onClick={()=>setTmplRawPos(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawPos===m?GOLD:A.border}`,background:tmplRawPos===m?"#1a1500":A.bg,color:tmplRawPos===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}
-                              </div>
-                            </>
-                          )}
-                          <label style={lbl}>Font Style</label>
-                          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                            {[["Inter","Clean"],["Times New Roman","Serif"],["Playfair Display","Feminine"]].map(([id,label])=>(
-                              <button key={id} onClick={()=>setTmplFontStyle(id)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplFontStyle===id?GOLD:A.border}`,background:tmplFontStyle===id?"#1a1500":A.bg,color:tmplFontStyle===id?GOLD:A.muted,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:id,fontStyle:id==="Playfair Display"?"italic":"normal"}}>{label}</button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Active slide inputs */}
-                      <div style={{background:A.surface,border:`1.5px solid ${activeSlide===0?GOLD:A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
-                        <div style={{fontSize:12,fontWeight:800,color:activeSlide===0?GOLD:A.text}}>
-                          {activeSlide===0?"Cover Slide — scroll stopper":`Slide ${activeSlide+1}`}
-                        </div>
-
-                        {/* Image upload */}
-                        {(isDarkFade||(isListicle&&activeSlide===0)||(isCleanPro&&activeSlide===0)||isRaw)&&(
-                          <div>
-                            <label style={lbl}>Photo</label>
-                            <div style={{display:"flex",gap:10,alignItems:"flex-start",flexWrap:"wrap"}}>
-                              <div onClick={()=>{const inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>updateSlide("image",ev.target.result);r.readAsDataURL(f);};inp.click();}} style={{width:72,height:72,borderRadius:8,border:`1.5px dashed ${slide.image?GOLD:A.border}`,background:A.bg,overflow:"hidden",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                                {slide.image?<img src={slide.image} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:A.muted,fontSize:24}}>+</span>}
-                              </div>
-                              {slide.image&&(
-                                <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:3,width:72}}>
-                                    <div/>
-                                    <button onClick={()=>updateSlide("imagePos",{x:slide.imagePos?.x||50,y:Math.max(0,(slide.imagePos?.y||50)-10)})} style={{width:22,height:22,borderRadius:4,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:10,cursor:"pointer"}}>↑</button>
-                                    <div/>
-                                    <button onClick={()=>updateSlide("imagePos",{x:Math.max(0,(slide.imagePos?.x||50)-10),y:slide.imagePos?.y||50})} style={{width:22,height:22,borderRadius:4,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:10,cursor:"pointer"}}>←</button>
-                                    <div style={{width:22,height:22,borderRadius:4,background:A.surface,border:`1px solid ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:8,color:A.muted}}>⊙</span></div>
-                                    <button onClick={()=>updateSlide("imagePos",{x:Math.min(100,(slide.imagePos?.x||50)+10),y:slide.imagePos?.y||50})} style={{width:22,height:22,borderRadius:4,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:10,cursor:"pointer"}}>→</button>
-                                    <div/>
-                                    <button onClick={()=>updateSlide("imagePos",{x:slide.imagePos?.x||50,y:Math.min(100,(slide.imagePos?.y||50)+10)})} style={{width:22,height:22,borderRadius:4,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:10,cursor:"pointer"}}>↓</button>
-                                    <div/>
-                                  </div>
-                                  <button onClick={()=>updateSlide("image",null)} style={{fontSize:10,color:"#e74c3c",background:"none",border:"none",cursor:"pointer",textAlign:"center"}}>Remove</button>
-                                </div>
-                              )}
-                              {coverPhotos?.length>0&&(
-                                <div style={{display:"flex",gap:3,flexWrap:"wrap",maxWidth:140}}>
-                                  {coverPhotos.slice(0,6).map((p,pi)=>(
-                                    <div key={pi} onClick={()=>updateSlide("image",p)} style={{width:28,height:28,borderRadius:5,overflow:"hidden",cursor:"pointer",border:`1px solid ${A.border}`}}>
-                                      <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                                    </div>
-                                  ))}
-                                  <span style={{fontSize:9,color:A.muted,alignSelf:"center"}}>library</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Text inputs per template */}
-                        {(isDarkFade||(isCleanPro&&activeSlide===0))&&(
-                          <>
-                            <label style={lbl}>Headline</label>
-                            <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Hook headline — make them swipe" style={{...inp}}/>
-                            <label style={lbl}>Subline</label>
-                            <input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} placeholder="Supporting line (optional)" style={{...inp}}/>
-                          </>
-                        )}
-
-                        {isListicle&&activeSlide===0&&(
-                          <>
-                            <label style={lbl}>Topic Line</label>
-                            <input value={slide.topicLine||""} onChange={e=>updateSlide("topicLine",e.target.value)} placeholder="PLACES YOU MUST VISIT BEFORE" style={{...inp}}/>
-                            <label style={lbl}>Subject</label>
-                            <input value={slide.subject||""} onChange={e=>updateSlide("subject",e.target.value)} placeholder="2026 ENDS" style={{...inp}}/>
-                            <label style={lbl}>Subline</label>
-                            <input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} placeholder="Swipe to see them all." style={{...inp}}/>
-                          </>
-                        )}
-
-                        {isListicle&&activeSlide>0&&(
-                          <>
-                            <label style={lbl}>Point {activeSlide} — Headline</label>
-                            <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder={`Point ${activeSlide} headline (optional)`} style={{...inp}}/>
-                            <label style={lbl}>Detail</label>
-                            <div style={{position:"relative"}}>
-                              <textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="The tip, fact or detail for this point" rows={3} style={{...inp,resize:"vertical",paddingRight:72}}/>
-                              <button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button>
-                            </div>
-                          </>
-                        )}
-
-                        {isCleanPro&&activeSlide>0&&(
-                          <>
-                            <label style={lbl}>Headline</label>
-                            <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Headline (optional)" style={{...inp}}/>
-                            <label style={lbl}>Body Text</label>
-                            <div style={{position:"relative"}}>
-                              <textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="Body text — the detail" rows={4} style={{...inp,resize:"vertical",paddingRight:72}}/>
-                              <button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button>
-                            </div>
-                            <label style={lbl}>Accent Sub-text</label>
-                            <input value={slide.accentText||""} onChange={e=>updateSlide("accentText",e.target.value)} placeholder="Key takeaway line in accent colour" style={{...inp}}/>
-                          </>
-                        )}
-
-                        {isStory&&(
-                          <>
-                            <label style={lbl}>Story Text — Slide {activeSlide+1}</label>
-                            <div style={{position:"relative"}}>
-                              <textarea value={slide.storyText||""} onChange={e=>updateSlide("storyText",e.target.value)} placeholder="Your story paragraph. Use line breaks to separate paragraphs. Keep it real and specific." rows={6} style={{...inp,resize:"vertical",paddingRight:72,lineHeight:1.6}}/>
-                              <button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button>
-                            </div>
-                          </>
-                        )}
-
-                        {isRaw&&(
-                          <>
-                            <label style={lbl}>Your Text</label>
-                            <textarea value={slide.rawText||""} onChange={e=>updateSlide("rawText",e.target.value)} placeholder={"Type exactly what you want to say.\n\nUse line breaks to separate thoughts.\n\nKeep it real."} rows={5} style={{...inp,resize:"vertical",lineHeight:1.6,wordBreak:"break-word",whiteSpace:"pre-wrap"}}/>
-                          </>
-                        )}
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{fontSize:11,color:A.muted}}>Slides:</span>
+                        <button onClick={()=>setTmplSlideCount(s=>Math.max(2,s-1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>−</button>
+                        <span style={{fontWeight:800,fontSize:14}}>{tmplSlideCount}</span>
+                        <button onClick={()=>setTmplSlideCount(s=>Math.min(maxSlides,s+1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>+</button>
+                        <span style={{fontSize:10,color:A.muted}}>max {maxSlides}</span>
+                        {isListicle&&<><span style={{fontSize:11,color:A.muted,marginLeft:8}}>№:</span><button onClick={()=>setTmplListicleNum(n=>Math.max(1,n-1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>−</button><span style={{fontWeight:800,fontSize:14,color:GOLD}}>{tmplListicleNum}</span><button onClick={()=>setTmplListicleNum(n=>Math.min(11,n+1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>+</button></>}
                       </div>
+                    </div>
+                    {hasAI&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
+                      <label style={{...lbl,color:GOLD,marginBottom:6}}>AI Brief</label>
+                      <textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={3} placeholder={isStory?"Your story — include names, places, feelings, turning point...":isListicle?"What's your list about?":"What's this carousel about?"} style={{...inp,fontSize:12,lineHeight:1.5}}/>
+                      <div style={{fontSize:10,color:A.muted,marginTop:4}}>Powers ✨ AI Suggest on each slide.</div>
+                    </div>}
+                    {!isRaw&&!isStory&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                      <label style={lbl}>Text Effect</label>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+                        {[["gold","GOLD"],["chrome","CHROME"],["neon","NEON"],["fire","FIRE"],["3d","3D"],["outline","OUTLINE"],["ice","ICE"],["clean","CLEAN"]].map(([id,label])=>(
+                          <button key={id} onClick={()=>setTmplEffect(id)} style={{padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplEffect===id?GOLD:A.border}`,background:tmplEffect===id?"#1a1500":A.bg,color:tmplEffect===id?GOLD:A.muted,fontSize:12,fontWeight:900,cursor:"pointer"}}>{label}</button>
+                        ))}
+                      </div>
+                      <label style={lbl}>Font</label>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+                        {[["Bebas Neue","BEBAS"],["Anton","ANTON"],["Oswald","OSWALD"],["Teko","TEKO"],["Barlow Condensed","BARLOW"],["Archivo Black","ARCHIVO"],["Playfair Display","Playfair"],["Alfa Slab One","Alfa Slab"]].map(([id,label])=>(
+                          <button key={id} onClick={()=>setTmplFont(id)} style={{padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplFont===id?GOLD:A.border}`,background:tmplFont===id?"#1a1500":A.bg,color:tmplFont===id?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer"}}>{label}</button>
+                        ))}
+                      </div>
+                      <label style={lbl}>Primary Colour</label>
+                      <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                        <input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{width:32,height:32,borderRadius:6,border:`1px solid ${A.border}`,background:"none",cursor:"pointer",padding:2,flexShrink:0}}/>
+                        <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,width:90,fontFamily:"monospace",fontSize:13,textTransform:"uppercase"}}/>
+                        <span style={{fontSize:10,color:A.muted}}>Effect · line · chevron</span>
+                      </div>
+                      <label style={lbl}>Secondary Colour</label>
+                      <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                        <input type="color" value={tmplSecondary} onChange={e=>setTmplSecondary(e.target.value)} style={{width:32,height:32,borderRadius:6,border:`1px solid ${A.border}`,background:"none",cursor:"pointer",padding:2,flexShrink:0}}/>
+                        <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} style={{...inp,width:90,fontFamily:"monospace",fontSize:13,textTransform:"uppercase"}}/>
+                        <span style={{fontSize:10,color:A.muted}}>Text · subline · gradient</span>
+                      </div>
+                      {isCleanPro&&<><label style={lbl}>Body Background</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
+                    </div>}
+                    {(isStory||isRaw)&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                      {isStory&&<><label style={lbl}>Background</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
+                      {isRaw&&<><label style={lbl}>Text Box</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplRawBox(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawBox===m?GOLD:A.border}`,background:tmplRawBox===m?"#1a1500":A.bg,color:tmplRawBox===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div><label style={lbl}>Position</label><div style={{display:"flex",gap:8}}>{["bottom","centre"].map(m=><button key={m} onClick={()=>setTmplRawPos(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawPos===m?GOLD:A.border}`,background:tmplRawPos===m?"#1a1500":A.bg,color:tmplRawPos===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
+                      <label style={lbl}>Font Style</label>
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                        {[["Inter","Clean"],["Times New Roman","Serif"],["Playfair Display","Feminine"]].map(([id,label])=>(
+                          <button key={id} onClick={()=>setTmplFontStyle(id)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplFontStyle===id?GOLD:A.border}`,background:tmplFontStyle===id?"#1a1500":A.bg,color:tmplFontStyle===id?GOLD:A.muted,fontSize:12,fontWeight:600,cursor:"pointer"}}>{label}</button>
+                        ))}
+                      </div>
+                    </div>}
+                    <div style={{background:A.surface,border:`1.5px solid ${activeSlide===0?GOLD:A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                      <div style={{fontSize:12,fontWeight:800,color:activeSlide===0?GOLD:A.text}}>{activeSlide===0?"Cover Slide — scroll stopper":`Slide ${activeSlide+1}`}</div>
+                      {(isDarkFade||(isListicle&&activeSlide===0)||(isCleanPro&&activeSlide===0)||isRaw)&&(
+                        <div>
+                          <label style={lbl}>Photo</label>
+                          <div style={{display:"flex",gap:10,alignItems:"flex-start",flexWrap:"wrap"}}>
+                            <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>updateSlide("image",ev.target.result);r.readAsDataURL(f);};i.click();}} style={{width:72,height:72,borderRadius:8,border:`1.5px dashed ${slide.image?GOLD:A.border}`,background:A.bg,overflow:"hidden",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              {slide.image?<img src={slide.image} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:A.muted,fontSize:24}}>+</span>}
+                            </div>
+                            {slide.image&&<button onClick={()=>updateSlide("image",null)} style={{fontSize:11,color:"#e74c3c",background:"none",border:"none",cursor:"pointer",alignSelf:"center"}}>Remove</button>}
+                            {coverPhotos?.length>0&&<div style={{display:"flex",gap:3,flexWrap:"wrap",maxWidth:140}}>
+                              {coverPhotos.slice(0,6).map((p,pi)=>(
+                                <div key={pi} onClick={()=>updateSlide("image",p)} style={{width:28,height:28,borderRadius:5,overflow:"hidden",cursor:"pointer",border:`1px solid ${A.border}`}}>
+                                  <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                                </div>
+                              ))}
+                              <span style={{fontSize:9,color:A.muted,alignSelf:"center"}}>library</span>
+                            </div>}
+                          </div>
+                        </div>
+                      )}
+                      {(isDarkFade||(isCleanPro&&activeSlide===0))&&<><label style={lbl}>Headline</label><input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Hook headline" style={{...inp}}/><label style={lbl}>Subline</label><input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} placeholder="Supporting line (optional)" style={{...inp}}/></>}
+                      {isListicle&&activeSlide===0&&<><label style={lbl}>Topic Line</label><input value={slide.topicLine||""} onChange={e=>updateSlide("topicLine",e.target.value)} style={{...inp}}/><label style={lbl}>Subject</label><input value={slide.subject||""} onChange={e=>updateSlide("subject",e.target.value)} style={{...inp}}/><label style={lbl}>Subline</label><input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} style={{...inp}}/></>}
+                      {isListicle&&activeSlide>0&&<><label style={lbl}>Point {activeSlide} — Headline</label><input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder={`Point ${activeSlide} headline (optional)`} style={{...inp}}/><label style={lbl}>Detail</label><div style={{position:"relative"}}><textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="The tip, fact or detail" rows={3} style={{...inp,resize:"vertical",paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div></>}
+                      {isCleanPro&&activeSlide>0&&<><label style={lbl}>Headline</label><input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Headline (optional)" style={{...inp}}/><label style={lbl}>Body Text</label><div style={{position:"relative"}}><textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="Body text" rows={4} style={{...inp,resize:"vertical",paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div><label style={lbl}>Accent Sub-text</label><input value={slide.accentText||""} onChange={e=>updateSlide("accentText",e.target.value)} placeholder="Key takeaway in accent colour" style={{...inp}}/></>}
+                      {isStory&&<><label style={lbl}>Story Text — Slide {activeSlide+1}</label><div style={{position:"relative"}}><textarea value={slide.storyText||""} onChange={e=>updateSlide("storyText",e.target.value)} placeholder="Your story paragraph. Use line breaks to separate paragraphs." rows={6} style={{...inp,resize:"vertical",paddingRight:72,lineHeight:1.6}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div></>}
+                      {isRaw&&<><label style={lbl}>Your Text</label><textarea value={slide.rawText||""} onChange={e=>updateSlide("rawText",e.target.value)} placeholder={"Type exactly what you want.\n\nUse line breaks to separate thoughts."} rows={5} style={{...inp,resize:"vertical",lineHeight:1.6,wordBreak:"break-word",whiteSpace:"pre-wrap"}}/></>}
                     </div>
                   </div>
                 </div>
-              );
+              </div>);
             })()}
           </div>
         )}
 
-
-                {nav==="brand"&&(
+        {nav==="brand"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Brand</h2>
-            {currentUser?.is_admin&&(
-              <div style={{background:"#1a1500",border:`1.5px solid ${GOLD}`,borderRadius:12,padding:16,marginBottom:20}}>
-                <label style={{...lbl,color:GOLD}}>Admin — Brand Presets</label>
-                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10,marginBottom:10}}>
-                  {adminPresets.map(p=>(
-                    <div key={p.id} style={{display:"flex",alignItems:"center",gap:4,background:adminActivePreset===p.id?GOLD:A.bg,border:`1px solid ${A.border}`,borderRadius:8,padding:"4px 4px 4px 10px"}}>
-                      <span onClick={()=>loadAdminPreset(p.id)} style={{cursor:"pointer",fontSize:12,fontWeight:700,color:adminActivePreset===p.id?"#000":A.text}}>{p.label}</span>
-                      <button onClick={()=>deleteAdminPreset(p.id)} style={{background:"none",border:"none",color:adminActivePreset===p.id?"#000":A.muted,cursor:"pointer",fontSize:12,padding:"2px 6px"}}>×</button>
-                    </div>
-                  ))}
-                  {adminPresets.length===0&&<span style={{fontSize:12,color:A.muted}}>No presets saved yet.</span>}
-                </div>
-                <div style={{display:"flex",gap:8}}>
-                  <input value={adminPresetName} onChange={e=>setAdminPresetName(e.target.value)} placeholder="Preset name e.g. Client X" style={{...inp,flex:1}}/>
-                  <button onClick={saveAdminPreset} style={{padding:"8px 16px",background:GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:12,border:"none",whiteSpace:"nowrap"}}>Save Current</button>
-                </div>
-              </div>
-            )}
             <div style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:24,alignItems:"start"}} className="brand-grid">
               <div style={{display:"flex",flexDirection:"column",gap:20}}>
 
@@ -3419,55 +3017,22 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               <div style={{position:"sticky",top:80}}>
                 <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                   <label style={lbl}>Cover photo library</label>
-                  <p style={{color:A.muted,fontSize:12,margin:"0 0 12px",lineHeight:1.6}}>Upload and save up to 10 images. Pick one per generation. Used on cover slide only.</p>
+                  <p style={{color:A.muted,fontSize:12,margin:"0 0 12px",lineHeight:1.6}}>Save up to 8 photos. Pick one per generation. Used on cover slide only.</p>
                   <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
                     {coverPhotos.map((p,i)=>(
-                      <div key={i} style={{position:"relative",flexShrink:0}}>
-                        <div onClick={()=>{if(activeCoverPhoto===p){setActiveCoverPhoto(null);if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);}else{setActiveCoverPhoto(p);sampleImageBrightness(p).then(result=>{setBadgeArea(result);if(result==="light")setCustomColourDark(false);else setCustomColourDark(true);});}}} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:activeCoverPhoto===p?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
+                      <div key={i} style={{position:"relative"}}>
+                        <div onClick={()=>{setActiveCoverPhoto(p);sampleImageBrightness(p).then(setBadgeArea);}} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:`2px solid ${activeCoverPhoto===p?GOLD:A.border}`,cursor:"pointer"}}>
                           <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                         </div>
-                        {activeCoverPhoto===p&&<div onClick={()=>{setActiveCoverPhoto(null);if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);}} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
-                        <div onClick={()=>{if(window.confirm("Remove this photo from your library? This cannot be undone.")){const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);setTemplatePhotos(next);if(activeCoverPhoto===p){setActiveCoverPhoto(next[0]||null);if(!next[0]){if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);}}}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
+                        <button onClick={()=>{if(window.confirm("Remove this photo from your library? This cannot be undone.")){const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);if(activeCoverPhoto===p)setActiveCoverPhoto(next[0]||null);}}} style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#c0392b",color:"#fff",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>×</button>
                       </div>
                     ))}
-                    {coverPhotos.length < 10 && (
+                    {coverPhotos.length < 8 && (
                       <div onClick={()=>coverPhotoRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:28}}>+</div>
                     )}
                   </div>
                   <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
-                  {isPexelsUser ? (
-                    <button onClick={()=>setShowPexelsCover(true)} style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                      🔍 Search 1000s of free images
-                    </button>
-                  ) : (
-                    <div title="Upgrade to Pro to search Pexels" style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:12,textAlign:"center",marginBottom:10,cursor:"not-allowed",opacity:0.6}}>
-                      🔍 Search Pexels — Pro+ only
-                    </div>
-                  )}
-                  {activeCoverPhoto&&(
-                    <div style={{marginBottom:12}}>
-                      <label style={{...lbl,fontSize:11,marginBottom:6,display:"block"}}>Photo opacity — {photoOpacity}% <span style={{fontWeight:400,fontSize:9}}>(lower = more faded)</span></label>
-                      <input type="range" min={10} max={100} value={photoOpacity} onChange={e=>setPhotoOpacity(+e.target.value)} style={{width:"100%"}}/>
-                      <label style={{...lbl,fontSize:11,marginBottom:6,marginTop:10,display:"block"}}>Photo overlay — {overlayDark}% <span style={{fontWeight:400,fontSize:9}}>(higher = darker)</span></label>
-                      <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
-                    </div>
-                  )}
-                  <div style={{display:"flex",gap:8,marginBottom:14}}>
-                    <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>White text</button>
-                    <button onClick={()=>setCustomColourDark(false)} style={{flex:1,padding:"7px",borderRadius:8,border:`1.5px solid ${!customColourDark?GOLD:A.border}`,background:!customColourDark?"#fff":A.bg,color:!customColourDark?"#000":A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>Dark text</button>
-                  </div>
-                  {(()=>{
-                    const coverSlide = {headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null};
-                    return (
-                      <div style={{marginBottom:14}}>
-                        <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                          <SlidePreview slide={coverSlide} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
-                        </div>
-                        <p style={{color:A.muted,fontSize:11,marginTop:8}}>{activeCoverPhoto?"Select a position below to adjust badge and headline placement.":"No cover photo selected — showing your background defaults as set in the Visual tab."}</p>
-                      </div>
-                    );
-                  })()}
-                  <label style={{...lbl,marginTop:4}}>Badge & hook position on cover</label>
+                  <label style={{...lbl,marginTop:14}}>Badge & hook position on cover</label>
                   <div style={{display:"flex",gap:8,marginBottom:14}}>
                     {COVER_POSITIONS.map(p=>(
                       <button key={p.id} onClick={()=>setCoverPosition(p.id)} style={{flex:1,background:coverPosition===p.id?A.text:A.bg,border:`1.5px solid ${coverPosition===p.id?A.text:A.border}`,borderRadius:8,padding:"8px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
@@ -3476,6 +3041,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       </button>
                     ))}
                   </div>
+                  {activeCoverPhoto&&(()=>{
+                    const coverSlide = {headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null};
+                    return (
+                      <div>
+                        <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                          <SlidePreview slide={coverSlide} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
+                        </div>
+                        <p style={{color:A.muted,fontSize:11,marginTop:8}}>Switch position above to see how badge and headline sit on your photo.</p>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -3618,7 +3194,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         <input type="color" value={bgColour} onChange={e=>setBgColour(e.target.value)} style={{width:40,height:40,borderRadius:8,border:`1px solid ${A.border}`,cursor:"pointer",padding:2}}/>
                         <input value={bgColour} onChange={e=>setBgColour(e.target.value)} placeholder="#1a1a2e" style={{...inp,flex:1,fontSize:13}}/>
                       </div>
-
+                      <div style={{display:"flex",gap:8,marginTop:12}}>
+                        <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>White text</button>
+                        <button onClick={()=>setCustomColourDark(false)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${!customColourDark?GOLD:A.border}`,background:!customColourDark?"#fff":A.bg,color:!customColourDark?"#000":A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>Dark text</button>
+                      </div>
                     </div>
                   )}
                   {bgMode==="custom"&&(
@@ -3626,33 +3205,20 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       {templatePhotos.length > 0 ? (
                         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
                           {templatePhotos.map((photo,i)=>(
-                            <div key={i} style={{position:"relative",flexShrink:0}}>
-                              <div onClick={()=>{if(templateBgUrl===photo){setTemplateBgUrl(null);setSlideTextDark(false);}else setTemplateBgUrl(photo);}} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:templateBgUrl===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
-                                <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                              </div>
-                              {templateBgUrl===photo&&<div onClick={()=>{setTemplateBgUrl(null);setSlideTextDark(false);}} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
-                              <div onClick={()=>{if(window.confirm("Remove this image from your library? This cannot be undone.")){removeFromSharedLibrary(photo);}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
+                            <div key={i} onClick={()=>setTemplateBgUrl(photo)} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:templateBgUrl===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0}}>
+                              <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                             </div>
                           ))}
-                          {templatePhotos.length < 10 && (
+                          {templatePhotos.length < 8 && (
                             <div onClick={()=>templateBgRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
                           )}
                         </div>
                       ) : (
                         <div onClick={()=>templateBgRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:"12px",cursor:"pointer",textAlign:"center",marginBottom:8}}>
-                          <span style={{fontSize:12,fontWeight:600,color:A.muted}}>Upload and save up to 10 custom images</span>
+                          <span style={{fontSize:12,fontWeight:600,color:A.muted}}>Upload background images (up to 8)</span>
                         </div>
                       )}
-                      <p style={{color:A.muted,fontSize:11,margin:"0 0 8px",lineHeight:1.6}}>Safe zone: keep important elements within 80px from each edge. Recommended size: 1080×1350px.</p>
-                      {isPexelsUser ? (
-                        <button onClick={()=>setShowPexelsTemplate(true)} style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                          🔍 Search 1000s of free backgrounds
-                        </button>
-                      ) : (
-                        <div title="Upgrade to Pro to search Pexels" style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:12,textAlign:"center",marginBottom:10,cursor:"not-allowed",opacity:0.6}}>
-                          🔍 Search 1000s of free backgrounds — Pro+
-                        </div>
-                      )}
+                      <p style={{color:A.muted,fontSize:11,margin:"0 0 12px",lineHeight:1.6}}>Safe zone: keep important elements within 80px from each edge. Recommended size: 1080×1350px.</p>
                       <input ref={templateBgRef} type="file" accept="image/*" onChange={async e=>{
                       const file = e.target.files[0]; if(!file) return;
                       const reader = new FileReader();
@@ -3668,9 +3234,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           const data = await res.json();
                           if (data.url) {
                             setTemplateBgUrl(data.url);
-                            const next = [data.url, ...coverPhotos.filter(p=>p!==data.url)].slice(0,10);
-                            setCoverPhotos(next);
-                            setTemplatePhotos(next);
+                            setTemplatePhotos(prev => [data.url, ...prev.filter(p=>p!==data.url)].slice(0,8));
                           }
                         } catch(err) { console.error('Template upload failed:', err); }
                       };
@@ -3681,11 +3245,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   <div style={{padding:8,background:A.bg,borderRadius:12,border:`1.5px solid ${A.border}`,marginTop:16}}><div style={{borderRadius:8,overflow:"hidden"}}>
                     <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
                   </div></div>
-                  <p style={{color:A.muted,fontSize:11,marginTop:8}}>{bgMode==="custom"&&templateBgUrl?"Image selected — use White/Dark text to match.":bgMode==="custom"?"No image selected — showing background defaults.":`Preview reflects your ${bgMode} background setting.`}</p>
-                  <div style={{display:"flex",gap:8,marginTop:10}}>
-                    <button onClick={()=>setSlideTextDark(true)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${slideTextDark?GOLD:A.border}`,background:slideTextDark?A.text:A.bg,color:slideTextDark?A.accentText:A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>White text</button>
-                    <button onClick={()=>setSlideTextDark(false)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${!slideTextDark?GOLD:A.border}`,background:!slideTextDark?"#fff":A.bg,color:!slideTextDark?"#000":A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>Dark text</button>
-                  </div>
+                  {bgMode==="custom"&&templateBgUrl&&(
+                    <div style={{display:"flex",gap:8,marginTop:12}}>
+                      <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>White text</button>
+                      <button onClick={()=>setCustomColourDark(false)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${!customColourDark?GOLD:A.border}`,background:!customColourDark?"#fff":A.bg,color:!customColourDark?"#000":A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>Dark text</button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -3729,17 +3294,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     {downloadingAll?<><Spin/>Downloading...</>:downloadDone?"✓ All Downloaded":`↓ Download All ${slides.length} (zip)`}
                   </button>
                 </div>
-                <button onClick={()=>{
-                  const entry={id:Date.now(),brief,audience:audienceType,slides:slides.map(s=>({...s})),createdAt:new Date().toISOString(),savedManually:true};
-                  const existing=JSON.parse(localStorage.getItem("bwt_v12")||"{}");
-                  const hist=existing.history||[];
-                  hist.unshift(entry);
-                  if(hist.length>20)hist.pop();
-                  localStorage.setItem("bwt_v12",JSON.stringify({...existing,history:hist}));
-                  alert("✓ Saved to History");
-                }} style={{width:"100%",padding:"10px",background:"none",border:`1px solid ${A.border}`,color:A.muted,borderRadius:9,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"center"}}>
-                  💾 Save this version to History
-                </button>
                 <button onClick={()=>setEditDrawerOpen(true)} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:14,color:A.text,cursor:"pointer",marginTop:8,textAlign:"center"}}>Edit Slide {active+1}</button>
                 <button onClick={generateCaption} disabled={generatingCaption} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:14,color:A.text,cursor:"pointer",marginTop:8,textAlign:"center"}}>
                   {generatingCaption?"Writing caption...":"Generate Caption"}
@@ -3824,7 +3378,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           </div>
         )}
       </div>
-
 
         {nav==="help"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:960,margin:"0 auto"}}>
@@ -3984,7 +3537,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       <div style={{fontSize:12,color:A.text,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                         {"https://studio.buildwithtav.co/landing?sa="+affiliateStats.affiliate_id}
                       </div>
-                      <button onClick={()=>{try{navigator.clipboard.writeText("https://studio.buildwithtav.co/landing?sa="+affiliateStats.affiliate_id);setAffiliateLinkCopied(true);setTimeout(()=>setAffiliateLinkCopied(false),2000);}catch{}}} style={{padding:"6px 12px",background:affiliateLinkCopied?"#27ae60":GOLD,color:affiliateLinkCopied?"#fff":"#000",borderRadius:6,fontWeight:700,fontSize:11,border:"none",flexShrink:0,transition:"background 0.2s"}}>{affiliateLinkCopied?"✓ Copied":"Copy"}</button>
+                      <button onClick={()=>{try{navigator.clipboard.writeText("https://studio.buildwithtav.co/landing?sa="+affiliateStats.affiliate_id);}catch{}}} style={{padding:"6px 12px",background:GOLD,color:"#000",borderRadius:6,fontWeight:700,fontSize:11,border:"none",flexShrink:0}}>Copy</button>
                     </div>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
@@ -4301,68 +3854,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           </div>
         )}
 
-      <PexelsModal
-        open={showPexelsCover}
-        onClose={()=>setShowPexelsCover(false)}
-        onSelect={async (url)=>{ await addCoverPhoto(url); }}
-        A={A}
-        GOLD={GOLD}
-      />
-      <PexelsModal
-        open={showPexelsTemplate}
-        onClose={()=>setShowPexelsTemplate(false)}
-        onSelect={async (url)=>{
-          setTemplateBgUrl(url);
-          try {
-            const res = await fetch("/api/upload-photo", {
-              method:"POST",
-              headers:{"Content-Type":"application/json"},
-              body: JSON.stringify({ imageData: url, filename: `template-pexels-${Date.now()}.jpg` }),
-            });
-            const data = await res.json();
-            if (data.url) {
-              setTemplateBgUrl(data.url);
-              const next = [data.url,...coverPhotos.filter(p=>p!==data.url)].slice(0,10);
-              setCoverPhotos(next); setTemplatePhotos(next);
-            } else {
-              const next = [url,...coverPhotos.filter(p=>p!==url)].slice(0,10);
-              setCoverPhotos(next); setTemplatePhotos(next);
-            }
-          } catch(e) {
-            console.error("Template Pexels save failed:",e);
-            const next = [url,...coverPhotos.filter(p=>p!==url)].slice(0,10);
-            setCoverPhotos(next); setTemplatePhotos(next);
-          }
-        }}
-        A={A}
-        GOLD={GOLD}
-      />
-      <PexelsModal
-        open={showPexelsQuote}
-        onClose={()=>setShowPexelsQuote(false)}
-        onSelect={async (url)=>{
-          setQuoteBgCustomUrl(url);
-          try {
-            const res = await fetch("/api/upload-photo", {
-              method:"POST",
-              headers:{"Content-Type":"application/json"},
-              body: JSON.stringify({ imageData: url, filename: `quotebg-pexels-${Date.now()}.jpg` }),
-            });
-            const data = await res.json();
-            if (data.url) {
-              setQuoteBgCustomUrl(data.url);
-              setQuotePhotos(prev=>[data.url,...prev.filter(p=>p!==data.url)].slice(0,8));
-            } else {
-              setQuotePhotos(prev=>[url,...prev.filter(p=>p!==url)].slice(0,8));
-            }
-          } catch(e) {
-            console.error("Quote Pexels save failed:",e);
-            setQuotePhotos(prev=>[url,...prev.filter(p=>p!==url)].slice(0,8));
-          }
-        }}
-        A={A}
-        GOLD={GOLD}
-      />
+
+
       <footer style={{borderTop:`1px solid ${A.border}`,padding:"14px 32px",textAlign:"center",marginTop:60}}>
         <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:GOLD,fontWeight:700,textDecoration:"none",fontSize:12}}>BuildWithTav</a>
         <span style={{color:A.muted,fontSize:12}}> · </span>
