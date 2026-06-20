@@ -1849,7 +1849,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       const tc=dark?"#fff":"#0a0a0a",sc=dark?"rgba(255,255,255,0.55)":"rgba(0,0,0,0.45)";
       const tick=showTick?"<span style='display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#1D9BF0;border-radius:50%;margin-left:8px;vertical-align:middle;flex-shrink:0;'><span style='display:block;width:8px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);margin-top:-2px;'></span></span>":"";
       const av=profUrl?"<img src='"+esc(profUrl)+"' style='width:100%;height:100%;object-fit:cover;border-radius:50%;'/>"  :"<div style='width:100%;height:100%;background:#4a6a9a;border-radius:50%;'></div>";
-      return"<div style='display:flex;align-items:center;gap:18px;'><div style='width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid #fff;flex-shrink:0;background:#4a6a9a;'>"+av+"</div><div style='display:flex;flex-direction:column;gap:4px;'><div style='display:flex;align-items:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;font-weight:800;color:"+tc+";text-shadow:0 1px 6px rgba(0,0,0,0.5);'>"+esc(nm||"")+tick+"</div><div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:28px;color:"+sc+";text-shadow:0 1px 4px rgba(0,0,0,0.4);'>"+esc(hdl||"")+"</div></div></div>";
+      return"<div style='display:flex;align-items:center;gap:18px;'><div style='width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid #fff;flex-shrink:0;background:#4a6a9a;'>"+av+"</div><div style='display:flex;flex-direction:column;gap:4px;'><div style='display:flex;align-items:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;font-weight:800;color:"+tc+";'>"+esc(nm||"")+tick+"</div><div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:28px;color:"+sc+";'>"+esc(hdl||"")+"</div></div></div>";
     }
     const grad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 28%,rgba(0,0,0,0.08) 44%,rgba(0,0,0,0.35) 54%,rgba(0,0,0,0.65) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.96) 78%,rgba(0,0,0,0.99) 88%,rgba(0,0,0,1) 100%)";
     const chevron="<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+primary+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+primary+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>";
@@ -1875,7 +1875,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         +"<div style='position:absolute;inset:0;background:"+cf+";z-index:1;'></div>"
         +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;z-index:5;left:"+SAFE+"px;top:"+Math.round(H*0.33)+"px;width:"+(String(listicleNum||6).length>1?420:260)+"px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+(String(listicleNum||6).length>1?320:460)+"px;font-weight:900;line-height:0.88;"+effectCSS(effect,primary,secondary)+"'>"+(listicleNum||6)+"</div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+(String(listicleNum||6).length>2?200:String(listicleNum||6).length>1?300:440)+"px;font-weight:900;line-height:0.9;"+effectCSS(effect,primary,secondary)+"'>"+(listicleNum||6)+"</div>"
         +"<div style='width:"+(String(listicleNum||6).length>1?420:260)+"px;height:5px;background:"+primary+";margin-top:16px;'></div></div>"
         +"<div style='position:absolute;z-index:5;left:"+(SAFE+(String(listicleNum||6).length>1?436:276))+"px;right:"+SAFE+"px;top:"+Math.round(H*0.39)+"px;display:flex;flex-direction:column;gap:16px;'>"
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:44px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.3;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase())+"</div>"
@@ -1884,25 +1884,25 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"+chevron+counter+wm+"</div>";
     }
     else if(tmpl==="listicle"&&!isCover){
-      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#0a0a0a;overflow:hidden;'>"
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#0a0a0a;overflow:hidden;'>"+imgTag(slide)
+        +(slide.image?"<div style='position:absolute;inset:0;background:rgba(0,0,0,0.72);z-index:1;'></div>":"")
         +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;inset:0;z-index:5;display:flex;align-items:center;padding:0 "+SAFE+"px;gap:60px;padding-top:180px;'>"
         +"<div style='flex-shrink:0;width:280px;display:flex;flex-direction:column;gap:20px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:340px;font-weight:900;line-height:1;"+effectCSS(effect,primary,secondary)+"'>"+String(idx).padStart(2,"0")+"</div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+(String(idx).length>1?300:360)+"px;font-weight:900;line-height:1;"+effectCSS(effect,primary,secondary)+"'>"+String(idx)+"</div>"
         +"<div style='width:280px;height:5px;background:"+primary+";'></div></div>"
         +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:24px;'>"
         +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:72px;font-weight:900;color:"+secondary+";line-height:1.1;text-transform:uppercase;word-break:break-word;'>"+esc(slide.headline.toUpperCase())+"</div>":"")
         +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:48px;color:rgba(255,255,255,0.7);line-height:1.5;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
-        +"</div></div>"+website+counter+wm+"</div>";
+        +"</div></div>"+website+wm+"</div>";
     }
     else if(tmpl==="clean-pro"&&isCover){body=darkFadeCover(slide);}
     else if(tmpl==="clean-pro"&&!isCover){
       const isW=bg==="white",bgC=isW?"#ffffff":"#0a0a0a",tM=isW?"#0a0a0a":"#ffffff";
       const tS=isW?"rgba(0,0,0,0.5)":"rgba(255,255,255,0.5)",dC=isW?"rgba(0,0,0,0.08)":"rgba(255,255,255,0.08)";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;'>"
-        +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
-        +"<div style='position:absolute;top:270px;left:"+SAFE+"px;right:"+SAFE+"px;height:1.5px;background:"+dC+";z-index:5;'></div>"
-        +"<div style='position:absolute;top:340px;left:"+(SAFE+20)+"px;right:"+(SAFE+20)+"px;bottom:120px;z-index:5;display:flex;flex-direction:column;justify-content:center;gap:52px;'>"
+        +"<div style='position:absolute;top:140px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
+        +"<div style='position:absolute;top:320px;left:"+(SAFE+20)+"px;right:"+(SAFE+20)+"px;bottom:120px;z-index:5;display:flex;flex-direction:column;justify-content:center;gap:52px;'>"
         +(slide.headline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:82px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
         +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:52px;color:"+tS+";line-height:1.65;word-break:break-word;'>"+esc(slide.bodyText).replace(/\n/g,"<br/>")+"</div>":"")
         +(slide.accentText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:56px;font-weight:700;color:"+primary+";line-height:1.3;word-break:break-word;'>"+esc(slide.accentText)+"</div>":"")
@@ -1914,7 +1914,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       const stI=fontStyle==="Playfair Display",stF=fontStyle||"Inter";
       const sw=isCover?"<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+(isW?"rgba(0,0,0,0.3)":"rgba(255,255,255,0.3)")+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+(isW?"rgba(0,0,0,0.3)":"rgba(255,255,255,0.3)")+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>":"";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;'>"
-        +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
+        +"<div style='position:absolute;top:140px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
         +"<div style='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:200px 120px;z-index:5;'>"
         +"<div style='font-family:"+stF+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;"+(stI?"font-style:italic;":"")+"font-weight:400;color:"+tC+";line-height:1.7;text-align:center;'>"
         +esc(slide.storyText||"").replace(/\n\n/g,"</p><p style='margin-top:1.2em;'>").replace(/\n/g,"<br/>")
@@ -2832,8 +2832,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Dark Fade":isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":"Raw"}</span>
                   {isFree&&<span style={{fontSize:11,color:"#e74c3c",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>Free plan — watermark on exports</span>}
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:28,alignItems:"start"}}>
-                  <div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:28,alignItems:"start",position:"relative"}}>
+                  <div style={{position:"sticky",top:76,alignSelf:"start"}}>
                     <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12}}>
                       <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:A.bg}}>
                         {(()=>{
@@ -2878,7 +2878,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       <div style={{fontSize:12,fontWeight:800,color:activeSlide===0?GOLD:A.text}}>{activeSlide===0?"Cover Slide":"Slide "+( activeSlide+1)}</div>
 
                       {/* Photo upload + library */}
-                      {(isDarkFade||(isListicle&&activeSlide===0)||(isCleanPro&&activeSlide===0)||isRaw)&&(
+                      {(isDarkFade||isListicle||(isCleanPro&&activeSlide===0)||isRaw)&&(
                         <div>
                           <label style={lbl}>Photo</label>
                           {/* Library strip */}
@@ -3028,19 +3028,19 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       {/* Hex-only colour pickers */}
                       <label style={lbl}>Primary Colour <span style={{letterSpacing:0,fontWeight:400,textTransform:"none",fontSize:9}}>Effect · line · chevron</span></label>
                       <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                        <div style={{position:"relative",width:38,height:38,flexShrink:0}}>
-                          <div style={{width:38,height:38,borderRadius:8,background:tmplPrimary,border:`1.5px solid ${A.border}`,cursor:"pointer"}}/>
+                        <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} placeholder="#BB9900" style={{...inp,flex:1,fontFamily:"monospace",fontSize:15,fontWeight:700,textTransform:"uppercase"}}/>
+                        <div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}>
+                          <div style={{width:"100%",height:"100%",background:tmplPrimary}}/>
                           <input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/>
                         </div>
-                        <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontSize:14,fontWeight:700,textTransform:"uppercase"}}/>
                       </div>
-                      <label style={lbl}>Secondary Colour <span style={{letterSpacing:0,fontWeight:400,textTransform:"none",fontSize:9}}>Text · subline · gradient</span></label>
+                      <label style={lbl}>Subline & Body Text Colour</label>
                       <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                        <div style={{position:"relative",width:38,height:38,flexShrink:0}}>
-                          <div style={{width:38,height:38,borderRadius:8,background:tmplSecondary,border:`1.5px solid ${A.border}`,cursor:"pointer"}}/>
+                        <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} placeholder="#ffffff" style={{...inp,flex:1,fontFamily:"monospace",fontSize:15,fontWeight:700,textTransform:"uppercase"}}/>
+                        <div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}>
+                          <div style={{width:"100%",height:"100%",background:tmplSecondary}}/>
                           <input type="color" value={tmplSecondary} onChange={e=>setTmplSecondary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/>
                         </div>
-                        <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontSize:14,fontWeight:700,textTransform:"uppercase"}}/>
                       </div>
                       {isCleanPro&&<><label style={lbl}>Body Background</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
                     </div>}
