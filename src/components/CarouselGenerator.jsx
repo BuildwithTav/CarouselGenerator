@@ -1870,41 +1870,52 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
     let body="";
     if(tmpl==="dark-fade"){body=darkFadeCover(slide);}
     else if(tmpl==="listicle"&&isCover){
-      // Central black band: fully opaque from 42%–68%, transparent top and bottom
-      const cf="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 20%,rgba(0,0,0,0.55) 35%,rgba(0,0,0,0.97) 42%,rgba(0,0,0,1) 50%,rgba(0,0,0,1) 62%,rgba(0,0,0,0.97) 68%,rgba(0,0,0,0.55) 78%,rgba(0,0,0,0) 92%,rgba(0,0,0,0) 100%)";
-      // Text sits in the fully black zone: 42%–68% = px 567–918. Centre = ~742px
-      // Number top: 42% = 567px. Text + topic/subject below it.
-      const numTop=Math.round(H*0.42);
-      const numW=String(listicleNum||6).length>1?420:260;
-      const numFS=String(listicleNum||6).length>2?200:String(listicleNum||6).length>1?300:440;
-      const txtLeft=SAFE+numW+16;
+      // Narrower full-black band: 48%–62% (reduced by ~1/4 vs previous 42%–68%)
+      const cf="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 22%,rgba(0,0,0,0.5) 38%,rgba(0,0,0,0.97) 48%,rgba(0,0,0,1) 52%,rgba(0,0,0,1) 60%,rgba(0,0,0,0.97) 64%,rgba(0,0,0,0.5) 74%,rgba(0,0,0,0) 88%,rgba(0,0,0,0) 100%)";
+      // Text anchored at 48% (top of black zone)
+      const numTop=Math.round(H*0.48);
+      const numDigits=String(listicleNum||6).length;
+      const numFS=numDigits>2?190:numDigits>1?290:420;
+      // Accent line width matches only the number characters — approx 0.6 * fontSize * digits
+      const numLineW=Math.round(numFS*0.62*numDigits)+20;
+      const numW=numLineW+20; // column width just enough for number
+      const txtLeft=SAFE+numW+24;
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(slide)
         +"<div style='position:absolute;inset:0;background:"+cf+";z-index:1;'></div>"
         +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
-        +"<div style='position:absolute;z-index:5;left:"+SAFE+"px;top:"+numTop+"px;width:"+numW+"px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS+"px;font-weight:900;line-height:0.9;"+effectCSS(effect,primary,secondary)+"'>"+(listicleNum||6)+"</div>"
-        +"<div style='width:"+numW+"px;height:5px;background:"+primary+";margin-top:16px;'></div></div>"
-        +"<div style='position:absolute;z-index:5;left:"+txtLeft+"px;right:"+SAFE+"px;top:"+(numTop+30)+"px;display:flex;flex-direction:column;justify-content:center;gap:14px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:44px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.2;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase())+"</div>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:100px;font-weight:900;color:"+secondary+";line-height:1.05;word-break:break-word;'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div></div>"
-        +(slide.subline?"<div style='position:absolute;bottom:"+Math.round(H*0.14)+"px;left:0;right:0;text-align:center;z-index:5;font-size:34px;color:rgba(255,255,255,0.6);'>"+esc(slide.subline)+"</div>":"")
+        // Number + accent line under it (line = exact number width only)
+        +"<div style='position:absolute;z-index:5;left:"+SAFE+"px;top:"+numTop+"px;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS+"px;font-weight:900;line-height:0.88;"+effectCSS(effect,primary,secondary)+"'>"+(listicleNum||6)+"</div>"
+        +"<div style='width:"+numLineW+"px;height:5px;background:"+primary+";margin-top:14px;'></div></div>"
+        // Topic + subject right of number
+        +"<div style='position:absolute;z-index:5;left:"+txtLeft+"px;right:"+SAFE+"px;top:"+(numTop+20)+"px;display:flex;flex-direction:column;justify-content:center;gap:12px;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:42px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.2;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase())+"</div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:96px;font-weight:900;color:"+secondary+";line-height:1.0;word-break:break-word;'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div></div>"
+        // Subline pushed up into the bottom of the black zone
+        +(slide.subline?"<div style='position:absolute;bottom:"+Math.round(H*0.295)+"px;left:0;right:0;text-align:center;z-index:5;font-size:34px;color:rgba(255,255,255,0.6);'>"+esc(slide.subline)+"</div>":"")
         +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"+chevron+counter+wm+"</div>";
     }
     else if(tmpl==="listicle"&&!isCover){
-      // Same gradient as dark-fade — full colour photo, fade to black at bottom for text
-      const lGrad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 30%,rgba(0,0,0,0.08) 46%,rgba(0,0,0,0.35) 56%,rgba(0,0,0,0.68) 64%,rgba(0,0,0,0.90) 72%,rgba(0,0,0,0.97) 82%,rgba(0,0,0,1) 100%)";
-      const numFS2=String(idx).length>1?300:360;
+      // Gradient from bottom — full image visible at top, black zone at bottom for text
+      const lGrad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 40%,rgba(0,0,0,0.15) 54%,rgba(0,0,0,0.55) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.97) 78%,rgba(0,0,0,1) 86%,rgba(0,0,0,1) 100%)";
+      const numFS2=String(idx).length>1?260:310;
+      const numLineW2=Math.round(numFS2*0.62*String(idx).length)+20;
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#0a0a0a;overflow:hidden;'>"+imgTag(slide)
-        +(slide.image?"<div style='position:absolute;inset:0;background:"+lGrad+";z-index:1;'></div>":"")
+        +"<div style='position:absolute;inset:0;background:"+lGrad+";z-index:1;'></div>"
+        // Badge at top
         +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
-        +"<div style='position:absolute;inset:0;z-index:5;display:flex;align-items:center;padding:0 "+SAFE+"px;gap:60px;padding-top:180px;'>"
-        +"<div style='flex-shrink:0;width:280px;display:flex;flex-direction:column;gap:20px;'>"
+        // All content pinned to bottom, sitting on the black zone
+        +"<div style='position:absolute;bottom:80px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:40px;'>"
+        // Number + line on left
+        +"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS2+"px;font-weight:900;line-height:1;"+effectCSS(effect,primary,secondary)+"'>"+String(idx)+"</div>"
-        +"<div style='width:280px;height:5px;background:"+primary+";'></div></div>"
-        +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:24px;'>"
-        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:72px;font-weight:900;color:"+secondary+";line-height:1.1;text-transform:uppercase;word-break:break-word;'>"+esc(slide.headline.toUpperCase())+"</div>":"")
-        +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:48px;color:rgba(255,255,255,0.85);line-height:1.5;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
-        +"</div></div>"+website+wm+"</div>";
+        +"<div style='width:"+numLineW2+"px;height:5px;background:"+primary+";'></div></div>"
+        // Headline + body on right
+        +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;padding-bottom:8px;'>"
+        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:68px;font-weight:900;color:"+secondary+";line-height:1.1;text-transform:uppercase;word-break:break-word;'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:rgba(255,255,255,0.85);line-height:1.45;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
+        +"</div></div>"
+        +website+wm+"</div>";
     }
     else if(tmpl==="clean-pro"&&isCover){body=darkFadeCover(slide);}
     else if(tmpl==="clean-pro"&&!isCover){
