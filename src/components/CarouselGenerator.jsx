@@ -1824,12 +1824,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
     setDownloadingQuotes(false);
   };
 
-  // ── useDebouncedValue — prevents preview flash on every keystroke ────────
-  function useDebouncedValue(value, delay) {
-    const [dv, setDv] = useState(value);
-    useEffect(()=>{ const t=setTimeout(()=>setDv(value),delay||300); return()=>clearTimeout(t); },[value,delay]);
-    return dv;
-  }
+  // useDebouncedValue removed — hooks must be at top level, not in nested functions
 
   // ── buildTmplHTML — generates HTML sent to Puppeteer /api/render-slide ──
   function buildTmplHTML(slide, idx, total, tmpl, opts) {
@@ -1957,6 +1952,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
     }catch(e){console.error(e);}
     setTmplSuggesting(null);
   };
+
+  // Top-level debounced slides state — hooks must never be inside IIFE or nested fns
+  const [dTmplSlides, setDTmplSlides] = useState(tmplSlides);
+  useEffect(()=>{ const t=setTimeout(()=>setDTmplSlides(tmplSlides),300); return()=>clearTimeout(t); },[JSON.stringify(tmplSlides)]);
 
   const A = { bg:"#F5F3EF", surface:"#FFF", border:"#E8E5E0", text:"#0A0A0A", muted:"#8A8780", accentText:"#FFF", input:"#FFF" };
   const inp = { width:"100%", background:A.input, border:`1.5px solid ${A.border}`, borderRadius:10, padding:"11px 14px", color:A.text, fontSize:14, fontFamily:"inherit" };
@@ -2778,9 +2777,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               const isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade";
               const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:6,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
               const opts={effect:tmplEffect,font:tmplFont,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree};
-              const dSlides=useDebouncedValue(tmplSlides,300),dOpts=useDebouncedValue(opts,300);
-              const previewHTML=buildTmplHTML(dSlides[activeSlide]||{},activeSlide,tmplSlideCount,tmplSelected,dOpts);
-              const thumbHTMLs=dSlides.slice(0,tmplSlideCount).map((s,i)=>buildTmplHTML(s||{},i,tmplSlideCount,tmplSelected,dOpts));
+              // Use top-level debounced slides (hooks can't be called here inside IIFE)
+              const previewHTML=buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,tmplSlideCount,tmplSelected,opts);
+              const thumbHTMLs=dTmplSlides.slice(0,tmplSlideCount).map((s,i)=>buildTmplHTML(s||{},i,tmplSlideCount,tmplSelected,opts));
               const downloadSlide=async(idx)=>{
                 if(!canGenerate()){setNav("upgrade");return;}
                 setTmplDownloadingIdx(idx);
