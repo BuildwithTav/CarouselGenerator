@@ -3224,24 +3224,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               const maxSlides = isListicle?12:6;
               const isFree = currentUser?.plan==="free";
 
-              // Canvas preview ref array
-              const canvasRefs = tmplSlides.slice(0,tmplSlideCount).map(()=>React.createRef());
-
               const opts = {
                 effect:tmplEffect, font:tmplFont, primary:tmplPrimary, secondary:tmplSecondary,
                 bg:tmplBg, fontStyle:tmplFontStyle, rawBox:tmplRawBox, rawPos:tmplRawPos,
                 listicleNum:tmplListicleNum, profUrl:profileUrl, nm:name, hdl:handle, isFree
               };
 
-              const doRender = (idx, canvasEl) => {
-                if(!canvasEl) return;
-                renderTmplSlide(canvasEl, idx, tmplSlideCount, tmplSelected, tmplSlides, opts);
+              const getPreviewRef = (idx) => (el) => {
+                if(el) renderTmplSlide(el, idx, tmplSlideCount, tmplSelected, tmplSlides, opts);
               };
-
-              // Trigger re-render of all previews
-              React.useEffect(()=>{
-                canvasRefs.forEach((ref,i)=>{if(ref.current)doRender(i,ref.current);});
-              });
 
               const downloadSlide = async (idx) => {
                 if(!canGenerate()){setNav("upgrade");return;}
@@ -3421,7 +3412,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                             <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"flex-start"}}>
 
                               {/* Mini canvas preview */}
-                              <canvas ref={canvasRefs[idx]} width={270} height={338} style={{borderRadius:8,flexShrink:0,border:`1px solid ${A.border}`,width:108,height:135}}/>
+                              <canvas ref={getPreviewRef(idx)} width={270} height={338} style={{borderRadius:8,flexShrink:0,border:`1px solid ${A.border}`,width:108,height:135}}/>
 
                               {/* Inputs */}
                               <div style={{flex:1,minWidth:160,display:"flex",flexDirection:"column",gap:8}}>
