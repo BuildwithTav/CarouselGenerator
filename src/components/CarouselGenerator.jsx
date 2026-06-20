@@ -955,6 +955,18 @@ export default function App() {
     } catch {}
   }, []);
 
+  // Load Google Fonts for Templates canvas rendering
+  useEffect(() => {
+    const id = "tmpl-gfonts";
+    if (!document.getElementById(id)) {
+      const link = document.createElement("link");
+      link.id = id;
+      link.rel = "stylesheet";
+      link.href = "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Teko:wght@700&family=Barlow+Condensed:wght@800;900&family=Archivo+Black&family=Playfair+Display:ital,wght@0,900;1,900&family=Alfa+Slab+One&display=swap";
+      document.head.appendChild(link);
+    }
+  }, []);
+
   // Fire checkout automatically after login if checkout param was set
   useEffect(() => {
     if (!currentUser) return;
@@ -1006,7 +1018,7 @@ export default function App() {
   // ============================================================
   // UNIVERSAL BADGE RENDERER — locked, never varies per template
   // ============================================================
-  function drawBadge(ctx, profUrl, nm, hdl, x, y, small, showTick) {
+  function drawBadge(ctx, profUrl, nm, hdl, x, y, small, showTick, opts) {
     const avR = small ? 28 : 38;
     const nameSize = small ? 26 : 34;
     const hdlSize = small ? 20 : 26;
@@ -1015,11 +1027,11 @@ export default function App() {
     const avCY = y + avR;
     ctx.save(); ctx.beginPath(); ctx.arc(avCX,avCY,avR+3,0,Math.PI*2); ctx.fillStyle="#fff"; ctx.fill(); ctx.restore();
     if(profUrl) {
-      const img = new Image(); img.src = profUrl;
-      ctx.save(); ctx.beginPath(); ctx.arc(avCX,avCY,avR,0,Math.PI*2); ctx.clip();
+      const img = (opts&&opts.imgCache&&opts.imgCache[profUrl])||null;
+      if(img){ctx.save(); ctx.beginPath(); ctx.arc(avCX,avCY,avR,0,Math.PI*2); ctx.clip();
       const s=Math.max(avR*2/img.width,avR*2/img.height);
       ctx.drawImage(img,avCX-img.width*s/2,avCY-img.height*s/2,img.width*s,img.height*s);
-      ctx.restore();
+      ctx.restore();}
     } else {
       ctx.save(); ctx.beginPath(); ctx.arc(avCX,avCY,avR,0,Math.PI*2); ctx.fillStyle="#4a6a9a"; ctx.fill(); ctx.restore();
     }
@@ -1047,7 +1059,7 @@ export default function App() {
   function renderTmplSlide(canvas, slideIdx, total, tmpl, slides, opts) {
     const ctx = canvas.getContext("2d");
     const W = canvas.width, H = canvas.height;
-    const {effect, font, primary, secondary, bg, fontStyle, rawBox, rawPos, listicleNum, profUrl, nm, hdl, isFree} = opts;
+    const {effect, font, primary, secondary, bg, fontStyle, rawBox, rawPos, listicleNum, profUrl, nm, hdl, isFree, imgCache} = opts;
     const slide = slides[slideIdx];
     const SAFE = 60;
 
@@ -1059,8 +1071,13 @@ export default function App() {
       ctx.drawImage(img,(W-img.width*s)/2,(H-img.height*s)/2,img.width*s,img.height*s);
     }
     function loadAndDraw(src, cb) {
-      const img=new Image(); img.onload=()=>cb(img);
-      img.onerror=()=>cb(null); img.src=src;
+      if(!src) { cb(null); return; }
+      // Use cached image if available
+      if(imgCache&&imgCache[src]) { cb(imgCache[src]); return; }
+      const img=new Image(); img.crossOrigin="anonymous";
+      img.onload=()=>cb(img);
+      img.onerror=()=>cb(null);
+      img.src=src;
     }
     function drawGradientOverlay() {
       const gr=ctx.createLinearGradient(0,0,0,H);
@@ -1148,7 +1165,7 @@ export default function App() {
       if(img) coverFit(img);
       else{const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,"#2a3a5a");g.addColorStop(1,"#0a1020");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
       drawGradientOverlay();
-      drawBadge(ctx,profUrl,nm,hdl,SAFE+(W-SAFE*2-420)/2,H*0.655,false,opts.showTick);
+      drawBadge(ctx,profUrl,nm,hdl,SAFE+(W-SAFE*2-420)/2,H*0.655,false,opts.showTick,opts);
       drawAccentLine(H*0.748);
       const {lines:hlL,fontSize:hlF}=fitLines(slide.headline||"",W-160,2,140);
       const lhh=hlF*1.12, ttH=hlL.length*lhh;
@@ -1177,7 +1194,7 @@ export default function App() {
           const gB=ctx.createLinearGradient(0,centreY,0,H);
           gB.addColorStop(0,"rgba(0,0,0,0.98)");gB.addColorStop(0.14,"rgba(0,0,0,0.93)");gB.addColorStop(0.32,"rgba(0,0,0,0.62)");gB.addColorStop(0.68,"rgba(0,0,0,0)");gB.addColorStop(1.0,"rgba(0,0,0,0)");
           ctx.fillStyle=gB;ctx.fillRect(0,centreY,W,H-centreY);
-          drawBadge(ctx,profUrl,nm,hdl,SAFE,SAFE,true,opts.showTick);
+          drawBadge(ctx,profUrl,nm,hdl,SAFE,SAFE,true,opts.showTick,opts);
           const NCOL=320,NCX=SAFE+NCOL/2,CTOP=H*0.34,CBTM=H*0.72,CH=CBTM-CTOP;
           const numStr=String(listicleNum||6);
           let nfs=Math.min(CH*0.88,480);
@@ -1229,7 +1246,7 @@ export default function App() {
           if(bl)bls.push(bl);
           bls.forEach(l=>{ctx.fillText(l,TX2,by);by+=64;});
         }
-        drawBadge(ctx,profUrl,nm,hdl,SAFE,SAFE,true,opts.showTick);
+        drawBadge(ctx,profUrl,nm,hdl,SAFE,SAFE,true,opts.showTick,opts);
         drawWebsite(H*0.972);
       }
     }
@@ -1247,7 +1264,7 @@ export default function App() {
         const divCol=isWhite?"rgba(0,0,0,0.08)":"rgba(255,255,255,0.08)";
         const bAvR=28,bCX=SAFE+bAvR,bCY=SAFE+bAvR+20;
         ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR+2,0,Math.PI*2);ctx.fillStyle=isWhite?"rgba(0,0,0,0.06)":"rgba(255,255,255,0.15)";ctx.fill();ctx.restore();
-        if(profUrl){const img=new Image();img.src=profUrl;ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR,0,Math.PI*2);ctx.clip();const s=Math.max(bAvR*2/img.width,bAvR*2/img.height);ctx.drawImage(img,bCX-img.width*s/2,bCY-img.height*s/2,img.width*s,img.height*s);ctx.restore();}
+        if(profUrl){const img=(imgCache&&imgCache[profUrl])||null;if(img){ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR,0,Math.PI*2);ctx.clip();const s=Math.max(bAvR*2/img.width,bAvR*2/img.height);ctx.drawImage(img,bCX-img.width*s/2,bCY-img.height*s/2,img.width*s,img.height*s);ctx.restore();}}
         else{ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR,0,Math.PI*2);ctx.fillStyle="#4a6a9a";ctx.fill();ctx.restore();}
         const btx=bCX+bAvR+16;
         ctx.fillStyle=textMain;ctx.font="700 26px 'Helvetica Neue',Arial,sans-serif";
@@ -1294,7 +1311,7 @@ export default function App() {
       const subCol=isWhite?"rgba(0,0,0,0.4)":"rgba(255,255,255,0.4)";
       const bAvR=30,bCX=SAFE+bAvR,bCY=H*0.25;
       ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR+2,0,Math.PI*2);ctx.fillStyle=isWhite?"rgba(0,0,0,0.06)":"rgba(255,255,255,0.12)";ctx.fill();ctx.restore();
-      if(profUrl){const img=new Image();img.src=profUrl;ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR,0,Math.PI*2);ctx.clip();const s=Math.max(bAvR*2/img.width,bAvR*2/img.height);ctx.drawImage(img,bCX-img.width*s/2,bCY-img.height*s/2,img.width*s,img.height*s);ctx.restore();}
+      if(profUrl){const img=(imgCache&&imgCache[profUrl])||null;if(img){ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR,0,Math.PI*2);ctx.clip();const s=Math.max(bAvR*2/img.width,bAvR*2/img.height);ctx.drawImage(img,bCX-img.width*s/2,bCY-img.height*s/2,img.width*s,img.height*s);ctx.restore();}}
       else{ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR,0,Math.PI*2);ctx.fillStyle="#4a6a9a";ctx.fill();ctx.restore();}
       const btx2=bCX+bAvR+16;
       ctx.fillStyle=textCol;ctx.font="700 32px 'Helvetica Neue',Arial,sans-serif";
@@ -3258,17 +3275,35 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 showTick:blueTick, isFree
               };
 
-              const mainCanvasRef = (el) => {
-                if(el) {
-                  document.fonts.ready.then(()=>{
-                    renderTmplSlide(el, activeSlide, tmplSlideCount, tmplSelected, tmplSlides, opts);
+              const renderToCanvas = (el, idx) => {
+                if(!el) return;
+                // Debounce: cancel any pending render for this canvas
+                if(el._tmplTimer) clearTimeout(el._tmplTimer);
+                el._tmplTimer = setTimeout(async () => {
+                  await document.fonts.ready;
+                  // Pre-load all images referenced by this slide before drawing
+                  const s = tmplSlides[idx];
+                  const imagePromises = [];
+                  const imgCache = {};
+                  const loadImg = (src) => new Promise(res => {
+                    if(!src) return res(null);
+                    const img = new Image(); img.crossOrigin="anonymous";
+                    img.onload = () => { imgCache[src] = img; res(img); };
+                    img.onerror = () => res(null);
+                    img.src = src;
                   });
-                }
+                  if(s?.image) imagePromises.push(loadImg(s.image));
+                  if(s?.image2) imagePromises.push(loadImg(s.image2));
+                  if(profileUrl) imagePromises.push(loadImg(profileUrl));
+                  await Promise.all(imagePromises);
+                  // Now draw with images pre-cached
+                  const optsWithCache = {...opts, imgCache};
+                  renderTmplSlide(el, idx, tmplSlideCount, tmplSelected, tmplSlides, optsWithCache);
+                }, 150);
               };
 
-              const thumbRef = (idx) => (el) => {
-                if(el) document.fonts.ready.then(()=>renderTmplSlide(el, idx, tmplSlideCount, tmplSelected, tmplSlides, opts));
-              };
+              const mainCanvasRef = (el) => renderToCanvas(el, activeSlide);
+              const thumbRef = (idx) => (el) => renderToCanvas(el, idx);
 
               const downloadSlide = async (idx) => {
                 if(!canGenerate()){setNav("upgrade");return;}
