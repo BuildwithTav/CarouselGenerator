@@ -996,6 +996,8 @@ export default function App() {
   const [tmplSuggesting, setTmplSuggesting] = useState(null);
   const [tmplDownloading, setTmplDownloading] = useState(false);
   const [tmplDownloadingIdx, setTmplDownloadingIdx] = useState(null);
+  const [tmplLibrary, setTmplLibrary] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_library")||"[]");}catch{return[];}});
+  const [suppressLibraryConfirm, setSuppressLibraryConfirm] = useState(()=>{try{return localStorage.getItem("bwt_suppress_lib_confirm")==="1";}catch{return false;}});
   const [isDraggingTemplate, setIsDraggingTemplate] = useState(false);
   const profileRef = useRef(null);
   const coverDragRef = useRef(null);
@@ -1919,12 +1921,19 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         +"</div></div>"+sw+counter+wm+"</div>";
     }
     else if(tmpl==="raw"){
-      const isWB=rawBox==="white",bBg=isWB?"rgba(255,255,255,0.97)":"rgba(0,0,0,0.93)",tCR=isWB?"#0a0a0a":"#ffffff";
+      const isWB=rawBox==="white",tCR=isWB?"#0a0a0a":"#ffffff";
+      const bBg=isWB?"rgba(255,255,255,0.95)":"rgba(0,0,0,0.88)";
       const stI=fontStyle==="Playfair Display",stF=fontStyle||"Inter";
-      const pos=rawPos==="bottom"?"bottom:100px;left:50%;transform:translateX(-50%);":"top:50%;left:50%;transform:translate(-50%,-50%);";
+      const lines=esc(slide.rawText||"").split("\n");
+      // Render each line as its own inline-block span so background wraps text tightly
+      const linesHTML=lines.map(l=>l.trim()===""
+        ?"<div style='height:32px;'></div>"
+        :"<div style='display:inline-block;background:"+bBg+";padding:8px 28px;margin:4px 0;font-family:'"+stF+"',-apple-system,Helvetica Neue,Arial,sans-serif;font-size:52px;font-weight:800;color:"+tCR+";line-height:1.35;"+(stI?"font-style:italic;":"")+"word-break:break-word;'>"+l+"</div><br/>"
+      ).join("");
+      const vAlign=rawPos==="bottom"?"justify-content:flex-end;padding-bottom:160px":"justify-content:center";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#1a1a1a;overflow:hidden;'>"+imgTag(slide)
-        +"<div style='position:absolute;"+pos+"max-width:80%;z-index:5;background:"+bBg+";padding:40px 50px;'>"
-        +"<div style='font-family:"+stF+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:40px;"+(stI?"font-style:italic;":"")+"font-weight:400;color:"+tCR+";line-height:1.5;white-space:pre-wrap;word-break:break-word;'>"+esc(slide.rawText||"")+"</div>"
+        +"<div style='position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:flex-start;"+vAlign+";padding:80px 80px;'>"
+        +"<div style='line-height:1;'>"+linesHTML+"</div>"
         +"</div>"+counter+wm+"</div>";
     }
     return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
@@ -2862,6 +2871,122 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                     </div>
                   </div>
                   <div style={{display:"flex",flexDirection:"column",gap:12}}>
+
+                    {/* ── 1. SLIDE CONTENT — always first ── */}
+                    <div style={{background:A.surface,border:`1.5px solid ${activeSlide===0?GOLD:A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                      <div style={{fontSize:12,fontWeight:800,color:activeSlide===0?GOLD:A.text}}>{activeSlide===0?"Cover Slide":"Slide "+( activeSlide+1)}</div>
+
+                      {/* Photo upload + library */}
+                      {(isDarkFade||(isListicle&&activeSlide===0)||(isCleanPro&&activeSlide===0)||isRaw)&&(
+                        <div>
+                          <label style={lbl}>Photo</label>
+                          {/* Library strip */}
+                          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
+                            {tmplLibrary.map((p,pi)=>(
+                              <div key={pi} style={{position:"relative",flexShrink:0}}>
+                                <div onClick={()=>updateSlide("image",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${slide.image===p?GOLD:A.border}`,cursor:"pointer"}}>
+                                  <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                                </div>
+                                {/* X — remove from slide */}
+                                <div onClick={()=>{if(slide.image===p)updateSlide("image",null);}} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>
+                                {/* Trash — remove from library */}
+                                <div onClick={()=>{
+                                  const doRemove=()=>{
+                                    const next=tmplLibrary.filter((_,j)=>j!==pi);
+                                    setTmplLibrary(next);
+                                    try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}
+                                    if(slide.image===p)updateSlide("image",null);
+                                  };
+                                  if(suppressLibraryConfirm){doRemove();return;}
+                                  if(window.confirm("Permanently remove this image from your library?")){
+                                    doRemove();
+                                    if(window.confirm("Don't show this confirmation again?")){
+                                      setSuppressLibraryConfirm(true);
+                                      try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}
+                                    }
+                                  }
+                                }} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}} title="Remove from library">🗑</div>
+                              </div>
+                            ))}
+                            {/* Upload new */}
+                            <div onClick={()=>{
+                              const i=document.createElement("input");i.type="file";i.accept="image/*";
+                              i.onchange=e=>{
+                                const f=e.target.files[0];if(!f)return;
+                                const r=new FileReader();
+                                r.onload=ev=>{
+                                  const url=ev.target.result;
+                                  updateSlide("image",url);
+                                  const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);
+                                  setTmplLibrary(next);
+                                  try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}
+                                };
+                                r.readAsDataURL(f);
+                              };
+                              i.click();
+                            }} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
+                          </div>
+                          {tmplLibrary.length===0&&<p style={{fontSize:11,color:A.muted,margin:"0 0 6px"}}>Upload photos — they'll save to your library.</p>}
+                        </div>
+                      )}
+
+                      {/* Text inputs per template */}
+                      {(isDarkFade||(isCleanPro&&activeSlide===0))&&<>
+                        <label style={lbl}>Headline</label>
+                        <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Hook headline" style={{...inp}}/>
+                        <label style={lbl}>Subline</label>
+                        <input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} placeholder="Supporting line (optional)" style={{...inp}}/>
+                      </>}
+
+                      {isListicle&&activeSlide===0&&<>
+                        <label style={lbl}>Number</label>
+                        <input type="number" min={1} max={11} value={tmplListicleNum} onChange={e=>setTmplListicleNum(Math.min(11,Math.max(1,parseInt(e.target.value)||1)))} style={{...inp,width:80}}/>
+                        <label style={lbl}>Topic Line</label>
+                        <input value={slide.topicLine||""} onChange={e=>updateSlide("topicLine",e.target.value)} style={{...inp}}/>
+                        <label style={lbl}>Subject</label>
+                        <input value={slide.subject||""} onChange={e=>updateSlide("subject",e.target.value)} style={{...inp}}/>
+                        <label style={lbl}>Subline</label>
+                        <input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} style={{...inp}}/>
+                      </>}
+
+                      {isListicle&&activeSlide>0&&<>
+                        <label style={lbl}>Point {activeSlide} — Headline</label>
+                        <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder={`Point ${activeSlide} headline (optional)`} style={{...inp}}/>
+                        <label style={lbl}>Detail</label>
+                        <div style={{position:"relative"}}>
+                          <textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="The tip, fact or detail" rows={3} style={{...inp,resize:"vertical",paddingRight:72}}/>
+                          <button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button>
+                        </div>
+                      </>}
+
+                      {isCleanPro&&activeSlide>0&&<>
+                        <label style={lbl}>Headline</label>
+                        <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Headline (optional)" style={{...inp}}/>
+                        <label style={lbl}>Body Text</label>
+                        <div style={{position:"relative"}}>
+                          <textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="Body text" rows={4} style={{...inp,resize:"vertical",paddingRight:72}}/>
+                          <button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button>
+                        </div>
+                        <label style={lbl}>Accent Sub-text</label>
+                        <input value={slide.accentText||""} onChange={e=>updateSlide("accentText",e.target.value)} placeholder="Key takeaway in accent colour" style={{...inp}}/>
+                      </>}
+
+                      {isStory&&<>
+                        <label style={lbl}>Story Text — Slide {activeSlide+1}</label>
+                        <div style={{position:"relative"}}>
+                          <textarea value={slide.storyText||""} onChange={e=>updateSlide("storyText",e.target.value)} placeholder="Your story paragraph. Use line breaks to separate paragraphs." rows={6} style={{...inp,resize:"vertical",paddingRight:72,lineHeight:1.6}}/>
+                          <button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button>
+                        </div>
+                      </>}
+
+                      {isRaw&&<>
+                        <label style={lbl}>Your Text</label>
+                        <p style={{fontSize:11,color:A.muted,margin:"-6px 0 4px"}}>Each line gets its own highlight. Blank line = space.</p>
+                        <textarea value={slide.rawText||""} onChange={e=>updateSlide("rawText",e.target.value)} placeholder={"The day I got my tag off\n\nI sat in my car for 20 minutes.\n\nNo music. No phone.\n\nJust silence."} rows={6} style={{...inp,resize:"vertical",lineHeight:1.6}}/>
+                      </>}
+                    </div>
+
+                    {/* ── 2. SLIDE SELECTOR ── */}
                     <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
                       <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:10}}>Slide {activeSlide+1} of {tmplSlideCount}</div>
                       <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:12}}>
@@ -2875,14 +3000,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                         <span style={{fontWeight:800,fontSize:14}}>{tmplSlideCount}</span>
                         <button onClick={()=>setTmplSlideCount(s=>Math.min(maxSlides,s+1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>+</button>
                         <span style={{fontSize:10,color:A.muted}}>max {maxSlides}</span>
-                        {isListicle&&<><span style={{fontSize:11,color:A.muted,marginLeft:8}}>№:</span><button onClick={()=>setTmplListicleNum(n=>Math.max(1,n-1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>−</button><span style={{fontWeight:800,fontSize:14,color:GOLD}}>{tmplListicleNum}</span><button onClick={()=>setTmplListicleNum(n=>Math.min(11,n+1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>+</button></>}
                       </div>
                     </div>
+
+                    {/* ── 3. AI BRIEF ── */}
                     {hasAI&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
                       <label style={{...lbl,color:GOLD,marginBottom:6}}>AI Brief</label>
                       <textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={3} placeholder={isStory?"Your story — include names, places, feelings, turning point...":isListicle?"What's your list about?":"What's this carousel about?"} style={{...inp,fontSize:12,lineHeight:1.5}}/>
                       <div style={{fontSize:10,color:A.muted,marginTop:4}}>Powers ✨ AI Suggest on each slide.</div>
                     </div>}
+
+                    {/* ── 4. STYLE CONTROLS ── */}
                     {!isRaw&&!isStory&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
                       <label style={lbl}>Text Effect</label>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
@@ -2896,23 +3024,29 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                           <button key={id} onClick={()=>setTmplFont(id)} style={{padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplFont===id?GOLD:A.border}`,background:tmplFont===id?"#1a1500":A.bg,color:tmplFont===id?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer"}}>{label}</button>
                         ))}
                       </div>
-                      <label style={lbl}>Primary Colour</label>
-                      <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                        <input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{width:32,height:32,borderRadius:6,border:`1px solid ${A.border}`,background:"none",cursor:"pointer",padding:2,flexShrink:0}}/>
-                        <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,width:90,fontFamily:"monospace",fontSize:13,textTransform:"uppercase"}}/>
-                        <span style={{fontSize:10,color:A.muted}}>Effect · line · chevron</span>
+                      {/* Hex-only colour pickers */}
+                      <label style={lbl}>Primary Colour <span style={{letterSpacing:0,fontWeight:400,textTransform:"none",fontSize:9}}>Effect · line · chevron</span></label>
+                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                        <div style={{position:"relative",width:38,height:38,flexShrink:0}}>
+                          <div style={{width:38,height:38,borderRadius:8,background:tmplPrimary,border:`1.5px solid ${A.border}`,cursor:"pointer"}}/>
+                          <input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/>
+                        </div>
+                        <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontSize:14,fontWeight:700,textTransform:"uppercase"}}/>
                       </div>
-                      <label style={lbl}>Secondary Colour</label>
-                      <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                        <input type="color" value={tmplSecondary} onChange={e=>setTmplSecondary(e.target.value)} style={{width:32,height:32,borderRadius:6,border:`1px solid ${A.border}`,background:"none",cursor:"pointer",padding:2,flexShrink:0}}/>
-                        <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} style={{...inp,width:90,fontFamily:"monospace",fontSize:13,textTransform:"uppercase"}}/>
-                        <span style={{fontSize:10,color:A.muted}}>Text · subline · gradient</span>
+                      <label style={lbl}>Secondary Colour <span style={{letterSpacing:0,fontWeight:400,textTransform:"none",fontSize:9}}>Text · subline · gradient</span></label>
+                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                        <div style={{position:"relative",width:38,height:38,flexShrink:0}}>
+                          <div style={{width:38,height:38,borderRadius:8,background:tmplSecondary,border:`1.5px solid ${A.border}`,cursor:"pointer"}}/>
+                          <input type="color" value={tmplSecondary} onChange={e=>setTmplSecondary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/>
+                        </div>
+                        <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontSize:14,fontWeight:700,textTransform:"uppercase"}}/>
                       </div>
                       {isCleanPro&&<><label style={lbl}>Body Background</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
                     </div>}
+
                     {(isStory||isRaw)&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
                       {isStory&&<><label style={lbl}>Background</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
-                      {isRaw&&<><label style={lbl}>Text Box</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplRawBox(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawBox===m?GOLD:A.border}`,background:tmplRawBox===m?"#1a1500":A.bg,color:tmplRawBox===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div><label style={lbl}>Position</label><div style={{display:"flex",gap:8}}>{["bottom","centre"].map(m=><button key={m} onClick={()=>setTmplRawPos(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawPos===m?GOLD:A.border}`,background:tmplRawPos===m?"#1a1500":A.bg,color:tmplRawPos===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
+                      {isRaw&&<><label style={lbl}>Text Highlight</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplRawBox(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawBox===m?GOLD:A.border}`,background:tmplRawBox===m?"#1a1500":A.bg,color:tmplRawBox===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div><label style={lbl}>Text Position</label><div style={{display:"flex",gap:8}}>{["bottom","centre"].map(m=><button key={m} onClick={()=>setTmplRawPos(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawPos===m?GOLD:A.border}`,background:tmplRawPos===m?"#1a1500":A.bg,color:tmplRawPos===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
                       <label style={lbl}>Font Style</label>
                       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                         {[["Inter","Clean"],["Times New Roman","Serif"],["Playfair Display","Feminine"]].map(([id,label])=>(
@@ -2920,34 +3054,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                         ))}
                       </div>
                     </div>}
-                    <div style={{background:A.surface,border:`1.5px solid ${activeSlide===0?GOLD:A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
-                      <div style={{fontSize:12,fontWeight:800,color:activeSlide===0?GOLD:A.text}}>{activeSlide===0?"Cover Slide — scroll stopper":`Slide ${activeSlide+1}`}</div>
-                      {(isDarkFade||(isListicle&&activeSlide===0)||(isCleanPro&&activeSlide===0)||isRaw)&&(
-                        <div>
-                          <label style={lbl}>Photo</label>
-                          <div style={{display:"flex",gap:10,alignItems:"flex-start",flexWrap:"wrap"}}>
-                            <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>updateSlide("image",ev.target.result);r.readAsDataURL(f);};i.click();}} style={{width:72,height:72,borderRadius:8,border:`1.5px dashed ${slide.image?GOLD:A.border}`,background:A.bg,overflow:"hidden",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                              {slide.image?<img src={slide.image} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:A.muted,fontSize:24}}>+</span>}
-                            </div>
-                            {slide.image&&<button onClick={()=>updateSlide("image",null)} style={{fontSize:11,color:"#e74c3c",background:"none",border:"none",cursor:"pointer",alignSelf:"center"}}>Remove</button>}
-                            {coverPhotos?.length>0&&<div style={{display:"flex",gap:3,flexWrap:"wrap",maxWidth:140}}>
-                              {coverPhotos.slice(0,6).map((p,pi)=>(
-                                <div key={pi} onClick={()=>updateSlide("image",p)} style={{width:28,height:28,borderRadius:5,overflow:"hidden",cursor:"pointer",border:`1px solid ${A.border}`}}>
-                                  <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                                </div>
-                              ))}
-                              <span style={{fontSize:9,color:A.muted,alignSelf:"center"}}>library</span>
-                            </div>}
-                          </div>
-                        </div>
-                      )}
-                      {(isDarkFade||(isCleanPro&&activeSlide===0))&&<><label style={lbl}>Headline</label><input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Hook headline" style={{...inp}}/><label style={lbl}>Subline</label><input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} placeholder="Supporting line (optional)" style={{...inp}}/></>}
-                      {isListicle&&activeSlide===0&&<><label style={lbl}>Topic Line</label><input value={slide.topicLine||""} onChange={e=>updateSlide("topicLine",e.target.value)} style={{...inp}}/><label style={lbl}>Subject</label><input value={slide.subject||""} onChange={e=>updateSlide("subject",e.target.value)} style={{...inp}}/><label style={lbl}>Subline</label><input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} style={{...inp}}/></>}
-                      {isListicle&&activeSlide>0&&<><label style={lbl}>Point {activeSlide} — Headline</label><input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder={`Point ${activeSlide} headline (optional)`} style={{...inp}}/><label style={lbl}>Detail</label><div style={{position:"relative"}}><textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="The tip, fact or detail" rows={3} style={{...inp,resize:"vertical",paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div></>}
-                      {isCleanPro&&activeSlide>0&&<><label style={lbl}>Headline</label><input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Headline (optional)" style={{...inp}}/><label style={lbl}>Body Text</label><div style={{position:"relative"}}><textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="Body text" rows={4} style={{...inp,resize:"vertical",paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div><label style={lbl}>Accent Sub-text</label><input value={slide.accentText||""} onChange={e=>updateSlide("accentText",e.target.value)} placeholder="Key takeaway in accent colour" style={{...inp}}/></>}
-                      {isStory&&<><label style={lbl}>Story Text — Slide {activeSlide+1}</label><div style={{position:"relative"}}><textarea value={slide.storyText||""} onChange={e=>updateSlide("storyText",e.target.value)} placeholder="Your story paragraph. Use line breaks to separate paragraphs." rows={6} style={{...inp,resize:"vertical",paddingRight:72,lineHeight:1.6}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div></>}
-                      {isRaw&&<><label style={lbl}>Your Text</label><textarea value={slide.rawText||""} onChange={e=>updateSlide("rawText",e.target.value)} placeholder={"Type exactly what you want.\n\nUse line breaks to separate thoughts."} rows={5} style={{...inp,resize:"vertical",lineHeight:1.6,wordBreak:"break-word",whiteSpace:"pre-wrap"}}/></>}
-                    </div>
                   </div>
                 </div>
               </div>);
