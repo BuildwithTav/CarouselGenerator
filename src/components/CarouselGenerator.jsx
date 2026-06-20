@@ -1851,7 +1851,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       const av=profUrl?"<img src='"+esc(profUrl)+"' style='width:100%;height:100%;object-fit:cover;border-radius:50%;'/>"  :"<div style='width:100%;height:100%;background:#4a6a9a;border-radius:50%;'></div>";
       return"<div style='display:flex;align-items:center;gap:18px;'><div style='width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid #fff;flex-shrink:0;background:#4a6a9a;'>"+av+"</div><div style='display:flex;flex-direction:column;gap:4px;'><div style='display:flex;align-items:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;font-weight:800;color:"+tc+";text-shadow:0 1px 6px rgba(0,0,0,0.5);'>"+esc(nm||"")+tick+"</div><div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:28px;color:"+sc+";text-shadow:0 1px 4px rgba(0,0,0,0.4);'>"+esc(hdl||"")+"</div></div></div>";
     }
-    const grad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 32%,rgba(0,0,0,0.06) 50%,rgba(0,0,0,0.28) 60%,rgba(0,0,0,0.58) 68%,rgba(0,0,0,0.82) 76%,rgba(0,0,0,0.94) 84%,rgba(0,0,0,0.98) 91%,rgba(0,0,0,1) 100%)";
+    const grad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 28%,rgba(0,0,0,0.08) 44%,rgba(0,0,0,0.35) 54%,rgba(0,0,0,0.65) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.96) 78%,rgba(0,0,0,0.99) 88%,rgba(0,0,0,1) 100%)";
     const chevron="<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+primary+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+primary+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>";
     const website="<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>";
     const wm=isFree?"<div style='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-20deg);font-size:72px;font-weight:900;color:rgba(255,255,255,0.12);white-space:nowrap;z-index:20;pointer-events:none;'>studio.buildwithtav.co</div>":"";
@@ -1873,19 +1873,19 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       const cf="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 25%,rgba(0,0,0,0.62) 45%,rgba(0,0,0,0.98) 60%,rgba(0,0,0,0.98) 72%,rgba(0,0,0,0.62) 88%,rgba(0,0,0,0) 100%)";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(slide)
         +"<div style='position:absolute;inset:0;background:"+cf+";z-index:1;'></div>"
-        +"<div style='position:absolute;top:52px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
-        +"<div style='position:absolute;z-index:5;left:"+SAFE+"px;top:"+Math.round(H*0.36)+"px;width:320px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:480px;font-weight:900;line-height:0.85;"+effectCSS(effect,primary,secondary)+"'>"+(listicleNum||6)+"</div>"
-        +"<div style='width:320px;height:5px;background:"+primary+";margin-top:20px;'></div></div>"
-        +"<div style='position:absolute;z-index:5;left:"+(SAFE+336)+"px;right:"+SAFE+"px;top:"+Math.round(H*0.40)+"px;display:flex;flex-direction:column;gap:16px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:46px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.3;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase())+"</div>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:116px;font-weight:900;color:"+secondary+";line-height:1.05;word-break:break-word;'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div></div>"
+        +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
+        +"<div style='position:absolute;z-index:5;left:"+SAFE+"px;top:"+Math.round(H*0.33)+"px;width:"+(String(listicleNum||6).length>1?420:260)+"px;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+(String(listicleNum||6).length>1?320:460)+"px;font-weight:900;line-height:0.88;"+effectCSS(effect,primary,secondary)+"'>"+(listicleNum||6)+"</div>"
+        +"<div style='width:"+(String(listicleNum||6).length>1?420:260)+"px;height:5px;background:"+primary+";margin-top:16px;'></div></div>"
+        +"<div style='position:absolute;z-index:5;left:"+(SAFE+(String(listicleNum||6).length>1?436:276))+"px;right:"+SAFE+"px;top:"+Math.round(H*0.39)+"px;display:flex;flex-direction:column;gap:16px;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:44px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.3;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase())+"</div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:106px;font-weight:900;color:"+secondary+";line-height:1.05;word-break:break-word;'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div></div>"
         +(slide.subline?"<div style='position:absolute;bottom:"+Math.round(H*0.185)+"px;left:0;right:0;text-align:center;z-index:5;font-size:34px;color:rgba(255,255,255,0.6);'>"+esc(slide.subline)+"</div>":"")
         +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"+chevron+counter+wm+"</div>";
     }
     else if(tmpl==="listicle"&&!isCover){
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#0a0a0a;overflow:hidden;'>"
-        +"<div style='position:absolute;top:52px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
+        +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;inset:0;z-index:5;display:flex;align-items:center;padding:0 "+SAFE+"px;gap:60px;padding-top:180px;'>"
         +"<div style='flex-shrink:0;width:280px;display:flex;flex-direction:column;gap:20px;'>"
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:340px;font-weight:900;line-height:1;"+effectCSS(effect,primary,secondary)+"'>"+String(idx).padStart(2,"0")+"</div>"
@@ -1900,21 +1900,21 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       const isW=bg==="white",bgC=isW?"#ffffff":"#0a0a0a",tM=isW?"#0a0a0a":"#ffffff";
       const tS=isW?"rgba(0,0,0,0.5)":"rgba(255,255,255,0.5)",dC=isW?"rgba(0,0,0,0.08)":"rgba(255,255,255,0.08)";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;'>"
-        +"<div style='position:absolute;top:"+SAFE+"px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
-        +"<div style='position:absolute;top:"+(SAFE+100+30)+"px;left:"+SAFE+"px;right:"+SAFE+"px;height:1.5px;background:"+dC+";z-index:5;'></div>"
-        +"<div style='position:absolute;top:"+(SAFE+100+60)+"px;left:"+(SAFE+30)+"px;right:"+(SAFE+30)+"px;z-index:5;display:flex;flex-direction:column;gap:28px;'>"
-        +(slide.headline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:72px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
-        +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:48px;color:"+tS+";line-height:1.6;word-break:break-word;'>"+esc(slide.bodyText).replace(/\n/g,"<br/>")+"</div>":"")
-        +(slide.accentText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:52px;font-weight:700;color:"+primary+";line-height:1.3;word-break:break-word;'>"+esc(slide.accentText)+"</div>":"")
-        +(slide.accentText?"<div style='width:100px;height:4px;background:"+primary+";'></div>":"")
-        +"</div><div style='position:absolute;bottom:40px;right:"+SAFE+"px;z-index:5;font-size:28px;color:"+tS+";'>"+(idx+1)+"/"+total+"</div>"+wm+"</div>";
+        +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
+        +"<div style='position:absolute;top:270px;left:"+SAFE+"px;right:"+SAFE+"px;height:1.5px;background:"+dC+";z-index:5;'></div>"
+        +"<div style='position:absolute;top:340px;left:"+(SAFE+20)+"px;right:"+(SAFE+20)+"px;bottom:120px;z-index:5;display:flex;flex-direction:column;justify-content:center;gap:52px;'>"
+        +(slide.headline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:82px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
+        +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:52px;color:"+tS+";line-height:1.65;word-break:break-word;'>"+esc(slide.bodyText).replace(/\n/g,"<br/>")+"</div>":"")
+        +(slide.accentText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:56px;font-weight:700;color:"+primary+";line-height:1.3;word-break:break-word;'>"+esc(slide.accentText)+"</div>":"")
+        +(slide.accentText?"<div style='width:110px;height:5px;background:"+primary+";'></div>":"")
+        +"</div><div style='position:absolute;bottom:48px;right:"+SAFE+"px;z-index:5;font-size:28px;color:"+tS+";'>"+(idx+1)+"/"+total+"</div>"+wm+"</div>";
     }
     else if(tmpl==="storytelling"){
       const isW=bg==="white",bgC=isW?"#ffffff":"#0a0a0a",tC=isW?"#0a0a0a":"#ffffff";
       const stI=fontStyle==="Playfair Display",stF=fontStyle||"Inter";
       const sw=isCover?"<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+(isW?"rgba(0,0,0,0.3)":"rgba(255,255,255,0.3)")+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+(isW?"rgba(0,0,0,0.3)":"rgba(255,255,255,0.3)")+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>":"";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;'>"
-        +"<div style='position:absolute;top:"+SAFE+"px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
+        +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
         +"<div style='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:200px 120px;z-index:5;'>"
         +"<div style='font-family:"+stF+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;"+(stI?"font-style:italic;":"")+"font-weight:400;color:"+tC+";line-height:1.7;text-align:center;'>"
         +esc(slide.storyText||"").replace(/\n\n/g,"</p><p style='margin-top:1.2em;'>").replace(/\n/g,"<br/>")
@@ -1922,18 +1922,18 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
     }
     else if(tmpl==="raw"){
       const isWB=rawBox==="white",tCR=isWB?"#0a0a0a":"#ffffff";
-      const bBg=isWB?"rgba(255,255,255,0.95)":"rgba(0,0,0,0.88)";
+      const bBg=isWB?"rgba(255,255,255,0.93)":"rgba(0,0,0,0.85)";
       const stI=fontStyle==="Playfair Display",stF=fontStyle||"Inter";
-      const lines=esc(slide.rawText||"").split("\n");
-      // Render each line as its own inline-block span so background wraps text tightly
-      const linesHTML=lines.map(l=>l.trim()===""
-        ?"<div style='height:32px;'></div>"
-        :"<div style='display:inline-block;background:"+bBg+";padding:8px 28px;margin:4px 0;font-family:'"+stF+"',-apple-system,Helvetica Neue,Arial,sans-serif;font-size:52px;font-weight:800;color:"+tCR+";line-height:1.35;"+(stI?"font-style:italic;":"")+"word-break:break-word;'>"+l+"</div><br/>"
-      ).join("");
-      const vAlign=rawPos==="bottom"?"justify-content:flex-end;padding-bottom:160px":"justify-content:center";
+      // Split on blank lines to make paragraph blocks; each block gets one box
+      const paras=(slide.rawText||"").split(/\n\n+/);
+      const parasHTML=paras.map(p=>p.trim()===""
+        ?""
+        :"<div style='display:inline-block;background:"+bBg+";padding:18px 36px;margin:10px 0;font-family:"+stF+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:56px;font-weight:800;color:"+tCR+";line-height:1.4;"+(stI?"font-style:italic;":"")+"word-break:break-word;white-space:pre-wrap;'>"+esc(p.trim())+"</div>"
+      ).join("<br/>");
+      const vAlign=rawPos==="bottom"?"justify-content:flex-end;padding-bottom:140px":"justify-content:center";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#1a1a1a;overflow:hidden;'>"+imgTag(slide)
-        +"<div style='position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:flex-start;"+vAlign+";padding:80px 80px;'>"
-        +"<div style='line-height:1;'>"+linesHTML+"</div>"
+        +"<div style='position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;"+vAlign+";padding:80px 80px;text-align:center;'>"
+        +parasHTML
         +"</div>"+counter+wm+"</div>";
     }
     return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
@@ -2835,13 +2835,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:28,alignItems:"start"}}>
                   <div>
                     <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12}}>
-                      <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:"#000"}}>
+                      <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:A.bg}}>
                         {(()=>{
                           // Container width ≈ (1200 - 380 - 28 - 32) / 1 ≈ 760px, but we don't know exactly.
                           // Use a fixed preview width of 540px (half of 1080) so scale = 0.5 always
+                          // Use 100% width of container, scale accordingly
                           const PW=540, PH=Math.round(1350*PW/1080);
                           return(
-                            <div style={{width:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}>
+                            <div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}>
                               <iframe
                                 key={`prev-${activeSlide}`}
                                 srcDoc={previewHTML}
@@ -2940,7 +2941,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
                       {isListicle&&activeSlide===0&&<>
                         <label style={lbl}>Number</label>
-                        <input type="number" min={1} max={11} value={tmplListicleNum} onChange={e=>setTmplListicleNum(Math.min(11,Math.max(1,parseInt(e.target.value)||1)))} style={{...inp,width:80}}/>
+                        <input type="number" min={1} value={tmplListicleNum} onChange={e=>setTmplListicleNum(Math.max(1,parseInt(e.target.value)||1))} style={{...inp,width:80}}/>
                         <label style={lbl}>Topic Line</label>
                         <input value={slide.topicLine||""} onChange={e=>updateSlide("topicLine",e.target.value)} style={{...inp}}/>
                         <label style={lbl}>Subject</label>
@@ -3049,7 +3050,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       {isRaw&&<><label style={lbl}>Text Highlight</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplRawBox(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawBox===m?GOLD:A.border}`,background:tmplRawBox===m?"#1a1500":A.bg,color:tmplRawBox===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div><label style={lbl}>Text Position</label><div style={{display:"flex",gap:8}}>{["bottom","centre"].map(m=><button key={m} onClick={()=>setTmplRawPos(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawPos===m?GOLD:A.border}`,background:tmplRawPos===m?"#1a1500":A.bg,color:tmplRawPos===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
                       <label style={lbl}>Font Style</label>
                       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                        {[["Inter","Clean"],["Times New Roman","Serif"],["Playfair Display","Feminine"]].map(([id,label])=>(
+                        {[["Inter","Clean"],["Times New Roman","Serif"]].map(([id,label])=>(
                           <button key={id} onClick={()=>setTmplFontStyle(id)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplFontStyle===id?GOLD:A.border}`,background:tmplFontStyle===id?"#1a1500":A.bg,color:tmplFontStyle===id?GOLD:A.muted,fontSize:12,fontWeight:600,cursor:"pointer"}}>{label}</button>
                         ))}
                       </div>
