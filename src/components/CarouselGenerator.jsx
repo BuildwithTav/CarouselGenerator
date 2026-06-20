@@ -922,14 +922,22 @@ export default function App() {
   const [showPayoutForm, setShowPayoutForm] = useState(false);
   const [payoutMethod, setPayoutMethod] = useState("bank");
   // Templates tab state
-  const [tmplSelected, setTmplSelected] = useState(null); // which template family selected
+  const [tmplSelected, setTmplSelected] = useState(null);
   const [tmplSlideCount, setTmplSlideCount] = useState(6);
-  const [tmplSlides, setTmplSlides] = useState(Array(6).fill(null).map(()=>({image:null, image2:null, imagePos:{x:50,y:50}, image2Pos:{x:50,y:50}, headline:"", headline2:"", subline:"", bodyText:"", pillText:""})));
-  const [tmplFont, setTmplFont] = useState("bold-impact");
-  const [tmplTextColour, setTmplTextColour] = useState("#ffffff");
-  const [tmplAccent, setTmplAccent] = useState("#BB9900");
-  const [tmplSuggesting, setTmplSuggesting] = useState(null); // slide index being suggested
+  const [tmplSlides, setTmplSlides] = useState(Array(12).fill(null).map(()=>({image:null,image2:null,imagePos:{x:50,y:50},image2Pos:{x:50,y:50},headline:"",subline:"",bodyText:"",accentText:"",number:6,topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:"",pillText:""})));
+  const [tmplEffect, setTmplEffect] = useState("gold");
+  const [tmplFont, setTmplFont] = useState("'Bebas Neue'");
+  const [tmplPrimary, setTmplPrimary] = useState("#BB9900");
+  const [tmplSecondary, setTmplSecondary] = useState("#ffffff");
+  const [tmplBg, setTmplBg] = useState("white");
+  const [tmplFontStyle, setTmplFontStyle] = useState("Inter");
+  const [tmplRawBox, setTmplRawBox] = useState("white");
+  const [tmplRawPos, setTmplRawPos] = useState("bottom");
+  const [tmplListicleNum, setTmplListicleNum] = useState(6);
+  const [tmplBrief, setTmplBrief] = useState("");
+  const [tmplSuggesting, setTmplSuggesting] = useState(null);
   const [tmplDownloading, setTmplDownloading] = useState(false);
+  const [tmplDownloadingIdx, setTmplDownloadingIdx] = useState(null);
   const [payoutDetails, setPayoutDetails] = useState({});
   const [payoutSubmitting, setPayoutSubmitting] = useState(false);
   const [payoutSuccess, setPayoutSuccess] = useState(false);
@@ -994,195 +1002,373 @@ export default function App() {
   }, [nav, currentUser?.plan, currentUser?.affiliate_active]);
 
   // Build full-resolution HTML for template slide export
-  function buildTmplSlideHTML(slide, idx, total, tmpl, activeStyle, textCol, accent, profUrl, hdl, nm, pillText) {
-    const px = slide.imagePos?.x||50;
-    const py = slide.imagePos?.y||50;
-    const px2 = slide.image2Pos?.x||50;
-    const py2 = slide.image2Pos?.y||50;
-    const handleClean = (hdl||"").replace("@","");
-    const hasImage = !!slide.image;
-    const hasImage2 = !!slide.image2;
-    const isCover = idx===0;
-    const hs = `font-family:'${activeStyle.fontFamily.replace(/'/g,"")}',sans-serif;font-weight:${activeStyle.fontWeight};text-transform:${activeStyle.textTransform};letter-spacing:${activeStyle.letterSpacing};font-style:${activeStyle.fontStyle||"normal"};`;
-    const isCleanPro = tmpl==="clean-pro";
-    const isThemeSplit = tmpl==="theme-split";
-    const isBreaking = tmpl==="breaking-news";
-    const isComparison = tmpl==="comparison";
-    const isListicle = tmpl==="listicle";
-    const isCleanCard = tmpl==="clean-card";
-    const isLightBody = isCleanPro && !isCover;
-
-    const imgTag = (src, w, h, objPos="50% 50%", extra="") =>
-      `<img src="${src}" style="width:${w};height:${h};object-fit:cover;object-position:${objPos};display:block;${extra}"/>`;
-
-    const tickSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="#1D9BF0" style="flex-shrink:0;"><circle cx="12" cy="12" r="12"/><path d="M9 12l2 2 4-4" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`;
-    // Cover divider badge — row style, sits on the divider line
-    const badgeHtml = profUrl ? `<div style="position:absolute;top:calc(65% - 40px);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:20px;background:rgba(0,0,0,0.55);backdrop-filter:blur(8px);border-radius:60px;padding:12px 28px 12px 12px;z-index:3;white-space:nowrap;"><div style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:3px solid #fff;flex-shrink:0;">${imgTag(profUrl,"100%","100%")}</div><div style="display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:32px;font-weight:800;color:#fff;">${nm||""}</span>${tickSvg}</div><div style="font-size:24px;color:rgba(255,255,255,0.65);">@${handleClean}</div></div></div>` : "";
-    // Body slide badge — row style, top left, light or dark version
-    const profileBadgeDark = profUrl ? `<div style="display:flex;align-items:center;gap:16px;margin-bottom:32px;"><div style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,0.2);flex-shrink:0;">${imgTag(profUrl,"100%","100%")}</div><div style="display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:30px;font-weight:800;color:#fff;">${nm||""}</span>${tickSvg}</div><div style="font-size:24px;color:rgba(255,255,255,0.55);">@${handleClean}</div></div></div>` : "";
-    const profileBadgeSmall = profUrl ? `<div style="display:flex;align-items:center;gap:20px;margin-bottom:36px;"><div style="width:88px;height:88px;border-radius:50%;overflow:hidden;border:2px solid rgba(0,0,0,0.12);flex-shrink:0;">${imgTag(profUrl,"100%","100%")}</div><div style="display:flex;flex-direction:column;gap:4px;"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:32px;font-weight:800;color:#0a0a0a;">${nm||""}</span>${tickSvg}</div><div style="font-size:26px;color:rgba(0,0,0,0.45);">@${handleClean}</div></div></div>` : "";
-    const handleTag = handleClean ? `<div style="font-size:30px;color:${accent};font-weight:700;margin-top:16px;">@${handleClean}</div>` : "";
-
-    let inner = "";
-
-    if (isCover) {
-      // ---- COVER SLIDES ----
-      if (isBreaking) {
-        inner = `
-          <div style="position:absolute;inset:0;background:#000;${hasImage?`background-image:url('${slide.image}');background-size:cover;background-position:${px}% ${py}%;`:""}">
-            ${hasImage?`<div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);"></div>`:""}
-            <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:80px;gap:24px;">
-              <div style="background:${accent};color:#000;font-size:36px;font-weight:900;padding:12px 48px;border-radius:8px;letter-spacing:4px;font-family:'Oswald',sans-serif;text-transform:uppercase;">${pillText||"BREAKING"}</div>
-              <div style="${hs}font-size:${(slide.headline||"").length>40?"96":"120"}px;color:${textCol};text-align:center;line-height:1.05;">${slide.headline||""}</div>
-              ${slide.bodyText?`<div style="font-size:46px;color:rgba(255,255,255,0.75);text-align:center;line-height:1.5;">${slide.bodyText}</div>`:""}
-              ${handleTag}
-            </div>
-          </div>`;
-      } else if (isComparison) {
-        inner = `
-          <div style="position:absolute;inset:0;background:#000;display:flex;flex-direction:column;">
-            <div style="flex:1;display:flex;">
-              <div style="flex:1;background:rgba(255,255,255,0.06);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px;gap:12px;border-right:2px solid rgba(255,255,255,0.1);">
-                <div style="${hs}font-size:80px;color:${textCol};text-align:center;line-height:1.1;">${slide.headline||"Option A"}</div>
-                ${slide.bodyText?`<div style="font-size:38px;color:rgba(255,255,255,0.6);text-align:center;line-height:1.4;">${slide.bodyText}</div>`:""}
-              </div>
-              <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px;gap:12px;">
-                <div style="${hs}font-size:80px;color:${accent};text-align:center;line-height:1.1;">${slide.headline2||"Option B"}</div>
-                ${slide.subline?`<div style="font-size:38px;color:rgba(255,255,255,0.5);text-align:center;line-height:1.4;">${slide.subline}</div>`:""}
-              </div>
-            </div>
-            <div style="padding:30px;text-align:center;border-top:1px solid rgba(255,255,255,0.1);">
-              ${handleTag}
-            </div>
-          </div>`;
-      } else if (isListicle) {
-        inner = `
-          <div style="position:absolute;inset:0;background:#000;${hasImage?`background-image:url('${slide.image}');background-size:cover;background-position:${px}% ${py}%;`:""}">
-            ${hasImage?`<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.3),rgba(0,0,0,0.85));"></div>`:""}
-            <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:80px;gap:24px;text-align:center;">
-              <div style="font-size:34px;color:${accent};font-weight:700;letter-spacing:3px;text-transform:uppercase;">The List</div>
-              <div style="${hs}font-size:${(slide.headline||"").length>40?"90":"110"}px;color:${textCol};line-height:1.1;">${slide.headline||""}</div>
-              ${slide.bodyText?`<div style="font-size:44px;color:rgba(255,255,255,0.7);line-height:1.4;">${slide.bodyText}</div>`:""}
-              ${handleTag}
-            </div>
-          </div>`;
-      } else if (isThemeSplit) {
-        inner = `
-          <div style="position:absolute;inset:0;background:#000;">
-            <div style="position:absolute;top:0;left:0;width:100%;height:65%;display:flex;gap:2px;">
-              <div style="flex:1;overflow:hidden;">${hasImage?imgTag(slide.image,"100%","100%",`${px}% ${py}%`):`<div style="width:100%;height:100%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;"><span style="color:rgba(255,255,255,0.3);font-size:60px;">+</span></div>`}</div>
-              <div style="flex:1;overflow:hidden;">${hasImage2?imgTag(slide.image2,"100%","100%",`${px2}% ${py2}%`):`<div style="width:100%;height:100%;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;"><span style="color:rgba(255,255,255,0.3);font-size:60px;">+</span></div>`}</div>
-            </div>
-            <div style="position:absolute;top:0;left:0;width:100%;height:75%;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.98) 100%);"></div>
-            ${badgeHtml}
-            <div style="position:absolute;bottom:0;left:0;width:100%;padding:120px 80px 80px;display:flex;flex-direction:column;align-items:center;gap:16px;">
-              <div style="${hs}font-size:${(slide.headline||"").length>40?"96":"116"}px;color:${textCol};text-align:center;line-height:1.05;text-shadow:0 2px 8px rgba(0,0,0,0.5);">${slide.headline||""}</div>
-              ${slide.bodyText?`<div style="font-size:44px;color:rgba(255,255,255,0.75);text-align:center;line-height:1.5;">${slide.bodyText}</div>`:""}
-              ${handleTag}
-            </div>
-          </div>`;
-      } else {
-        // clean-pro, theme-page, clean-card — all single image covers with gradient
-        inner = `
-          <div style="position:absolute;inset:0;background:#000;">
-            ${hasImage?`<div style="position:absolute;top:0;left:0;width:100%;height:65%;">${imgTag(slide.image,"100%","100%",`${px}% ${py}%`)}</div>`:""}
-            <div style="position:absolute;top:0;left:0;width:100%;height:75%;background:linear-gradient(to bottom,transparent 30%,rgba(0,0,0,0.98) 100%);"></div>
-            ${["clean-pro","theme-page","theme-split"].includes(tmpl)?badgeHtml:""}
-            <div style="position:absolute;bottom:0;left:0;width:100%;padding:${profUrl?"120px":"60px"} 80px 80px;display:flex;flex-direction:column;align-items:${isCleanCard?"flex-start":"center"};gap:16px;">
-              ${isCleanCard?`<div style="background:rgba(255,255,255,0.94);border-radius:12px;padding:40px 50px;max-width:900px;"><div style="${hs}font-size:${(slide.headline||"").length>40?"80":"100"}px;color:#0a0a0a;line-height:1.1;">${slide.headline||""}</div>${slide.bodyText?`<div style="font-size:40px;color:rgba(0,0,0,0.6);margin-top:16px;line-height:1.5;">${slide.bodyText}</div>`:""}</div>`:`<div style="${hs}font-size:${(slide.headline||"").length>40?"96":"120"}px;color:${textCol};text-align:center;line-height:1.05;text-shadow:0 2px 8px rgba(0,0,0,0.5);">${slide.headline||""}</div>${slide.bodyText?`<div style="font-size:44px;color:rgba(255,255,255,0.75);text-align:center;line-height:1.5;">${slide.bodyText}</div>`:""}`}
-              ${!isCleanCard?handleTag:""}
-            </div>
-          </div>`;
-      }
+  // ============================================================
+  // UNIVERSAL BADGE RENDERER — locked, never varies per template
+  // ============================================================
+  function drawBadge(ctx, profUrl, nm, hdl, x, y, small) {
+    const avR = small ? 28 : 38;
+    const nameSize = small ? 26 : 34;
+    const hdlSize = small ? 20 : 26;
+    const tickR = small ? 12 : 15;
+    const avCX = x + avR;
+    const avCY = y + avR;
+    ctx.save(); ctx.beginPath(); ctx.arc(avCX,avCY,avR+3,0,Math.PI*2); ctx.fillStyle="#fff"; ctx.fill(); ctx.restore();
+    if(profUrl) {
+      const img = new Image(); img.src = profUrl;
+      ctx.save(); ctx.beginPath(); ctx.arc(avCX,avCY,avR,0,Math.PI*2); ctx.clip();
+      const s=Math.max(avR*2/img.width,avR*2/img.height);
+      ctx.drawImage(img,avCX-img.width*s/2,avCY-img.height*s/2,img.width*s,img.height*s);
+      ctx.restore();
     } else {
-      // ---- BODY SLIDES ----
-      if (isCleanPro) {
-        inner = `
-          <div style="position:absolute;inset:0;background:#F5F3EF;">
-            <div style="position:absolute;inset:0;padding:80px 80px 60px;display:flex;flex-direction:column;">
-              ${profileBadgeSmall}
-              <div style="${hs}font-size:${(slide.headline||"").length>50?"80":"100"}px;color:#0a0a0a;line-height:1.1;flex-shrink:0;">${slide.headline||""}</div>
-              ${slide.bodyText?`<div style="font-size:44px;color:rgba(0,0,0,0.55);margin-top:28px;line-height:1.6;">${slide.bodyText}</div>`:""}
-              ${slide.bodyText&&slide.bodyText.includes(".")?`<div style="font-size:38px;color:${accent};font-weight:700;margin-top:28px;line-height:1.5;">${slide.bodyText.split(".").slice(-1)[0].trim()}</div>`:""}
-            </div>
-          </div>`;
-      } else if (isBreaking) {
-        inner = `
-          <div style="position:absolute;inset:0;background:#000;">
-            <div style="position:absolute;top:50px;left:60px;background:${accent};border-radius:6px;padding:6px 24px;font-size:24px;font-weight:900;color:#000;letter-spacing:3px;font-family:'Oswald',sans-serif;text-transform:uppercase;">${pillText||"BREAKING"}</div>
-            <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:80px;padding-top:140px;gap:24px;">
-              <div style="${hs}font-size:${(slide.headline||"").length>50?"88":"108"}px;color:${textCol};line-height:1.1;">${slide.headline||""}</div>
-              ${slide.bodyText?`<div style="font-size:44px;color:rgba(255,255,255,0.7);line-height:1.5;">${slide.bodyText}</div>`:""}
-              ${handleTag}
-            </div>
-          </div>`;
-      } else if (isComparison) {
-        inner = `
-          <div style="position:absolute;inset:0;background:#0a0a0a;display:flex;flex-direction:column;">
-            <div style="flex:1;display:flex;">
-              <div style="flex:1;border-right:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;justify-content:center;padding:60px 50px;gap:16px;">
-                <div style="${hs}font-size:72px;color:${textCol};line-height:1.1;">${slide.headline||""}</div>
-                ${slide.bodyText?`<div style="font-size:38px;color:rgba(255,255,255,0.6);line-height:1.5;">${slide.bodyText}</div>`:""}
-              </div>
-              <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:60px 50px;gap:16px;">
-                <div style="${hs}font-size:72px;color:${accent};line-height:1.1;">${slide.headline2||""}</div>
-                ${slide.subline?`<div style="font-size:38px;color:rgba(255,255,255,0.5);line-height:1.5;">${slide.subline}</div>`:""}
-              </div>
-            </div>
-            <div style="padding:24px 60px;border-top:1px solid rgba(255,255,255,0.06);">${handleTag}</div>
-          </div>`;
-      } else if (isListicle) {
-        inner = `
-          <div style="position:absolute;inset:0;background:#0a0a0a;display:flex;align-items:center;padding:80px;gap:60px;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:260px;color:${accent};line-height:1;flex-shrink:0;opacity:0.9;">0${idx}</div>
-            <div style="flex:1;">
-              <div style="${hs}font-size:${(slide.headline||"").length>40?"80":"100"}px;color:${textCol};line-height:1.1;">${slide.headline||""}</div>
-              ${slide.bodyText?`<div style="font-size:42px;color:rgba(255,255,255,0.6);margin-top:20px;line-height:1.5;">${slide.bodyText}</div>`:""}
-            </div>
-          </div>
-          ${handleClean?`<div style="position:absolute;bottom:40px;right:60px;font-size:28px;color:${accent};font-weight:700;">@${handleClean}</div>`:""}`;
-      } else if (isCleanCard) {
-        inner = `
-          <div style="position:absolute;inset:0;${hasImage?`background-image:url('${slide.image}');background-size:cover;background-position:${px}% ${py}%;`:"background:#2a2a2a;"}">
-            ${hasImage?`<div style="position:absolute;inset:0;background:rgba(0,0,0,0.45);"></div>`:""}
-            <div style="position:absolute;bottom:60px;left:60px;right:60px;background:rgba(255,255,255,0.94);border-radius:16px;padding:50px 60px;">
-              <div style="${hs}font-size:${(slide.headline||"").length>40?"80":"96"}px;color:#0a0a0a;line-height:1.1;">${slide.headline||""}</div>
-              ${slide.bodyText?`<div style="font-size:40px;color:rgba(0,0,0,0.6);margin-top:20px;line-height:1.55;">${slide.bodyText}</div>`:""}
-              ${handleClean?`<div style="font-size:28px;color:${accent};font-weight:700;margin-top:20px;">@${handleClean}</div>`:""}
-            </div>
-          </div>`;
+      ctx.save(); ctx.beginPath(); ctx.arc(avCX,avCY,avR,0,Math.PI*2); ctx.fillStyle="#4a6a9a"; ctx.fill(); ctx.restore();
+    }
+    const tx = avCX + avR + 16;
+    ctx.save(); ctx.shadowColor="rgba(0,0,0,0.7)"; ctx.shadowBlur=8;
+    ctx.fillStyle="#fff"; ctx.font=`700 ${nameSize}px 'Helvetica Neue',Arial,sans-serif`; ctx.textAlign="left";
+    const nameW = ctx.measureText(nm||"").width;
+    ctx.fillText(nm||"", tx, avCY-6); ctx.restore();
+    ctx.fillStyle="rgba(255,255,255,0.5)"; ctx.font=`400 ${hdlSize}px 'Helvetica Neue',Arial,sans-serif`;
+    const hdlW = ctx.measureText(hdl||"").width;
+    ctx.fillText(hdl||"", tx, avCY+hdlSize+2);
+    const tickX = tx + Math.max(nameW, hdlW) + 22;
+    ctx.save(); ctx.beginPath(); ctx.arc(tickX,avCY-avR*0.3,tickR,0,Math.PI*2); ctx.fillStyle="#1D9BF0"; ctx.fill();
+    ctx.strokeStyle="#fff"; ctx.lineWidth=tickR*0.25; ctx.lineCap="round"; ctx.lineJoin="round";
+    ctx.beginPath(); ctx.moveTo(tickX-tickR*0.42,avCY-avR*0.3+tickR*0.05); ctx.lineTo(tickX-tickR*0.08,avCY-avR*0.3+tickR*0.42); ctx.lineTo(tickX+tickR*0.44,avCY-avR*0.3-tickR*0.28); ctx.stroke();
+    ctx.restore(); ctx.textAlign="left";
+  }
+
+  // ============================================================
+  // TEMPLATE CANVAS RENDERER
+  // ============================================================
+  function renderTmplSlide(canvas, slideIdx, total, tmpl, slides, opts) {
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width, H = canvas.height;
+    const {effect, font, primary, secondary, bg, fontStyle, rawBox, rawPos, listicleNum, profUrl, nm, hdl, isFree} = opts;
+    const slide = slides[slideIdx];
+    const SAFE = 60;
+
+    ctx.clearRect(0,0,W,H);
+
+    function coverFit(img) {
+      if(!img||!img.width) return;
+      const s=Math.max(W/img.width,H/img.height);
+      ctx.drawImage(img,(W-img.width*s)/2,(H-img.height*s)/2,img.width*s,img.height*s);
+    }
+    function loadAndDraw(src, cb) {
+      const img=new Image(); img.onload=()=>cb(img);
+      img.onerror=()=>cb(null); img.src=src;
+    }
+    function drawGradientOverlay() {
+      const gr=ctx.createLinearGradient(0,0,0,H);
+      gr.addColorStop(0,"rgba(0,0,0,0)"); gr.addColorStop(0.32,"rgba(0,0,0,0)");
+      gr.addColorStop(0.50,"rgba(0,0,0,0.06)"); gr.addColorStop(0.60,"rgba(0,0,0,0.28)");
+      gr.addColorStop(0.68,"rgba(0,0,0,0.58)"); gr.addColorStop(0.76,"rgba(0,0,0,0.82)");
+      gr.addColorStop(0.84,"rgba(0,0,0,0.94)"); gr.addColorStop(0.91,"rgba(0,0,0,0.98)");
+      gr.addColorStop(1.0,"rgba(0,0,0,1.0)");
+      ctx.fillStyle=gr; ctx.fillRect(0,0,W,H);
+    }
+    function drawAccentLine(y, fullWidth, colW) {
+      const pad=54;
+      if(fullWidth===false) {
+        ctx.fillStyle=primary; ctx.fillRect(SAFE,y,colW||300,5);
       } else {
-        // theme-page, theme-split body slides — dark, profile badge top left, large text
-        inner = `
-          <div style="position:absolute;inset:0;background:#000;">
-            <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:60px 80px;gap:24px;">
-              ${profileBadgeDark}
-              <div style="${hs}font-size:${(slide.headline||"").length>50?"96":"120"}px;color:${textCol};line-height:1.05;">${slide.headline||""}</div>
-              ${slide.bodyText?`<div style="font-size:46px;color:rgba(255,255,255,0.7);line-height:1.55;">${slide.bodyText}</div>`:""}
-            </div>
-          </div>`;
+        ctx.fillStyle=primary; ctx.fillRect(pad,y,W-pad*2,5);
+        const fl=ctx.createLinearGradient(0,y,pad,y); fl.addColorStop(0,"rgba(0,0,0,1)"); fl.addColorStop(1,"rgba(0,0,0,0)"); ctx.fillStyle=fl; ctx.fillRect(0,y,pad,5);
+        const fr=ctx.createLinearGradient(W-pad,y,W,y); fr.addColorStop(0,"rgba(0,0,0,0)"); fr.addColorStop(1,"rgba(0,0,0,1)"); ctx.fillStyle=fr; ctx.fillRect(W-pad,y,pad,5);
+      }
+    }
+    function drawChevron() {
+      const x=W-58, y=H*0.968;
+      ctx.save(); ctx.globalAlpha=0.7; ctx.strokeStyle=primary; ctx.lineWidth=5; ctx.lineCap="round"; ctx.lineJoin="round";
+      ctx.beginPath(); ctx.moveTo(x-22,y-14); ctx.lineTo(x,y); ctx.lineTo(x-22,y+14); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x-6,y-14); ctx.lineTo(x+16,y); ctx.lineTo(x-6,y+14); ctx.stroke();
+      ctx.globalAlpha=1; ctx.restore();
+    }
+    function makeEffectGrad(cx, topY, h) {
+      const g=ctx.createLinearGradient(cx,topY,cx,topY+h);
+      const p=primary, s=secondary;
+      if(effect==="gold"){g.addColorStop(0,s);g.addColorStop(0.2,"#ffe44d");g.addColorStop(0.5,p);g.addColorStop(0.8,"#7a5800");g.addColorStop(1,"#ffe066");}
+      else if(effect==="chrome"){g.addColorStop(0,s);g.addColorStop(0.2,"#ddd");g.addColorStop(0.45,"#777");g.addColorStop(0.65,"#bbb");g.addColorStop(0.85,"#444");g.addColorStop(1,"#ccc");}
+      else if(effect==="fire"){g.addColorStop(0,s);g.addColorStop(0.15,"#ffff00");g.addColorStop(0.4,p);g.addColorStop(0.75,"#cc0000");g.addColorStop(1,"#660000");}
+      else if(effect==="ice"){g.addColorStop(0,s);g.addColorStop(0.3,"#d0f0ff");g.addColorStop(0.65,p);g.addColorStop(1,"#1a6090");}
+      return g;
+    }
+    function drawEffectText(text, cx, y, fontSize) {
+      ctx.font=`900 ${fontSize}px ${font},sans-serif`; ctx.textAlign="center";
+      if(["gold","chrome","fire","ice"].includes(effect)){
+        ctx.save(); ctx.shadowColor=effect==="gold"?"rgba(140,100,0,0.5)":"rgba(0,0,0,0.5)"; ctx.shadowBlur=18; ctx.shadowOffsetY=5;
+        ctx.fillStyle=makeEffectGrad(cx,y-fontSize,fontSize*1.15); ctx.fillText(text,cx,y); ctx.restore();
+        ctx.save(); ctx.globalAlpha=0.13; ctx.fillStyle="#fff"; ctx.fillText(text,cx,y-3); ctx.restore();
+      } else if(effect==="neon"){
+        for(let i=4;i>=1;i--){ctx.save();ctx.shadowColor=primary;ctx.shadowBlur=i*32;ctx.fillStyle=primary;ctx.globalAlpha=0.22/i;ctx.fillText(text,cx,y);ctx.restore();}
+        ctx.save(); ctx.shadowColor=primary; ctx.shadowBlur=14; ctx.fillStyle=secondary; ctx.fillText(text,cx,y); ctx.restore();
+      } else if(effect==="3d"){
+        for(let i=12;i>=1;i--){const sh=Math.round(10+(i/12)*60);ctx.fillStyle=`rgb(${sh},${sh},${sh})`;ctx.fillText(text,cx+i*0.85,y+i*0.85);}
+        ctx.save(); ctx.shadowColor="rgba(0,0,0,0.4)"; ctx.shadowBlur=6; ctx.fillStyle="#fff"; ctx.fillText(text,cx,y); ctx.restore();
+      } else if(effect==="outline"){
+        ctx.save(); ctx.strokeStyle=primary; ctx.lineWidth=fontSize*0.05; ctx.lineJoin="round"; ctx.strokeText(text,cx,y);
+        ctx.fillStyle="rgba(0,0,0,0.05)"; ctx.fillText(text,cx,y); ctx.restore();
+      } else {
+        ctx.save(); ctx.shadowColor="rgba(0,0,0,0.7)"; ctx.shadowBlur=20; ctx.shadowOffsetY=5; ctx.fillStyle=secondary; ctx.fillText(text,cx,y); ctx.restore();
+      }
+      ctx.textAlign="left";
+    }
+    function fitLines(text, maxW, maxLines, fontSize) {
+      let fs=fontSize||140, lines=[];
+      const t=text.toUpperCase();
+      while(fs>=56){
+        ctx.font=`900 ${fs}px ${font},sans-serif`;
+        const words=t.split(" "); lines=[]; let line="";
+        for(const w of words){const test=line?line+" "+w:w;if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=w;}else line=test;}
+        if(line)lines.push(line);
+        if(lines.length<=maxLines)break;
+        fs-=6;
+      }
+      return {lines, fontSize:fs};
+    }
+    function drawWebsite(y) {
+      ctx.textAlign="center"; ctx.fillStyle=secondary; ctx.globalAlpha=0.5;
+      ctx.font="400 24px 'Helvetica Neue',Arial,sans-serif";
+      ctx.fillText("studio.buildwithtav.co",W/2,y);
+      ctx.globalAlpha=1; ctx.textAlign="left";
+    }
+    function drawWatermark() {
+      if(!isFree) return;
+      ctx.save(); ctx.globalAlpha=0.3; ctx.fillStyle="#fff";
+      ctx.font="bold 52px 'Helvetica Neue',Arial,sans-serif"; ctx.textAlign="center";
+      ctx.translate(W/2,H/2); ctx.rotate(-Math.PI/6);
+      [-400,-200,0,200,400].forEach(offset=>ctx.fillText("studio.buildwithtav.co",0,offset));
+      ctx.restore();
+    }
+    function darkFadeCover(img) {
+      if(img) coverFit(img);
+      else{const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,"#2a3a5a");g.addColorStop(1,"#0a1020");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
+      drawGradientOverlay();
+      drawBadge(ctx,profUrl,nm,hdl,SAFE+(W-SAFE*2-420)/2,H*0.655,false);
+      drawAccentLine(H*0.748);
+      const {lines:hlL,fontSize:hlF}=fitLines(slide.headline||"",W-160,2,140);
+      const lhh=hlF*1.12, ttH=hlL.length*lhh;
+      let hlY=H*0.800+(H*0.132-ttH)/2+hlF*0.82;
+      hlL.forEach(l=>{drawEffectText(l,W/2,hlY,hlF);hlY+=lhh;});
+      if(slide.subline){ctx.textAlign="center";ctx.fillStyle=secondary;ctx.font="600 34px 'Helvetica Neue',Arial,sans-serif";ctx.shadowColor="rgba(0,0,0,0.5)";ctx.shadowBlur=8;ctx.fillText(slide.subline,W/2,H*0.950);ctx.shadowBlur=0;ctx.textAlign="left";}
+      drawWebsite(H*0.977); drawChevron();
+    }
+
+    // DARK FADE
+    if(tmpl==="dark-fade") {
+      if(slide.image){loadAndDraw(slide.image,img=>{ctx.clearRect(0,0,W,H);darkFadeCover(img);drawWatermark();});}
+      else darkFadeCover(null);
+    }
+
+    // LISTICLE
+    else if(tmpl==="listicle") {
+      if(slideIdx===0) {
+        const drawListicleCover=(img)=>{
+          if(img) coverFit(img);
+          else{const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,"#1a3a2a");g.addColorStop(1,"#0a1a2a");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
+          const centreY=H*0.525;
+          const gT=ctx.createLinearGradient(0,0,0,centreY);
+          gT.addColorStop(0,"rgba(0,0,0,0)");gT.addColorStop(0.3,"rgba(0,0,0,0)");gT.addColorStop(0.68,"rgba(0,0,0,0.62)");gT.addColorStop(0.86,"rgba(0,0,0,0.93)");gT.addColorStop(1.0,"rgba(0,0,0,0.98)");
+          ctx.fillStyle=gT;ctx.fillRect(0,0,W,centreY);
+          const gB=ctx.createLinearGradient(0,centreY,0,H);
+          gB.addColorStop(0,"rgba(0,0,0,0.98)");gB.addColorStop(0.14,"rgba(0,0,0,0.93)");gB.addColorStop(0.32,"rgba(0,0,0,0.62)");gB.addColorStop(0.68,"rgba(0,0,0,0)");gB.addColorStop(1.0,"rgba(0,0,0,0)");
+          ctx.fillStyle=gB;ctx.fillRect(0,centreY,W,H-centreY);
+          drawBadge(ctx,profUrl,nm,hdl,SAFE,SAFE,true);
+          const NCOL=320,NCX=SAFE+NCOL/2,CTOP=H*0.34,CBTM=H*0.72,CH=CBTM-CTOP;
+          const numStr=String(listicleNum||6);
+          let nfs=Math.min(CH*0.88,480);
+          ctx.font=`900 ${nfs}px ${font},sans-serif`;
+          while(ctx.measureText(numStr).width>NCOL*0.88&&nfs>80){nfs-=10;ctx.font=`900 ${nfs}px ${font},sans-serif`;}
+          const nY=CTOP+CH*0.78;
+          drawEffectText(numStr,NCX,nY,nfs);
+          drawAccentLine(nY+18,false,NCOL);
+          const TX=SAFE+NCOL+36,TW=W-TX-SAFE;
+          const topicLine=(slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase();
+          const subject=(slide.subject||"2026 ENDS").toUpperCase();
+          ctx.fillStyle="rgba(255,255,255,0.62)";ctx.font=`600 42px ${font},sans-serif`;ctx.textAlign="left";
+          const tWords=topicLine.split(" ");let tLine="",tLines=[];
+          tWords.forEach(w=>{const test=tLine?tLine+" "+w:w;if(ctx.measureText(test).width>TW&&tLine){tLines.push(tLine);tLine=w;}else tLine=test;});
+          if(tLine)tLines.push(tLine);
+          const ttHH=tLines.length*50+20+130;
+          let ty=CTOP+(CH-ttHH)/2+50;
+          ctx.shadowColor="rgba(0,0,0,0.8)";ctx.shadowBlur=10;
+          tLines.forEach(l=>{ctx.fillText(l,TX,ty);ty+=50;});ctx.shadowBlur=0;
+          let sfs=118;ctx.font=`900 ${sfs}px ${font},sans-serif`;
+          while(ctx.measureText(subject).width>TW&&sfs>50){sfs-=6;ctx.font=`900 ${sfs}px ${font},sans-serif`;}
+          ctx.save();ctx.shadowColor="rgba(0,0,0,0.7)";ctx.shadowBlur=16;ctx.shadowOffsetY=4;ctx.fillStyle=secondary;ctx.fillText(subject,TX,ty+sfs*0.88);ctx.restore();
+          if(slide.subline){ctx.textAlign="center";ctx.fillStyle=secondary;ctx.globalAlpha=0.55;ctx.font="400 32px sans-serif";ctx.fillText(slide.subline,W/2,H*0.815);ctx.globalAlpha=1;ctx.textAlign="left";}
+          drawWebsite(H*0.962);drawChevron();
+        };
+        if(slide.image) loadAndDraw(slide.image,img=>{ctx.clearRect(0,0,W,H);drawListicleCover(img);drawWatermark();});
+        else drawListicleCover(null);
+      } else {
+        ctx.fillStyle="#0a0a0a";ctx.fillRect(0,0,W,H);
+        const numStr=String(slideIdx);
+        const NCOL=280,NCX=SAFE+NCOL/2;
+        let nfs=380;ctx.font=`900 ${nfs}px ${font},sans-serif`;
+        while(ctx.measureText(numStr).width>NCOL*0.85&&nfs>80){nfs-=10;ctx.font=`900 ${nfs}px ${font},sans-serif`;}
+        drawEffectText(numStr,NCX,H*0.55,nfs);
+        drawAccentLine(H*0.67,false,NCOL);
+        const TX2=SAFE+NCOL+40,TW2=W-TX2-SAFE;
+        if(slide.headline){
+          ctx.fillStyle=secondary;ctx.font=`700 72px ${font},sans-serif`;ctx.textAlign="left";
+          const hWords=slide.headline.toUpperCase().split(" ");let hl="",hls=[];
+          hWords.forEach(w=>{const t=hl?hl+" "+w:w;if(ctx.measureText(t).width>TW2&&hl){hls.push(hl);hl=w;}else hl=t;});
+          if(hl)hls.push(hl);
+          let hy=H*0.35;hls.forEach(l=>{ctx.fillText(l,TX2,hy);hy+=82;});
+        }
+        if(slide.bodyText){
+          const bW=TW2;let by=slide.headline?H*0.52:H*0.38;
+          ctx.fillStyle="rgba(255,255,255,0.65)";ctx.font="400 46px 'Helvetica Neue',Arial,sans-serif";ctx.textAlign="left";
+          const bWords=slide.bodyText.split(" ");let bl="",bls=[];
+          bWords.forEach(w=>{const t=bl?bl+" "+w:w;if(ctx.measureText(t).width>bW&&bl){bls.push(bl);bl=w;}else bl=t;});
+          if(bl)bls.push(bl);
+          bls.forEach(l=>{ctx.fillText(l,TX2,by);by+=64;});
+        }
+        drawBadge(ctx,profUrl,nm,hdl,SAFE,SAFE,true);
+        drawWebsite(H*0.972);
       }
     }
 
-    const fontLink = `https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Barlow+Condensed:wght@800&family=Archivo+Black&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&display=swap`;
-    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><link href="${fontLink}" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}</style></head><body style="width:1080px;height:1350px;overflow:hidden;position:relative;background:#000;">${inner}<div style="position:absolute;top:30px;right:40px;background:rgba(0,0,0,0.55);border-radius:8px;padding:6px 14px;font-size:28px;color:#fff;font-weight:700;font-family:sans-serif;">${idx+1}/${total}</div></body></html>`;
+    // CLEAN PRO
+    else if(tmpl==="clean-pro") {
+      if(slideIdx===0) {
+        if(slide.image) loadAndDraw(slide.image,img=>{ctx.clearRect(0,0,W,H);darkFadeCover(img);drawWatermark();});
+        else darkFadeCover(null);
+      } else {
+        const isWhite=bg==="white";
+        ctx.fillStyle=isWhite?"#ffffff":"#0a0a0a";ctx.fillRect(0,0,W,H);
+        const textMain=isWhite?"#0a0a0a":"#ffffff";
+        const textSub=isWhite?"rgba(0,0,0,0.45)":"rgba(255,255,255,0.45)";
+        const divCol=isWhite?"rgba(0,0,0,0.08)":"rgba(255,255,255,0.08)";
+        const bAvR=28,bCX=SAFE+bAvR,bCY=SAFE+bAvR+20;
+        ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR+2,0,Math.PI*2);ctx.fillStyle=isWhite?"rgba(0,0,0,0.06)":"rgba(255,255,255,0.15)";ctx.fill();ctx.restore();
+        if(profUrl){const img=new Image();img.src=profUrl;ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR,0,Math.PI*2);ctx.clip();const s=Math.max(bAvR*2/img.width,bAvR*2/img.height);ctx.drawImage(img,bCX-img.width*s/2,bCY-img.height*s/2,img.width*s,img.height*s);ctx.restore();}
+        else{ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR,0,Math.PI*2);ctx.fillStyle="#4a6a9a";ctx.fill();ctx.restore();}
+        const btx=bCX+bAvR+16;
+        ctx.fillStyle=textMain;ctx.font="700 26px 'Helvetica Neue',Arial,sans-serif";
+        const dnW=ctx.measureText(nm||"").width;ctx.fillText(nm||"",btx,bCY-4);
+        const hdlW2=ctx.measureText(hdl||"").width;
+        const tkX=btx+Math.max(dnW,hdlW2)+20;
+        ctx.save();ctx.beginPath();ctx.arc(tkX,bCY-14,12,0,Math.PI*2);ctx.fillStyle="#1D9BF0";ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.lineCap="round";ctx.lineJoin="round";ctx.beginPath();ctx.moveTo(tkX-5,bCY-14+5);ctx.lineTo(tkX-1.5,bCY-14+9);ctx.lineTo(tkX+5,bCY-14-2);ctx.stroke();ctx.restore();
+        ctx.fillStyle=textSub;ctx.font="400 20px 'Helvetica Neue',Arial,sans-serif";ctx.fillText(hdl||"",btx,bCY+18);
+        const divY=bCY+bAvR+40;
+        ctx.fillStyle=divCol;ctx.fillRect(SAFE,divY,W-SAFE*2,1.5);
+        let curY=divY+90;const cX=SAFE+30,cW=W-(SAFE+30)*2;
+        if(slide.headline){
+          ctx.fillStyle=textMain;ctx.font="800 68px 'Helvetica Neue',Arial,sans-serif";ctx.textAlign="left";
+          const hw=slide.headline.split(" ");let hl="",hls=[];
+          hw.forEach(w=>{const t=hl?hl+" "+w:w;if(ctx.measureText(t).width>cW&&hl){hls.push(hl);hl=w;}else hl=t;});
+          if(hl)hls.push(hl);hls.forEach(l=>{ctx.fillText(l,cX,curY);curY+=82;});curY+=36;
+        }
+        if(slide.bodyText){
+          ctx.fillStyle=textSub;ctx.font="400 46px 'Helvetica Neue',Arial,sans-serif";ctx.textAlign="left";
+          slide.bodyText.split("\n").forEach(para=>{
+            if(!para.trim()){curY+=36;return;}
+            const bw=para.split(" ");let bl="",bls=[];
+            bw.forEach(w=>{const t=bl?bl+" "+w:w;if(ctx.measureText(t).width>cW&&bl){bls.push(bl);bl=w;}else bl=t;});
+            if(bl)bls.push(bl);bls.forEach(l=>{ctx.fillText(l,cX,curY);curY+=64;});curY+=16;
+          });curY+=16;
+        }
+        if(slide.accentText){
+          ctx.fillStyle=primary;ctx.font="700 50px 'Helvetica Neue',Arial,sans-serif";ctx.textAlign="left";
+          const aw=slide.accentText.split(" ");let al="",als=[];
+          aw.forEach(w=>{const t=al?al+" "+w:w;if(ctx.measureText(t).width>cW&&al){als.push(al);al=w;}else al=t;});
+          if(al)als.push(al);als.forEach(l=>{ctx.fillText(l,cX,curY);curY+=66;});curY+=16;
+          ctx.fillStyle=primary;ctx.fillRect(cX,curY,100,4);
+        }
+        ctx.fillStyle=textSub;ctx.font="400 28px sans-serif";ctx.textAlign="right";
+        ctx.fillText(`${slideIdx+1} / ${total}`,W-SAFE,H-SAFE);ctx.textAlign="left";
+      }
+    }
+
+    // STORYTELLING
+    else if(tmpl==="storytelling") {
+      const isWhite=bg==="white";
+      ctx.fillStyle=isWhite?"#ffffff":"#0a0a0a";ctx.fillRect(0,0,W,H);
+      const textCol=isWhite?"#0a0a0a":"#ffffff";
+      const subCol=isWhite?"rgba(0,0,0,0.4)":"rgba(255,255,255,0.4)";
+      const bAvR=30,bCX=SAFE+bAvR,bCY=H*0.25;
+      ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR+2,0,Math.PI*2);ctx.fillStyle=isWhite?"rgba(0,0,0,0.06)":"rgba(255,255,255,0.12)";ctx.fill();ctx.restore();
+      if(profUrl){const img=new Image();img.src=profUrl;ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR,0,Math.PI*2);ctx.clip();const s=Math.max(bAvR*2/img.width,bAvR*2/img.height);ctx.drawImage(img,bCX-img.width*s/2,bCY-img.height*s/2,img.width*s,img.height*s);ctx.restore();}
+      else{ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR,0,Math.PI*2);ctx.fillStyle="#4a6a9a";ctx.fill();ctx.restore();}
+      const btx2=bCX+bAvR+16;
+      ctx.fillStyle=textCol;ctx.font="700 32px 'Helvetica Neue',Arial,sans-serif";
+      const dnW2=ctx.measureText(nm||"").width;ctx.fillText(nm||"",btx2,bCY-6);
+      const hdlW3=ctx.measureText(hdl||"").width;
+      const tkX2=btx2+Math.max(dnW2,hdlW3)+20;
+      ctx.save();ctx.beginPath();ctx.arc(tkX2,bCY-18,13,0,Math.PI*2);ctx.fillStyle="#1D9BF0";ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.lineCap="round";ctx.lineJoin="round";ctx.beginPath();ctx.moveTo(tkX2-6,bCY-18+6);ctx.lineTo(tkX2-1.5,bCY-18+12);ctx.lineTo(tkX2+6,bCY-18-2);ctx.stroke();ctx.restore();
+      ctx.fillStyle=subCol;ctx.font="400 26px 'Helvetica Neue',Arial,sans-serif";ctx.fillText(hdl||"",btx2,bCY+26);
+      const text=slide.storyText||"";
+      if(text.trim()){
+        const stItalic=fontStyle==="Playfair Display";
+        const stFamily=fontStyle||"Inter";
+        const fontSize=38,lineH=62,cW=W-SAFE*4;
+        ctx.font=`${stItalic?"italic ":""}400 ${fontSize}px '${stFamily}',serif`;
+        ctx.fillStyle=textCol;ctx.textAlign="center";
+        const paras=text.split("\n");let allLines=[];
+        paras.forEach((para,pi)=>{
+          if(!para.trim()){if(pi>0)allLines.push(null);return;}
+          const words=para.split(" ");let line="";
+          words.forEach(w=>{const test=line?line+" "+w:w;if(ctx.measureText(test).width>cW&&line){allLines.push(line);line=w;}else line=test;});
+          if(line)allLines.push(line);if(pi<paras.length-1)allLines.push(null);
+        });
+        while(allLines.length&&allLines[allLines.length-1]===null)allLines.pop();
+        const totalH=allLines.reduce((h,l)=>h+(l===null?lineH*0.6:lineH),0);
+        let curY=(H-totalH)/2+fontSize*0.82;
+        allLines.forEach(l=>{if(l===null){curY+=lineH*0.6;return;}ctx.fillText(l,W/2,curY);curY+=lineH;});
+      }
+      if(slideIdx===0){
+        ctx.save();ctx.globalAlpha=0.3;ctx.strokeStyle=textCol;ctx.lineWidth=5;ctx.lineCap="round";ctx.lineJoin="round";
+        const cx2=W-SAFE-16,cy2=H-SAFE;
+        ctx.beginPath();ctx.moveTo(cx2-22,cy2-14);ctx.lineTo(cx2,cy2);ctx.lineTo(cx2-22,cy2+14);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(cx2-6,cy2-14);ctx.lineTo(cx2+16,cy2);ctx.lineTo(cx2-6,cy2+14);ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // RAW
+    else if(tmpl==="raw") {
+      const drawRaw=(img)=>{
+        if(img) coverFit(img);
+        else{const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,"#2a1a2a");g.addColorStop(1,"#1a2a1a");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
+        const isWhiteBox=rawBox==="white";
+        const boxBg=isWhiteBox?"rgba(255,255,255,0.97)":"rgba(0,0,0,0.93)";
+        const textColR=isWhiteBox?"#0a0a0a":"#ffffff";
+        const text=slide.rawText||"";
+        if(text.trim()){
+          const rItalic=fontStyle==="Playfair Display";
+          const rFamily=fontStyle||"Inter";
+          const fontSize=34,lineH=48,padX=38,padY=28,maxTW=W*0.78;
+          ctx.font=`${rItalic?"italic ":""}400 ${fontSize}px '${rFamily}',sans-serif`;
+          ctx.textAlign="left";
+          const paras=text.split("\n");let allLines=[];
+          paras.forEach(para=>{
+            if(!para.trim()){allLines.push(null);return;}
+            const words=para.split(" ");let line="";
+            words.forEach(w=>{const test=line?line+" "+w:w;if(ctx.measureText(test).width>maxTW&&line){allLines.push(line);line=w;}else line=test;});
+            if(line)allLines.push(line);allLines.push(null);
+          });
+          while(allLines.length&&allLines[allLines.length-1]===null)allLines.pop();
+          let maxWW=0;allLines.forEach(l=>{if(l){const m=ctx.measureText(l).width;if(m>maxWW)maxWW=m;}});
+          const boxW=maxWW+padX*2;
+          const totalTextH=allLines.reduce((h,l)=>h+(l===null?lineH*0.45:lineH),0);
+          const boxH=totalTextH+padY*2;
+          const boxX=(W-boxW)/2;
+          const boxY=rawPos==="bottom"?H-boxH-100:(H-boxH)/2;
+          ctx.fillStyle=boxBg;ctx.fillRect(boxX,boxY,boxW,boxH);
+          ctx.fillStyle=textColR;
+          let cy=boxY+padY+fontSize*0.82;
+          allLines.forEach(l=>{if(l===null){cy+=lineH*0.45;return;}ctx.fillText(l,boxX+padX,cy);cy+=lineH;});
+        }
+      };
+      if(slide.image) loadAndDraw(slide.image,img=>{ctx.clearRect(0,0,W,H);drawRaw(img);drawWatermark();});
+      else drawRaw(null);
+    }
+
+    drawWatermark();
   }
 
-    // Template slide AI suggest function
-  const tmplSuggestSlide = async (idx) => {
-    setTmplSuggesting(idx);
-    try {
-      const context = tmplSlides.map((s,i)=>s.headline?`Slide ${i+1}: "${s.headline}"`:"").filter(Boolean).join(", ");
-      const r = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:80, messages:[{ role:"user", content:`You are writing text for slide ${idx+1} of a ${tmplSelected} carousel for a ${businessType||"digital marketer"} called ${name||"the creator"}. Voice: ${voiceProfile||"direct, honest, punchy"}. ${context?`Other slides: ${context}.`:""} Write ONE punchy headline, max 60 characters. Return ONLY the headline text, nothing else, no quotes.` }] });
-      const text = r?.content?.[0]?.text?.trim()||"";
-      if (text) {
-        const next = [...tmplSlides];
-        next[idx] = {...next[idx], headline: text};
-        setTmplSlides(next);
-      }
-    } catch {}
-    setTmplSuggesting(null);
-  };
 
   // ADMIN-ONLY brand preset functions — only ever called from is_admin-gated UI, touches a separate localStorage key only
   const saveAdminPreset = () => {
@@ -2226,9 +2412,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
   const [showPexelsCover, setShowPexelsCover] = useState(false);
   const [showPexelsTemplate, setShowPexelsTemplate] = useState(false);
   const [showPexelsQuote, setShowPexelsQuote] = useState(false);
-  const NAV_ITEMS = [["generate","Generate"],["quotes","Quotes"],...(currentUser?.is_admin?[["templates","Templates"]]:[]),["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
-  const BURGER_ITEMS = [["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
-  const MAIN_NAV = [["generate","Generate"],["quotes","Quotes"],...(currentUser?.is_admin?[["templates","Templates"]]:[])];
+  const NAV_ITEMS = [["generate","Generate"],["templates","Templates"],["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
+  const BURGER_ITEMS = [["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
+  const MAIN_NAV = [["generate","Generate"],["templates","Templates"]];
 
   return (
     <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"Plus Jakarta Sans,system-ui,sans-serif"}}>
@@ -3003,172 +3189,25 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         {nav==="templates"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:960,margin:"0 auto",width:"100%",paddingBottom:60}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 4px"}}>Templates</h2>
-            <p style={{fontSize:14,color:A.muted,margin:"0 0 28px",lineHeight:1.6}}>You're in control. Pick a template, add your images and text. AI helps when you need it.</p>
+            <p style={{fontSize:14,color:A.muted,margin:"0 0 24px"}}>Pick a design, add your content, download. You're in control.</p>
 
             {/* TEMPLATE PICKER */}
             {!tmplSelected&&(
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:20}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:16}}>
                 {[
-                  {
-                    id:"clean-pro",
-                    label:"Clean Pro",
-                    desc:"Photo cover with gradient + badge. Light body slides with profile top left. The most professional format.",
-                    coverBg:"linear-gradient(to bottom, #4a6fa5 0%, #1a1a2e 100%)",
-                    bodyBg:"#F5F3EF",
-                    coverText:"#fff",
-                    bodyText:"#0a0a0a"
-                  },
-                  {
-                    id:"theme-page",
-                    label:"Theme Page",
-                    desc:"Bold gradient cover with profile badge on divider. Dark body slides with handle top left.",
-                    coverBg:"linear-gradient(to bottom, #2d2d2d 0%, #000 100%)",
-                    bodyBg:"#000",
-                    coverText:"#fff",
-                    bodyText:"#fff"
-                  },
-                  {
-                    id:"theme-split",
-                    label:"Theme Page Split",
-                    desc:"Two-image grid cover with gradient. Dark clean body slides. Great for comparisons and stories.",
-                    coverBg:"linear-gradient(to bottom, #3a3a3a 0%, #000 100%)",
-                    bodyBg:"#0a0a0a",
-                    coverText:"#fff",
-                    bodyText:"#fff"
-                  },
-                  {
-                    id:"breaking-news",
-                    label:"Breaking News",
-                    desc:"Bold pill label cover with optional image. Body slides keep the breaking news energy with detail text.",
-                    coverBg:"#000",
-                    bodyBg:"#0a0a0a",
-                    coverText:"#fff",
-                    bodyText:"#fff"
-                  },
-                  {
-                    id:"comparison",
-                    label:"Comparison",
-                    desc:"Split cover — left vs right. Body slides continue with two-column format. Perfect for contrast content.",
-                    coverBg:"linear-gradient(135deg, #1a1a1a 50%, #2a2a2a 50%)",
-                    bodyBg:"#0a0a0a",
-                    coverText:"#fff",
-                    bodyText:"#fff"
-                  },
-                  {
-                    id:"listicle",
-                    label:"Listicle",
-                    desc:"Hook cover with your topic headline. Body slides numbered 1-6, one fact or point per slide.",
-                    coverBg:"#000",
-                    bodyBg:"#0a0a0a",
-                    coverText:"#fff",
-                    bodyText:"#fff"
-                  },
-                  {
-                    id:"clean-card",
-                    label:"Clean Card",
-                    desc:"Image cover with white card text overlay. Body slides keep the card style — clean, editorial, sharp.",
-                    coverBg:"linear-gradient(to bottom, #6a8a6a 0%, #2a4a2a 100%)",
-                    bodyBg:"linear-gradient(to bottom, #5a7a9a 0%, #1a3a5a 100%)",
-                    coverText:"#fff",
-                    bodyText:"#fff"
-                  },
+                  {id:"dark-fade",label:"Dark Fade",desc:"Bold photo cover with smooth gradient fade. Badge, headline and subline. Scroll-stopping theme page style.",emoji:"🌑"},
+                  {id:"listicle",label:"Listicle",desc:"Hook cover with big number left, topic right. Body slides numbered. Up to 11 points + cover.",emoji:"🔢"},
+                  {id:"clean-pro",label:"Clean Pro",desc:"Dark Fade cover, then clean white or black body slides. Informative, professional, readable.",emoji:"✨"},
+                  {id:"storytelling",label:"Storytelling",desc:"Pure text on white or black. Badge at top left. Dead centre paragraph text. AI writes your story from a brief.",emoji:"📖"},
+                  {id:"raw",label:"Raw",desc:"Your photo. Tight text box over it. No badge. No polish. Authentic, native, unfiltered.",emoji:"📱"},
                 ].map(t=>(
-                  <div key={t.id} onClick={()=>{
-                    setTmplSelected(t.id);
-                    setTmplSlides(Array(tmplSlideCount).fill(null).map((_,i)=>({
-                      image:null, image2:null,
-                      imagePos:{x:50,y:50}, image2Pos:{x:50,y:50},
-                      headline:"", subline:"", bodyText:""
-                    })));
-                  }} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:16,overflow:"hidden",cursor:"pointer",transition:"border-color 0.2s,transform 0.15s"}}
-                  onMouseEnter={e=>{e.currentTarget.style.borderColor=GOLD;e.currentTarget.style.transform="translateY(-2px)";}}
-                  onMouseLeave={e=>{e.currentTarget.style.borderColor=A.border;e.currentTarget.style.transform="translateY(0)";}}>
-                    {/* Two-slide preview */}
-                    <div style={{display:"flex",height:90}}>
-                      {/* Cover preview */}
-                      <div style={{flex:1,background:t.coverBg,display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:8,position:"relative",borderRight:`1px solid rgba(255,255,255,0.1)`}}>
-                        <div style={{position:"absolute",top:4,right:4,fontSize:7,color:"rgba(255,255,255,0.5)",fontWeight:700}}>COVER</div>
-                        {t.id==="theme-split"&&(
-                          <div style={{position:"absolute",top:0,left:0,right:0,height:"55%",display:"flex",gap:1}}>
-                            <div style={{flex:1,background:"rgba(255,255,255,0.15)"}}/>
-                            <div style={{flex:1,background:"rgba(255,255,255,0.1)"}}/>
-                          </div>
-                        )}
-                        {t.id==="breaking-news"&&(
-                          <div style={{position:"absolute",top:"30%",left:"50%",transform:"translate(-50%,-50%)",background:"#e74c3c",borderRadius:2,padding:"2px 6px",fontSize:6,fontWeight:900,color:"#fff",letterSpacing:1,whiteSpace:"nowrap"}}>BREAKING</div>
-                        )}
-                        {t.id==="comparison"&&(
-                          <>
-                            <div style={{position:"absolute",top:0,left:0,width:"50%",height:"100%",background:"rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                              <div style={{fontSize:6,color:"rgba(255,255,255,0.4)",fontWeight:700}}>LEFT</div>
-                            </div>
-                            <div style={{position:"absolute",top:0,right:0,width:"50%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                              <div style={{fontSize:6,color:"rgba(255,255,255,0.4)",fontWeight:700}}>RIGHT</div>
-                            </div>
-                          </>
-                        )}
-                        {["clean-card"].includes(t.id)&&(
-                          <div style={{position:"absolute",bottom:10,left:6,right:6,background:"rgba(255,255,255,0.92)",borderRadius:3,padding:"4px 6px"}}>
-                            <div style={{fontSize:6,color:"#0a0a0a",fontWeight:800,lineHeight:1.2}}>Your headline</div>
-                          </div>
-                        )}
-                        {!["clean-card","comparison","breaking-news"].includes(t.id)&&(
-                          <div style={{fontSize:7,fontWeight:900,color:t.coverText,lineHeight:1.1,textShadow:"0 1px 4px rgba(0,0,0,0.6)"}}>Your hook headline</div>
-                        )}
-                        {t.id==="breaking-news"&&(
-                          <div style={{fontSize:7,fontWeight:900,color:"#fff",lineHeight:1.1,marginTop:2}}>YOUR HEADLINE</div>
-                        )}
-                        {t.id==="comparison"&&(
-                          <div style={{fontSize:6,color:"rgba(255,255,255,0.5)",textAlign:"center",width:"100%"}}>vs</div>
-                        )}
-                        {["clean-pro","theme-page","theme-split"].includes(t.id)&&(
-                          <div style={{position:"absolute",bottom:6,left:"50%",transform:"translateX(-50%)",width:14,height:14,borderRadius:"50%",background:"rgba(255,255,255,0.3)",border:"1.5px solid #fff"}}/>
-                        )}
-                      </div>
-                      {/* Body preview */}
-                      <div style={{flex:1,background:t.id==="clean-pro"?"#F5F3EF":t.id==="clean-card"?"#e8e8e8":"#0a0a0a",display:"flex",flexDirection:"column",padding:8,gap:3,position:"relative"}}>
-                        <div style={{position:"absolute",top:4,right:4,fontSize:7,color:t.id==="clean-pro"?"rgba(0,0,0,0.3)":"rgba(255,255,255,0.3)",fontWeight:700}}>BODY</div>
-                        {["clean-pro"].includes(t.id)&&(
-                          <div style={{display:"flex",alignItems:"center",gap:3,marginBottom:2}}>
-                            <div style={{width:10,height:10,borderRadius:"50%",background:"rgba(0,0,0,0.15)"}}/>
-                            <div style={{fontSize:6,color:"rgba(0,0,0,0.4)",fontWeight:700}}>Your Name</div>
-                          </div>
-                        )}
-                        {["clean-card"].includes(t.id)&&(
-                          <div style={{background:"rgba(255,255,255,0.9)",borderRadius:3,padding:"4px 5px",marginTop:8}}>
-                            <div style={{fontSize:6,color:"#0a0a0a",fontWeight:800,lineHeight:1.2}}>Bold headline</div>
-                            <div style={{fontSize:5,color:"rgba(0,0,0,0.5)",marginTop:1}}>Body text here</div>
-                          </div>
-                        )}
-                        {t.id==="listicle"&&(
-                          <div style={{display:"flex",alignItems:"center",gap:4,marginTop:16}}>
-                            <div style={{fontSize:18,fontWeight:900,color:GOLD,lineHeight:1}}>01</div>
-                            <div style={{fontSize:6,color:"rgba(255,255,255,0.8)",lineHeight:1.3}}>Your point here</div>
-                          </div>
-                        )}
-                        {t.id==="comparison"&&(
-                          <div style={{display:"flex",gap:2,marginTop:16,flex:1}}>
-                            <div style={{flex:1,background:"rgba(255,255,255,0.05)",borderRadius:2,padding:3,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                              <div style={{fontSize:5,color:"rgba(255,255,255,0.5)",textAlign:"center"}}>Left</div>
-                            </div>
-                            <div style={{flex:1,background:"rgba(255,255,255,0.05)",borderRadius:2,padding:3,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                              <div style={{fontSize:5,color:"rgba(255,255,255,0.5)",textAlign:"center"}}>Right</div>
-                            </div>
-                          </div>
-                        )}
-                        {!["clean-card","listicle","comparison"].includes(t.id)&&(
-                          <>
-                            <div style={{fontSize:7,fontWeight:800,color:t.id==="clean-pro"?"#0a0a0a":"#fff",marginTop:t.id==="clean-pro"?0:12}}>Bold headline</div>
-                            <div style={{fontSize:6,color:t.id==="clean-pro"?"rgba(0,0,0,0.5)":"rgba(255,255,255,0.5)",lineHeight:1.4}}>Body text content goes here...</div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    {/* Label + desc */}
-                    <div style={{padding:"12px 14px"}}>
-                      <div style={{fontSize:13,fontWeight:800,color:A.text,marginBottom:4}}>{t.label}</div>
-                      <div style={{fontSize:11,color:A.muted,lineHeight:1.5}}>{t.desc}</div>
-                    </div>
+                  <div key={t.id} onClick={()=>{setTmplSelected(t.id);setTmplSlides(Array(12).fill(null).map(()=>({image:null,image2:null,imagePos:{x:50,y:50},image2Pos:{x:50,y:50},headline:"",subline:"",bodyText:"",accentText:"",topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:"",pillText:""})));setTmplSlideCount(t.id==="listicle"?7:6);setTmplBrief("");}}
+                    style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,cursor:"pointer",transition:"border-color 0.2s,transform 0.15s"}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=GOLD;e.currentTarget.style.transform="translateY(-2px)";}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor=A.border;e.currentTarget.style.transform="translateY(0)";}}>
+                    <div style={{fontSize:28,marginBottom:8}}>{t.emoji}</div>
+                    <div style={{fontSize:14,fontWeight:800,color:A.text,marginBottom:6}}>{t.label}</div>
+                    <div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>{t.desc}</div>
                   </div>
                 ))}
               </div>
@@ -3176,372 +3215,316 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
             {/* TEMPLATE BUILDER */}
             {tmplSelected&&(()=>{
-              const isLightBody = tmplSelected==="clean-pro";
-              const needsCover = true;
-              const hasSplitCover = tmplSelected==="theme-split";
               const isListicle = tmplSelected==="listicle";
-              const isComparison = tmplSelected==="comparison";
-              const isBreaking = tmplSelected==="breaking-news";
-              const isCleanCard = tmplSelected==="clean-card";
               const isCleanPro = tmplSelected==="clean-pro";
+              const isStory = tmplSelected==="storytelling";
+              const isRaw = tmplSelected==="raw";
+              const isDarkFade = tmplSelected==="dark-fade";
+              const hasAI = isListicle||isCleanPro||isStory;
+              const maxSlides = isListicle?12:6;
+              const isFree = currentUser?.plan==="free";
 
-              const STYLE_PRESETS = [
-                {id:"bold-impact",label:"Bold Impact",fontFamily:"'Oswald',sans-serif",fontWeight:900,textTransform:"uppercase",letterSpacing:"1px"},
-                {id:"elegant-serif",label:"Elegant Serif",fontFamily:"'Playfair Display',serif",fontWeight:700,textTransform:"none",letterSpacing:"0px"},
-                {id:"clean-modern",label:"Clean Modern",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,textTransform:"none",letterSpacing:"-0.5px"},
-                {id:"heavy-condensed",label:"Heavy Condensed",fontFamily:"'Bebas Neue',sans-serif",fontWeight:400,textTransform:"uppercase",letterSpacing:"2px"},
-                {id:"editorial",label:"Editorial",fontFamily:"'Anton',sans-serif",fontWeight:400,textTransform:"uppercase",letterSpacing:"0px"},
-                {id:"script-luxury",label:"Script Luxury",fontFamily:"'Playfair Display',serif",fontWeight:900,textTransform:"none",fontStyle:"italic",letterSpacing:"-1px"},
-              ];
-              const activeStyle = STYLE_PRESETS.find(s=>s.id===tmplFont)||STYLE_PRESETS[0];
-              const headlineStyle = {fontFamily:activeStyle.fontFamily,fontWeight:activeStyle.fontWeight,textTransform:activeStyle.textTransform,letterSpacing:activeStyle.letterSpacing,fontStyle:activeStyle.fontStyle||"normal"};
+              // Canvas preview ref array
+              const canvasRefs = tmplSlides.slice(0,tmplSlideCount).map(()=>React.createRef());
 
-              const updateSlide = (idx, field, val) => {
-                setTmplSlides(prev => {const next=[...prev];next[idx]={...next[idx],[field]:val};return next;});
+              const opts = {
+                effect:tmplEffect, font:tmplFont, primary:tmplPrimary, secondary:tmplSecondary,
+                bg:tmplBg, fontStyle:tmplFontStyle, rawBox:tmplRawBox, rawPos:tmplRawPos,
+                listicleNum:tmplListicleNum, profUrl:profileUrl, nm:name, hdl:handle, isFree
               };
 
-              const ImageUploadSlot = ({label, image, onImage, pos, onPos, size=80}) => (
-                <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"center"}}>
-                  <div style={{fontSize:10,color:A.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>{label}</div>
-                  <div onClick={()=>{const inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>onImage(ev.target.result);r.readAsDataURL(f);};inp.click();}} style={{width:size,height:size,borderRadius:10,border:`1.5px dashed ${image?GOLD:A.border}`,background:A.bg,overflow:"hidden",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,position:"relative"}}>
-                    {image?<img src={image} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:`${pos?.x||50}% ${pos?.y||50}%`}}/>:<span style={{color:A.muted,fontSize:22}}>+</span>}
-                  </div>
-                  {image&&(
-                    <>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gridTemplateRows:"1fr 1fr 1fr",gap:3,width:70}}>
-                        <div/>
-                        <button onClick={()=>onPos({...(pos||{x:50,y:50}),y:Math.max(0,(pos?.y||50)-10)})} style={{background:A.surface,border:`1px solid ${A.border}`,borderRadius:4,padding:"3px",cursor:"pointer",color:A.text,fontSize:10,display:"flex",alignItems:"center",justifyContent:"center"}}>↑</button>
-                        <div/>
-                        <button onClick={()=>onPos({...(pos||{x:50,y:50}),x:Math.max(0,(pos?.x||50)-10)})} style={{background:A.surface,border:`1px solid ${A.border}`,borderRadius:4,padding:"3px",cursor:"pointer",color:A.text,fontSize:10,display:"flex",alignItems:"center",justifyContent:"center"}}>←</button>
-                        <div style={{background:A.surface,border:`1px solid ${A.border}`,borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:8,color:A.muted}}>⊙</span></div>
-                        <button onClick={()=>onPos({...(pos||{x:50,y:50}),x:Math.min(100,(pos?.x||50)+10)})} style={{background:A.surface,border:`1px solid ${A.border}`,borderRadius:4,padding:"3px",cursor:"pointer",color:A.text,fontSize:10,display:"flex",alignItems:"center",justifyContent:"center"}}>→</button>
-                        <div/>
-                        <button onClick={()=>onPos({...(pos||{x:50,y:50}),y:Math.min(100,(pos?.y||50)+10)})} style={{background:A.surface,border:`1px solid ${A.border}`,borderRadius:4,padding:"3px",cursor:"pointer",color:A.text,fontSize:10,display:"flex",alignItems:"center",justifyContent:"center"}}>↓</button>
-                        <div/>
-                      </div>
-                      <button onClick={()=>onImage(null)} style={{fontSize:10,color:"#e74c3c",background:"none",border:"none",cursor:"pointer"}}>Remove</button>
-                      {coverPhotos?.length>0&&(
-                        <div style={{display:"flex",gap:3,flexWrap:"wrap",justifyContent:"center",maxWidth:100}}>
-                          {coverPhotos.slice(0,4).map((p,pi)=>(
-                            <div key={pi} onClick={()=>onImage(p)} style={{width:22,height:22,borderRadius:4,overflow:"hidden",cursor:"pointer",border:`1px solid ${A.border}`}}>
-                              <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              );
+              const doRender = (idx, canvasEl) => {
+                if(!canvasEl) return;
+                renderTmplSlide(canvasEl, idx, tmplSlideCount, tmplSelected, tmplSlides, opts);
+              };
+
+              // Trigger re-render of all previews
+              React.useEffect(()=>{
+                canvasRefs.forEach((ref,i)=>{if(ref.current)doRender(i,ref.current);});
+              });
+
+              const downloadSlide = async (idx) => {
+                if(!canGenerate()){setNav("upgrade");return;}
+                setTmplDownloadingIdx(idx);
+                try {
+                  const c = document.createElement("canvas");
+                  c.width=1080; c.height=1350;
+                  renderTmplSlide(c, idx, tmplSlideCount, tmplSelected, tmplSlides, opts);
+                  // Wait for async image loads
+                  await new Promise(r=>setTimeout(r,800));
+                  renderTmplSlide(c, idx, tmplSlideCount, tmplSelected, tmplSlides, opts);
+                  await new Promise(r=>setTimeout(r,200));
+                  const url = c.toDataURL("image/png");
+                  const a = document.createElement("a"); a.href=url; a.download=`${tmplSelected}-slide-${idx+1}.png`; a.click();
+                  // Deduct credits
+                  await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:5})});
+                  setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));
+                } catch(e){console.error(e);}
+                setTmplDownloadingIdx(null);
+              };
+
+              const downloadAll = async () => {
+                if(!canGenerate()){setNav("upgrade");return;}
+                setTmplDownloading(true);
+                try {
+                  for(let i=0;i<tmplSlideCount;i++){
+                    const c=document.createElement("canvas");c.width=1080;c.height=1350;
+                    renderTmplSlide(c,i,tmplSlideCount,tmplSelected,tmplSlides,opts);
+                    await new Promise(r=>setTimeout(r,800));
+                    renderTmplSlide(c,i,tmplSlideCount,tmplSelected,tmplSlides,opts);
+                    await new Promise(r=>setTimeout(r,200));
+                    const url=c.toDataURL("image/png");
+                    const a=document.createElement("a");a.href=url;a.download=`${tmplSelected}-slide-${i+1}.png`;a.click();
+                    await new Promise(r=>setTimeout(r,400));
+                  }
+                  // Deduct 10 credits for all
+                  await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:10})});
+                  setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+10}));
+                } catch(e){console.error(e);}
+                setTmplDownloading(false);
+              };
 
               return (
                 <div>
-                  {/* Back button */}
+                  {/* Back */}
                   <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
                     <button onClick={()=>setTmplSelected(null)} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Templates</button>
-                    <span style={{fontSize:14,fontWeight:800,color:GOLD}}>
-                      {tmplSelected==="clean-pro"?"Clean Pro":tmplSelected==="theme-page"?"Theme Page":tmplSelected==="theme-split"?"Theme Page Split":tmplSelected==="breaking-news"?"Breaking News":tmplSelected==="comparison"?"Comparison":tmplSelected==="listicle"?"Listicle":"Clean Card"}
-                    </span>
+                    <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Dark Fade":isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":"Raw"}</span>
+                    {isFree&&<span style={{fontSize:11,color:"#e74c3c",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",padding:"2px 8px",borderRadius:6}}>Free plan — watermark on exports</span>}
                   </div>
 
-                  {/* Global settings */}
-                  <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:16,marginBottom:20}}>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:16,alignItems:"flex-start"}}>
-                      
-                      {/* Slide count */}
-                      <div>
-                        <label style={lbl}>Slides</label>
-                        <div style={{display:"flex",alignItems:"center",gap:10,marginTop:6}}>
-                          <button onClick={()=>{const n=Math.max(2,tmplSlideCount-1);setTmplSlideCount(n);setTmplSlides(s=>{const next=[...s];while(next.length<n)next.push({image:null,image2:null,imagePos:{x:50,y:50},image2Pos:{x:50,y:50},headline:"",subline:"",bodyText:""});return next.slice(0,n);});}} style={{width:28,height:28,borderRadius:6,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:16,cursor:"pointer"}}>−</button>
-                          <span style={{fontWeight:800,fontSize:16,minWidth:16,textAlign:"center"}}>{tmplSlideCount}</span>
-                          <button onClick={()=>{const n=Math.min(6,tmplSlideCount+1);setTmplSlideCount(n);setTmplSlides(s=>{const next=[...s];while(next.length<n)next.push({image:null,image2:null,imagePos:{x:50,y:50},image2Pos:{x:50,y:50},headline:"",subline:"",bodyText:""});return next.slice(0,n);});}} style={{width:28,height:28,borderRadius:6,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:16,cursor:"pointer"}}>+</button>
-                          <span style={{fontSize:11,color:A.muted}}>max 6</span>
+                  <div style={{display:"flex",gap:20,flexWrap:"wrap",alignItems:"flex-start"}}>
+
+                    {/* LEFT — controls */}
+                    <div style={{width:280,flexShrink:0,display:"flex",flexDirection:"column",gap:12}}>
+
+                      {/* Brief (AI templates only) */}
+                      {hasAI&&(
+                        <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
+                          <label style={{...lbl,color:GOLD}}>AI Brief</label>
+                          <textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={3} placeholder={isStory?"What's your story? Include names, places, feelings, turning point...":isListicle?"What's your list about? e.g. Instagram growth tips for coaches":"What's this carousel about? e.g. 5 email marketing mistakes"} style={{...inp,marginTop:6,fontSize:12,lineHeight:1.5}}/>
+                          <div style={{fontSize:10,color:A.muted,marginTop:4}}>The more specific, the better. AI uses this for ✨ Suggest.</div>
                         </div>
-                      </div>
+                      )}
 
-                      {/* Style presets */}
-                      <div style={{flex:1,minWidth:260}}>
-                        <label style={lbl}>Text Style</label>
-                        <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:6}}>
-                          {STYLE_PRESETS.map(s=>(
-                            <button key={s.id} onClick={()=>setTmplFont(s.id)} style={{padding:"6px 12px",borderRadius:8,border:`1.5px solid ${tmplFont===s.id?GOLD:A.border}`,background:tmplFont===s.id?"#1a1500":A.bg,color:tmplFont===s.id?GOLD:A.muted,fontSize:12,cursor:"pointer",fontFamily:s.fontFamily,fontWeight:s.fontWeight,textTransform:s.textTransform,fontStyle:s.fontStyle||"normal"}}>{s.label}</button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Colours */}
-                      <div>
-                        <label style={lbl}>Text Colour</label>
-                        <div style={{display:"flex",gap:6,marginTop:6,alignItems:"center",flexWrap:"wrap"}}>
-                          {["#ffffff","#000000","#BB9900","#e74c3c","#3498db","#2ecc71","#f39c12"].map(c=>(
-                            <div key={c} onClick={()=>setTmplTextColour(c)} style={{width:22,height:22,borderRadius:"50%",background:c,border:`2.5px solid ${tmplTextColour===c?GOLD:"transparent"}`,cursor:"pointer"}}/>
-                          ))}
-                          <input type="color" value={tmplTextColour} onChange={e=>setTmplTextColour(e.target.value)} style={{width:26,height:26,borderRadius:6,border:`1px solid ${A.border}`,background:"none",cursor:"pointer",padding:2}}/>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label style={lbl}>Accent</label>
-                        <div style={{display:"flex",gap:6,marginTop:6,alignItems:"center",flexWrap:"wrap"}}>
-                          {["#BB9900","#e74c3c","#ff6b35","#3498db","#2ecc71","#9b59b6","#ffffff"].map(c=>(
-                            <div key={c} onClick={()=>setTmplAccent(c)} style={{width:22,height:22,borderRadius:"50%",background:c,border:`2.5px solid ${tmplAccent===c?GOLD:"transparent"}`,cursor:"pointer"}}/>
-                          ))}
-                        </div>
-                      </div>
-
-                    </div>
-                  </div>
-
-                  {/* Per-slide inputs */}
-                  <div style={{display:"flex",flexDirection:"column",gap:16,marginBottom:24}}>
-                    {tmplSlides.slice(0,tmplSlideCount).map((slide,idx)=>{
-                      const isCoverSlide = idx===0;
-                      const isBodySlide = idx>0;
-                      const bodyIsLight = isCleanPro;
-                      const needsBodyImage = ["clean-pro","theme-page","theme-split","clean-card"].includes(tmplSelected)&&isBodySlide;
-                      const needsCoverImage = !isBreaking||slide.image;
-
-                      return (
-                        <div key={idx} style={{background:A.surface,border:`1.5px solid ${isCoverSlide?GOLD:A.border}`,borderRadius:12,padding:16}}>
-                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
-                            <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:20,color:isCoverSlide?GOLD:A.muted,minWidth:32}}>0{idx+1}</span>
-                            <span style={{fontSize:13,fontWeight:800,color:isCoverSlide?GOLD:A.text}}>{isCoverSlide?"Cover Slide — scroll stopper":`Slide ${idx+1}`}</span>
-                            {isCoverSlide&&<span style={{fontSize:10,color:A.muted,background:A.bg,padding:"2px 8px",borderRadius:6}}>This is what stops the scroll</span>}
+                      {/* Global style settings */}
+                      {!isRaw&&!isStory&&(
+                        <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:12}}>
+                          <label style={lbl}>Text Effect</label>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+                            {[["gold","GOLD"],["chrome","CHROME"],["neon","NEON"],["fire","FIRE"],["3d","3D"],["outline","OUTLINE"],["ice","ICE"],["clean","CLEAN"]].map(([id,label])=>(
+                              <button key={id} onClick={()=>setTmplEffect(id)} style={{padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplEffect===id?GOLD:A.border}`,background:tmplEffect===id?"#1a1500":A.bg,color:tmplEffect===id?GOLD:A.muted,fontSize:12,fontWeight:900,cursor:"pointer"}}>{label}</button>
+                            ))}
                           </div>
+                          <label style={lbl}>Font</label>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+                            {[["'Bebas Neue'","BEBAS"],["'Anton'","ANTON"],["'Oswald'","OSWALD"],["'Teko'","TEKO"],["'Barlow Condensed'","BARLOW"],["'Archivo Black'","ARCHIVO"],["'Playfair Display'","Playfair"],["'Alfa Slab One'","Alfa Slab"]].map(([id,label])=>(
+                              <button key={id} onClick={()=>setTmplFont(id)} style={{padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplFont===id?GOLD:A.border}`,background:tmplFont===id?"#1a1500":A.bg,color:tmplFont===id?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:id}}>{label}</button>
+                            ))}
+                          </div>
+                          <label style={lbl}>Primary Colour</label>
+                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                            <input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{width:32,height:32,borderRadius:6,border:`1px solid ${A.border}`,background:"none",cursor:"pointer",padding:2,flexShrink:0}}/>
+                            <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,width:90,fontFamily:"monospace",fontSize:13,textTransform:"uppercase"}}/>
+                          </div>
+                          <label style={lbl}>Secondary Colour</label>
+                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                            <input type="color" value={tmplSecondary} onChange={e=>setTmplSecondary(e.target.value)} style={{width:32,height:32,borderRadius:6,border:`1px solid ${A.border}`,background:"none",cursor:"pointer",padding:2,flexShrink:0}}/>
+                            <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} style={{...inp,width:90,fontFamily:"monospace",fontSize:13,textTransform:"uppercase"}}/>
+                          </div>
+                        </div>
+                      )}
 
-                          <div style={{display:"flex",gap:16,flexWrap:"wrap",alignItems:"flex-start"}}>
-                            
-                            {/* Image slots */}
-                            {isCoverSlide&&(
-                              <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-                                <ImageUploadSlot
-                                  label={hasSplitCover?"Image Left":"Cover Photo"}
-                                  image={slide.image}
-                                  onImage={v=>updateSlide(idx,"image",v)}
-                                  pos={slide.imagePos}
-                                  onPos={v=>updateSlide(idx,"imagePos",v)}
-                                />
-                                {hasSplitCover&&(
-                                  <ImageUploadSlot
-                                    label="Image Right"
-                                    image={slide.image2}
-                                    onImage={v=>updateSlide(idx,"image2",v)}
-                                    pos={slide.image2Pos}
-                                    onPos={v=>updateSlide(idx,"image2Pos",v)}
-                                  />
-                                )}
+                      {/* Storytelling / Raw style */}
+                      {(isStory||isRaw)&&(
+                        <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                          {isStory&&(
+                            <>
+                              <label style={lbl}>Background</label>
+                              <div style={{display:"flex",gap:8}}>
+                                {["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}
                               </div>
-                            )}
-                            {needsBodyImage&&(
-                              <ImageUploadSlot
-                                label="Slide Photo"
-                                image={slide.image}
-                                onImage={v=>updateSlide(idx,"image",v)}
-                                pos={slide.imagePos}
-                                onPos={v=>updateSlide(idx,"imagePos",v)}
-                                size={60}
-                              />
-                            )}
+                            </>
+                          )}
+                          {isRaw&&(
+                            <>
+                              <label style={lbl}>Text Box</label>
+                              <div style={{display:"flex",gap:8}}>
+                                {["white","black"].map(m=><button key={m} onClick={()=>setTmplRawBox(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawBox===m?GOLD:A.border}`,background:tmplRawBox===m?"#1a1500":A.bg,color:tmplRawBox===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}
+                              </div>
+                              <label style={lbl}>Text Position</label>
+                              <div style={{display:"flex",gap:8}}>
+                                {["bottom","centre"].map(m=><button key={m} onClick={()=>setTmplRawPos(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawPos===m?GOLD:A.border}`,background:tmplRawPos===m?"#1a1500":A.bg,color:tmplRawPos===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}
+                              </div>
+                            </>
+                          )}
+                          <label style={lbl}>Font Style</label>
+                          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                            {[["Inter","Clean"],["Times New Roman","Serif"],["Playfair Display","Feminine"]].map(([id,label])=>(
+                              <button key={id} onClick={()=>setTmplFontStyle(id)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplFontStyle===id?GOLD:A.border}`,background:tmplFontStyle===id?"#1a1500":A.bg,color:tmplFontStyle===id?GOLD:A.muted,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:id,fontStyle:id==="Playfair Display"?"italic":"normal"}}>{label}</button>
+                            ))}
+                          </div>
+                          {isCleanPro&&(
+                            <>
+                              <label style={lbl}>Body Slide Background</label>
+                              <div style={{display:"flex",gap:8}}>
+                                {["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
 
-                            {/* Text inputs */}
-                            <div style={{flex:1,minWidth:200,display:"flex",flexDirection:"column",gap:8}}>
-                              {isBreaking&&isCoverSlide&&(
-                                <input value={slide.pillText||""} onChange={e=>updateSlide(idx,"pillText",e.target.value)} placeholder='Pill label e.g. "BREAKING" or "JUST IN"' style={{...inp,fontSize:12}}/>
-                              )}
-                              <div style={{position:"relative"}}>
-                                <input
-                                  value={slide.headline}
-                                  onChange={e=>updateSlide(idx,"headline",e.target.value)}
-                                  placeholder={isCoverSlide?"Hook headline — make them swipe":`Slide ${idx+1} ${isListicle?"— your point or fact":isComparison?"— topic label":""}`}
-                                  style={{...inp,paddingRight:90,...headlineStyle,fontSize:14}}
-                                />
-                                <button onClick={()=>tmplSuggestSlide(idx)} disabled={tmplSuggesting===idx} style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:10,fontWeight:700,padding:"3px 7px",borderRadius:6,cursor:"pointer",whiteSpace:"nowrap"}}>{tmplSuggesting===idx?"...":"✨ AI"}</button>
-                              </div>
-                              {isComparison&&(
-                                <input value={slide.headline2||""} onChange={e=>updateSlide(idx,"headline2",e.target.value)} placeholder="Right column label" style={{...inp,fontSize:13}}/>
-                              )}
-                              <textarea value={slide.bodyText} onChange={e=>updateSlide(idx,"bodyText",e.target.value)} placeholder={isCoverSlide?"Sub-line or supporting text (optional)":"Body text — the detail for this slide"} rows={2} style={{...inp,resize:"vertical",lineHeight:1.5,fontSize:13}}/>
+                      {/* Slide count */}
+                      <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
+                        <label style={lbl}>Slides {isListicle?"(cover + numbered body)":""}</label>
+                        <div style={{display:"flex",alignItems:"center",gap:10,marginTop:8}}>
+                          <button onClick={()=>setTmplSlideCount(s=>Math.max(2,s-1))} style={{width:32,height:32,borderRadius:7,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:18,cursor:"pointer"}}>−</button>
+                          <span style={{fontWeight:800,fontSize:18,minWidth:20,textAlign:"center"}}>{tmplSlideCount}</span>
+                          <button onClick={()=>setTmplSlideCount(s=>Math.min(maxSlides,s+1))} style={{width:32,height:32,borderRadius:7,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:18,cursor:"pointer"}}>+</button>
+                          <span style={{fontSize:11,color:A.muted}}>max {maxSlides}</span>
+                        </div>
+                        {isListicle&&(
+                          <div style={{marginTop:12}}>
+                            <label style={lbl}>Number on Cover</label>
+                            <div style={{display:"flex",alignItems:"center",gap:10,marginTop:6}}>
+                              <button onClick={()=>setTmplListicleNum(n=>Math.max(1,n-1))} style={{width:28,height:28,borderRadius:6,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:16,cursor:"pointer"}}>−</button>
+                              <span style={{fontWeight:800,fontSize:16,minWidth:20,textAlign:"center",color:GOLD}}>{tmplListicleNum}</span>
+                              <button onClick={()=>setTmplListicleNum(n=>Math.min(11,n+1))} style={{width:28,height:28,borderRadius:6,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:16,cursor:"pointer"}}>+</button>
+                              <span style={{fontSize:11,color:A.muted}}>max 11</span>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        )}
+                      </div>
 
-                  {/* Preview + Download */}
-                  <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
-                    <label style={{...lbl,marginBottom:12}}>Preview</label>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:10,marginBottom:20}}>
+                      {/* Download all */}
+                      <button onClick={downloadAll} disabled={tmplDownloading} style={{width:"100%",padding:"14px",background:GOLD,color:"#000",borderRadius:10,fontWeight:800,fontSize:14,border:"none",cursor:"pointer",opacity:tmplDownloading?0.7:1}}>
+                        {tmplDownloading?"Downloading...`":"↓ Download All (10 credits)"}
+                      </button>
+                      <div style={{fontSize:11,color:A.muted,textAlign:"center"}}>5 credits per slide · 10 credits for all</div>
+                    </div>
+
+                    {/* RIGHT — per-slide inputs + previews */}
+                    <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:14}}>
                       {tmplSlides.slice(0,tmplSlideCount).map((slide,idx)=>{
-                        const isCover = idx===0;
-                        const px = slide.imagePos?.x||50;
-                        const py = slide.imagePos?.y||50;
-                        const px2 = slide.image2Pos?.x||50;
-                        const py2 = slide.image2Pos?.y||50;
-                        const previewW = 108;
-                        const previewH = 135;
+                        const isCover=idx===0;
+                        const slideLabel=isCover?"Cover Slide":`Slide ${idx+1}`;
+                        const needsImage=!isStory&&!(isCleanPro&&!isCover);
+                        const needsListicleCoverImage=isListicle&&isCover;
 
                         return (
-                          <div key={idx} style={{width:previewW,height:previewH,borderRadius:8,overflow:"hidden",position:"relative",flexShrink:0,border:`1px solid ${A.border}`}}>
-                            
-                            {/* Background */}
-                            {isCleanPro&&!isCover&&<div style={{position:"absolute",inset:0,background:"#F5F3EF"}}/>}
-                            {isCleanCard&&!isCover&&<div style={{position:"absolute",inset:0,background:"#e8e8e8"}}/>}
-                            {(!isCleanPro||isCover)&&(!isCleanCard||isCover)&&<div style={{position:"absolute",inset:0,background:"#000"}}/>}
+                          <div key={idx} style={{background:A.surface,border:`1.5px solid ${isCover?GOLD:A.border}`,borderRadius:12,padding:14}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+                              <span style={{fontSize:13,fontWeight:800,color:isCover?GOLD:A.text}}>{slideLabel}</span>
+                              {isCover&&<span style={{fontSize:10,color:A.muted,background:A.bg,padding:"2px 8px",borderRadius:6}}>scroll stopper</span>}
+                            </div>
+                            <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"flex-start"}}>
 
-                            {/* Cover image */}
-                            {isCover&&slide.image&&!hasSplitCover&&(
-                              <img src={slide.image} style={{position:"absolute",top:0,left:0,width:"100%",height:isCover?"65%":"100%",objectFit:"cover",objectPosition:`${px}% ${py}%`}}/>
-                            )}
-                            {/* Split cover images */}
-                            {isCover&&hasSplitCover&&(
-                              <div style={{position:"absolute",top:0,left:0,width:"100%",height:"65%",display:"flex"}}>
-                                <div style={{flex:1,overflow:"hidden",position:"relative"}}>
-                                  {slide.image?<img src={slide.image} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:`${px}% ${py}%`}}/>:<div style={{width:"100%",height:"100%",background:"rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:"rgba(255,255,255,0.3)",fontSize:14}}>+</span></div>}
-                                </div>
-                                <div style={{width:1,background:"rgba(0,0,0,0.5)"}}/>
-                                <div style={{flex:1,overflow:"hidden",position:"relative"}}>
-                                  {slide.image2?<img src={slide.image2} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:`${px2}% ${py2}%`}}/>:<div style={{width:"100%",height:"100%",background:"rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:"rgba(255,255,255,0.3)",fontSize:14}}>+</span></div>}
-                                </div>
-                              </div>
-                            )}
-                            {/* Body slide image for clean-pro */}
-                            {!isCover&&isCleanPro&&slide.image&&(
-                              <img src={slide.image} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:`${px}% ${py}%`,opacity:0.15}}/>
-                            )}
+                              {/* Mini canvas preview */}
+                              <canvas ref={canvasRefs[idx]} width={270} height={338} style={{borderRadius:8,flexShrink:0,border:`1px solid ${A.border}`,width:108,height:135}}/>
 
-                            {/* Gradient overlay on cover */}
-                            {isCover&&slide.image&&!isBreaking&&(
-                              <div style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",background:"linear-gradient(to bottom,transparent 30%,rgba(0,0,0,0.95) 100%)"}}/>
-                            )}
-                            {isBreaking&&isCover&&slide.image&&(
-                              <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}}/>
-                            )}
+                              {/* Inputs */}
+                              <div style={{flex:1,minWidth:160,display:"flex",flexDirection:"column",gap:8}}>
 
-                            {/* Profile badge on cover divider — row style */}
-                            {isCover&&profileUrl&&["clean-pro","theme-page","theme-split"].includes(tmplSelected)&&(
-                              <div style={{position:"absolute",top:"calc(65% - 12px)",left:"50%",transform:"translateX(-50%)",display:"flex",alignItems:"center",gap:4,background:"rgba(0,0,0,0.6)",borderRadius:20,padding:"3px 8px 3px 3px",zIndex:3,whiteSpace:"nowrap"}}>
-                                <div style={{width:18,height:18,borderRadius:"50%",overflow:"hidden",border:"1.5px solid #fff",flexShrink:0}}>
-                                  <img src={profileUrl} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                                </div>
-                                {name&&<span style={{fontSize:6,fontWeight:800,color:"#fff"}}>{name}</span>}
-                              </div>
-                            )}
-
-                            {/* Breaking news pill */}
-                            {isBreaking&&isCover&&(
-                              <div style={{position:"absolute",top:8,left:"50%",transform:"translateX(-50%)",background:tmplAccent,borderRadius:3,padding:"2px 7px",fontSize:6,fontWeight:900,color:"#000",letterSpacing:1,textTransform:"uppercase",whiteSpace:"nowrap",zIndex:3}}>{slide.pillText||"BREAKING"}</div>
-                            )}
-                            {isBreaking&&!isCover&&(
-                              <div style={{position:"absolute",top:5,left:6,background:tmplAccent,borderRadius:2,padding:"1px 4px",fontSize:5,fontWeight:900,color:"#000",letterSpacing:0.5,textTransform:"uppercase",zIndex:3}}>{tmplSlides[0]?.pillText||"BREAKING"}</div>
-                            )}
-
-                            {/* Comparison columns on body */}
-                            {isComparison&&!isCover&&(
-                              <div style={{position:"absolute",inset:0,display:"flex"}}>
-                                <div style={{flex:1,borderRight:"1px solid rgba(255,255,255,0.1)",display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",padding:4,gap:2}}>
-                                  <div style={{fontSize:6,color:tmplAccent,fontWeight:700,textAlign:"center"}}>{slide.headline||"Left"}</div>
-                                  <div style={{fontSize:5,color:"rgba(255,255,255,0.6)",textAlign:"center",lineHeight:1.3}}>{slide.bodyText||""}</div>
-                                </div>
-                                <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",padding:4,gap:2}}>
-                                  <div style={{fontSize:6,color:"rgba(255,255,255,0.7)",fontWeight:700,textAlign:"center"}}>{slide.headline2||"Right"}</div>
-                                  <div style={{fontSize:5,color:"rgba(255,255,255,0.5)",textAlign:"center",lineHeight:1.3}}>{slide.subline||""}</div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Listicle body */}
-                            {isListicle&&!isCover&&(
-                              <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",padding:"6px 8px",gap:5}}>
-                                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:28,color:tmplAccent,lineHeight:1,flexShrink:0}}>0{idx}</div>
-                                <div style={{flex:1}}>
-                                  <div style={{fontSize:7,fontWeight:900,color:"#fff",lineHeight:1.2,...headlineStyle,fontSize:6}}>{slide.headline||""}</div>
-                                  <div style={{fontSize:5,color:"rgba(255,255,255,0.6)",marginTop:2,lineHeight:1.3}}>{slide.bodyText||""}</div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Clean card overlay on body */}
-                            {isCleanCard&&!isCover&&(
-                              <div style={{position:"absolute",bottom:8,left:6,right:6,background:"rgba(255,255,255,0.93)",borderRadius:4,padding:"5px 6px"}}>
-                                <div style={{fontSize:6,fontWeight:900,color:"#0a0a0a",lineHeight:1.2,...headlineStyle}}>{slide.headline||""}</div>
-                                {slide.bodyText&&<div style={{fontSize:5,color:"rgba(0,0,0,0.6)",marginTop:2,lineHeight:1.3}}>{slide.bodyText}</div>}
-                              </div>
-                            )}
-
-                            {/* Clean Pro body */}
-                            {isCleanPro&&!isCover&&(
-                              <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",padding:"8px 8px 6px"}}>
-                                {profileUrl&&(
-                                  <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:6}}>
-                                    <div style={{width:14,height:14,borderRadius:"50%",overflow:"hidden",border:"1px solid rgba(0,0,0,0.1)",flexShrink:0}}>
-                                      <img src={profileUrl} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                                {/* Image upload */}
+                                {(needsImage||needsListicleCoverImage)&&(
+                                  <div style={{display:"flex",gap:8,alignItems:"flex-start",flexWrap:"wrap"}}>
+                                    <div>
+                                      <div onClick={()=>{const inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{setTmplSlides(prev=>{const next=[...prev];next[idx]={...next[idx],image:ev.target.result};return next;});};r.readAsDataURL(f);};inp.click();}} style={{width:60,height:60,borderRadius:8,border:`1.5px dashed ${slide.image?GOLD:A.border}`,background:A.bg,overflow:"hidden",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                        {slide.image?<img src={slide.image} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:A.muted,fontSize:20}}>+</span>}
+                                      </div>
+                                      {slide.image&&(
+                                        <div style={{display:"flex",flexDirection:"column",gap:3,marginTop:4}}>
+                                          <div style={{display:"flex",gap:2,justifyContent:"center"}}>
+                                            <button onClick={()=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],imagePos:{x:n[idx].imagePos.x,y:Math.max(0,n[idx].imagePos.y-10)}};return n;})} style={{width:20,height:20,borderRadius:3,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:9,cursor:"pointer"}}>↑</button>
+                                          </div>
+                                          <div style={{display:"flex",gap:2,justifyContent:"center"}}>
+                                            <button onClick={()=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],imagePos:{x:Math.max(0,n[idx].imagePos.x-10),y:n[idx].imagePos.y}};return n;})} style={{width:20,height:20,borderRadius:3,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:9,cursor:"pointer"}}>←</button>
+                                            <button onClick={()=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],imagePos:{x:n[idx].imagePos.x,y:Math.min(100,n[idx].imagePos.y+10)}};return n;})} style={{width:20,height:20,borderRadius:3,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:9,cursor:"pointer"}}>↓</button>
+                                            <button onClick={()=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],imagePos:{x:Math.min(100,n[idx].imagePos.x+10),y:n[idx].imagePos.y}};return n;})} style={{width:20,height:20,borderRadius:3,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:9,cursor:"pointer"}}>→</button>
+                                          </div>
+                                          <button onClick={()=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],image:null,imagePos:{x:50,y:50}};return n;})} style={{fontSize:9,color:"#e74c3c",background:"none",border:"none",cursor:"pointer",textAlign:"center"}}>Remove</button>
+                                        </div>
+                                      )}
                                     </div>
-                                    <div style={{display:"flex",flexDirection:"column"}}>
-                                      <div style={{fontSize:6,color:"rgba(0,0,0,0.8)",fontWeight:800,lineHeight:1.1}}>{name||"Your Name"}</div>
-                                      <div style={{fontSize:5,color:"rgba(0,0,0,0.4)",lineHeight:1.1}}>@{(handle||"").replace("@","")}</div>
-                                    </div>
+                                    {/* From library */}
+                                    {coverPhotos?.length>0&&(
+                                      <div style={{display:"flex",gap:3,flexWrap:"wrap",maxWidth:120}}>
+                                        {coverPhotos.slice(0,6).map((p,pi)=>(
+                                          <div key={pi} onClick={()=>setTmplSlides(prev=>{const next=[...prev];next[idx]={...next[idx],image:p,imagePos:{x:50,y:50}};return next;})} style={{width:28,height:28,borderRadius:5,overflow:"hidden",cursor:"pointer",border:`1px solid ${A.border}`}}>
+                                            <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                                          </div>
+                                        ))}
+                                        <span style={{fontSize:9,color:A.muted,width:"100%"}}>from library</span>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
-                                <div style={{fontSize:7,fontWeight:900,color:"#0a0a0a",lineHeight:1.2,...headlineStyle,fontSize:7}}>{slide.headline||""}</div>
-                                {slide.bodyText&&<div style={{fontSize:5,color:"rgba(0,0,0,0.55)",marginTop:3,lineHeight:1.4}}>{slide.bodyText}</div>}
-                              </div>
-                            )}
 
-                            {/* Default cover text (non-comparison, non-listicle, non-clean-card-body) */}
-                            {!(isComparison&&!isCover)&&!(isListicle&&!isCover)&&!(isCleanCard&&!isCover)&&!(isCleanPro&&!isCover)&&(
-                              <div style={{position:"absolute",bottom:0,left:0,right:0,padding:`${isCover&&profileUrl?"18px":"8px"} 8px 6px`}}>
-                                {isCleanCard&&isCover&&slide.image&&(
-                                  <div style={{background:"rgba(255,255,255,0.93)",borderRadius:4,padding:"5px 6px",marginBottom:4}}>
-                                    <div style={{fontSize:6,fontWeight:900,color:"#0a0a0a",lineHeight:1.2,...headlineStyle}}>{slide.headline||"Your hook"}</div>
-                                    {slide.bodyText&&<div style={{fontSize:5,color:"rgba(0,0,0,0.6)",marginTop:1}}>{slide.bodyText}</div>}
-                                  </div>
-                                )}
-                                {(!isCleanCard||!slide.image)&&(
+                                {/* Text inputs per template type */}
+                                {(isDarkFade||(isCleanPro&&isCover))&&(
                                   <>
-                                    {slide.headline&&<div style={{fontSize:7,fontWeight:900,color:tmplTextColour,lineHeight:1.1,textShadow:"0 1px 4px rgba(0,0,0,0.8)",...headlineStyle,fontSize:7}}>{slide.headline}</div>}
-                                    {slide.bodyText&&<div style={{fontSize:5,color:"rgba(255,255,255,0.7)",marginTop:2,lineHeight:1.3}}>{slide.bodyText}</div>}
+                                    <div style={{position:"relative"}}>
+                                      <input value={slide.headline} onChange={e=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],headline:e.target.value};return n;})} placeholder="Hook headline..." style={{...inp,paddingRight:isCover?8:8}}/>
+                                    </div>
+                                    <input value={slide.subline} onChange={e=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],subline:e.target.value};return n;})} placeholder="Subline (optional)..." style={{...inp,fontSize:12}}/>
                                   </>
                                 )}
-                                {handle&&!isCleanPro&&<div style={{fontSize:5,color:tmplAccent,marginTop:2,fontWeight:700}}>@{(handle||"").replace("@","")}</div>}
-                              </div>
-                            )}
 
-                            {/* Cover clean pro text */}
-                            {isCleanPro&&isCover&&(
-                              <div style={{position:"absolute",bottom:0,left:0,right:0,padding:`${profileUrl?"18px":"8px"} 8px 6px`}}>
-                                {slide.headline&&<div style={{fontSize:7,fontWeight:900,color:"#fff",lineHeight:1.1,textShadow:"0 1px 4px rgba(0,0,0,0.8)",...headlineStyle,fontSize:7}}>{slide.headline}</div>}
-                                {slide.bodyText&&<div style={{fontSize:5,color:"rgba(255,255,255,0.8)",marginTop:2}}>{slide.bodyText}</div>}
-                              </div>
-                            )}
+                                {isListicle&&isCover&&(
+                                  <>
+                                    <input value={slide.topicLine||"PLACES YOU MUST VISIT BEFORE"} onChange={e=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],topicLine:e.target.value};return n;})} placeholder="Topic line..." style={{...inp}}/>
+                                    <input value={slide.subject||"2026 ENDS"} onChange={e=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],subject:e.target.value};return n;})} placeholder="Subject (bold)..." style={{...inp}}/>
+                                    <input value={slide.subline} onChange={e=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],subline:e.target.value};return n;})} placeholder="Subline e.g. Swipe to see them all..." style={{...inp,fontSize:12}}/>
+                                  </>
+                                )}
 
-                            {/* Slide number */}
-                            <div style={{position:"absolute",top:4,right:4,background:"rgba(0,0,0,0.55)",borderRadius:4,padding:"1px 4px",fontSize:6,color:"#fff",fontWeight:700,zIndex:4}}>{idx+1}/{tmplSlideCount}</div>
+                                {isListicle&&!isCover&&(
+                                  <>
+                                    <input value={slide.headline} onChange={e=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],headline:e.target.value};return n;})} placeholder={`Point ${idx} headline (optional)...`} style={{...inp}}/>
+                                    <div style={{position:"relative"}}>
+                                      <textarea value={slide.bodyText} onChange={e=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],bodyText:e.target.value};return n;})} placeholder={`Point ${idx} — what's the tip or fact?`} rows={2} style={{...inp,resize:"vertical",paddingRight:72}}/>
+                                      {hasAI&&<button onClick={()=>tmplSuggestSlide(idx,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===idx} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:10,fontWeight:700,padding:"3px 7px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===idx?"...":"✨ AI"}</button>}
+                                    </div>
+                                  </>
+                                )}
+
+                                {isCleanPro&&!isCover&&(
+                                  <>
+                                    <input value={slide.headline} onChange={e=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],headline:e.target.value};return n;})} placeholder="Headline (optional)..." style={{...inp}}/>
+                                    <div style={{position:"relative"}}>
+                                      <textarea value={slide.bodyText} onChange={e=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],bodyText:e.target.value};return n;})} placeholder="Body text..." rows={3} style={{...inp,resize:"vertical",paddingRight:72}}/>
+                                      {hasAI&&<button onClick={()=>tmplSuggestSlide(idx,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===idx} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:10,fontWeight:700,padding:"3px 7px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===idx?"...":"✨ AI"}</button>}
+                                    </div>
+                                    <input value={slide.accentText} onChange={e=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],accentText:e.target.value};return n;})} placeholder="Accent sub-text (key takeaway)..." style={{...inp,fontSize:12}}/>
+                                  </>
+                                )}
+
+                                {isStory&&(
+                                  <div style={{position:"relative"}}>
+                                    <textarea value={slide.storyText} onChange={e=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],storyText:e.target.value};return n;})} placeholder="Your story paragraph... Use line breaks to separate paragraphs." rows={4} style={{...inp,resize:"vertical",paddingRight:72}}/>
+                                    {hasAI&&<button onClick={()=>tmplSuggestSlide(idx,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===idx} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:10,fontWeight:700,padding:"3px 7px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===idx?"...":"✨ AI"}</button>}
+                                  </div>
+                                )}
+
+                                {isRaw&&(
+                                  <textarea value={slide.rawText} onChange={e=>setTmplSlides(p=>{const n=[...p];n[idx]={...n[idx],rawText:e.target.value};return n;})} placeholder="Type exactly what you want to say..." rows={3} style={{...inp,resize:"vertical"}}/>
+                                )}
+
+                                {/* Per slide download */}
+                                <button onClick={()=>downloadSlide(idx)} disabled={tmplDownloadingIdx===idx} style={{padding:"8px 14px",background:A.surface,border:`1px solid ${A.border}`,color:A.text,borderRadius:8,fontSize:12,fontWeight:700,cursor:"pointer",alignSelf:"flex-start"}}>
+                                  {tmplDownloadingIdx===idx?"...":"↓ This slide (5 credits)"}
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         );
                       })}
                     </div>
-
-                    {/* Download */}
-                    <button onClick={async()=>{
-                      setTmplDownloading(true);
-                      try {
-                        for(let idx=0;idx<tmplSlideCount;idx++){
-                          const slide=tmplSlides[idx];
-                          const html=buildTmplSlideHTML(slide,idx,tmplSlideCount,tmplSelected,activeStyle,tmplTextColour,tmplAccent,profileUrl,handle,name,tmplSlides[0]?.pillText||"BREAKING");
-                          const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({html,width:1080,height:1350})});
-                          if(res.ok){const blob=await res.blob();const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`slide-${idx+1}.png`;a.click();await new Promise(r=>setTimeout(r,300));}
-                        }
-                      } catch(e){console.error(e);}
-                      setTmplDownloading(false);
-                    }} style={{width:"100%",padding:"14px",background:GOLD,color:"#000",borderRadius:10,fontWeight:800,fontSize:14,border:"none",cursor:"pointer",opacity:tmplDownloading?0.7:1}}>
-                      {tmplDownloading?`Downloading slides...`:`↓ Download All ${tmplSlideCount} Slides`}
-                    </button>
                   </div>
                 </div>
               );
             })()}
-
           </div>
         )}
 
@@ -3949,6 +3932,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     {downloadingAll?<><Spin/>Downloading...</>:downloadDone?"✓ All Downloaded":`↓ Download All ${slides.length} (zip)`}
                   </button>
                 </div>
+                <button onClick={()=>{
+                  const entry={id:Date.now(),brief,audience:audienceType,slides:slides.map(s=>({...s})),createdAt:new Date().toISOString(),savedManually:true};
+                  const existing=JSON.parse(localStorage.getItem("bwt_v12")||"{}");
+                  const hist=existing.history||[];
+                  hist.unshift(entry);
+                  if(hist.length>20)hist.pop();
+                  localStorage.setItem("bwt_v12",JSON.stringify({...existing,history:hist}));
+                  alert("✓ Saved to History");
+                }} style={{width:"100%",padding:"10px",background:"none",border:`1px solid ${A.border}`,color:A.muted,borderRadius:9,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"center"}}>
+                  💾 Save this version to History
+                </button>
                 <button onClick={()=>setEditDrawerOpen(true)} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:14,color:A.text,cursor:"pointer",marginTop:8,textAlign:"center"}}>Edit Slide {active+1}</button>
                 <button onClick={generateCaption} disabled={generatingCaption} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontWeight:700,fontSize:14,color:A.text,cursor:"pointer",marginTop:8,textAlign:"center"}}>
                   {generatingCaption?"Writing caption...":"Generate Caption"}
