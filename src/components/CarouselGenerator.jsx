@@ -1873,23 +1873,20 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       // Same as body slides: gradient from bottom, image shows at top, text pinned to bottom
       const cf="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 38%,rgba(0,0,0,0.12) 52%,rgba(0,0,0,0.55) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.97) 78%,rgba(0,0,0,1) 85%,rgba(0,0,0,1) 100%)";
       const numDigits=String(listicleNum||6).length;
-      const numFS=numDigits>2?190:numDigits>1?280:400;
+      const numFS=numDigits>2?240:numDigits>1?360:520;
       const numLineW=Math.round(numFS*0.62*numDigits)+20;
       const txtLeft=SAFE+numLineW+32;
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(slide)
         +"<div style='position:absolute;inset:0;background:"+cf+";z-index:1;'></div>"
         +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
-        // Number + line + topic/subject all pinned to bottom
-        +"<div style='position:absolute;bottom:80px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:32px;'>"
-        // Number left column
+        +"<div style='position:absolute;bottom:60px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:32px;'>"
         +"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS+"px;font-weight:900;line-height:0.88;"+effectCSS(effect,primary,secondary)+"'>"+(listicleNum||6)+"</div>"
         +"<div style='width:"+numLineW+"px;height:5px;background:"+primary+";'></div></div>"
-        // Topic + subject right
-        +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;padding-bottom:8px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:40px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.2;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase())+"</div>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:88px;font-weight:900;color:"+secondary+";line-height:1.0;word-break:break-word;'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div>"
-        +(slide.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:32px;color:rgba(255,255,255,0.6);line-height:1.3;'>"+esc(slide.subline)+"</div>":"")
+        +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:12px;padding-bottom:8px;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:46px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.2;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase())+"</div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:110px;font-weight:900;color:"+secondary+";line-height:1.0;word-break:break-word;'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div>"
+        +(slide.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.6);line-height:1.3;'>"+esc(slide.subline)+"</div>":"")
         +"</div></div>"
         +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"+chevron+counter+wm+"</div>";
     }
@@ -1964,7 +1961,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
       // Right image
       const imgR=slide.image2?"<img src='"+esc(slide.image2)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+(slide.image2Pos?.x||50)+"% "+(slide.image2Pos?.y||50)+"%;z-index:0;'/>":"";
       // Thin divider line between halves
-      const divider="<div style='position:absolute;left:"+HW+"px;top:0;width:3px;height:100%;background:"+primary+";z-index:6;opacity:0.7;'></div>";
+      const divider="<div style='position:absolute;left:"+HW+"px;top:0;width:3px;height:100%;background:"+primary+";z-index:1;opacity:0.5;'></div>";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"
         // Left half
         +"<div style='position:absolute;top:0;left:0;width:"+HW+"px;height:"+H+"px;overflow:hidden;'>"+imgL+"</div>"
@@ -1974,8 +1971,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         +"<div style='position:absolute;inset:0;background:"+splitGrad+";z-index:2;'></div>"
         // Divider
         +divider
-        // Badge centred at top
-        +"<div style='position:absolute;top:80px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
+        // Badge centred, sitting on the gradient zone
+        +"<div style='position:absolute;bottom:"+Math.round(H*0.38)+"px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
         // Left text — bottom left
         +"<div style='position:absolute;bottom:90px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;display:flex;flex-direction:column;gap:14px;'>"
         +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:72px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
@@ -2813,9 +2810,29 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   {id:"split",label:"Split",desc:"Two images side by side, one gradient across the bottom. Left and right text.",emoji:"⚡"},
                 ].map(t=>(
                   <div key={t.id} onClick={()=>{
+                    // Save current session before switching
+                    if(tmplSelected){
+                      try{localStorage.setItem("bwt_tmpl_session_"+tmplSelected,JSON.stringify({slides:tmplSlides,slideCount:tmplSlideCount,brief:tmplBrief,effect:tmplEffect,font:tmplFont,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum}));}catch{}
+                    }
+                    // Try to restore a saved session for this template
+                    let restored=false;
+                    try{
+                      const saved=localStorage.getItem("bwt_tmpl_session_"+t.id);
+                      if(saved){
+                        const s=JSON.parse(saved);
+                        setTmplSlides(s.slides); setTmplSlideCount(s.slideCount); setTmplBrief(s.brief||"");
+                        setTmplEffect(s.effect||"gold"); setTmplFont(s.font||"Bebas Neue");
+                        setTmplPrimary(s.primary||"#BB9900"); setTmplSecondary(s.secondary||"#ffffff");
+                        setTmplBg(s.bg||"white"); setTmplFontStyle(s.fontStyle||"Inter");
+                        setTmplRawBox(s.rawBox||"white"); setTmplRawPos(s.rawPos||"bottom");
+                        setTmplListicleNum(s.listicleNum||6);
+                        restored=true;
+                      }
+                    }catch{}
                     setTmplSelected(t.id); setTmplActiveSlide(0);
+                    if(!restored){
                     const defaults=Array(12).fill(null).map((_,i)=>{
-                      const base={image:null,imagePos:{x:50,y:50},headline:"",subline:"",bodyText:"",accentText:"",topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:""};
+                      const base={image:null,imagePos:{x:50,y:50},image2:null,image2Pos:{x:50,y:50},headline:"",subline:"",headline2:"",subline2:"",bodyText:"",accentText:"",topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:""};
                       if(t.id==="dark-fade"){base.headline=i===0?"Stop posting singles. Start posting carousels.":"";base.subline=i===0?"The algorithm rewards every swipe.":"";}
                       if(t.id==="listicle"&&i===0){base.topicLine="PLACES YOU MUST VISIT BEFORE";base.subject="2026 ENDS";base.subline="Swipe to see them all.";}
                       if(t.id==="listicle"&&i>0){base.headline=["Santorini, Greece","Kyoto, Japan","Amalfi Coast, Italy","Bali, Indonesia","Patagonia, Argentina","Cape Town, South Africa","Iceland","Machu Picchu, Peru","The Maldives","New Zealand","Morocco"][i-1]||"";base.bodyText=["Sunsets you won't find anywhere else.","Cherry blossom and centuries of culture.","The most dramatic coastline in Europe.","Temples, rice fields, and world-class surf.","Mountains that look computer generated.","Beaches, wine, wildlife. All in one place.","Northern lights every clear night.","Lost city of the Incas. Nothing like it.","Overwater bungalows. Turquoise lagoons.","Lord of the Rings meets real adventure.","Deserts, medinas, and mint tea."][i-1]||"";}
@@ -2832,6 +2849,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       return base;
                     });
                     setTmplSlides(defaults); setTmplSlideCount(t.id==="listicle"?7:6); setTmplBrief("");
+                    }
                   }} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,cursor:"pointer",transition:"border-color 0.2s,transform 0.15s"}}
                   onMouseEnter={e=>{e.currentTarget.style.borderColor=GOLD;e.currentTarget.style.transform="translateY(-2px)";}}
                   onMouseLeave={e=>{e.currentTarget.style.borderColor=A.border;e.currentTarget.style.transform="translateY(0)";}}>
@@ -2888,7 +2906,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               const updateSlide=(field,val)=>setTmplSlides(prev=>{const next=[...prev];next[activeSlide]={...next[activeSlide],[field]:val};return next;});
               return(<div>
                 <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
-                  <button onClick={()=>setTmplSelected(null)} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Templates</button>
+                  <button onClick={()=>{
+                    if(tmplSelected){try{localStorage.setItem("bwt_tmpl_session_"+tmplSelected,JSON.stringify({slides:tmplSlides,slideCount:tmplSlideCount,brief:tmplBrief,effect:tmplEffect,font:tmplFont,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum}));}catch{}}
+                    setTmplSelected(null);
+                  }} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Templates</button>
                   <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Dark Fade":isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":isSplit?"Split":"Raw"}</span>
                   {isFree&&<span style={{fontSize:11,color:"#e74c3c",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>Free plan — watermark on exports</span>}
                 </div>
@@ -3044,23 +3065,29 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                         <label style={lbl}>Left Image</label>
                         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:4}}>
                           {tmplLibrary.map((p,pi)=>(
-                            <div key={pi} onClick={()=>updateSlide("image",p)} style={{width:44,height:44,borderRadius:6,overflow:"hidden",border:`2px solid ${slide.image===p?GOLD:A.border}`,cursor:"pointer"}}>
-                              <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                            </div>
+                            <div key={pi} style={{position:"relative",flexShrink:0}}>
+                              <div onClick={()=>updateSlide("image",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${slide.image===p?GOLD:A.border}`,cursor:"pointer"}}>
+                                <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                              </div>
+                              {slide.image===p&&<div onClick={()=>updateSlide("image",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}
+                              <div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(slide.image===p)updateSlide("image",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Permanently remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div>
+            </div>
                           ))}
-                          <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateSlide("image",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:44,height:44,borderRadius:6,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:20}}>+</div>
+                          <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateSlide("image",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
                         </div>
-                        {slide.image&&<button onClick={()=>updateSlide("image",null)} style={{fontSize:11,color:"#e74c3c",background:"none",border:"none",cursor:"pointer",marginBottom:6}}>Remove left image</button>}
                         <label style={lbl}>Right Image</label>
                         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:4}}>
                           {tmplLibrary.map((p,pi)=>(
-                            <div key={pi} onClick={()=>updateSlide("image2",p)} style={{width:44,height:44,borderRadius:6,overflow:"hidden",border:`2px solid ${slide.image2===p?GOLD:A.border}`,cursor:"pointer"}}>
-                              <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                            </div>
+                            <div key={pi} style={{position:"relative",flexShrink:0}}>
+                              <div onClick={()=>updateSlide("image2",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${slide.image2===p?GOLD:A.border}`,cursor:"pointer"}}>
+                                <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                              </div>
+                              {slide.image2===p&&<div onClick={()=>updateSlide("image2",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}
+                              <div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(slide.image2===p)updateSlide("image2",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Permanently remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div>
+            </div>
                           ))}
-                          <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateSlide("image2",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:44,height:44,borderRadius:6,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:20}}>+</div>
+                          <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateSlide("image2",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
                         </div>
-                        {slide.image2&&<button onClick={()=>updateSlide("image2",null)} style={{fontSize:11,color:"#e74c3c",background:"none",border:"none",cursor:"pointer",marginBottom:6}}>Remove right image</button>}
                         <label style={lbl}>Left Headline</label>
                         <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Before" style={{...inp}}/>
                         <label style={lbl}>Left Subline</label>
