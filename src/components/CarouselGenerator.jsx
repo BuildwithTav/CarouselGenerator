@@ -2826,8 +2826,22 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                 <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:28,alignItems:"start"}}>
                   <div>
                     <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12}}>
-                      <div style={{position:"relative",width:"100%",paddingBottom:"125%"}}>
-                        <iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",border:"none",borderRadius:8}} scrolling="no"/>
+                      <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:"#000"}}>
+                        {(()=>{
+                          // Container width ≈ (1200 - 380 - 28 - 32) / 1 ≈ 760px, but we don't know exactly.
+                          // Use a fixed preview width of 540px (half of 1080) so scale = 0.5 always
+                          const PW=540, PH=Math.round(1350*PW/1080);
+                          return(
+                            <div style={{width:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}>
+                              <iframe
+                                key={`prev-${activeSlide}`}
+                                srcDoc={previewHTML}
+                                style={{width:1080,height:1350,border:"none",transform:"scale(0.5)",transformOrigin:"top left",pointerEvents:"none",display:"block"}}
+                                scrolling="no"
+                              />
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
