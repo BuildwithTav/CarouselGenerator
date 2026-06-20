@@ -1402,6 +1402,34 @@ export default function App() {
   }
 
 
+  // Re-render main template canvas when content/style changes (debounced, no hook rules violation)
+  useEffect(()=>{
+    const el = mainTmplCanvasRef.current;
+    if(!el||!tmplSelected) return;
+    if(el._tmplTimer) clearTimeout(el._tmplTimer);
+    el._tmplTimer = setTimeout(async()=>{
+      await document.fonts.ready;
+      const s = tmplSlides[tmplActiveSlide||0];
+      const imgCache = {};
+      const loadImg = (src) => new Promise(res=>{
+        if(!src) return res(null);
+        const img=new Image();
+        if(!src.startsWith('data:')) img.crossOrigin="anonymous";
+        img.onload=()=>{imgCache[src]=img;res(img);};
+        img.onerror=()=>res(null);
+        img.src=src;
+      });
+      await Promise.all([s?.image,s?.image2,profileUrl].filter(Boolean).map(loadImg));
+      const isFree = currentUser?.plan==="free";
+      renderTmplSlide(el, tmplActiveSlide||0, tmplSlideCount, tmplSelected, tmplSlides, {
+        effect:tmplEffect, font:tmplFont, primary:tmplPrimary, secondary:tmplSecondary,
+        bg:tmplBg, fontStyle:tmplFontStyle, rawBox:tmplRawBox, rawPos:tmplRawPos,
+        listicleNum:tmplListicleNum, profUrl:profileUrl, nm:name, hdl:handle,
+        showTick:blueTick, isFree, imgCache
+      });
+    }, 150);
+  });
+
   // ADMIN-ONLY brand preset functions — only ever called from is_admin-gated UI, touches a separate localStorage key only
   const saveAdminPreset = () => {
     const trimmed = adminPresetName.trim();
@@ -1597,6 +1625,7 @@ export default function App() {
   };
 
   const profileRef = useRef(null);
+  const mainTmplCanvasRef = useRef(null);
   const coverDragRef = useRef(null);
   const templateDragRef = useRef(null);
   const coverPhotoRef = useRef(null);
@@ -3288,45 +3317,28 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
               const renderToCanvas = (el, idx) => {
                 if(!el) return;
-                // Debounce: cancel any pending render for this canvas
                 if(el._tmplTimer) clearTimeout(el._tmplTimer);
-                el._tmplTimer = setTimeout(async () => {
+                el._tmplTimer = setTimeout(async()=>{
                   await document.fonts.ready;
-                  // Pre-load all images referenced by this slide before drawing
                   const s = tmplSlides[idx];
-                  const imagePromises = [];
                   const imgCache = {};
-                  const loadImg = (src) => new Promise(res => {
+                  const loadImg = (src) => new Promise(res=>{
                     if(!src) return res(null);
-                    const img = new Image();
-                    // Only set crossOrigin for actual URLs, not base64
+                    const img=new Image();
                     if(!src.startsWith('data:')) img.crossOrigin="anonymous";
-                    img.onload = () => { imgCache[src] = img; res(img); };
-                    img.onerror = () => res(null);
-                    img.src = src;
+                    img.onload=()=>{imgCache[src]=img;res(img);};
+                    img.onerror=()=>res(null); img.src=src;
                   });
-                  if(s?.image) imagePromises.push(loadImg(s.image));
-                  if(s?.image2) imagePromises.push(loadImg(s.image2));
-                  if(profileUrl) imagePromises.push(loadImg(profileUrl));
-                  await Promise.all(imagePromises);
-                  // Now draw with images pre-cached
-                  const optsWithCache = {...opts, imgCache};
-                  renderTmplSlide(el, idx, tmplSlideCount, tmplSelected, tmplSlides, optsWithCache);
+                  await Promise.all([s?.image,s?.image2,profileUrl].filter(Boolean).map(loadImg));
+                  renderTmplSlide(el,idx,tmplSlideCount,tmplSelected,tmplSlides,{...opts,imgCache});
                 }, 150);
               };
 
-              const mainCanvasElRef = useRef(null);
-
               const mainCanvasRef = (el) => {
-                mainCanvasElRef.current = el;
+                mainTmplCanvasRef.current = el;
                 if(el) renderToCanvas(el, activeSlide);
               };
               const thumbRef = (idx) => (el) => renderToCanvas(el, idx);
-
-              // Re-render main canvas when slide content or style changes (debounced)
-              useEffect(()=>{
-                if(mainCanvasElRef.current) renderToCanvas(mainCanvasElRef.current, activeSlide);
-              });
 
               const downloadSlide = async (idx) => {
                 if(!canGenerate()){setNav("upgrade");return;}
