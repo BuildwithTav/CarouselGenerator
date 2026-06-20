@@ -1019,7 +1019,7 @@ export default function App() {
   // UNIVERSAL BADGE RENDERER — locked, never varies per template
   // ============================================================
   function drawBadge(ctx, profUrl, nm, hdl, x, y, small, showTick, opts) {
-    const avR = small ? 28 : 38;
+    const avR = small ? 36 : 54;
     const nameSize = small ? 26 : 34;
     const hdlSize = small ? 20 : 26;
     const tickR = small ? 12 : 15;
@@ -1137,10 +1137,21 @@ export default function App() {
     function fitLines(text, maxW, maxLines, fontSize) {
       let fs=fontSize||140, lines=[];
       const t=text.toUpperCase();
-      while(fs>=56){
+      while(fs>=40){
         ctx.font=`900 ${fs}px ${font},sans-serif`;
         const words=t.split(" "); lines=[]; let line="";
-        for(const w of words){const test=line?line+" "+w:w;if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=w;}else line=test;}
+        for(const w of words){
+          const test=line?line+" "+w:w;
+          if(ctx.measureText(test).width>maxW&&line){
+            lines.push(line); line=w;
+          } else if(ctx.measureText(w).width>maxW) {
+            // Single word wider than maxW — force it on its own line, will shrink on next pass
+            if(line){lines.push(line);line="";}
+            lines.push(w); line="";
+          } else {
+            line=test;
+          }
+        }
         if(line)lines.push(line);
         if(lines.length<=maxLines)break;
         fs-=6;
@@ -3287,7 +3298,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   const imgCache = {};
                   const loadImg = (src) => new Promise(res => {
                     if(!src) return res(null);
-                    const img = new Image(); img.crossOrigin="anonymous";
+                    const img = new Image();
+                    // Only set crossOrigin for actual URLs, not base64
+                    if(!src.startsWith('data:')) img.crossOrigin="anonymous";
                     img.onload = () => { imgCache[src] = img; res(img); };
                     img.onerror = () => res(null);
                     img.src = src;
@@ -3302,8 +3315,18 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 }, 150);
               };
 
-              const mainCanvasRef = (el) => renderToCanvas(el, activeSlide);
+              const mainCanvasElRef = useRef(null);
+
+              const mainCanvasRef = (el) => {
+                mainCanvasElRef.current = el;
+                if(el) renderToCanvas(el, activeSlide);
+              };
               const thumbRef = (idx) => (el) => renderToCanvas(el, idx);
+
+              // Re-render main canvas when slide content or style changes (debounced)
+              useEffect(()=>{
+                if(mainCanvasElRef.current) renderToCanvas(mainCanvasElRef.current, activeSlide);
+              });
 
               const downloadSlide = async (idx) => {
                 if(!canGenerate()){setNav("upgrade");return;}
@@ -3360,14 +3383,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     <div>
                       {/* Main canvas preview */}
                       <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12,display:"flex",justifyContent:"center",alignItems:"center",padding:16}}>
-                        <canvas key={`main-${activeSlide}-${JSON.stringify(slide)}-${tmplEffect}-${tmplFont}-${tmplPrimary}-${tmplSecondary}-${tmplBg}`} ref={mainCanvasRef} width={1080} height={1350} style={{borderRadius:8,width:"100%",height:"auto",display:"block"}}/>
+                        <canvas key={`main-canvas-${activeSlide}`} ref={mainCanvasRef} width={1080} height={1350} style={{borderRadius:8,width:"100%",height:"auto",display:"block"}}/>
                       </div>
 
                       {/* Thumbnail strip */}
                       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
                         {tmplSlides.slice(0,tmplSlideCount).map((_,idx)=>(
                           <div key={idx} onClick={()=>setTmplActiveSlide(idx)} style={{cursor:"pointer",position:"relative",flexShrink:0}}>
-                            <canvas key={`thumb-${idx}-${tmplEffect}-${tmplFont}-${tmplPrimary}-${tmplSecondary}-${tmplBg}-${JSON.stringify(tmplSlides[idx])}`} ref={thumbRef(idx)} width={1080} height={1350} style={{borderRadius:6,display:"block",width:108,height:135,border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}/>
+                            <canvas key={`thumb-canvas-${idx}`} ref={thumbRef(idx)} width={1080} height={1350} style={{borderRadius:6,display:"block",width:108,height:135,border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}/>
                             <div style={{position:"absolute",bottom:3,right:4,background:"rgba(0,0,0,0.6)",borderRadius:3,padding:"1px 4px",fontSize:9,color:"#fff",fontWeight:700}}>{idx+1}</div>
                           </div>
                         ))}
