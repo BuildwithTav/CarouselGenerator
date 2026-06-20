@@ -982,7 +982,7 @@ export default function App() {
   const [tmplSelected, setTmplSelected] = useState(null);
   const [tmplActiveSlide, setTmplActiveSlide] = useState(0);
   const [tmplSlideCount, setTmplSlideCount] = useState(6);
-  const [tmplSlides, setTmplSlides] = useState(Array(12).fill(null).map(()=>({image:null,imagePos:{x:50,y:50},headline:"",subline:"",bodyText:"",accentText:"",topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:""})));
+  const [tmplSlides, setTmplSlides] = useState(Array(12).fill(null).map(()=>({image:null,imagePos:{x:50,y:50},image2:null,image2Pos:{x:50,y:50},headline:"",subline:"",headline2:"",subline2:"",bodyText:"",accentText:"",topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:""})));
   const [tmplEffect, setTmplEffect] = useState("gold");
   const [tmplFont, setTmplFont] = useState("Bebas Neue");
   const [tmplPrimary, setTmplPrimary] = useState("#BB9900");
@@ -1870,29 +1870,27 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
     let body="";
     if(tmpl==="dark-fade"){body=darkFadeCover(slide);}
     else if(tmpl==="listicle"&&isCover){
-      // Narrower full-black band: 48%–62% (reduced by ~1/4 vs previous 42%–68%)
-      const cf="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 22%,rgba(0,0,0,0.5) 38%,rgba(0,0,0,0.97) 48%,rgba(0,0,0,1) 52%,rgba(0,0,0,1) 60%,rgba(0,0,0,0.97) 64%,rgba(0,0,0,0.5) 74%,rgba(0,0,0,0) 88%,rgba(0,0,0,0) 100%)";
-      // Text anchored at 48% (top of black zone)
-      const numTop=Math.round(H*0.48);
+      // Same as body slides: gradient from bottom, image shows at top, text pinned to bottom
+      const cf="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 38%,rgba(0,0,0,0.12) 52%,rgba(0,0,0,0.55) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.97) 78%,rgba(0,0,0,1) 85%,rgba(0,0,0,1) 100%)";
       const numDigits=String(listicleNum||6).length;
-      const numFS=numDigits>2?190:numDigits>1?290:420;
-      // Accent line width matches only the number characters — approx 0.6 * fontSize * digits
+      const numFS=numDigits>2?190:numDigits>1?280:400;
       const numLineW=Math.round(numFS*0.62*numDigits)+20;
-      const numW=numLineW+20; // column width just enough for number
-      const txtLeft=SAFE+numW+24;
+      const txtLeft=SAFE+numLineW+32;
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(slide)
         +"<div style='position:absolute;inset:0;background:"+cf+";z-index:1;'></div>"
         +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
-        // Number + accent line under it (line = exact number width only)
-        +"<div style='position:absolute;z-index:5;left:"+SAFE+"px;top:"+numTop+"px;'>"
+        // Number + line + topic/subject all pinned to bottom
+        +"<div style='position:absolute;bottom:80px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:32px;'>"
+        // Number left column
+        +"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS+"px;font-weight:900;line-height:0.88;"+effectCSS(effect,primary,secondary)+"'>"+(listicleNum||6)+"</div>"
-        +"<div style='width:"+numLineW+"px;height:5px;background:"+primary+";margin-top:14px;'></div></div>"
-        // Topic + subject right of number
-        +"<div style='position:absolute;z-index:5;left:"+txtLeft+"px;right:"+SAFE+"px;top:"+(numTop+20)+"px;display:flex;flex-direction:column;justify-content:center;gap:12px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:42px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.2;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase())+"</div>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:96px;font-weight:900;color:"+secondary+";line-height:1.0;word-break:break-word;'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div></div>"
-        // Subline pushed up into the bottom of the black zone
-        +(slide.subline?"<div style='position:absolute;bottom:"+Math.round(H*0.295)+"px;left:0;right:0;text-align:center;z-index:5;font-size:34px;color:rgba(255,255,255,0.6);'>"+esc(slide.subline)+"</div>":"")
+        +"<div style='width:"+numLineW+"px;height:5px;background:"+primary+";'></div></div>"
+        // Topic + subject right
+        +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;padding-bottom:8px;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:40px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.2;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase())+"</div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:88px;font-weight:900;color:"+secondary+";line-height:1.0;word-break:break-word;'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div>"
+        +(slide.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:32px;color:rgba(255,255,255,0.6);line-height:1.3;'>"+esc(slide.subline)+"</div>":"")
+        +"</div></div>"
         +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"+chevron+counter+wm+"</div>";
     }
     else if(tmpl==="listicle"&&!isCover){
@@ -1957,7 +1955,41 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         +parasHTML
         +"</div>"+counter+wm+"</div>";
     }
-    return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
+    else if(tmpl==="split"){
+      // One gradient across the full bottom spanning both halves
+      const splitGrad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 38%,rgba(0,0,0,0.08) 52%,rgba(0,0,0,0.42) 62%,rgba(0,0,0,0.82) 72%,rgba(0,0,0,0.97) 82%,rgba(0,0,0,1) 100%)";
+      const HW=Math.floor(W/2); // half width = 540px
+      // Left image
+      const imgL=slide.image?"<img src='"+esc(slide.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+(slide.imagePos?.x||50)+"% "+(slide.imagePos?.y||50)+"%;z-index:0;'/>":"";
+      // Right image
+      const imgR=slide.image2?"<img src='"+esc(slide.image2)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+(slide.image2Pos?.x||50)+"% "+(slide.image2Pos?.y||50)+"%;z-index:0;'/>":"";
+      // Thin divider line between halves
+      const divider="<div style='position:absolute;left:"+HW+"px;top:0;width:3px;height:100%;background:"+primary+";z-index:6;opacity:0.7;'></div>";
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"
+        // Left half
+        +"<div style='position:absolute;top:0;left:0;width:"+HW+"px;height:"+H+"px;overflow:hidden;'>"+imgL+"</div>"
+        // Right half
+        +"<div style='position:absolute;top:0;left:"+HW+"px;width:"+HW+"px;height:"+H+"px;overflow:hidden;'>"+imgR+"</div>"
+        // Single gradient overlay across full width
+        +"<div style='position:absolute;inset:0;background:"+splitGrad+";z-index:2;'></div>"
+        // Divider
+        +divider
+        // Badge centred at top
+        +"<div style='position:absolute;top:80px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
+        // Left text — bottom left
+        +"<div style='position:absolute;bottom:90px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;display:flex;flex-direction:column;gap:14px;'>"
+        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:72px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(slide.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.7);line-height:1.4;'>"+esc(slide.subline)+"</div>":"")
+        +"</div>"
+        // Right text — bottom right
+        +"<div style='position:absolute;bottom:90px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;display:flex;flex-direction:column;gap:14px;'>"
+        +(slide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:72px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline2.toUpperCase())+"</div>":"")
+        +(slide.subline2?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.7);line-height:1.4;'>"+esc(slide.subline2)+"</div>":"")
+        +"</div>"
+        +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"
+        +(isCover?chevron:"")+counter+wm+"</div>";
+    }
+        return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
   }
 
   // ── Template AI suggest ──────────────────────────────────────────────────
@@ -2778,6 +2810,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   {id:"clean-pro",label:"Clean Pro",desc:"Dark Fade cover then clean white or black body slides.",emoji:"✨"},
                   {id:"storytelling",label:"Storytelling",desc:"Pure text on white or black. Badge top left. Dead centre paragraph.",emoji:"📖"},
                   {id:"raw",label:"Raw",desc:"Your photo. Tight text box. No badge. Authentic, unfiltered.",emoji:"📱"},
+                  {id:"split",label:"Split",desc:"Two images side by side, one gradient across the bottom. Left and right text.",emoji:"⚡"},
                 ].map(t=>(
                   <div key={t.id} onClick={()=>{
                     setTmplSelected(t.id); setTmplActiveSlide(0);
@@ -2789,6 +2822,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                       if(t.id==="clean-pro"&&i===0){base.headline="Most coaches are sleeping on this.";base.subline="The feature that changes everything.";}
                       if(t.id==="clean-pro"&&i>0){base.headline=["The timing is everything.","Your DMs are a free lead machine.","Most coaches have no idea this exists.","Set it up once. Let it run forever.","Here's exactly how to do it."][i-1]||"";base.bodyText=["Someone just followed you. They're curious right now.","Instagram now auto-DMs every new follower. No manual outreach.","It captures the lead the moment they follow.","Five minutes of setup. Automated outreach indefinitely.","Settings → Creators → Automated Responses. Turn it on."][i-1]||"";base.accentText=["That's the highest-intent moment you'll ever get.","That's a free lead machine.","Most coaches have no idea this feature exists.","Your ad drives the follow. This captures the lead.","You're already paying for the follower. Don't waste them."][i-1]||"";}
                       if(t.id==="storytelling"){base.storyText=["I went bankrupt at 25.\n\nNot the kind you read about in business books. The kind where you can't look your mum in the eye.","Her name is Carol. She raised three of us on her own. No shortcuts. Just sacrifice.\n\nAnd I'd thrown it all away.","I spent three years on bail waiting for a trial that kept getting cancelled.\n\nCOVID hit. Courts closed. I just had to wait.","The day I got my tag off, I sat in my car for twenty minutes.\n\nNo music. No phone. Just silence.","I found digital marketing while I was still on tag.\n\nI made my first sale at 3am on a Tuesday. I cried.","That's why I built this. Not to flex. To show you what's possible when you stop waiting for permission."][i]||"";}
+                      if(t.id==="split"){
+                        base.headline=i===0?"Before":"After";
+                        base.subline=i===0?"Where you are now.":"Where you could be.";
+                        base.headline2=i===0?"After":"Before";
+                        base.subline2=i===0?"Where you could be.":"Where you are now.";
+                      }
                       if(t.id==="raw"){base.rawText=["The day I got my tag off, I sat in my car for 20 minutes.\n\nNo music. No phone.\n\nJust silence.","Most people wait for the perfect moment.\n\nThere isn't one.\n\nStart anyway.","Nobody tells you how lonely the rebuild is.\n\nThey only see the result.","You don't need more information.\n\nYou need to start.","Done is better than perfect.\n\nAlways.","Your story is your strategy."][i]||"";}
                       return base;
                     });
@@ -2804,7 +2843,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               </div>
             )}
             {tmplSelected&&(()=>{
-              const isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade";
+              const isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade",isSplit=tmplSelected==="split";
               const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:6,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
               const opts={effect:tmplEffect,font:tmplFont,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree};
               // Use top-level debounced slides (hooks can't be called here inside IIFE)
@@ -2850,7 +2889,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               return(<div>
                 <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
                   <button onClick={()=>setTmplSelected(null)} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Templates</button>
-                  <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Dark Fade":isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":"Raw"}</span>
+                  <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Dark Fade":isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":isSplit?"Split":"Raw"}</span>
                   {isFree&&<span style={{fontSize:11,color:"#e74c3c",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>Free plan — watermark on exports</span>}
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:28,alignItems:"start",position:"relative"}}>
@@ -3001,6 +3040,36 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                         </div>
                       </>}
 
+                      {isSplit&&<>
+                        <label style={lbl}>Left Image</label>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:4}}>
+                          {tmplLibrary.map((p,pi)=>(
+                            <div key={pi} onClick={()=>updateSlide("image",p)} style={{width:44,height:44,borderRadius:6,overflow:"hidden",border:`2px solid ${slide.image===p?GOLD:A.border}`,cursor:"pointer"}}>
+                              <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                            </div>
+                          ))}
+                          <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateSlide("image",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:44,height:44,borderRadius:6,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:20}}>+</div>
+                        </div>
+                        {slide.image&&<button onClick={()=>updateSlide("image",null)} style={{fontSize:11,color:"#e74c3c",background:"none",border:"none",cursor:"pointer",marginBottom:6}}>Remove left image</button>}
+                        <label style={lbl}>Right Image</label>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:4}}>
+                          {tmplLibrary.map((p,pi)=>(
+                            <div key={pi} onClick={()=>updateSlide("image2",p)} style={{width:44,height:44,borderRadius:6,overflow:"hidden",border:`2px solid ${slide.image2===p?GOLD:A.border}`,cursor:"pointer"}}>
+                              <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                            </div>
+                          ))}
+                          <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateSlide("image2",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:44,height:44,borderRadius:6,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:20}}>+</div>
+                        </div>
+                        {slide.image2&&<button onClick={()=>updateSlide("image2",null)} style={{fontSize:11,color:"#e74c3c",background:"none",border:"none",cursor:"pointer",marginBottom:6}}>Remove right image</button>}
+                        <label style={lbl}>Left Headline</label>
+                        <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Before" style={{...inp}}/>
+                        <label style={lbl}>Left Subline</label>
+                        <input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} placeholder="Where you are now." style={{...inp}}/>
+                        <label style={lbl}>Right Headline</label>
+                        <input value={slide.headline2||""} onChange={e=>updateSlide("headline2",e.target.value)} placeholder="After" style={{...inp}}/>
+                        <label style={lbl}>Right Subline</label>
+                        <input value={slide.subline2||""} onChange={e=>updateSlide("subline2",e.target.value)} placeholder="Where you could be." style={{...inp}}/>
+                      </>}
                       {isRaw&&<>
                         <label style={lbl}>Your Text</label>
                         <p style={{fontSize:11,color:A.muted,margin:"-6px 0 4px"}}>Each line gets its own highlight. Blank line = space.</p>
