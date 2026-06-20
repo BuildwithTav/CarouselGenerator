@@ -2416,9 +2416,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
   const [showPexelsCover, setShowPexelsCover] = useState(false);
   const [showPexelsTemplate, setShowPexelsTemplate] = useState(false);
   const [showPexelsQuote, setShowPexelsQuote] = useState(false);
-  const NAV_ITEMS = [["generate","Generate"],["templates","Templates"],["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
+  const NAV_ITEMS = [["generate","Generate"],...(currentUser?.is_admin?[["templates","Templates"]]:[]),["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
   const BURGER_ITEMS = [["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
-  const MAIN_NAV = [["generate","Generate"],["templates","Templates"]];
+  const MAIN_NAV = [["generate","Generate"],...(currentUser?.is_admin?[["templates","Templates"]]:[])];
 
   return (
     <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"Plus Jakarta Sans,system-ui,sans-serif"}}>
@@ -3260,12 +3260,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
               const mainCanvasRef = (el) => {
                 if(el) {
-                  setTimeout(()=>renderTmplSlide(el, activeSlide, tmplSlideCount, tmplSelected, tmplSlides, opts), 50);
+                  document.fonts.ready.then(()=>{
+                    renderTmplSlide(el, activeSlide, tmplSlideCount, tmplSelected, tmplSlides, opts);
+                  });
                 }
               };
 
               const thumbRef = (idx) => (el) => {
-                if(el) setTimeout(()=>renderTmplSlide(el, idx, tmplSlideCount, tmplSelected, tmplSlides, opts), 50);
+                if(el) document.fonts.ready.then(()=>renderTmplSlide(el, idx, tmplSlideCount, tmplSelected, tmplSlides, opts));
               };
 
               const downloadSlide = async (idx) => {
@@ -3323,14 +3325,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     <div>
                       {/* Main canvas preview */}
                       <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12,display:"flex",justifyContent:"center",alignItems:"center",padding:16}}>
-                        <canvas key={`main-${activeSlide}-${JSON.stringify(slide)}-${tmplEffect}-${tmplFont}-${tmplPrimary}-${tmplSecondary}-${tmplBg}`} ref={mainCanvasRef} width={540} height={675} style={{borderRadius:8,maxWidth:"100%",display:"block"}}/>
+                        <canvas key={`main-${activeSlide}-${JSON.stringify(slide)}-${tmplEffect}-${tmplFont}-${tmplPrimary}-${tmplSecondary}-${tmplBg}`} ref={mainCanvasRef} width={1080} height={1350} style={{borderRadius:8,width:"100%",height:"auto",display:"block"}}/>
                       </div>
 
                       {/* Thumbnail strip */}
                       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
                         {tmplSlides.slice(0,tmplSlideCount).map((_,idx)=>(
                           <div key={idx} onClick={()=>setTmplActiveSlide(idx)} style={{cursor:"pointer",position:"relative",flexShrink:0}}>
-                            <canvas key={`thumb-${idx}-${tmplEffect}-${tmplFont}-${tmplPrimary}-${tmplSecondary}-${tmplBg}-${JSON.stringify(tmplSlides[idx])}`} ref={thumbRef(idx)} width={108} height={135} style={{borderRadius:6,display:"block",border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}/>
+                            <canvas key={`thumb-${idx}-${tmplEffect}-${tmplFont}-${tmplPrimary}-${tmplSecondary}-${tmplBg}-${JSON.stringify(tmplSlides[idx])}`} ref={thumbRef(idx)} width={1080} height={1350} style={{borderRadius:6,display:"block",width:108,height:135,border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}/>
                             <div style={{position:"absolute",bottom:3,right:4,background:"rgba(0,0,0,0.6)",borderRadius:3,padding:"1px 4px",fontSize:9,color:"#fff",fontWeight:700}}>{idx+1}</div>
                           </div>
                         ))}
