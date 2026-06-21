@@ -926,7 +926,7 @@ export default function App() {
   const [tmplSlideCount, setTmplSlideCount] = useState(6);
   const [tmplSlides, setTmplSlides] = useState(Array(12).fill(null).map(()=>({image:null,image2:null,imagePos:{x:50,y:50},image2Pos:{x:50,y:50},headline:"",subline:"",bodyText:"",accentText:"",number:6,topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:"",pillText:""})));
   const [tmplEffect, setTmplEffect] = useState("gold");
-  const [tmplFont, setTmplFont] = useState("'Bebas Neue'");
+  const [tmplFont, setTmplFont] = useState("Bebas Neue");
   const [tmplPrimary, setTmplPrimary] = useState("#BB9900");
   const [tmplSecondary, setTmplSecondary] = useState("#ffffff");
   const [tmplBg, setTmplBg] = useState("white");
@@ -939,6 +939,8 @@ export default function App() {
   const [tmplDownloading, setTmplDownloading] = useState(false);
   const [tmplDownloadingIdx, setTmplDownloadingIdx] = useState(null);
   const [tmplActiveSlide, setTmplActiveSlide] = useState(0);
+  const [tmplLibrary, setTmplLibrary] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_library")||"[]");}catch{return[];}});
+  const [suppressLibraryConfirm, setSuppressLibraryConfirm] = useState(()=>{try{return localStorage.getItem("bwt_suppress_lib_confirm")==="1";}catch{return false;}});
   const [payoutDetails, setPayoutDetails] = useState({});
   const [payoutSubmitting, setPayoutSubmitting] = useState(false);
   const [payoutSuccess, setPayoutSuccess] = useState(false);
@@ -1018,417 +1020,176 @@ export default function App() {
   // ============================================================
   // UNIVERSAL BADGE RENDERER — locked, never varies per template
   // ============================================================
-  function drawBadge(ctx, profUrl, nm, hdl, x, y, small, showTick, opts) {
-    const avR = small ? 36 : 54;
-    const nameSize = small ? 26 : 34;
-    const hdlSize = small ? 20 : 26;
-    const tickR = small ? 12 : 15;
-    const avCX = x + avR;
-    const avCY = y + avR;
-    ctx.save(); ctx.beginPath(); ctx.arc(avCX,avCY,avR+3,0,Math.PI*2); ctx.fillStyle="#fff"; ctx.fill(); ctx.restore();
-    if(profUrl) {
-      const img = (opts&&opts.imgCache&&opts.imgCache[profUrl])||null;
-      if(img){ctx.save(); ctx.beginPath(); ctx.arc(avCX,avCY,avR,0,Math.PI*2); ctx.clip();
-      const s=Math.max(avR*2/img.width,avR*2/img.height);
-      ctx.drawImage(img,avCX-img.width*s/2,avCY-img.height*s/2,img.width*s,img.height*s);
-      ctx.restore();}
-    } else {
-      ctx.save(); ctx.beginPath(); ctx.arc(avCX,avCY,avR,0,Math.PI*2); ctx.fillStyle="#4a6a9a"; ctx.fill(); ctx.restore();
+  // useDebouncedValue removed — hooks must be at top level, not in nested functions
+
+  // ── buildTmplHTML — generates HTML sent to Puppeteer /api/render-slide ──
+  function buildTmplHTML(slide, idx, total, tmpl, opts) {
+    const {effect,font,primary,secondary,bg,fontStyle,rawBox,rawPos,listicleNum,profUrl,nm,hdl,showTick,isFree}=opts;
+    const W=1080,H=1350,SAFE=60,isCover=idx===0;
+    const fontFamily=(font||"Bebas Neue").replace(/'/g,"");
+    function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+    const gFonts="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Teko:wght@700&family=Barlow+Condensed:wght@800;900&family=Archivo+Black&family=Playfair+Display:ital,wght@0,900;1,900&family=Alfa+Slab+One&family=Inter:wght@400;600;700;800&display=swap";
+    function effectCSS(eff,pri,sec){
+      if(eff==="gold") return"background:linear-gradient(180deg,"+sec+" 0%,#ffe44d 20%,"+pri+" 50%,#7a5800 80%,#ffe066 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 4px 8px rgba(140,100,0,0.5));";
+      if(eff==="chrome") return"background:linear-gradient(180deg,"+sec+" 0%,#ddd 20%,#777 45%,#bbb 65%,#444 85%,#ccc 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
+      if(eff==="fire") return"background:linear-gradient(180deg,"+sec+" 0%,#ffff00 15%,#ff6600 40%,#cc0000 75%,#660000 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
+      if(eff==="ice") return"background:linear-gradient(180deg,"+sec+" 0%,#d0f0ff 30%,"+pri+" 65%,#1a6090 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
+      if(eff==="neon") return"-webkit-text-fill-color:#fff;color:#fff;text-shadow:0 0 10px "+pri+",0 0 20px "+pri+",0 0 40px "+pri+",0 0 80px "+pri+";";
+      if(eff==="3d") return"color:#fff;text-shadow:1px 1px 0 #555,2px 2px 0 #444,3px 3px 0 #333,4px 4px 0 #222,5px 5px 0 #111,6px 6px 8px rgba(0,0,0,0.4);";
+      if(eff==="outline") return"-webkit-text-stroke:4px "+pri+";-webkit-text-fill-color:transparent;color:transparent;";
+      return"-webkit-text-fill-color:"+sec+";color:"+sec+";text-shadow:0 2px 8px rgba(0,0,0,0.6);";
     }
-    const tx = avCX + avR + 16;
-    ctx.save(); ctx.shadowColor="rgba(0,0,0,0.7)"; ctx.shadowBlur=8;
-    ctx.fillStyle="#fff"; ctx.font=`700 ${nameSize}px 'Helvetica Neue',Arial,sans-serif`; ctx.textAlign="left";
-    const nameW = ctx.measureText(nm||"").width;
-    ctx.fillText(nm||"", tx, avCY-6); ctx.restore();
-    ctx.fillStyle="rgba(255,255,255,0.5)"; ctx.font=`400 ${hdlSize}px 'Helvetica Neue',Arial,sans-serif`;
-    const hdlW = ctx.measureText(hdl||"").width;
-    ctx.fillText(hdl||"", tx, avCY+hdlSize+2);
-    const tickX = tx + Math.max(nameW, hdlW) + 22;
-    if(showTick!==false) {
-      ctx.save(); ctx.beginPath(); ctx.arc(tickX,avCY-avR*0.3,tickR,0,Math.PI*2); ctx.fillStyle="#1D9BF0"; ctx.fill();
-      ctx.strokeStyle="#fff"; ctx.lineWidth=tickR*0.25; ctx.lineCap="round"; ctx.lineJoin="round";
-      ctx.beginPath(); ctx.moveTo(tickX-tickR*0.42,avCY-avR*0.3+tickR*0.05); ctx.lineTo(tickX-tickR*0.08,avCY-avR*0.3+tickR*0.42); ctx.lineTo(tickX+tickR*0.44,avCY-avR*0.3-tickR*0.28); ctx.stroke();
-      ctx.restore();
+    function badge(dark){
+      const tc=dark?"#fff":"#0a0a0a",sc=dark?"rgba(255,255,255,0.55)":"rgba(0,0,0,0.45)";
+      const tick=showTick?"<span style='display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#1D9BF0;border-radius:50%;margin-left:8px;vertical-align:middle;flex-shrink:0;'><span style='display:block;width:8px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);margin-top:-2px;'></span></span>":"";
+      const av=profUrl?"<img src='"+esc(profUrl)+"' style='width:100%;height:100%;object-fit:cover;border-radius:50%;'/>"  :"<div style='width:100%;height:100%;background:#4a6a9a;border-radius:50%;'></div>";
+      return"<div style='display:flex;align-items:center;gap:18px;'><div style='width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid #fff;flex-shrink:0;background:#4a6a9a;'>"+av+"</div><div style='display:flex;flex-direction:column;gap:4px;'><div style='display:flex;align-items:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;font-weight:800;color:"+tc+";'>"+esc(nm||"")+tick+"</div><div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:28px;color:"+sc+";'>"+esc(hdl||"")+"</div></div></div>";
     }
-    ctx.textAlign="left";
+    const grad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 28%,rgba(0,0,0,0.08) 44%,rgba(0,0,0,0.35) 54%,rgba(0,0,0,0.65) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.96) 78%,rgba(0,0,0,0.99) 88%,rgba(0,0,0,1) 100%)";
+    const chevron="<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+primary+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+primary+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>";
+    const website="<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>";
+    const wm=isFree?"<div style='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-20deg);font-size:72px;font-weight:900;color:rgba(255,255,255,0.12);white-space:nowrap;z-index:20;pointer-events:none;'>studio.buildwithtav.co</div>":"";
+    const counter="<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+(idx+1)+"/"+total+"</div>";
+    function imgTag(s){if(!s||!s.image)return"";const px=(s.imagePos&&s.imagePos.x)||50,py=(s.imagePos&&s.imagePos.y)||50;return"<img src='"+esc(s.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+px+"% "+py+"%;z-index:0;'/>";}
+    function darkFadeCover(s){
+      return"<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(s)
+        +"<div style='position:absolute;inset:0;background:"+grad+";z-index:1;'></div>"
+        +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.638)+"px;white-space:nowrap;'>"+badge(true)+"</div>"
+        +"<div style='position:absolute;z-index:5;left:54px;right:54px;top:"+Math.round(H*0.748)+"px;height:5px;background:linear-gradient(to right,transparent 0%,"+primary+" 5%,"+primary+" 95%,transparent 100%);'></div>"
+        +"<div style='position:absolute;z-index:5;left:80px;right:80px;top:"+Math.round(H*0.762)+"px;bottom:"+Math.round(H*0.04)+"px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;overflow:hidden;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:82px;font-weight:900;line-height:1.1;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectCSS(effect,primary,secondary)+"'>"+esc((s.headline||"").toUpperCase())+"</div>"
+        +(s.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;color:"+secondary+";text-align:center;font-weight:600;max-width:100%;'>"+esc(s.subline)+"</div>":"")
+        +"</div>"+website+(isCover?chevron:"")+counter+wm+"</div>";
+    }
+    let body="";
+    if(tmpl==="dark-fade"){body=darkFadeCover(slide);}
+    else if(tmpl==="listicle"&&isCover){
+      const cf="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 38%,rgba(0,0,0,0.12) 52%,rgba(0,0,0,0.55) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.97) 78%,rgba(0,0,0,1) 85%,rgba(0,0,0,1) 100%)";
+      const numDigits=String(listicleNum||6).length;
+      const numFS=numDigits>2?240:numDigits>1?360:520;
+      const numLineW=Math.round(numFS*0.62*numDigits)+20;
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(slide)
+        +"<div style='position:absolute;inset:0;background:"+cf+";z-index:1;'></div>"
+        +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
+        +"<div style='position:absolute;bottom:60px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:32px;'>"
+        +"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS+"px;font-weight:900;line-height:0.88;"+effectCSS(effect,primary,secondary)+"'>"+(listicleNum||6)+"</div>"
+        +"<div style='width:"+numLineW+"px;height:5px;background:"+primary+";'></div></div>"
+        +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:12px;padding-bottom:8px;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:46px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.2;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase())+"</div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:110px;font-weight:900;color:"+secondary+";line-height:1.0;word-break:break-word;'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div>"
+        +(slide.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.6);line-height:1.3;'>"+esc(slide.subline)+"</div>":"")
+        +"</div></div>"
+        +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"+chevron+counter+wm+"</div>";
+    }
+    else if(tmpl==="listicle"&&!isCover){
+      const lGrad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 40%,rgba(0,0,0,0.15) 54%,rgba(0,0,0,0.55) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.97) 78%,rgba(0,0,0,1) 86%,rgba(0,0,0,1) 100%)";
+      const numFS2=String(idx).length>1?260:310;
+      const numLineW2=Math.round(numFS2*0.62*String(idx).length)+20;
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#0a0a0a;overflow:hidden;'>"+imgTag(slide)
+        +"<div style='position:absolute;inset:0;background:"+lGrad+";z-index:1;'></div>"
+        +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
+        +"<div style='position:absolute;bottom:80px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:40px;'>"
+        +"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS2+"px;font-weight:900;line-height:1;"+effectCSS(effect,primary,secondary)+"'>"+String(idx)+"</div>"
+        +"<div style='width:"+numLineW2+"px;height:5px;background:"+primary+";'></div></div>"
+        +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;padding-bottom:8px;'>"
+        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:68px;font-weight:900;color:"+secondary+";line-height:1.1;text-transform:uppercase;word-break:break-word;'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:rgba(255,255,255,0.85);line-height:1.45;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
+        +"</div></div>"
+        +website+wm+"</div>";
+    }
+    else if(tmpl==="clean-pro"&&isCover){body=darkFadeCover(slide);}
+    else if(tmpl==="clean-pro"&&!isCover){
+      const isW=bg==="white",bgC=isW?"#ffffff":"#0a0a0a",tM=isW?"#0a0a0a":"#ffffff";
+      const tS=isW?"rgba(0,0,0,0.5)":"rgba(255,255,255,0.5)";
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;'>"
+        +"<div style='position:absolute;top:140px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
+        +"<div style='position:absolute;top:320px;left:"+(SAFE+20)+"px;right:"+(SAFE+20)+"px;bottom:120px;z-index:5;display:flex;flex-direction:column;justify-content:center;gap:52px;'>"
+        +(slide.headline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:82px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
+        +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:52px;color:"+tS+";line-height:1.65;word-break:break-word;'>"+esc(slide.bodyText).replace(/\n/g,"<br/>")+"</div>":"")
+        +(slide.accentText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:56px;font-weight:700;color:"+primary+";line-height:1.3;word-break:break-word;'>"+esc(slide.accentText)+"</div>":"")
+        +(slide.accentText?"<div style='width:110px;height:5px;background:"+primary+";'></div>":"")
+        +"</div><div style='position:absolute;bottom:48px;right:"+SAFE+"px;z-index:5;font-size:28px;color:"+tS+";'>"+(idx+1)+"/"+total+"</div>"+wm+"</div>";
+    }
+    else if(tmpl==="storytelling"){
+      const isW=bg==="white",bgC=isW?"#ffffff":"#0a0a0a",tC=isW?"#0a0a0a":"#ffffff";
+      const stI=fontStyle==="Playfair Display",stF=fontStyle||"Inter";
+      const sw=isCover?"<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+(isW?"rgba(0,0,0,0.3)":"rgba(255,255,255,0.3)")+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+(isW?"rgba(0,0,0,0.3)":"rgba(255,255,255,0.3)")+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>":"";
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;'>"
+        +"<div style='position:absolute;top:140px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
+        +"<div style='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:200px 120px;z-index:5;'>"
+        +"<div style='font-family:"+stF+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;"+(stI?"font-style:italic;":"")+"font-weight:400;color:"+tC+";line-height:1.7;text-align:center;'>"
+        +esc(slide.storyText||"").replace(/\n\n/g,"</p><p style='margin-top:1.2em;'>").replace(/\n/g,"<br/>")
+        +"</div></div>"+sw+counter+wm+"</div>";
+    }
+    else if(tmpl==="raw"){
+      const isWB=rawBox==="white",tCR=isWB?"#0a0a0a":"#ffffff";
+      const bBg=isWB?"rgba(255,255,255,0.93)":"rgba(0,0,0,0.85)";
+      const stI=fontStyle==="Playfair Display",stF=fontStyle||"Inter";
+      const paras=(slide.rawText||"").split(/\n\n+/);
+      const parasHTML=paras.map(p=>p.trim()===""
+        ?""
+        :"<div style='display:inline-block;background:"+bBg+";padding:18px 36px;margin:10px 0;font-family:"+stF+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:56px;font-weight:800;color:"+tCR+";line-height:1.4;"+(stI?"font-style:italic;":"")+"word-break:break-word;white-space:pre-wrap;'>"+esc(p.trim())+"</div>"
+      ).join("<br/>");
+      const vAlign=rawPos==="bottom"?"justify-content:flex-end;padding-bottom:140px":"justify-content:center";
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#1a1a1a;overflow:hidden;'>"+imgTag(slide)
+        +"<div style='position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;"+vAlign+";padding:80px 80px;text-align:center;'>"
+        +parasHTML
+        +"</div>"+counter+wm+"</div>";
+    }
+    else if(tmpl==="split"){
+      const splitGrad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 38%,rgba(0,0,0,0.08) 52%,rgba(0,0,0,0.42) 62%,rgba(0,0,0,0.82) 72%,rgba(0,0,0,0.97) 82%,rgba(0,0,0,1) 100%)";
+      const HW=Math.floor(W/2);
+      const imgL=slide.image?"<img src='"+esc(slide.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+(slide.imagePos?.x||50)+"% "+(slide.imagePos?.y||50)+"%;z-index:0;'/>":"";
+      const imgR=slide.image2?"<img src='"+esc(slide.image2)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+(slide.image2Pos?.x||50)+"% "+(slide.image2Pos?.y||50)+"%;z-index:0;'/>":"";
+      const divider="<div style='position:absolute;left:"+HW+"px;top:0;width:3px;height:100%;background:"+primary+";z-index:1;opacity:0.5;'></div>";
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"
+        +"<div style='position:absolute;top:0;left:0;width:"+HW+"px;height:"+H+"px;overflow:hidden;'>"+imgL+"</div>"
+        +"<div style='position:absolute;top:0;left:"+HW+"px;width:"+HW+"px;height:"+H+"px;overflow:hidden;'>"+imgR+"</div>"
+        +"<div style='position:absolute;inset:0;background:"+splitGrad+";z-index:2;'></div>"
+        +divider
+        +"<div style='position:absolute;bottom:"+Math.round(H*0.38)+"px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
+        +"<div style='position:absolute;bottom:90px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;display:flex;flex-direction:column;gap:14px;'>"
+        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:72px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(slide.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.7);line-height:1.4;'>"+esc(slide.subline)+"</div>":"")
+        +"</div>"
+        +"<div style='position:absolute;bottom:90px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;display:flex;flex-direction:column;gap:14px;'>"
+        +(slide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:72px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline2.toUpperCase())+"</div>":"")
+        +(slide.subline2?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.7);line-height:1.4;'>"+esc(slide.subline2)+"</div>":"")
+        +"</div>"
+        +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"
+        +(isCover?chevron:"")+counter+wm+"</div>";
+    }
+    return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
   }
 
-  // ============================================================
-  // TEMPLATE CANVAS RENDERER
-  // ============================================================
-  function renderTmplSlide(canvas, slideIdx, total, tmpl, slides, opts) {
-    const ctx = canvas.getContext("2d");
-    const W = canvas.width, H = canvas.height;
-    const {effect, font, primary, secondary, bg, fontStyle, rawBox, rawPos, listicleNum, profUrl, nm, hdl, isFree, imgCache} = opts;
-    const slide = slides[slideIdx];
-    const SAFE = 60;
-
-    ctx.clearRect(0,0,W,H);
-
-    function coverFit(img) {
-      if(!img||!img.width) return;
-      const s=Math.max(W/img.width,H/img.height);
-      ctx.drawImage(img,(W-img.width*s)/2,(H-img.height*s)/2,img.width*s,img.height*s);
-    }
-    function loadAndDraw(src, cb) {
-      if(!src) { cb(null); return; }
-      // Use cached image if available
-      if(imgCache&&imgCache[src]) { cb(imgCache[src]); return; }
-      const img=new Image(); img.crossOrigin="anonymous";
-      img.onload=()=>cb(img);
-      img.onerror=()=>cb(null);
-      img.src=src;
-    }
-    function drawGradientOverlay() {
-      const gr=ctx.createLinearGradient(0,0,0,H);
-      gr.addColorStop(0,"rgba(0,0,0,0)"); gr.addColorStop(0.32,"rgba(0,0,0,0)");
-      gr.addColorStop(0.50,"rgba(0,0,0,0.06)"); gr.addColorStop(0.60,"rgba(0,0,0,0.28)");
-      gr.addColorStop(0.68,"rgba(0,0,0,0.58)"); gr.addColorStop(0.76,"rgba(0,0,0,0.82)");
-      gr.addColorStop(0.84,"rgba(0,0,0,0.94)"); gr.addColorStop(0.91,"rgba(0,0,0,0.98)");
-      gr.addColorStop(1.0,"rgba(0,0,0,1.0)");
-      ctx.fillStyle=gr; ctx.fillRect(0,0,W,H);
-    }
-    function drawAccentLine(y, fullWidth, colW) {
-      const pad=54;
-      if(fullWidth===false) {
-        ctx.fillStyle=primary; ctx.fillRect(SAFE,y,colW||300,5);
-      } else {
-        ctx.fillStyle=primary; ctx.fillRect(pad,y,W-pad*2,5);
-        const fl=ctx.createLinearGradient(0,y,pad,y); fl.addColorStop(0,"rgba(0,0,0,1)"); fl.addColorStop(1,"rgba(0,0,0,0)"); ctx.fillStyle=fl; ctx.fillRect(0,y,pad,5);
-        const fr=ctx.createLinearGradient(W-pad,y,W,y); fr.addColorStop(0,"rgba(0,0,0,0)"); fr.addColorStop(1,"rgba(0,0,0,1)"); ctx.fillStyle=fr; ctx.fillRect(W-pad,y,pad,5);
-      }
-    }
-    function drawChevron() {
-      const x=W-58, y=H*0.968;
-      ctx.save(); ctx.globalAlpha=0.7; ctx.strokeStyle=primary; ctx.lineWidth=5; ctx.lineCap="round"; ctx.lineJoin="round";
-      ctx.beginPath(); ctx.moveTo(x-22,y-14); ctx.lineTo(x,y); ctx.lineTo(x-22,y+14); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(x-6,y-14); ctx.lineTo(x+16,y); ctx.lineTo(x-6,y+14); ctx.stroke();
-      ctx.globalAlpha=1; ctx.restore();
-    }
-    function makeEffectGrad(cx, topY, h) {
-      const g=ctx.createLinearGradient(cx,topY,cx,topY+h);
-      const p=primary, s=secondary;
-      if(effect==="gold"){g.addColorStop(0,s);g.addColorStop(0.2,"#ffe44d");g.addColorStop(0.5,p);g.addColorStop(0.8,"#7a5800");g.addColorStop(1,"#ffe066");}
-      else if(effect==="chrome"){g.addColorStop(0,s);g.addColorStop(0.2,"#ddd");g.addColorStop(0.45,"#777");g.addColorStop(0.65,"#bbb");g.addColorStop(0.85,"#444");g.addColorStop(1,"#ccc");}
-      else if(effect==="fire"){g.addColorStop(0,s);g.addColorStop(0.15,"#ffff00");g.addColorStop(0.4,p);g.addColorStop(0.75,"#cc0000");g.addColorStop(1,"#660000");}
-      else if(effect==="ice"){g.addColorStop(0,s);g.addColorStop(0.3,"#d0f0ff");g.addColorStop(0.65,p);g.addColorStop(1,"#1a6090");}
-      return g;
-    }
-    function drawEffectText(text, cx, y, fontSize) {
-      ctx.font=`900 ${fontSize}px ${font},sans-serif`; ctx.textAlign="center";
-      if(["gold","chrome","fire","ice"].includes(effect)){
-        ctx.save(); ctx.shadowColor=effect==="gold"?"rgba(140,100,0,0.5)":"rgba(0,0,0,0.5)"; ctx.shadowBlur=18; ctx.shadowOffsetY=5;
-        ctx.fillStyle=makeEffectGrad(cx,y-fontSize,fontSize*1.15); ctx.fillText(text,cx,y); ctx.restore();
-        ctx.save(); ctx.globalAlpha=0.13; ctx.fillStyle="#fff"; ctx.fillText(text,cx,y-3); ctx.restore();
-      } else if(effect==="neon"){
-        for(let i=4;i>=1;i--){ctx.save();ctx.shadowColor=primary;ctx.shadowBlur=i*32;ctx.fillStyle=primary;ctx.globalAlpha=0.22/i;ctx.fillText(text,cx,y);ctx.restore();}
-        ctx.save(); ctx.shadowColor=primary; ctx.shadowBlur=14; ctx.fillStyle=secondary; ctx.fillText(text,cx,y); ctx.restore();
-      } else if(effect==="3d"){
-        for(let i=12;i>=1;i--){const sh=Math.round(10+(i/12)*60);ctx.fillStyle=`rgb(${sh},${sh},${sh})`;ctx.fillText(text,cx+i*0.85,y+i*0.85);}
-        ctx.save(); ctx.shadowColor="rgba(0,0,0,0.4)"; ctx.shadowBlur=6; ctx.fillStyle="#fff"; ctx.fillText(text,cx,y); ctx.restore();
-      } else if(effect==="outline"){
-        ctx.save(); ctx.strokeStyle=primary; ctx.lineWidth=fontSize*0.05; ctx.lineJoin="round"; ctx.strokeText(text,cx,y);
-        ctx.fillStyle="rgba(0,0,0,0.05)"; ctx.fillText(text,cx,y); ctx.restore();
-      } else {
-        ctx.save(); ctx.shadowColor="rgba(0,0,0,0.7)"; ctx.shadowBlur=20; ctx.shadowOffsetY=5; ctx.fillStyle=secondary; ctx.fillText(text,cx,y); ctx.restore();
-      }
-      ctx.textAlign="left";
-    }
-    function fitLines(text, maxW, maxLines, fontSize) {
-      let fs=fontSize||140, lines=[];
-      const t=text.toUpperCase();
-      while(fs>=40){
-        ctx.font=`900 ${fs}px ${font},sans-serif`;
-        const words=t.split(" "); lines=[]; let line="";
-        for(const w of words){
-          const test=line?line+" "+w:w;
-          if(ctx.measureText(test).width>maxW&&line){
-            lines.push(line); line=w;
-          } else if(ctx.measureText(w).width>maxW) {
-            // Single word wider than maxW — force it on its own line, will shrink on next pass
-            if(line){lines.push(line);line="";}
-            lines.push(w); line="";
-          } else {
-            line=test;
-          }
+  // ── Template AI suggest ──────────────────────────────────────────────────
+  const tmplSuggestSlide = async (idx, tmpl, brief, slides, slideCount) => {
+    setTmplSuggesting(idx);
+    try {
+      const context=slides.slice(0,slideCount).map((s,i)=>{const t=tmpl==="storytelling"?s.storyText:s.bodyText;return t?`Slide ${i+1}: "${t.substring(0,60)}"`:""}).filter(Boolean).join("; ");
+      const prompt=tmpl==="listicle"
+        ?`Write ONE specific punchy point for slide ${idx+1} of a listicle carousel. Topic: "${brief||"general"}". ${context?`Already covered: ${context}.`:""} Max 80 chars. Return ONLY the text.`
+        :tmpl==="storytelling"
+        ?`Write ONE paragraph continuing a personal story carousel (slide ${idx+1}). Story brief: "${brief||"personal journey"}". ${context?`Story so far: ${context}.`:""} Max 120 chars. First person, specific details only. Return ONLY the text.`
+        :`Write ONE clear body text point for slide ${idx+1} of an informative carousel about "${brief||"this topic"}". ${context?`Previous: ${context}.`:""} Max 100 chars. Return ONLY the text.`;
+      const r=await fetchWithRetry({model:"claude-sonnet-4-6",max_tokens:80,messages:[{role:"user",content:prompt}]});
+      const text=r?.content?.[0]?.text?.trim()||"";
+      if(text){
+        setTmplSlides(prev=>{const next=[...prev];const field=tmpl==="storytelling"?"storyText":"bodyText";next[idx]={...next[idx],[field]:text};return next;});
+        if(currentUser?.email){
+          await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:5})});
+          setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));
         }
-        if(line)lines.push(line);
-        if(lines.length<=maxLines)break;
-        fs-=6;
       }
-      return {lines, fontSize:fs};
-    }
-    function drawWebsite(y) {
-      ctx.textAlign="center"; ctx.fillStyle=secondary; ctx.globalAlpha=0.5;
-      ctx.font="400 24px 'Helvetica Neue',Arial,sans-serif";
-      ctx.fillText("studio.buildwithtav.co",W/2,y);
-      ctx.globalAlpha=1; ctx.textAlign="left";
-    }
-    function drawWatermark() {
-      if(!isFree) return;
-      ctx.save(); ctx.globalAlpha=0.3; ctx.fillStyle="#fff";
-      ctx.font="bold 52px 'Helvetica Neue',Arial,sans-serif"; ctx.textAlign="center";
-      ctx.translate(W/2,H/2); ctx.rotate(-Math.PI/6);
-      [-400,-200,0,200,400].forEach(offset=>ctx.fillText("studio.buildwithtav.co",0,offset));
-      ctx.restore();
-    }
-    function darkFadeCover(img) {
-      if(img) coverFit(img);
-      else{const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,"#2a3a5a");g.addColorStop(1,"#0a1020");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
-      drawGradientOverlay();
-      drawBadge(ctx,profUrl,nm,hdl,SAFE+(W-SAFE*2-420)/2,H*0.655,false,opts.showTick,opts);
-      drawAccentLine(H*0.748);
-      const {lines:hlL,fontSize:hlF}=fitLines(slide.headline||"",W-160,2,140);
-      const lhh=hlF*1.12, ttH=hlL.length*lhh;
-      let hlY=H*0.800+(H*0.132-ttH)/2+hlF*0.82;
-      hlL.forEach(l=>{drawEffectText(l,W/2,hlY,hlF);hlY+=lhh;});
-      if(slide.subline){ctx.textAlign="center";ctx.fillStyle=secondary;ctx.font="600 34px 'Helvetica Neue',Arial,sans-serif";ctx.shadowColor="rgba(0,0,0,0.5)";ctx.shadowBlur=8;ctx.fillText(slide.subline,W/2,H*0.950);ctx.shadowBlur=0;ctx.textAlign="left";}
-      drawWebsite(H*0.977); drawChevron();
-    }
+    }catch(e){console.error(e);}
+    setTmplSuggesting(null);
+  };
 
-    // DARK FADE
-    if(tmpl==="dark-fade") {
-      if(slide.image){loadAndDraw(slide.image,img=>{ctx.clearRect(0,0,W,H);darkFadeCover(img);drawWatermark();});}
-      else darkFadeCover(null);
-    }
-
-    // LISTICLE
-    else if(tmpl==="listicle") {
-      if(slideIdx===0) {
-        const drawListicleCover=(img)=>{
-          if(img) coverFit(img);
-          else{const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,"#1a3a2a");g.addColorStop(1,"#0a1a2a");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
-          const centreY=H*0.525;
-          const gT=ctx.createLinearGradient(0,0,0,centreY);
-          gT.addColorStop(0,"rgba(0,0,0,0)");gT.addColorStop(0.3,"rgba(0,0,0,0)");gT.addColorStop(0.68,"rgba(0,0,0,0.62)");gT.addColorStop(0.86,"rgba(0,0,0,0.93)");gT.addColorStop(1.0,"rgba(0,0,0,0.98)");
-          ctx.fillStyle=gT;ctx.fillRect(0,0,W,centreY);
-          const gB=ctx.createLinearGradient(0,centreY,0,H);
-          gB.addColorStop(0,"rgba(0,0,0,0.98)");gB.addColorStop(0.14,"rgba(0,0,0,0.93)");gB.addColorStop(0.32,"rgba(0,0,0,0.62)");gB.addColorStop(0.68,"rgba(0,0,0,0)");gB.addColorStop(1.0,"rgba(0,0,0,0)");
-          ctx.fillStyle=gB;ctx.fillRect(0,centreY,W,H-centreY);
-          drawBadge(ctx,profUrl,nm,hdl,SAFE,SAFE,true,opts.showTick,opts);
-          const NCOL=320,NCX=SAFE+NCOL/2,CTOP=H*0.34,CBTM=H*0.72,CH=CBTM-CTOP;
-          const numStr=String(listicleNum||6);
-          let nfs=Math.min(CH*0.88,480);
-          ctx.font=`900 ${nfs}px ${font},sans-serif`;
-          while(ctx.measureText(numStr).width>NCOL*0.88&&nfs>80){nfs-=10;ctx.font=`900 ${nfs}px ${font},sans-serif`;}
-          const nY=CTOP+CH*0.78;
-          drawEffectText(numStr,NCX,nY,nfs);
-          drawAccentLine(nY+18,false,NCOL);
-          const TX=SAFE+NCOL+36,TW=W-TX-SAFE;
-          const topicLine=(slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase();
-          const subject=(slide.subject||"2026 ENDS").toUpperCase();
-          ctx.fillStyle="rgba(255,255,255,0.62)";ctx.font=`600 42px ${font},sans-serif`;ctx.textAlign="left";
-          const tWords=topicLine.split(" ");let tLine="",tLines=[];
-          tWords.forEach(w=>{const test=tLine?tLine+" "+w:w;if(ctx.measureText(test).width>TW&&tLine){tLines.push(tLine);tLine=w;}else tLine=test;});
-          if(tLine)tLines.push(tLine);
-          const ttHH=tLines.length*50+20+130;
-          let ty=CTOP+(CH-ttHH)/2+50;
-          ctx.shadowColor="rgba(0,0,0,0.8)";ctx.shadowBlur=10;
-          tLines.forEach(l=>{ctx.fillText(l,TX,ty);ty+=50;});ctx.shadowBlur=0;
-          let sfs=118;ctx.font=`900 ${sfs}px ${font},sans-serif`;
-          while(ctx.measureText(subject).width>TW&&sfs>50){sfs-=6;ctx.font=`900 ${sfs}px ${font},sans-serif`;}
-          ctx.save();ctx.shadowColor="rgba(0,0,0,0.7)";ctx.shadowBlur=16;ctx.shadowOffsetY=4;ctx.fillStyle=secondary;ctx.fillText(subject,TX,ty+sfs*0.88);ctx.restore();
-          if(slide.subline){ctx.textAlign="center";ctx.fillStyle=secondary;ctx.globalAlpha=0.55;ctx.font="400 32px sans-serif";ctx.fillText(slide.subline,W/2,H*0.815);ctx.globalAlpha=1;ctx.textAlign="left";}
-          drawWebsite(H*0.962);drawChevron();
-        };
-        if(slide.image) loadAndDraw(slide.image,img=>{ctx.clearRect(0,0,W,H);drawListicleCover(img);drawWatermark();});
-        else drawListicleCover(null);
-      } else {
-        ctx.fillStyle="#0a0a0a";ctx.fillRect(0,0,W,H);
-        const numStr=String(slideIdx);
-        const NCOL=280,NCX=SAFE+NCOL/2;
-        let nfs=380;ctx.font=`900 ${nfs}px ${font},sans-serif`;
-        while(ctx.measureText(numStr).width>NCOL*0.85&&nfs>80){nfs-=10;ctx.font=`900 ${nfs}px ${font},sans-serif`;}
-        drawEffectText(numStr,NCX,H*0.55,nfs);
-        drawAccentLine(H*0.67,false,NCOL);
-        const TX2=SAFE+NCOL+40,TW2=W-TX2-SAFE;
-        if(slide.headline){
-          ctx.fillStyle=secondary;ctx.font=`700 72px ${font},sans-serif`;ctx.textAlign="left";
-          const hWords=slide.headline.toUpperCase().split(" ");let hl="",hls=[];
-          hWords.forEach(w=>{const t=hl?hl+" "+w:w;if(ctx.measureText(t).width>TW2&&hl){hls.push(hl);hl=w;}else hl=t;});
-          if(hl)hls.push(hl);
-          let hy=H*0.35;hls.forEach(l=>{ctx.fillText(l,TX2,hy);hy+=82;});
-        }
-        if(slide.bodyText){
-          const bW=TW2;let by=slide.headline?H*0.52:H*0.38;
-          ctx.fillStyle="rgba(255,255,255,0.65)";ctx.font="400 46px 'Helvetica Neue',Arial,sans-serif";ctx.textAlign="left";
-          const bWords=slide.bodyText.split(" ");let bl="",bls=[];
-          bWords.forEach(w=>{const t=bl?bl+" "+w:w;if(ctx.measureText(t).width>bW&&bl){bls.push(bl);bl=w;}else bl=t;});
-          if(bl)bls.push(bl);
-          bls.forEach(l=>{ctx.fillText(l,TX2,by);by+=64;});
-        }
-        drawBadge(ctx,profUrl,nm,hdl,SAFE,SAFE,true,opts.showTick,opts);
-        drawWebsite(H*0.972);
-      }
-    }
-
-    // CLEAN PRO
-    else if(tmpl==="clean-pro") {
-      if(slideIdx===0) {
-        if(slide.image) loadAndDraw(slide.image,img=>{ctx.clearRect(0,0,W,H);darkFadeCover(img);drawWatermark();});
-        else darkFadeCover(null);
-      } else {
-        const isWhite=bg==="white";
-        ctx.fillStyle=isWhite?"#ffffff":"#0a0a0a";ctx.fillRect(0,0,W,H);
-        const textMain=isWhite?"#0a0a0a":"#ffffff";
-        const textSub=isWhite?"rgba(0,0,0,0.45)":"rgba(255,255,255,0.45)";
-        const divCol=isWhite?"rgba(0,0,0,0.08)":"rgba(255,255,255,0.08)";
-        const bAvR=28,bCX=SAFE+bAvR,bCY=SAFE+bAvR+20;
-        ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR+2,0,Math.PI*2);ctx.fillStyle=isWhite?"rgba(0,0,0,0.06)":"rgba(255,255,255,0.15)";ctx.fill();ctx.restore();
-        if(profUrl){const img=(imgCache&&imgCache[profUrl])||null;if(img){ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR,0,Math.PI*2);ctx.clip();const s=Math.max(bAvR*2/img.width,bAvR*2/img.height);ctx.drawImage(img,bCX-img.width*s/2,bCY-img.height*s/2,img.width*s,img.height*s);ctx.restore();}}
-        else{ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR,0,Math.PI*2);ctx.fillStyle="#4a6a9a";ctx.fill();ctx.restore();}
-        const btx=bCX+bAvR+16;
-        ctx.fillStyle=textMain;ctx.font="700 26px 'Helvetica Neue',Arial,sans-serif";
-        const dnW=ctx.measureText(nm||"").width;ctx.fillText(nm||"",btx,bCY-4);
-        const hdlW2=ctx.measureText(hdl||"").width;
-        const tkX=btx+Math.max(dnW,hdlW2)+20;
-        if(opts.showTick!==false){ctx.save();ctx.beginPath();ctx.arc(tkX,bCY-14,12,0,Math.PI*2);ctx.fillStyle="#1D9BF0";ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.lineCap="round";ctx.lineJoin="round";ctx.beginPath();ctx.moveTo(tkX-5,bCY-14+5);ctx.lineTo(tkX-1.5,bCY-14+9);ctx.lineTo(tkX+5,bCY-14-2);ctx.stroke();ctx.restore();}
-        ctx.fillStyle=textSub;ctx.font="400 20px 'Helvetica Neue',Arial,sans-serif";ctx.fillText(hdl||"",btx,bCY+18);
-        const divY=bCY+bAvR+40;
-        ctx.fillStyle=divCol;ctx.fillRect(SAFE,divY,W-SAFE*2,1.5);
-        let curY=divY+90;const cX=SAFE+30,cW=W-(SAFE+30)*2;
-        if(slide.headline){
-          ctx.fillStyle=textMain;ctx.font="800 68px 'Helvetica Neue',Arial,sans-serif";ctx.textAlign="left";
-          const hw=slide.headline.split(" ");let hl="",hls=[];
-          hw.forEach(w=>{const t=hl?hl+" "+w:w;if(ctx.measureText(t).width>cW&&hl){hls.push(hl);hl=w;}else hl=t;});
-          if(hl)hls.push(hl);hls.forEach(l=>{ctx.fillText(l,cX,curY);curY+=82;});curY+=36;
-        }
-        if(slide.bodyText){
-          ctx.fillStyle=textSub;ctx.font="400 46px 'Helvetica Neue',Arial,sans-serif";ctx.textAlign="left";
-          slide.bodyText.split("\n").forEach(para=>{
-            if(!para.trim()){curY+=36;return;}
-            const bw=para.split(" ");let bl="",bls=[];
-            bw.forEach(w=>{const t=bl?bl+" "+w:w;if(ctx.measureText(t).width>cW&&bl){bls.push(bl);bl=w;}else bl=t;});
-            if(bl)bls.push(bl);bls.forEach(l=>{ctx.fillText(l,cX,curY);curY+=64;});curY+=16;
-          });curY+=16;
-        }
-        if(slide.accentText){
-          ctx.fillStyle=primary;ctx.font="700 50px 'Helvetica Neue',Arial,sans-serif";ctx.textAlign="left";
-          const aw=slide.accentText.split(" ");let al="",als=[];
-          aw.forEach(w=>{const t=al?al+" "+w:w;if(ctx.measureText(t).width>cW&&al){als.push(al);al=w;}else al=t;});
-          if(al)als.push(al);als.forEach(l=>{ctx.fillText(l,cX,curY);curY+=66;});curY+=16;
-          ctx.fillStyle=primary;ctx.fillRect(cX,curY,100,4);
-        }
-        ctx.fillStyle=textSub;ctx.font="400 28px sans-serif";ctx.textAlign="right";
-        ctx.fillText(`${slideIdx+1} / ${total}`,W-SAFE,H-SAFE);ctx.textAlign="left";
-      }
-    }
-
-    // STORYTELLING
-    else if(tmpl==="storytelling") {
-      const isWhite=bg==="white";
-      ctx.fillStyle=isWhite?"#ffffff":"#0a0a0a";ctx.fillRect(0,0,W,H);
-      const textCol=isWhite?"#0a0a0a":"#ffffff";
-      const subCol=isWhite?"rgba(0,0,0,0.4)":"rgba(255,255,255,0.4)";
-      const bAvR=30,bCX=SAFE+bAvR,bCY=H*0.25;
-      ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR+2,0,Math.PI*2);ctx.fillStyle=isWhite?"rgba(0,0,0,0.06)":"rgba(255,255,255,0.12)";ctx.fill();ctx.restore();
-      if(profUrl){const img=(imgCache&&imgCache[profUrl])||null;if(img){ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR,0,Math.PI*2);ctx.clip();const s=Math.max(bAvR*2/img.width,bAvR*2/img.height);ctx.drawImage(img,bCX-img.width*s/2,bCY-img.height*s/2,img.width*s,img.height*s);ctx.restore();}}
-      else{ctx.save();ctx.beginPath();ctx.arc(bCX,bCY,bAvR,0,Math.PI*2);ctx.fillStyle="#4a6a9a";ctx.fill();ctx.restore();}
-      const btx2=bCX+bAvR+16;
-      ctx.fillStyle=textCol;ctx.font="700 32px 'Helvetica Neue',Arial,sans-serif";
-      const dnW2=ctx.measureText(nm||"").width;ctx.fillText(nm||"",btx2,bCY-6);
-      const hdlW3=ctx.measureText(hdl||"").width;
-      const tkX2=btx2+Math.max(dnW2,hdlW3)+20;
-      if(opts.showTick!==false){ctx.save();ctx.beginPath();ctx.arc(tkX2,bCY-18,13,0,Math.PI*2);ctx.fillStyle="#1D9BF0";ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.lineCap="round";ctx.lineJoin="round";ctx.beginPath();ctx.moveTo(tkX2-6,bCY-18+6);ctx.lineTo(tkX2-1.5,bCY-18+12);ctx.lineTo(tkX2+6,bCY-18-2);ctx.stroke();ctx.restore();}
-      ctx.fillStyle=subCol;ctx.font="400 26px 'Helvetica Neue',Arial,sans-serif";ctx.fillText(hdl||"",btx2,bCY+26);
-      const text=slide.storyText||"";
-      if(text.trim()){
-        const stItalic=fontStyle==="Playfair Display";
-        const stFamily=fontStyle||"Inter";
-        const fontSize=38,lineH=62,cW=W-SAFE*4;
-        ctx.font=`${stItalic?"italic ":""}400 ${fontSize}px '${stFamily}',serif`;
-        ctx.fillStyle=textCol;ctx.textAlign="center";
-        const paras=text.split("\n");let allLines=[];
-        paras.forEach((para,pi)=>{
-          if(!para.trim()){if(pi>0)allLines.push(null);return;}
-          const words=para.split(" ");let line="";
-          words.forEach(w=>{const test=line?line+" "+w:w;if(ctx.measureText(test).width>cW&&line){allLines.push(line);line=w;}else line=test;});
-          if(line)allLines.push(line);if(pi<paras.length-1)allLines.push(null);
-        });
-        while(allLines.length&&allLines[allLines.length-1]===null)allLines.pop();
-        const totalH=allLines.reduce((h,l)=>h+(l===null?lineH*0.6:lineH),0);
-        let curY=(H-totalH)/2+fontSize*0.82;
-        allLines.forEach(l=>{if(l===null){curY+=lineH*0.6;return;}ctx.fillText(l,W/2,curY);curY+=lineH;});
-      }
-      if(slideIdx===0){
-        ctx.save();ctx.globalAlpha=0.3;ctx.strokeStyle=textCol;ctx.lineWidth=5;ctx.lineCap="round";ctx.lineJoin="round";
-        const cx2=W-SAFE-16,cy2=H-SAFE;
-        ctx.beginPath();ctx.moveTo(cx2-22,cy2-14);ctx.lineTo(cx2,cy2);ctx.lineTo(cx2-22,cy2+14);ctx.stroke();
-        ctx.beginPath();ctx.moveTo(cx2-6,cy2-14);ctx.lineTo(cx2+16,cy2);ctx.lineTo(cx2-6,cy2+14);ctx.stroke();
-        ctx.restore();
-      }
-    }
-
-    // RAW
-    else if(tmpl==="raw") {
-      const drawRaw=(img)=>{
-        if(img) coverFit(img);
-        else{const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,"#2a1a2a");g.addColorStop(1,"#1a2a1a");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
-        const isWhiteBox=rawBox==="white";
-        const boxBg=isWhiteBox?"rgba(255,255,255,0.97)":"rgba(0,0,0,0.93)";
-        const textColR=isWhiteBox?"#0a0a0a":"#ffffff";
-        const text=slide.rawText||"";
-        if(text.trim()){
-          const rItalic=fontStyle==="Playfair Display";
-          const rFamily=fontStyle||"Inter";
-          const fontSize=34,lineH=48,padX=38,padY=28,maxTW=W*0.78;
-          ctx.font=`${rItalic?"italic ":""}400 ${fontSize}px '${rFamily}',sans-serif`;
-          ctx.textAlign="left";
-          const paras=text.split("\n");let allLines=[];
-          paras.forEach(para=>{
-            if(!para.trim()){allLines.push(null);return;}
-            const words=para.split(" ");let line="";
-            words.forEach(w=>{const test=line?line+" "+w:w;if(ctx.measureText(test).width>maxTW&&line){allLines.push(line);line=w;}else line=test;});
-            if(line)allLines.push(line);allLines.push(null);
-          });
-          while(allLines.length&&allLines[allLines.length-1]===null)allLines.pop();
-          let maxWW=0;allLines.forEach(l=>{if(l){const m=ctx.measureText(l).width;if(m>maxWW)maxWW=m;}});
-          const boxW=maxWW+padX*2;
-          const totalTextH=allLines.reduce((h,l)=>h+(l===null?lineH*0.45:lineH),0);
-          const boxH=totalTextH+padY*2;
-          const boxX=(W-boxW)/2;
-          const boxY=rawPos==="bottom"?H-boxH-100:(H-boxH)/2;
-          ctx.fillStyle=boxBg;ctx.fillRect(boxX,boxY,boxW,boxH);
-          ctx.fillStyle=textColR;
-          let cy=boxY+padY+fontSize*0.82;
-          allLines.forEach(l=>{if(l===null){cy+=lineH*0.45;return;}ctx.fillText(l,boxX+padX,cy);cy+=lineH;});
-        }
-      };
-      if(slide.image) loadAndDraw(slide.image,img=>{ctx.clearRect(0,0,W,H);drawRaw(img);drawWatermark();});
-      else drawRaw(null);
-    }
-
-    drawWatermark();
-  }
-
-
-  // Re-render main template canvas when content/style changes (debounced, no hook rules violation)
-  useEffect(()=>{
-    const el = mainTmplCanvasRef.current;
-    if(!el||!tmplSelected) return;
-    if(el._tmplTimer) clearTimeout(el._tmplTimer);
-    el._tmplTimer = setTimeout(async()=>{
-      await document.fonts.ready;
-      const s = tmplSlides[tmplActiveSlide||0];
-      const imgCache = {};
-      const loadImg = (src) => new Promise(res=>{
-        if(!src) return res(null);
-        const img=new Image();
-        if(!src.startsWith('data:')) img.crossOrigin="anonymous";
-        img.onload=()=>{imgCache[src]=img;res(img);};
-        img.onerror=()=>res(null);
-        img.src=src;
-      });
-      await Promise.all([s?.image,s?.image2,profileUrl].filter(Boolean).map(loadImg));
-      const isFree = currentUser?.plan==="free";
-      renderTmplSlide(el, tmplActiveSlide||0, tmplSlideCount, tmplSelected, tmplSlides, {
-        effect:tmplEffect, font:tmplFont, primary:tmplPrimary, secondary:tmplSecondary,
-        bg:tmplBg, fontStyle:tmplFontStyle, rawBox:tmplRawBox, rawPos:tmplRawPos,
-        listicleNum:tmplListicleNum, profUrl:profileUrl, nm:name, hdl:handle,
-        showTick:blueTick, isFree, imgCache
-      });
-    }, 150);
-  });
+  // Top-level debounced slides state — hooks must never be inside IIFE or nested fns
+  const [dTmplSlides, setDTmplSlides] = useState(tmplSlides);
+  useEffect(()=>{ const t=setTimeout(()=>setDTmplSlides(tmplSlides),300); return()=>clearTimeout(t); },[JSON.stringify(tmplSlides)]);
 
   // ADMIN-ONLY brand preset functions — only ever called from is_admin-gated UI, touches a separate localStorage key only
   const saveAdminPreset = () => {
@@ -3250,43 +3011,40 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         {nav==="templates"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:1100,margin:"0 auto",width:"100%",paddingBottom:60}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 4px"}}>Templates</h2>
-            <p style={{fontSize:14,color:A.muted,margin:"0 0 24px"}}>Pick a design, add your content, download. You're in control.</p>
-
-            {/* TEMPLATE PICKER */}
+            <p style={{fontSize:14,color:A.muted,margin:"0 0 24px"}}>Pick a design, add your content, download.</p>
             {!tmplSelected&&(
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:16}}>
                 {[
-                  {id:"dark-fade",label:"Dark Fade",desc:"Bold photo cover with smooth gradient fade. Badge, headline and subline.",emoji:"🌑"},
-                  {id:"listicle",label:"Listicle",desc:"Hook cover with big number left, topic right. Body slides numbered. Up to 11 points.",emoji:"🔢"},
-                  {id:"clean-pro",label:"Clean Pro",desc:"Dark Fade cover, then clean white or black body slides. Informative, professional.",emoji:"✨"},
-                  {id:"storytelling",label:"Storytelling",desc:"Pure text on white or black. Badge top left. Dead centre paragraph. AI writes from a brief.",emoji:"📖"},
-                  {id:"raw",label:"Raw",desc:"Your photo. Tight text box over it. No badge. No polish. Authentic, unfiltered.",emoji:"📱"},
+                  {id:"dark-fade",label:"Dark Fade",desc:"Bold photo cover, gradient fade, badge, headline, subline.",emoji:"🌑"},
+                  {id:"listicle",label:"Listicle",desc:"Big number left, topic right. Body slides numbered. Up to 11 points.",emoji:"🔢"},
+                  {id:"clean-pro",label:"Clean Pro",desc:"Dark Fade cover then clean white or black body slides.",emoji:"✨"},
+                  {id:"storytelling",label:"Storytelling",desc:"Pure text on white or black. Badge top left. Dead centre paragraph.",emoji:"📖"},
+                  {id:"raw",label:"Raw",desc:"Your photo. Tight text box. No badge. Authentic, unfiltered.",emoji:"📱"},
+                  {id:"split",label:"Split",desc:"Two images side by side, one gradient across the bottom. Left and right text.",emoji:"⚡"},
                 ].map(t=>(
                   <div key={t.id} onClick={()=>{
-                    setTmplSelected(t.id);
-                    setTmplActiveSlide(0);
-                    // Set default placeholder content per template
-                    const defaults = Array(12).fill(null).map((_,i)=>{
-                      const base={image:null,image2:null,imagePos:{x:50,y:50},image2Pos:{x:50,y:50},headline:"",subline:"",bodyText:"",accentText:"",topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:"",pillText:""};
-                      if(t.id==="dark-fade"){
-                        base.headline=i===0?"Stop posting singles. Start posting carousels.":"";
-                        base.subline=i===0?"The algorithm rewards every swipe.":"";
-                      }
-                      if(t.id==="listicle"&&i===0){base.topicLine="PLACES YOU MUST VISIT BEFORE";base.subject="2026 ENDS";base.subline="Swipe to see them all.";}
-                      if(t.id==="listicle"&&i>0){base.headline=["Santorini, Greece","Kyoto, Japan","Amalfi Coast, Italy","Bali, Indonesia","Patagonia, Argentina","Cape Town, South Africa","Iceland","Machu Picchu, Peru","The Maldives","New Zealand","Morocco"][i-1]||"";base.bodyText=["Sunsets you won't find anywhere else.","Cherry blossom and centuries of culture.","The most dramatic coastline in Europe.","Temples, rice fields, and world-class surf.","Mountains that look computer generated.","Beaches, wine, wildlife. All in one place.","Northern lights every clear night.","Lost city of the Incas. Nothing like it.","Overwater bungalows. Turquoise lagoons.","Lord of the Rings meets real adventure.","Deserts, medinas, and mint tea."][i-1]||"";}
-                      if(t.id==="clean-pro"&&i===0){base.headline="Most coaches are sleeping on this.";base.subline="The feature that changes everything.";}
-                      if(t.id==="clean-pro"&&i>0){base.headline=["The timing is everything.","Your DMs are a free lead machine.","Most coaches have no idea this exists.","Set it up once. Let it run forever.","Here's exactly how to do it."][i-1]||"";base.bodyText=["Someone just followed you. They're curious right now. Your message hits instantly.","Instagram now auto-DMs every new follower. No manual outreach. No copy/paste.","It captures the lead the moment they follow. Before they scroll past you.","Five minutes of setup. Automated outreach to every new follower indefinitely.","Go to Settings → Creators → Automated Responses. Turn it on. Write your DM."][i-1]||"";base.accentText=["That's the highest-intent moment you'll ever get.","That's a free lead machine.","Most coaches have no idea this feature exists.","Your ad drives the follow. This captures the lead.","You're already paying for the follower. Don't waste them."][i-1]||"";}
-                      if(t.id==="storytelling"){base.storyText=["I went bankrupt at 25.\n\nNot the kind you read about in business books. The kind where you can't look your mum in the eye.","Her name is Carol. She raised three of us on her own. No shortcuts. Just sacrifice.\n\nAnd I'd thrown it all away.","I spent three years on bail waiting for a trial that kept getting cancelled.\n\nCOVID hit. Courts closed. I just had to wait.","The day I got my tag off, I sat in my car for twenty minutes.\n\nNo music. No phone. Just silence.","I found digital marketing while I was still on tag.\n\nI made my first sale at 3am on a Tuesday. I cried.","That's why I built this. Not to flex. To show you what's possible when you stop waiting for permission."][i]||"";}
-                      if(t.id==="raw"){base.rawText=["The day I got my tag off, I sat in my car for 20 minutes.\n\nNo music. No phone.\n\nJust silence.","Most people wait for the perfect moment.\n\nThere isn't one.\n\nStart anyway.","Nobody tells you how lonely the rebuild is.\n\nThey only see the result.","You don't need more information.\n\nYou need to start.","Done is better than perfect.\n\nAlways.","Your story is your strategy."][i]||"";}
-                      return base;
-                    });
-                    setTmplSlides(defaults);
-                    setTmplSlideCount(t.id==="listicle"?7:6);
-                    setTmplBrief("");
-                  }}
-                    style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,cursor:"pointer",transition:"border-color 0.2s,transform 0.15s"}}
-                    onMouseEnter={e=>{e.currentTarget.style.borderColor=GOLD;e.currentTarget.style.transform="translateY(-2px)";}}
-                    onMouseLeave={e=>{e.currentTarget.style.borderColor=A.border;e.currentTarget.style.transform="translateY(0)";}}>
+                    if(tmplSelected){try{localStorage.setItem("bwt_tmpl_session_"+tmplSelected,JSON.stringify({slides:tmplSlides,slideCount:tmplSlideCount,brief:tmplBrief,effect:tmplEffect,font:tmplFont,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum}));}catch{}}
+                    let restored=false;
+                    try{const saved=localStorage.getItem("bwt_tmpl_session_"+t.id);if(saved){const s=JSON.parse(saved);setTmplSlides(s.slides);setTmplSlideCount(s.slideCount);setTmplBrief(s.brief||"");setTmplEffect(s.effect||"gold");setTmplFont(s.font||"Bebas Neue");setTmplPrimary(s.primary||"#BB9900");setTmplSecondary(s.secondary||"#ffffff");setTmplBg(s.bg||"white");setTmplFontStyle(s.fontStyle||"Inter");setTmplRawBox(s.rawBox||"white");setTmplRawPos(s.rawPos||"bottom");setTmplListicleNum(s.listicleNum||6);restored=true;}}catch{}
+                    setTmplSelected(t.id);setTmplActiveSlide(0);
+                    if(!restored){
+                      const defaults=Array(12).fill(null).map((_,i)=>{
+                        const base={image:null,imagePos:{x:50,y:50},image2:null,image2Pos:{x:50,y:50},headline:"",subline:"",headline2:"",subline2:"",bodyText:"",accentText:"",topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:""};
+                        if(t.id==="dark-fade"){base.headline=i===0?"Stop posting singles. Start posting carousels.":"";base.subline=i===0?"The algorithm rewards every swipe.":"";}
+                        if(t.id==="listicle"&&i===0){base.topicLine="PLACES YOU MUST VISIT BEFORE";base.subject="2026 ENDS";base.subline="Swipe to see them all.";}
+                        if(t.id==="listicle"&&i>0){base.headline=["Santorini, Greece","Kyoto, Japan","Amalfi Coast, Italy","Bali, Indonesia","Patagonia, Argentina","Cape Town, South Africa","Iceland","Machu Picchu, Peru","The Maldives","New Zealand","Morocco"][i-1]||"";base.bodyText=["Sunsets you won't find anywhere else.","Cherry blossom and centuries of culture.","The most dramatic coastline in Europe.","Temples, rice fields, and world-class surf.","Mountains that look computer generated.","Beaches, wine, wildlife. All in one place.","Northern lights every clear night.","Lost city of the Incas. Nothing like it.","Overwater bungalows. Turquoise lagoons.","Lord of the Rings meets real adventure.","Deserts, medinas, and mint tea."][i-1]||"";}
+                        if(t.id==="clean-pro"&&i===0){base.headline="Most coaches are sleeping on this.";base.subline="The feature that changes everything.";}
+                        if(t.id==="clean-pro"&&i>0){base.headline=["The timing is everything.","Your DMs are a free lead machine.","Most coaches have no idea this exists.","Set it up once. Let it run forever.","Here's exactly how to do it."][i-1]||"";base.bodyText=["Someone just followed you. They're curious right now.","Instagram now auto-DMs every new follower. No manual outreach.","It captures the lead the moment they follow.","Five minutes of setup. Automated outreach indefinitely.","Settings → Creators → Automated Responses. Turn it on."][i-1]||"";base.accentText=["That's the highest-intent moment you'll ever get.","That's a free lead machine.","Most coaches have no idea this feature exists.","Your ad drives the follow. This captures the lead.","You're already paying for the follower. Don't waste them."][i-1]||"";}
+                        if(t.id==="storytelling"){base.storyText=["I went bankrupt at 25.\n\nNot the kind you read about in business books. The kind where you can't look your mum in the eye.","Her name is Carol. She raised three of us on her own. No shortcuts. Just sacrifice.\n\nAnd I'd thrown it all away.","I spent three years on bail waiting for a trial that kept getting cancelled.\n\nCOVID hit. Courts closed. I just had to wait.","The day I got my tag off, I sat in my car for twenty minutes.\n\nNo music. No phone. Just silence.","I found digital marketing while I was still on tag.\n\nI made my first sale at 3am on a Tuesday. I cried.","That's why I built this. Not to flex. To show you what's possible when you stop waiting for permission."][i]||"";}
+                        if(t.id==="split"){base.headline=i===0?"Before":"After";base.subline=i===0?"Where you are now.":"Where you could be.";base.headline2=i===0?"After":"Before";base.subline2=i===0?"Where you could be.":"Where you are now.";}
+                        if(t.id==="raw"){base.rawText=["The day I got my tag off, I sat in my car for 20 minutes.\n\nNo music. No phone.\n\nJust silence.","Most people wait for the perfect moment.\n\nThere isn't one.\n\nStart anyway.","Nobody tells you how lonely the rebuild is.\n\nThey only see the result.","You don't need more information.\n\nYou need to start.","Done is better than perfect.\n\nAlways.","Your story is your strategy."][i]||"";}
+                        return base;
+                      });
+                      setTmplSlides(defaults);setTmplSlideCount(t.id==="listicle"?7:6);setTmplBrief("");
+                    }
+                  }} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,cursor:"pointer",transition:"border-color 0.2s,transform 0.15s"}}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor=GOLD;e.currentTarget.style.transform="translateY(-2px)";}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor=A.border;e.currentTarget.style.transform="translateY(0)";}}>
                     <div style={{fontSize:28,marginBottom:8}}>{t.emoji}</div>
                     <div style={{fontSize:14,fontWeight:800,color:A.text,marginBottom:6}}>{t.label}</div>
                     <div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>{t.desc}</div>
@@ -3294,358 +3052,269 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 ))}
               </div>
             )}
-
-            {/* TEMPLATE BUILDER */}
             {tmplSelected&&(()=>{
-              const isListicle = tmplSelected==="listicle";
-              const isCleanPro = tmplSelected==="clean-pro";
-              const isStory = tmplSelected==="storytelling";
-              const isRaw = tmplSelected==="raw";
-              const isDarkFade = tmplSelected==="dark-fade";
-              const hasAI = isListicle||isCleanPro||isStory;
-              const maxSlides = isListicle?12:6;
-              const isFree = currentUser?.plan==="free";
-              const activeSlide = tmplActiveSlide||0;
-              const slide = tmplSlides[activeSlide]||{};
-
-              const opts = {
-                effect:tmplEffect, font:tmplFont, primary:tmplPrimary, secondary:tmplSecondary,
-                bg:tmplBg, fontStyle:tmplFontStyle, rawBox:tmplRawBox, rawPos:tmplRawPos,
-                listicleNum:tmplListicleNum, profUrl:profileUrl, nm:name, hdl:handle,
-                showTick:blueTick, isFree
-              };
-
-              const renderToCanvas = (el, idx) => {
-                if(!el) return;
-                if(el._tmplTimer) clearTimeout(el._tmplTimer);
-                el._tmplTimer = setTimeout(async()=>{
-                  await document.fonts.ready;
-                  const s = tmplSlides[idx];
-                  const imgCache = {};
-                  const loadImg = (src) => new Promise(res=>{
-                    if(!src) return res(null);
-                    const img=new Image();
-                    if(!src.startsWith('data:')) img.crossOrigin="anonymous";
-                    img.onload=()=>{imgCache[src]=img;res(img);};
-                    img.onerror=()=>res(null); img.src=src;
-                  });
-                  await Promise.all([s?.image,s?.image2,profileUrl].filter(Boolean).map(loadImg));
-                  renderTmplSlide(el,idx,tmplSlideCount,tmplSelected,tmplSlides,{...opts,imgCache});
-                }, 150);
-              };
-
-              const mainCanvasRef = (el) => {
-                mainTmplCanvasRef.current = el;
-                if(el) renderToCanvas(el, activeSlide);
-              };
-              const thumbRef = (idx) => (el) => renderToCanvas(el, idx);
-
-              const downloadSlide = async (idx) => {
+              const isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade",isSplit=tmplSelected==="split";
+              const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:6,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
+              const opts={effect:tmplEffect,font:tmplFont,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree};
+              const previewHTML=buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,tmplSlideCount,tmplSelected,opts);
+              const thumbHTMLs=dTmplSlides.slice(0,tmplSlideCount).map((s,i)=>buildTmplHTML(s||{},i,tmplSlideCount,tmplSelected,opts));
+              const downloadSlide=async(idx)=>{
                 if(!canGenerate()){setNav("upgrade");return;}
                 setTmplDownloadingIdx(idx);
-                try {
-                  const c=document.createElement("canvas");c.width=1080;c.height=1350;
-                  renderTmplSlide(c,idx,tmplSlideCount,tmplSelected,tmplSlides,opts);
-                  await new Promise(r=>setTimeout(r,1000));
-                  renderTmplSlide(c,idx,tmplSlideCount,tmplSelected,tmplSlides,opts);
-                  await new Promise(r=>setTimeout(r,300));
-                  const a=document.createElement("a");a.href=c.toDataURL("image/png");a.download=`${tmplSelected}-slide-${idx+1}.png`;a.click();
+                try{
+                  const html=buildTmplHTML(tmplSlides[idx],idx,tmplSlideCount,tmplSelected,opts);
+                  const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html,width:1080,height:1350})});
+                  const data=await res.json();
+                  if(!data.image)throw new Error(data.error||"Render failed");
+                  const bytes=atob(data.image),arr=new Uint8Array(bytes.length);
+                  for(let j=0;j<bytes.length;j++)arr[j]=bytes.charCodeAt(j);
+                  const url=URL.createObjectURL(new Blob([arr],{type:"image/png"}));
+                  const a=document.createElement("a");a.href=url;a.download=`${tmplSelected}-slide-${idx+1}.png`;a.click();URL.revokeObjectURL(url);
                   await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:5})});
                   setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));
-                } catch(e){console.error(e);}
+                }catch(e){console.error(e);alert("Download failed — try again");}
                 setTmplDownloadingIdx(null);
               };
-
-              const downloadAll = async () => {
+              const downloadAllTmpl=async()=>{
                 if(!canGenerate()){setNav("upgrade");return;}
                 setTmplDownloading(true);
-                try {
+                try{
                   for(let i=0;i<tmplSlideCount;i++){
-                    const c=document.createElement("canvas");c.width=1080;c.height=1350;
-                    renderTmplSlide(c,i,tmplSlideCount,tmplSelected,tmplSlides,opts);
-                    await new Promise(r=>setTimeout(r,1000));
-                    renderTmplSlide(c,i,tmplSlideCount,tmplSelected,tmplSlides,opts);
-                    await new Promise(r=>setTimeout(r,300));
-                    const a=document.createElement("a");a.href=c.toDataURL("image/png");a.download=`${tmplSelected}-slide-${i+1}.png`;a.click();
-                    await new Promise(r=>setTimeout(r,500));
+                    const html=buildTmplHTML(tmplSlides[i],i,tmplSlideCount,tmplSelected,opts);
+                    const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html,width:1080,height:1350})});
+                    const data=await res.json();if(!data.image)continue;
+                    const bytes=atob(data.image),arr=new Uint8Array(bytes.length);
+                    for(let j=0;j<bytes.length;j++)arr[j]=bytes.charCodeAt(j);
+                    const url=URL.createObjectURL(new Blob([arr],{type:"image/png"}));
+                    const a=document.createElement("a");a.href=url;a.download=`${tmplSelected}-slide-${i+1}.png`;a.click();URL.revokeObjectURL(url);
+                    await new Promise(r=>setTimeout(r,400));
                   }
                   await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:10})});
                   setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+10}));
-                } catch(e){console.error(e);}
+                }catch(e){console.error(e);}
                 setTmplDownloading(false);
               };
-
-              const updateSlide = (field, val) => {
-                setTmplSlides(prev=>{const next=[...prev];next[activeSlide]={...next[activeSlide],[field]:val};return next;});
-              };
-
-              return (
-                <div>
-                  {/* Header */}
-                  <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
-                    <button onClick={()=>setTmplSelected(null)} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Templates</button>
-                    <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Dark Fade":isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":"Raw"}</span>
-                    {isFree&&<span style={{fontSize:11,color:"#e74c3c",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>Free plan — watermark on exports</span>}
-                  </div>
-
-                  {/* Main layout — mirror Generate preview */}
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:28,alignItems:"start"}}>
-
-                    {/* LEFT — large preview + thumbnails + download */}
-                    <div>
-                      {/* Main canvas preview */}
-                      <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12,display:"flex",justifyContent:"center",alignItems:"center",padding:16}}>
-                        <canvas key={`main-canvas-${activeSlide}`} ref={mainCanvasRef} width={1080} height={1350} style={{borderRadius:8,width:"100%",height:"auto",display:"block"}}/>
+              const updateSlide=(field,val)=>setTmplSlides(prev=>{const next=[...prev];next[activeSlide]={...next[activeSlide],[field]:val};return next;});
+              return(<div>
+                <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+                  <button onClick={()=>{
+                    if(tmplSelected){try{localStorage.setItem("bwt_tmpl_session_"+tmplSelected,JSON.stringify({slides:tmplSlides,slideCount:tmplSlideCount,brief:tmplBrief,effect:tmplEffect,font:tmplFont,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum}));}catch{}}
+                    setTmplSelected(null);
+                  }} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Templates</button>
+                  <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Dark Fade":isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":isSplit?"Split":"Raw"}</span>
+                  {isFree&&<span style={{fontSize:11,color:"#e74c3c",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>Free plan — watermark on exports</span>}
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:28,alignItems:"start",position:"relative"}}>
+                  <div style={{position:"sticky",top:76,alignSelf:"start"}}>
+                    <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12}}>
+                      <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:A.bg}}>
+                        {(()=>{
+                          const PW=540,PH=Math.round(1350*PW/1080);
+                          return(
+                            <div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}>
+                              <iframe
+                                key={`prev-${activeSlide}`}
+                                srcDoc={previewHTML}
+                                style={{width:1080,height:1350,border:"none",transform:"scale(0.5)",transformOrigin:"top left",pointerEvents:"none",display:"block"}}
+                                scrolling="no"
+                              />
+                            </div>
+                          );
+                        })()}
                       </div>
-
-                      {/* Thumbnail strip */}
-                      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-                        {tmplSlides.slice(0,tmplSlideCount).map((_,idx)=>(
-                          <div key={idx} onClick={()=>setTmplActiveSlide(idx)} style={{cursor:"pointer",position:"relative",flexShrink:0}}>
-                            <canvas key={`thumb-canvas-${idx}`} ref={thumbRef(idx)} width={1080} height={1350} style={{borderRadius:6,display:"block",width:108,height:135,border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}/>
-                            <div style={{position:"absolute",bottom:3,right:4,background:"rgba(0,0,0,0.6)",borderRadius:3,padding:"1px 4px",fontSize:9,color:"#fff",fontWeight:700}}>{idx+1}</div>
+                    </div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+                      {thumbHTMLs.map((html,idx)=>(
+                        <div key={idx} onClick={()=>setTmplActiveSlide(idx)} style={{cursor:"pointer",position:"relative",flexShrink:0,width:86,height:108,borderRadius:6,overflow:"hidden",border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}>
+                          <iframe srcDoc={html} style={{width:1080,height:1350,border:"none",transform:"scale(0.0796)",transformOrigin:"top left",pointerEvents:"none"}} scrolling="no"/>
+                          <div style={{position:"absolute",bottom:3,right:4,background:"rgba(0,0,0,0.7)",borderRadius:3,padding:"1px 5px",fontSize:9,color:"#fff",fontWeight:700,zIndex:2}}>{idx+1}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{display:"flex",gap:8}}>
+                      <button onClick={()=>downloadSlide(activeSlide)} disabled={tmplDownloadingIdx===activeSlide} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                        {tmplDownloadingIdx===activeSlide?<><Spin c={A.text}/>Downloading...</>:`↓ Slide ${activeSlide+1}`}
+                      </button>
+                      <button onClick={downloadAllTmpl} disabled={tmplDownloading} style={{flex:2,background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,padding:"10px",borderRadius:9,fontSize:13,fontWeight:800,border:`1px solid ${GOLD}33`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                        {tmplDownloading?<><Spin/>Downloading...</>:`↓ Download All ${tmplSlideCount}`}
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                    {/* ── 1. SLIDE CONTENT ── */}
+                    <div style={{background:A.surface,border:`1.5px solid ${activeSlide===0?GOLD:A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                      <div style={{fontSize:12,fontWeight:800,color:activeSlide===0?GOLD:A.text}}>{activeSlide===0?"Cover Slide":"Slide "+(activeSlide+1)}</div>
+                      {(isDarkFade||isListicle||(isCleanPro&&activeSlide===0)||isRaw)&&(
+                        <div>
+                          <label style={lbl}>Photo</label>
+                          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
+                            {tmplLibrary.map((p,pi)=>(
+                              <div key={pi} style={{position:"relative",flexShrink:0}}>
+                                <div onClick={()=>updateSlide("image",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${slide.image===p?GOLD:A.border}`,cursor:"pointer"}}>
+                                  <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                                </div>
+                                <div onClick={()=>{if(slide.image===p)updateSlide("image",null);}} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>
+                                <div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(slide.image===p)updateSlide("image",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Permanently remove this image from your library?")){doRemove();if(window.confirm("Don't show this confirmation again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}} title="Remove from library">🗑</div>
+                              </div>
+                            ))}
+                            <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateSlide("image",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
                           </div>
+                          {tmplLibrary.length===0&&<p style={{fontSize:11,color:A.muted,margin:"0 0 6px"}}>Upload photos — they'll save to your library.</p>}
+                        </div>
+                      )}
+                      {(isDarkFade||(isCleanPro&&activeSlide===0))&&<>
+                        <label style={lbl}>Headline</label>
+                        <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Hook headline" style={{...inp}}/>
+                        <label style={lbl}>Subline</label>
+                        <input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} placeholder="Supporting line (optional)" style={{...inp}}/>
+                      </>}
+                      {isListicle&&activeSlide===0&&<>
+                        <label style={lbl}>Number</label>
+                        <input type="number" min={1} value={tmplListicleNum} onChange={e=>setTmplListicleNum(Math.max(1,parseInt(e.target.value)||1))} style={{...inp,width:80}}/>
+                        <label style={lbl}>Topic Line</label>
+                        <input value={slide.topicLine||""} onChange={e=>updateSlide("topicLine",e.target.value)} style={{...inp}}/>
+                        <label style={lbl}>Subject</label>
+                        <input value={slide.subject||""} onChange={e=>updateSlide("subject",e.target.value)} style={{...inp}}/>
+                        <label style={lbl}>Subline</label>
+                        <input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} style={{...inp}}/>
+                      </>}
+                      {isListicle&&activeSlide>0&&<>
+                        <label style={lbl}>Point {activeSlide} — Headline</label>
+                        <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder={`Point ${activeSlide} headline (optional)`} style={{...inp}}/>
+                        <label style={lbl}>Detail</label>
+                        <div style={{position:"relative"}}>
+                          <textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="The tip, fact or detail" rows={3} style={{...inp,resize:"vertical",paddingRight:72}}/>
+                          <button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button>
+                        </div>
+                      </>}
+                      {isCleanPro&&activeSlide>0&&<>
+                        <label style={lbl}>Headline</label>
+                        <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Headline (optional)" style={{...inp}}/>
+                        <label style={lbl}>Body Text</label>
+                        <div style={{position:"relative"}}>
+                          <textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="Body text" rows={4} style={{...inp,resize:"vertical",paddingRight:72}}/>
+                          <button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button>
+                        </div>
+                        <label style={lbl}>Accent Sub-text</label>
+                        <input value={slide.accentText||""} onChange={e=>updateSlide("accentText",e.target.value)} placeholder="Key takeaway in accent colour" style={{...inp}}/>
+                      </>}
+                      {isStory&&<>
+                        <label style={lbl}>Story Text — Slide {activeSlide+1}</label>
+                        <div style={{position:"relative"}}>
+                          <textarea value={slide.storyText||""} onChange={e=>updateSlide("storyText",e.target.value)} placeholder="Your story paragraph. Use line breaks to separate paragraphs." rows={6} style={{...inp,resize:"vertical",paddingRight:72,lineHeight:1.6}}/>
+                          <button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button>
+                        </div>
+                      </>}
+                      {isSplit&&<>
+                        <label style={lbl}>Left Image</label>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:4}}>
+                          {tmplLibrary.map((p,pi)=>(
+                            <div key={pi} style={{position:"relative",flexShrink:0}}>
+                              <div onClick={()=>updateSlide("image",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${slide.image===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+                              {slide.image===p&&<div onClick={()=>updateSlide("image",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}
+                              <div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(slide.image===p)updateSlide("image",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Permanently remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div>
+                            </div>
+                          ))}
+                          <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateSlide("image",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
+                        </div>
+                        <label style={lbl}>Right Image</label>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:4}}>
+                          {tmplLibrary.map((p,pi)=>(
+                            <div key={pi} style={{position:"relative",flexShrink:0}}>
+                              <div onClick={()=>updateSlide("image2",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${slide.image2===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+                              {slide.image2===p&&<div onClick={()=>updateSlide("image2",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}
+                              <div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(slide.image2===p)updateSlide("image2",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Permanently remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div>
+                            </div>
+                          ))}
+                          <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateSlide("image2",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
+                        </div>
+                        <label style={lbl}>Left Headline</label>
+                        <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Before" style={{...inp}}/>
+                        <label style={lbl}>Left Subline</label>
+                        <input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} placeholder="Where you are now." style={{...inp}}/>
+                        <label style={lbl}>Right Headline</label>
+                        <input value={slide.headline2||""} onChange={e=>updateSlide("headline2",e.target.value)} placeholder="After" style={{...inp}}/>
+                        <label style={lbl}>Right Subline</label>
+                        <input value={slide.subline2||""} onChange={e=>updateSlide("subline2",e.target.value)} placeholder="Where you could be." style={{...inp}}/>
+                      </>}
+                      {isRaw&&<>
+                        <label style={lbl}>Your Text</label>
+                        <p style={{fontSize:11,color:A.muted,margin:"-6px 0 4px"}}>Each line gets its own highlight. Blank line = space.</p>
+                        <textarea value={slide.rawText||""} onChange={e=>updateSlide("rawText",e.target.value)} placeholder={"The day I got my tag off\n\nI sat in my car for 20 minutes.\n\nNo music. No phone.\n\nJust silence."} rows={6} style={{...inp,resize:"vertical",lineHeight:1.6}}/>
+                      </>}
+                    </div>
+                    {/* ── 2. SLIDE SELECTOR ── */}
+                    <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
+                      <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:10}}>Slide {activeSlide+1} of {tmplSlideCount}</div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:12}}>
+                        {tmplSlides.slice(0,tmplSlideCount).map((_,i)=>(
+                          <button key={i} onClick={()=>setTmplActiveSlide(i)} style={{width:27,height:27,borderRadius:6,background:activeSlide===i?A.text:A.surface,border:`1.5px solid ${activeSlide===i?GOLD:A.border}`,color:activeSlide===i?A.accentText:A.muted,fontSize:12,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
                         ))}
                       </div>
-
-                      {/* Download buttons */}
-                      <div style={{display:"flex",gap:8,marginBottom:8}}>
-                        <button onClick={()=>downloadSlide(activeSlide)} disabled={tmplDownloadingIdx===activeSlide} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                          {tmplDownloadingIdx===activeSlide?<><Spin c={A.text}/>Downloading...</>:`↓ Slide ${activeSlide+1}`}
-                        </button>
-                        <button onClick={downloadAll} disabled={tmplDownloading} style={{flex:2,background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,padding:"10px",borderRadius:9,fontSize:13,fontWeight:800,border:`1px solid ${GOLD}33`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                          {tmplDownloading?<><Spin/>Downloading...</>:`↓ Download All ${tmplSlideCount}`}
-                        </button>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{fontSize:11,color:A.muted}}>Slides:</span>
+                        <button onClick={()=>setTmplSlideCount(s=>Math.max(2,s-1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>−</button>
+                        <span style={{fontWeight:800,fontSize:14}}>{tmplSlideCount}</span>
+                        <button onClick={()=>setTmplSlideCount(s=>Math.min(maxSlides,s+1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>+</button>
+                        <span style={{fontSize:10,color:A.muted}}>max {maxSlides}</span>
                       </div>
                     </div>
-
-                    {/* RIGHT — controls panel */}
-                    <div style={{display:"flex",flexDirection:"column",gap:12}}>
-
-                      {/* Slide selector */}
-                      <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
-                        <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:10}}>Slide {activeSlide+1} of {tmplSlideCount}</div>
-                        <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:12}}>
-                          {tmplSlides.slice(0,tmplSlideCount).map((_,i)=>(
-                            <button key={i} onClick={()=>setTmplActiveSlide(i)} style={{width:27,height:27,borderRadius:6,background:activeSlide===i?A.text:A.surface,border:`1.5px solid ${activeSlide===i?GOLD:A.border}`,color:activeSlide===i?A.accentText:A.muted,fontSize:12,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
-                          ))}
-                        </div>
-
-                        {/* Slide count */}
-                        <div style={{display:"flex",alignItems:"center",gap:8}}>
-                          <span style={{fontSize:11,color:A.muted}}>Slides:</span>
-                          <button onClick={()=>setTmplSlideCount(s=>Math.max(2,s-1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>−</button>
-                          <span style={{fontWeight:800,fontSize:14}}>{tmplSlideCount}</span>
-                          <button onClick={()=>setTmplSlideCount(s=>Math.min(maxSlides,s+1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>+</button>
-                          <span style={{fontSize:10,color:A.muted}}>max {maxSlides}</span>
-                          {isListicle&&(
-                            <>
-                              <span style={{fontSize:11,color:A.muted,marginLeft:8}}>№:</span>
-                              <button onClick={()=>setTmplListicleNum(n=>Math.max(1,n-1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>−</button>
-                              <span style={{fontWeight:800,fontSize:14,color:GOLD}}>{tmplListicleNum}</span>
-                              <button onClick={()=>setTmplListicleNum(n=>Math.min(11,n+1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>+</button>
-                            </>
-                          )}
+                    {/* ── 3. AI BRIEF ── */}
+                    {hasAI&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
+                      <label style={{...lbl,color:GOLD,marginBottom:6}}>AI Brief</label>
+                      <textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={3} placeholder={isStory?"Your story — include names, places, feelings, turning point...":isListicle?"What's your list about?":"What's this carousel about?"} style={{...inp,fontSize:12,lineHeight:1.5}}/>
+                      <div style={{fontSize:10,color:A.muted,marginTop:4}}>Powers ✨ AI Suggest on each slide.</div>
+                    </div>}
+                    {/* ── 4. STYLE CONTROLS ── */}
+                    {!isRaw&&!isStory&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                      <label style={lbl}>Text Effect</label>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+                        {[["gold","GOLD"],["chrome","CHROME"],["neon","NEON"],["fire","FIRE"],["3d","3D"],["outline","OUTLINE"],["ice","ICE"],["clean","CLEAN"]].map(([id,label])=>(
+                          <button key={id} onClick={()=>setTmplEffect(id)} style={{padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplEffect===id?GOLD:A.border}`,background:tmplEffect===id?"#1a1500":A.bg,color:tmplEffect===id?GOLD:A.muted,fontSize:12,fontWeight:900,cursor:"pointer"}}>{label}</button>
+                        ))}
+                      </div>
+                      <label style={lbl}>Font</label>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+                        {[["Bebas Neue","BEBAS"],["Anton","ANTON"],["Oswald","OSWALD"],["Teko","TEKO"],["Barlow Condensed","BARLOW"],["Archivo Black","ARCHIVO"],["Playfair Display","Playfair"],["Alfa Slab One","Alfa Slab"]].map(([id,label])=>(
+                          <button key={id} onClick={()=>setTmplFont(id)} style={{padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplFont===id?GOLD:A.border}`,background:tmplFont===id?"#1a1500":A.bg,color:tmplFont===id?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer"}}>{label}</button>
+                        ))}
+                      </div>
+                      <label style={lbl}>Primary Colour <span style={{letterSpacing:0,fontWeight:400,textTransform:"none",fontSize:9}}>Effect · line · chevron</span></label>
+                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                        <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} placeholder="#BB9900" style={{...inp,flex:1,fontFamily:"monospace",fontSize:15,fontWeight:700,textTransform:"uppercase"}}/>
+                        <div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}>
+                          <div style={{width:"100%",height:"100%",background:tmplPrimary}}/>
+                          <input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/>
                         </div>
                       </div>
-
-                      {/* AI Brief */}
-                      {hasAI&&(
-                        <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
-                          <label style={{...lbl,color:GOLD,marginBottom:6}}>AI Brief</label>
-                          <textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={3} placeholder={isStory?"What's your story? Include names, places, feelings, turning point...":isListicle?"What's your list about? e.g. 6 travel spots for digital nomads":"What's this carousel about?"} style={{...inp,fontSize:12,lineHeight:1.5}}/>
-                          <div style={{fontSize:10,color:A.muted,marginTop:4}}>The more specific, the better. Powers ✨ AI Suggest on each slide.</div>
+                      <label style={lbl}>Subline & Body Text Colour</label>
+                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                        <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} placeholder="#ffffff" style={{...inp,flex:1,fontFamily:"monospace",fontSize:15,fontWeight:700,textTransform:"uppercase"}}/>
+                        <div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}>
+                          <div style={{width:"100%",height:"100%",background:tmplSecondary}}/>
+                          <input type="color" value={tmplSecondary} onChange={e=>setTmplSecondary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/>
                         </div>
-                      )}
-
-                      {/* Style controls */}
-                      {!isRaw&&!isStory&&(
-                        <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
-                          <label style={lbl}>Text Effect</label>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-                            {[["gold","GOLD"],["chrome","CHROME"],["neon","NEON"],["fire","FIRE"],["3d","3D"],["outline","OUTLINE"],["ice","ICE"],["clean","CLEAN"]].map(([id,label])=>(
-                              <button key={id} onClick={()=>setTmplEffect(id)} style={{padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplEffect===id?GOLD:A.border}`,background:tmplEffect===id?"#1a1500":A.bg,color:tmplEffect===id?GOLD:A.muted,fontSize:12,fontWeight:900,cursor:"pointer"}}>{label}</button>
-                            ))}
-                          </div>
-                          <label style={lbl}>Font</label>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-                            {[["'Bebas Neue'","BEBAS"],["'Anton'","ANTON"],["'Oswald'","OSWALD"],["'Teko'","TEKO"],["'Barlow Condensed'","BARLOW"],["'Archivo Black'","ARCHIVO"],["'Playfair Display'","Playfair"],["'Alfa Slab One'","Alfa Slab"]].map(([id,label])=>(
-                              <button key={id} onClick={()=>setTmplFont(id)} style={{padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplFont===id?GOLD:A.border}`,background:tmplFont===id?"#1a1500":A.bg,color:tmplFont===id?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:id}}>{label}</button>
-                            ))}
-                          </div>
-                          <label style={lbl}>Primary Colour</label>
-                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                            <input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{width:32,height:32,borderRadius:6,border:`1px solid ${A.border}`,background:"none",cursor:"pointer",padding:2,flexShrink:0}}/>
-                            <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,width:90,fontFamily:"monospace",fontSize:13,textTransform:"uppercase"}}/>
-                            <span style={{fontSize:10,color:A.muted}}>Effect · line · chevron</span>
-                          </div>
-                          <label style={lbl}>Secondary Colour</label>
-                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                            <input type="color" value={tmplSecondary} onChange={e=>setTmplSecondary(e.target.value)} style={{width:32,height:32,borderRadius:6,border:`1px solid ${A.border}`,background:"none",cursor:"pointer",padding:2,flexShrink:0}}/>
-                            <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} style={{...inp,width:90,fontFamily:"monospace",fontSize:13,textTransform:"uppercase"}}/>
-                            <span style={{fontSize:10,color:A.muted}}>Text · subline · gradient</span>
-                          </div>
-                          {isCleanPro&&(
-                            <>
-                              <label style={lbl}>Body Slide Background</label>
-                              <div style={{display:"flex",gap:8}}>
-                                {["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Story/Raw style controls */}
-                      {(isStory||isRaw)&&(
-                        <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
-                          {isStory&&(
-                            <>
-                              <label style={lbl}>Background</label>
-                              <div style={{display:"flex",gap:8}}>
-                                {["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}
-                              </div>
-                            </>
-                          )}
-                          {isRaw&&(
-                            <>
-                              <label style={lbl}>Text Box</label>
-                              <div style={{display:"flex",gap:8}}>
-                                {["white","black"].map(m=><button key={m} onClick={()=>setTmplRawBox(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawBox===m?GOLD:A.border}`,background:tmplRawBox===m?"#1a1500":A.bg,color:tmplRawBox===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}
-                              </div>
-                              <label style={lbl}>Text Position</label>
-                              <div style={{display:"flex",gap:8}}>
-                                {["bottom","centre"].map(m=><button key={m} onClick={()=>setTmplRawPos(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawPos===m?GOLD:A.border}`,background:tmplRawPos===m?"#1a1500":A.bg,color:tmplRawPos===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}
-                              </div>
-                            </>
-                          )}
-                          <label style={lbl}>Font Style</label>
-                          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                            {[["Inter","Clean"],["Times New Roman","Serif"],["Playfair Display","Feminine"]].map(([id,label])=>(
-                              <button key={id} onClick={()=>setTmplFontStyle(id)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplFontStyle===id?GOLD:A.border}`,background:tmplFontStyle===id?"#1a1500":A.bg,color:tmplFontStyle===id?GOLD:A.muted,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:id,fontStyle:id==="Playfair Display"?"italic":"normal"}}>{label}</button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Active slide inputs */}
-                      <div style={{background:A.surface,border:`1.5px solid ${activeSlide===0?GOLD:A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
-                        <div style={{fontSize:12,fontWeight:800,color:activeSlide===0?GOLD:A.text}}>
-                          {activeSlide===0?"Cover Slide — scroll stopper":`Slide ${activeSlide+1}`}
-                        </div>
-
-                        {/* Image upload */}
-                        {(isDarkFade||(isListicle&&activeSlide===0)||(isCleanPro&&activeSlide===0)||isRaw)&&(
-                          <div>
-                            <label style={lbl}>Photo</label>
-                            <div style={{display:"flex",gap:10,alignItems:"flex-start",flexWrap:"wrap"}}>
-                              <div onClick={()=>{const inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>updateSlide("image",ev.target.result);r.readAsDataURL(f);};inp.click();}} style={{width:72,height:72,borderRadius:8,border:`1.5px dashed ${slide.image?GOLD:A.border}`,background:A.bg,overflow:"hidden",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                                {slide.image?<img src={slide.image} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:A.muted,fontSize:24}}>+</span>}
-                              </div>
-                              {slide.image&&(
-                                <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:3,width:72}}>
-                                    <div/>
-                                    <button onClick={()=>updateSlide("imagePos",{x:slide.imagePos?.x||50,y:Math.max(0,(slide.imagePos?.y||50)-10)})} style={{width:22,height:22,borderRadius:4,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:10,cursor:"pointer"}}>↑</button>
-                                    <div/>
-                                    <button onClick={()=>updateSlide("imagePos",{x:Math.max(0,(slide.imagePos?.x||50)-10),y:slide.imagePos?.y||50})} style={{width:22,height:22,borderRadius:4,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:10,cursor:"pointer"}}>←</button>
-                                    <div style={{width:22,height:22,borderRadius:4,background:A.surface,border:`1px solid ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:8,color:A.muted}}>⊙</span></div>
-                                    <button onClick={()=>updateSlide("imagePos",{x:Math.min(100,(slide.imagePos?.x||50)+10),y:slide.imagePos?.y||50})} style={{width:22,height:22,borderRadius:4,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:10,cursor:"pointer"}}>→</button>
-                                    <div/>
-                                    <button onClick={()=>updateSlide("imagePos",{x:slide.imagePos?.x||50,y:Math.min(100,(slide.imagePos?.y||50)+10)})} style={{width:22,height:22,borderRadius:4,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:10,cursor:"pointer"}}>↓</button>
-                                    <div/>
-                                  </div>
-                                  <button onClick={()=>updateSlide("image",null)} style={{fontSize:10,color:"#e74c3c",background:"none",border:"none",cursor:"pointer",textAlign:"center"}}>Remove</button>
-                                </div>
-                              )}
-                              {coverPhotos?.length>0&&(
-                                <div style={{display:"flex",gap:3,flexWrap:"wrap",maxWidth:140}}>
-                                  {coverPhotos.slice(0,6).map((p,pi)=>(
-                                    <div key={pi} onClick={()=>updateSlide("image",p)} style={{width:28,height:28,borderRadius:5,overflow:"hidden",cursor:"pointer",border:`1px solid ${A.border}`}}>
-                                      <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                                    </div>
-                                  ))}
-                                  <span style={{fontSize:9,color:A.muted,alignSelf:"center"}}>library</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Text inputs per template */}
-                        {(isDarkFade||(isCleanPro&&activeSlide===0))&&(
-                          <>
-                            <label style={lbl}>Headline</label>
-                            <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Hook headline — make them swipe" style={{...inp}}/>
-                            <label style={lbl}>Subline</label>
-                            <input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} placeholder="Supporting line (optional)" style={{...inp}}/>
-                          </>
-                        )}
-
-                        {isListicle&&activeSlide===0&&(
-                          <>
-                            <label style={lbl}>Topic Line</label>
-                            <input value={slide.topicLine||""} onChange={e=>updateSlide("topicLine",e.target.value)} placeholder="PLACES YOU MUST VISIT BEFORE" style={{...inp}}/>
-                            <label style={lbl}>Subject</label>
-                            <input value={slide.subject||""} onChange={e=>updateSlide("subject",e.target.value)} placeholder="2026 ENDS" style={{...inp}}/>
-                            <label style={lbl}>Subline</label>
-                            <input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} placeholder="Swipe to see them all." style={{...inp}}/>
-                          </>
-                        )}
-
-                        {isListicle&&activeSlide>0&&(
-                          <>
-                            <label style={lbl}>Point {activeSlide} — Headline</label>
-                            <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder={`Point ${activeSlide} headline (optional)`} style={{...inp}}/>
-                            <label style={lbl}>Detail</label>
-                            <div style={{position:"relative"}}>
-                              <textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="The tip, fact or detail for this point" rows={3} style={{...inp,resize:"vertical",paddingRight:72}}/>
-                              <button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button>
-                            </div>
-                          </>
-                        )}
-
-                        {isCleanPro&&activeSlide>0&&(
-                          <>
-                            <label style={lbl}>Headline</label>
-                            <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Headline (optional)" style={{...inp}}/>
-                            <label style={lbl}>Body Text</label>
-                            <div style={{position:"relative"}}>
-                              <textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="Body text — the detail" rows={4} style={{...inp,resize:"vertical",paddingRight:72}}/>
-                              <button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button>
-                            </div>
-                            <label style={lbl}>Accent Sub-text</label>
-                            <input value={slide.accentText||""} onChange={e=>updateSlide("accentText",e.target.value)} placeholder="Key takeaway line in accent colour" style={{...inp}}/>
-                          </>
-                        )}
-
-                        {isStory&&(
-                          <>
-                            <label style={lbl}>Story Text — Slide {activeSlide+1}</label>
-                            <div style={{position:"relative"}}>
-                              <textarea value={slide.storyText||""} onChange={e=>updateSlide("storyText",e.target.value)} placeholder="Your story paragraph. Use line breaks to separate paragraphs. Keep it real and specific." rows={6} style={{...inp,resize:"vertical",paddingRight:72,lineHeight:1.6}}/>
-                              <button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button>
-                            </div>
-                          </>
-                        )}
-
-                        {isRaw&&(
-                          <>
-                            <label style={lbl}>Your Text</label>
-                            <textarea value={slide.rawText||""} onChange={e=>updateSlide("rawText",e.target.value)} placeholder={"Type exactly what you want to say.\n\nUse line breaks to separate thoughts.\n\nKeep it real."} rows={5} style={{...inp,resize:"vertical",lineHeight:1.6,wordBreak:"break-word",whiteSpace:"pre-wrap"}}/>
-                          </>
-                        )}
                       </div>
-                    </div>
+                      {isCleanPro&&<><label style={lbl}>Body Background</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
+                    </div>}
+                    {(isStory||isRaw)&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                      {isStory&&<><label style={lbl}>Background</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
+                      {isRaw&&<><label style={lbl}>Text Highlight</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplRawBox(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawBox===m?GOLD:A.border}`,background:tmplRawBox===m?"#1a1500":A.bg,color:tmplRawBox===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div><label style={lbl}>Text Position</label><div style={{display:"flex",gap:8}}>{["bottom","centre"].map(m=><button key={m} onClick={()=>setTmplRawPos(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawPos===m?GOLD:A.border}`,background:tmplRawPos===m?"#1a1500":A.bg,color:tmplRawPos===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
+                      <label style={lbl}>Font Style</label>
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                        {[["Inter","Clean"],["Times New Roman","Serif"]].map(([id,label])=>(
+                          <button key={id} onClick={()=>setTmplFontStyle(id)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplFontStyle===id?GOLD:A.border}`,background:tmplFontStyle===id?"#1a1500":A.bg,color:tmplFontStyle===id?GOLD:A.muted,fontSize:12,fontWeight:600,cursor:"pointer"}}>{label}</button>
+                        ))}
+                      </div>
+                    </div>}
                   </div>
                 </div>
-              );
+              </div>);
             })()}
           </div>
         )}
 
-
-                {nav==="brand"&&(
+         {nav==="brand"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Brand</h2>
             {currentUser?.is_admin&&(
