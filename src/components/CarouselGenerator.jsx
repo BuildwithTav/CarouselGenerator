@@ -1972,16 +1972,16 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
         // Divider
         +divider
         // Badge centred, sitting on the gradient zone
-        +"<div style='position:absolute;bottom:"+Math.round(H*0.38)+"px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
-        // Left text — bottom left
-        +"<div style='position:absolute;bottom:90px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;display:flex;flex-direction:column;gap:14px;'>"
-        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:72px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
-        +(slide.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.7);line-height:1.4;'>"+esc(slide.subline)+"</div>":"")
+        +"<div style='position:absolute;bottom:360px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
+        // Left text — centred in left half
+        +"<div style='position:absolute;bottom:90px;left:"+SAFE+"px;width:"+(HW-SAFE-16)+"px;z-index:5;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;'>"
+        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:68px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(slide.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:32px;color:rgba(255,255,255,0.7);line-height:1.4;'>"+esc(slide.subline)+"</div>":"")
         +"</div>"
-        // Right text — bottom right
-        +"<div style='position:absolute;bottom:90px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;display:flex;flex-direction:column;gap:14px;'>"
-        +(slide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:72px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline2.toUpperCase())+"</div>":"")
-        +(slide.subline2?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.7);line-height:1.4;'>"+esc(slide.subline2)+"</div>":"")
+        // Right text — centred in right half
+        +"<div style='position:absolute;bottom:90px;left:"+(HW+16)+"px;width:"+(HW-SAFE-16)+"px;z-index:5;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;'>"
+        +(slide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:68px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline2.toUpperCase())+"</div>":"")
+        +(slide.subline2?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:32px;color:rgba(255,255,255,0.7);line-height:1.4;'>"+esc(slide.subline2)+"</div>":"")
         +"</div>"
         +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"
         +(isCover?chevron:"")+counter+wm+"</div>";
@@ -2014,7 +2014,26 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
 
   // Top-level debounced slides state — hooks must never be inside IIFE or nested fns
   const [dTmplSlides, setDTmplSlides] = useState(tmplSlides);
-  useEffect(()=>{ const t=setTimeout(()=>setDTmplSlides(tmplSlides),300); return()=>clearTimeout(t); },[JSON.stringify(tmplSlides)]);
+  // Debounce slides for preview — use ref to avoid stale closure
+  const tmplSlidesRef = useRef(tmplSlides);
+  useEffect(()=>{ tmplSlidesRef.current=tmplSlides; },[tmplSlides]);
+  useEffect(()=>{
+    const t=setTimeout(()=>setDTmplSlides([...tmplSlidesRef.current]),300);
+    return()=>clearTimeout(t);
+  },[tmplSlides]);
+  // Auto-save session whenever template content changes
+  useEffect(()=>{
+    if(!tmplSelected) return;
+    try{
+      localStorage.setItem("bwt_tmpl_session_"+tmplSelected, JSON.stringify({
+        slides:tmplSlides, slideCount:tmplSlideCount, brief:tmplBrief,
+        effect:tmplEffect, font:tmplFont, primary:tmplPrimary, secondary:tmplSecondary,
+        bg:tmplBg, fontStyle:tmplFontStyle, rawBox:tmplRawBox, rawPos:tmplRawPos,
+        listicleNum:tmplListicleNum
+      }));
+    }catch{}
+  },[tmplSelected,tmplSlides,tmplSlideCount,tmplBrief,tmplEffect,tmplFont,
+     tmplPrimary,tmplSecondary,tmplBg,tmplFontStyle,tmplRawBox,tmplRawPos,tmplListicleNum]);
 
   const A = { bg:"#F5F3EF", surface:"#FFF", border:"#E8E5E0", text:"#0A0A0A", muted:"#8A8780", accentText:"#FFF", input:"#FFF" };
   const inp = { width:"100%", background:A.input, border:`1.5px solid ${A.border}`, borderRadius:10, padding:"11px 14px", color:A.text, fontSize:14, fontFamily:"inherit" };
@@ -2810,10 +2829,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                   {id:"split",label:"Split",desc:"Two images side by side, one gradient across the bottom. Left and right text.",emoji:"⚡"},
                 ].map(t=>(
                   <div key={t.id} onClick={()=>{
-                    // Save current session before switching
-                    if(tmplSelected){
-                      try{localStorage.setItem("bwt_tmpl_session_"+tmplSelected,JSON.stringify({slides:tmplSlides,slideCount:tmplSlideCount,brief:tmplBrief,effect:tmplEffect,font:tmplFont,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum}));}catch{}
-                    }
+                    // Session auto-saved by useEffect — no manual save needed here
                     // Try to restore a saved session for this template
                     let restored=false;
                     try{
@@ -2865,7 +2881,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:6,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
               const opts={effect:tmplEffect,font:tmplFont,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree};
               // Use top-level debounced slides (hooks can't be called here inside IIFE)
-              const previewHTML=buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,tmplSlideCount,tmplSelected,opts);
+              // Use debounced slides for preview to prevent flash on keystrokes
+              const activeSlideData=dTmplSlides[activeSlide]||{};
+              const previewHTML=buildTmplHTML(activeSlideData,activeSlide,tmplSlideCount,tmplSelected,opts);
               const thumbHTMLs=dTmplSlides.slice(0,tmplSlideCount).map((s,i)=>buildTmplHTML(s||{},i,tmplSlideCount,tmplSelected,opts));
               const downloadSlide=async(idx)=>{
                 if(!canGenerate()){setNav("upgrade");return;}
@@ -2906,10 +2924,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
               const updateSlide=(field,val)=>setTmplSlides(prev=>{const next=[...prev];next[activeSlide]={...next[activeSlide],[field]:val};return next;});
               return(<div>
                 <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
-                  <button onClick={()=>{
-                    if(tmplSelected){try{localStorage.setItem("bwt_tmpl_session_"+tmplSelected,JSON.stringify({slides:tmplSlides,slideCount:tmplSlideCount,brief:tmplBrief,effect:tmplEffect,font:tmplFont,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum}));}catch{}}
-                    setTmplSelected(null);
-                  }} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Templates</button>
+                  <button onClick={()=>setTmplSelected(null)} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Templates</button>
                   <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Dark Fade":isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":isSplit?"Split":"Raw"}</span>
                   {isFree&&<span style={{fontSize:11,color:"#e74c3c",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>Free plan — watermark on exports</span>}
                 </div>
@@ -2925,7 +2940,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${hasBgImg?"#000
                           return(
                             <div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}>
                               <iframe
-                                key={`prev-${activeSlide}`}
                                 srcDoc={previewHTML}
                                 style={{width:1080,height:1350,border:"none",transform:"scale(0.5)",transformOrigin:"top left",pointerEvents:"none",display:"block"}}
                                 scrolling="no"
