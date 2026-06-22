@@ -1042,6 +1042,7 @@ export default function App() {
     const {effect,font,fontSize,primary,secondary,accentLine,bg,fontStyle,rawBox,rawPos,listicleNum,profUrl,nm,hdl,showTick,isFree,userWebsite,showCounter}=opts;
     const AL=accentLine||primary;
     const FS=fontSize||82;
+    function autoFS(text,base){if(!text)return base;const len=text.length;return Math.max(40,Math.min(base,base-Math.max(0,(len-15)*2)));}
     const W=1080,H=1350,SAFE=60,isCover=idx===0;
     const fontFamily=(font||"Bebas Neue").replace(/'/g,"");
     function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
@@ -1084,7 +1085,7 @@ export default function App() {
         +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.638)+"px;white-space:nowrap;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;z-index:5;left:54px;right:54px;top:"+Math.round(H*0.748)+"px;height:5px;background:linear-gradient(to right,transparent 0%,"+primary+" 5%,"+primary+" 95%,transparent 100%);'></div>"
         +"<div style='position:absolute;z-index:5;left:80px;right:80px;top:"+Math.round(H*0.762)+"px;bottom:"+Math.round(H*0.04)+"px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;overflow:hidden;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:900;line-height:1.1;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectCSS(effect,primary,secondary)+"'>"+esc((s.headline||"").toUpperCase())+"</div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((s.headline||""),FS)+"px;font-weight:900;line-height:1.1;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectCSS(effect,primary,secondary)+"'>"+esc((s.headline||"").toUpperCase())+"</div>"
         +(s.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;color:"+secondary+";text-align:center;font-weight:600;max-width:100%;'>"+esc(s.subline)+"</div>":"")
         +"</div>"+website+(isCover?chevron:"")+counter+wm+"</div>";
     }
@@ -1104,7 +1105,7 @@ export default function App() {
         +"<div style='width:"+numLineW+"px;height:5px;background:"+AL+";'></div></div>"
         +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:12px;padding-bottom:8px;'>"
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:58px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.2;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase())+"</div>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:900;line-height:1.0;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((slide.subject||""),FS)+"px;font-weight:900;line-height:1.0;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div>"
         +(slide.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.6);line-height:1.3;'>"+esc(slide.subline)+"</div>":"")
         +"</div></div>"
         +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"+chevron+wm+"</div>";
@@ -1121,7 +1122,7 @@ export default function App() {
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS2+"px;font-weight:900;line-height:1;"+effectCSS(effect,primary,secondary)+"'>"+String(idx)+"</div>"
         +"<div style='width:"+numLineW2+"px;height:5px;background:"+AL+";'></div></div>"
         +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;padding-bottom:8px;'>"
-        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((slide.headline||""),FS)+"px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
         +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:rgba(255,255,255,0.85);line-height:1.45;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
         +"</div></div>"
         +website+wm+"</div>";
@@ -1133,7 +1134,7 @@ export default function App() {
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;'>"
         +"<div style='position:absolute;top:140px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
         +"<div style='position:absolute;top:320px;left:"+(SAFE+20)+"px;right:"+(SAFE+20)+"px;bottom:120px;z-index:5;display:flex;flex-direction:column;justify-content:center;gap:52px;'>"
-        +(slide.headline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:"+FS+"px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
+        +(slide.headline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:"+autoFS((slide.headline||""),FS)+"px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
         +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:52px;color:"+tS+";line-height:1.65;word-break:break-word;'>"+esc(slide.bodyText).replace(/\n/g,"<br/>")+"</div>":"")
         +(slide.accentText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:56px;font-weight:700;color:"+primary+";line-height:1.3;word-break:break-word;'>"+esc(slide.accentText)+"</div>":"")
         +(slide.accentText?"<div style='width:110px;height:5px;background:"+AL+";'></div>":"")
@@ -1151,13 +1152,15 @@ export default function App() {
         +"</div></div>"+sw+counter+wm+"</div>";
     }
     else if(tmpl==="raw"){
-      const isWB=rawBox==="white",tCR=isWB?"#0a0a0a":"#ffffff";
-      const bBg=isWB?"rgba(255,255,255,0.93)":"rgba(0,0,0,0.85)";
+      const isNone=rawBox==="none",isWB=rawBox==="white",tCR=isNone?"#ffffff":isWB?"#0a0a0a":"#ffffff";
+      const bBg=isNone?"transparent":isWB?"rgba(255,255,255,0.93)":"rgba(0,0,0,0.85)";
+      const bBorder=isNone?"border:none;":"";
+      const txtShadow=isNone?"text-shadow:2px 2px 0 rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.8),-1px -1px 0 rgba(0,0,0,0.9),1px -1px 0 rgba(0,0,0,0.9),-1px 1px 0 rgba(0,0,0,0.9),1px 1px 0 rgba(0,0,0,0.9);":"";
       const stI=fontStyle==="Playfair Display",stF=fontStyle||"Inter";
       const paras=(slide.rawText||"").split(/\n\n+/);
       const parasHTML=paras.map(p=>p.trim()===""
         ?""
-        :"<div style='display:inline-block;background:"+bBg+";padding:18px 36px;margin:10px 0;font-family:"+stF+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:56px;font-weight:800;color:"+tCR+";line-height:1.4;"+(stI?"font-style:italic;":"")+"word-break:break-word;white-space:pre-wrap;'>"+esc(p.trim())+"</div>"
+        :"<div style='display:inline-block;background:"+bBg+";padding:"+(isNone?"0":"18px 36px")+";margin:10px 0;font-family:"+stF+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:56px;font-weight:800;color:"+tCR+";line-height:1.4;"+(stI?"font-style:italic;":"")+txtShadow+"word-break:break-word;white-space:pre-wrap;"+bBorder+"'>"+esc(p.trim())+"</div>"
       ).join("<br/>");
       const vAlign=rawPos==="bottom"?"justify-content:flex-end;padding-bottom:140px":"justify-content:center";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#1a1a1a;overflow:hidden;'>"+imgTag(slide)
@@ -1178,11 +1181,11 @@ export default function App() {
         +divider
         +"<div style='position:absolute;bottom:280px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;bottom:90px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;'>"
-        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;text-align:center;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((slide.headline||""),FS)+"px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;text-align:center;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
         +(slide.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.7);line-height:1.4;text-align:center;'>"+esc(slide.subline)+"</div>":"")
         +"</div>"
         +"<div style='position:absolute;bottom:90px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;'>"
-        +(slide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;text-align:center;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline2.toUpperCase())+"</div>":"")
+        +(slide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((slide.headline2||""),FS)+"px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;text-align:center;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline2.toUpperCase())+"</div>":"")
         +(slide.subline2?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.7);line-height:1.4;text-align:center;'>"+esc(slide.subline2)+"</div>":"")
         +"</div>"
         +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"
@@ -1193,12 +1196,12 @@ export default function App() {
 
 
   // ── buildCtaHTML — generates CTA final slide ──
-  function buildCtaHTML(opts,ctaType,keyword,line1,line2,line3,bg,nm,hdl,profUrl,showTick,font){
+  function buildCtaHTML(opts,ctaType,keyword,line1,line2,line3,bg,nm,hdl,profUrl,showTick,font,total,showCounter){
     const W=1080,H=1350;
     const fontFamily=(font||"Bebas Neue").replace(/'/g,"");
     const gFonts="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Barlow+Condensed:wght@800;900&family=Archivo+Black&family=Playfair+Display:ital,wght@0,900;1,900&family=Alfa+Slab+One&family=Cormorant+Garamond:ital,wght@0,700;1,700&family=Josefin+Sans:wght@700&family=Raleway:wght@800;900&family=Quicksand:wght@700&family=Dancing+Script:wght@700&family=Inter:wght@400;600;700;800&display=swap";
     const isDark=bg==="dark";
-    const bgC=isDark?"#0a0a0a":"#f5f5f5";
+    const bgC=isDark?"#0a0a0a":"#ffffff";
     const textC=isDark?"#ffffff":"#0a0a0a";
     const mutedC=isDark?"rgba(255,255,255,0.55)":"rgba(0,0,0,0.5)";
     const accent=opts.primary||"#BB9900";
@@ -1211,12 +1214,13 @@ export default function App() {
       +"<div style='display:flex;flex-direction:column;align-items:center;text-align:center;gap:32px;padding:0 80px;margin-top:60px;'>"
       +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:"+textC+";font-weight:600;line-height:1.3;margin:0;'>"+esc(line1)+"</p>"
       +"<div style='width:80px;height:4px;background:"+accent+";'></div>"
-      +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;color:"+mutedC+";letter-spacing:3px;text-transform:uppercase;margin:0;'>"+esc(line2)+"</p>"
+      +(ctaType==="comment"?"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;color:"+mutedC+";letter-spacing:3px;text-transform:uppercase;margin:0;'>"+esc(line2)+"</p>":"")
       +"<p style='font-family:"+fontFamily+",sans-serif;font-size:180px;font-weight:900;color:"+accent+";line-height:0.9;margin:0;letter-spacing:4px;'>"+esc((keyword||"").toUpperCase())+"</p>"
       +"<div style='width:80px;height:4px;background:"+accent+";'></div>"
       +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:40px;color:"+mutedC+";line-height:1.4;margin:0;'>"+esc(line3)+"</p>"
       +"</div>"
-      +"</div>";
+      +"</div>"
+      +(showCounter?"<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+total+"/"+total+"</div>":"")+"</div>";
     return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
   }
 
@@ -3128,7 +3132,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               const ctaLine2Defaults={comment:"Comment the word",follow:"Follow",save:"Save this",share:"Share this",like:"Like this"};
               const ctaKeywordDefaults={comment:tmplCtaKeyword||"GUIDE",follow:"FOLLOW",save:"SAVE",share:"SHARE",like:"LIKE"};
               const ctaLine3Defaults={comment:"and I'll send it straight over",follow:"for more content like this",save:"so you don't lose it",share:"with someone who needs it",like:"if it resonated with you"};
-              const ctaHTML=tmplShowCta&&!isRaw?buildCtaHTML(opts,tmplCtaType,ctaKeywordDefaults[tmplCtaType],tmplCtaTopLine||(isDarkFade?"Want to build wealth online?":isListicle?"Want more content like this?":isCleanPro?"Want the full strategy?":isStory?"Want to start your own journey?":"Want more like this?"),tmplCtaLine2||ctaLine2Defaults[tmplCtaType],tmplCtaRewardLine||ctaLine3Defaults[tmplCtaType],tmplCtaBg,name,handle,profileUrl,blueTick,tmplFont):null;
+              const ctaHTML=tmplShowCta&&!isRaw?buildCtaHTML(opts,tmplCtaType,ctaKeywordDefaults[tmplCtaType],tmplCtaTopLine||(isDarkFade?"Want to build wealth online?":isListicle?"Want more content like this?":isCleanPro?"Want the full strategy?":isStory?"Want to start your own journey?":"Want more like this?"),tmplCtaLine2||ctaLine2Defaults[tmplCtaType],tmplCtaRewardLine||ctaLine3Defaults[tmplCtaType],tmplCtaBg,name,handle,profileUrl,blueTick,tmplFont,tmplSlideCount+(tmplShowCta?1:0),tmplShowCounter):null;
               const totalSlides=tmplSlideCount+(ctaHTML?1:0);
               const activeIsCtaSlide=ctaHTML&&activeSlide===tmplSlideCount;
               const previewHTML=activeIsCtaSlide?ctaHTML:buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,totalSlides,tmplSelected,opts);
@@ -3419,7 +3423,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           {EFFECTS.find(e=>e.id===tmplEffect)?.label||tmplEffect.toUpperCase()}
                         </div>
                         {/* NEON colour picker */}
-                        <label style={lbl}>{tmplEffect==="neon"?"Glow Colour":tmplEffect==="clean"?"Headline Colour":"Effect Colour"}</label>
+                        <label style={lbl}>{tmplEffect==="neon"?"Glow Colour":tmplEffect==="clean"?"Headline Colour":"Effect & Accent Colour"}</label>
                         <div style={{display:"flex",gap:8,alignItems:"center"}}><input type="text" value={tmplEffect==="clean"?tmplSecondary:tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value)){tmplEffect==="clean"?setTmplSecondary(e.target.value):setTmplPrimary(e.target.value);}}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/><div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplEffect==="clean"?tmplSecondary:tmplPrimary}}/><input type="color" value={tmplEffect==="clean"?tmplSecondary:tmplPrimary} onChange={e=>tmplEffect==="clean"?setTmplSecondary(e.target.value):setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div></div>
                         {tmplEffect==="clean"&&<><label style={lbl}>Body / Subline Colour</label><div style={{display:"flex",gap:8,alignItems:"center"}}><input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontWeight:700}}/><div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`}}><div style={{width:"100%",height:"100%",background:tmplPrimary}}/><input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div></div></>}
                       </div>}
@@ -3447,7 +3451,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       {!isListicle&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                         <div>
                           <div style={{fontSize:12,fontWeight:700,color:A.text}}>Slide Counter</div>
-                          <div style={{fontSize:11,color:A.muted}}>Show 1/6 on every slide</div>
+                          <div style={{fontSize:11,color:A.muted}}>Show {tmplSlideCount+(tmplShowCta?1:0)}/{tmplSlideCount+(tmplShowCta?1:0)} on every slide</div>
                         </div>
                         <div onClick={()=>setTmplShowCounter(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowCounter?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
                           <div style={{position:"absolute",top:2,left:tmplShowCounter?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
@@ -3475,7 +3479,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       {/* Raw options */}
                       {isRaw&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:8}}>
                         <label style={lbl}>Text Highlight</label>
-                        <div style={{display:"flex",gap:8}}>{["white","black"].map(m=>(<button key={m} onClick={()=>setTmplRawBox(m)} style={{flex:1,padding:"8px",borderRadius:7,border:`1.5px solid ${tmplRawBox===m?GOLD:A.border}`,background:tmplRawBox===m?"#1a1500":A.bg,color:tmplRawBox===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>))}</div>
+                        <div style={{display:"flex",gap:8}}>{["white","black","none"].map(m=>(<button key={m} onClick={()=>setTmplRawBox(m)} style={{flex:1,padding:"8px",borderRadius:7,border:`1.5px solid ${tmplRawBox===m?GOLD:A.border}`,background:tmplRawBox===m?"#1a1500":A.bg,color:tmplRawBox===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>))}</div>
                         <label style={lbl}>Text Position</label>
                         <div style={{display:"flex",gap:8}}>{["bottom","centre"].map(m=>(<button key={m} onClick={()=>setTmplRawPos(m)} style={{flex:1,padding:"8px",borderRadius:7,border:`1.5px solid ${tmplRawPos===m?GOLD:A.border}`,background:tmplRawPos===m?"#1a1500":A.bg,color:tmplRawPos===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>))}</div>
                       </div>}
