@@ -1215,7 +1215,7 @@ export default function App() {
       +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:"+textC+";font-weight:600;line-height:1.3;margin:0;'>"+esc(line1)+"</p>"
       +"<div style='width:80px;height:4px;background:"+accent+";'></div>"
       +(ctaType==="comment"?"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;color:"+mutedC+";letter-spacing:3px;text-transform:uppercase;margin:0;'>"+esc(line2)+"</p>":"")
-      +"<p style='font-family:"+fontFamily+",sans-serif;font-size:"+(fontSize||180)+"px;font-weight:900;color:"+accent+";line-height:0.9;margin:0;letter-spacing:4px;'>"+esc((keyword||"").toUpperCase())+"</p>"
+      +"<p style='font-family:"+fontFamily+",sans-serif;font-size:"+(opts.fontSize||180)+"px;font-weight:900;color:"+accent+";line-height:0.9;margin:0;letter-spacing:4px;'>"+esc((keyword||"").toUpperCase())+"</p>"
       +"<div style='width:80px;height:4px;background:"+accent+";'></div>"
       +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:40px;color:"+mutedC+";line-height:1.4;margin:0;'>"+esc(line3)+"</p>"
       +"</div>"
