@@ -925,8 +925,9 @@ export default function App() {
   const [tmplSelected, setTmplSelected] = useState(null);
   const [tmplSlideCount, setTmplSlideCount] = useState(6);
   const [tmplSlides, setTmplSlides] = useState(Array(12).fill(null).map(()=>({image:null,image2:null,imagePos:{x:50,y:50},image2Pos:{x:50,y:50},headline:"",subline:"",bodyText:"",accentText:"",number:6,topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:"",pillText:""})));
-  const [tmplEffect, setTmplEffect] = useState("gold");
+  const [tmplEffect, setTmplEffect] = useState("clean");
   const [tmplFont, setTmplFont] = useState("Bebas Neue");
+  const [tmplFontSize, setTmplFontSize] = useState(82);
   const [tmplPrimary, setTmplPrimary] = useState("#BB9900");
   const [tmplSecondary, setTmplSecondary] = useState("#ffffff");
   const [tmplBg, setTmplBg] = useState("white");
@@ -939,6 +940,7 @@ export default function App() {
   const [tmplDownloading, setTmplDownloading] = useState(false);
   const [tmplDownloadingIdx, setTmplDownloadingIdx] = useState(null);
   const [tmplActiveSlide, setTmplActiveSlide] = useState(0);
+  const [pendingTmplImage, setPendingTmplImage] = useState(null);
   const [tmplLibrary, setTmplLibrary] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_library")||"[]");}catch{return[];}});
   const [suppressLibraryConfirm, setSuppressLibraryConfirm] = useState(()=>{try{return localStorage.getItem("bwt_suppress_lib_confirm")==="1";}catch{return false;}});
   const [payoutDetails, setPayoutDetails] = useState({});
@@ -1024,7 +1026,8 @@ export default function App() {
 
   // ── buildTmplHTML — generates HTML sent to Puppeteer /api/render-slide ──
   function buildTmplHTML(slide, idx, total, tmpl, opts) {
-    const {effect,font,primary,secondary,bg,fontStyle,rawBox,rawPos,listicleNum,profUrl,nm,hdl,showTick,isFree}=opts;
+    const {effect,font,fontSize,primary,secondary,bg,fontStyle,rawBox,rawPos,listicleNum,profUrl,nm,hdl,showTick,isFree,userWebsite}=opts;
+    const FS=fontSize||82;
     const W=1080,H=1350,SAFE=60,isCover=idx===0;
     const fontFamily=(font||"Bebas Neue").replace(/'/g,"");
     function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
@@ -1047,7 +1050,7 @@ export default function App() {
     }
     const grad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 28%,rgba(0,0,0,0.08) 44%,rgba(0,0,0,0.35) 54%,rgba(0,0,0,0.65) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.96) 78%,rgba(0,0,0,0.99) 88%,rgba(0,0,0,1) 100%)";
     const chevron="<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+primary+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+primary+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>";
-    const website="<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>";
+    const websiteStr=isFree?"studio.buildwithtav.co":(userWebsite||"");const website=websiteStr?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>"+websiteStr+"</div>":"";
     const wm=isFree?"<div style='position:absolute;top:32px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:32px;font-weight:800;color:#ffffff;text-shadow:0 2px 8px rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.8);letter-spacing:1px;'>studio.buildwithtav.co</div>":"";
     const counter="<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+(idx+1)+"/"+total+"</div>";
     function imgTag(s){if(!s||!s.image)return"";const px=(s.imagePos&&s.imagePos.x)||50,py=(s.imagePos&&s.imagePos.y)||50;return"<img src='"+esc(s.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+px+"% "+py+"%;z-index:0;'/>";}
@@ -1057,7 +1060,7 @@ export default function App() {
         +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.638)+"px;white-space:nowrap;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;z-index:5;left:54px;right:54px;top:"+Math.round(H*0.748)+"px;height:5px;background:linear-gradient(to right,transparent 0%,"+primary+" 5%,"+primary+" 95%,transparent 100%);'></div>"
         +"<div style='position:absolute;z-index:5;left:80px;right:80px;top:"+Math.round(H*0.762)+"px;bottom:"+Math.round(H*0.04)+"px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;overflow:hidden;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:82px;font-weight:900;line-height:1.1;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectCSS(effect,primary,secondary)+"'>"+esc((s.headline||"").toUpperCase())+"</div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:900;line-height:1.1;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectCSS(effect,primary,secondary)+"'>"+esc((s.headline||"").toUpperCase())+"</div>"
         +(s.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;color:"+secondary+";text-align:center;font-weight:600;max-width:100%;'>"+esc(s.subline)+"</div>":"")
         +"</div>"+website+(isCover?chevron:"")+counter+wm+"</div>";
     }
@@ -1106,7 +1109,7 @@ export default function App() {
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;'>"
         +"<div style='position:absolute;top:140px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
         +"<div style='position:absolute;top:320px;left:"+(SAFE+20)+"px;right:"+(SAFE+20)+"px;bottom:120px;z-index:5;display:flex;flex-direction:column;justify-content:center;gap:52px;'>"
-        +(slide.headline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:82px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
+        +(slide.headline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:"+FS+"px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
         +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:52px;color:"+tS+";line-height:1.65;word-break:break-word;'>"+esc(slide.bodyText).replace(/\n/g,"<br/>")+"</div>":"")
         +(slide.accentText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:56px;font-weight:700;color:"+primary+";line-height:1.3;word-break:break-word;'>"+esc(slide.accentText)+"</div>":"")
         +(slide.accentText?"<div style='width:110px;height:5px;background:"+primary+";'></div>":"")
@@ -1151,11 +1154,11 @@ export default function App() {
         +divider
         +"<div style='position:absolute;bottom:280px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;bottom:90px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;'>"
-        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:72px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;text-align:center;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;text-align:center;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
         +(slide.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.7);line-height:1.4;text-align:center;'>"+esc(slide.subline)+"</div>":"")
         +"</div>"
         +"<div style='position:absolute;bottom:90px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;'>"
-        +(slide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:72px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;text-align:center;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline2.toUpperCase())+"</div>":"")
+        +(slide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;text-align:center;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline2.toUpperCase())+"</div>":"")
         +(slide.subline2?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.7);line-height:1.4;text-align:center;'>"+esc(slide.subline2)+"</div>":"")
         +"</div>"
         +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"
@@ -1190,6 +1193,11 @@ export default function App() {
   // Top-level debounced slides state — hooks must never be inside IIFE or nested fns
   const [dTmplSlides, setDTmplSlides] = useState(tmplSlides);
   useEffect(()=>{ const t=setTimeout(()=>setDTmplSlides(tmplSlides),300); return()=>clearTimeout(t); },[JSON.stringify(tmplSlides)]);
+  useEffect(()=>{
+    if(!pendingTmplImage)return;
+    setTmplSlides(prev=>{const next=[...prev];next[tmplActiveSlide]={...next[tmplActiveSlide],image:pendingTmplImage};return next;});
+    setPendingTmplImage(null);
+  },[pendingTmplImage]);
 
   // ADMIN-ONLY brand preset functions — only ever called from is_admin-gated UI, touches a separate localStorage key only
   const saveAdminPreset = () => {
@@ -2139,7 +2147,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
     ${signature?`<div class="sig">${esc(signature)}</div>`:""}
   </div>
   ${tHandle}
-  ${currentUser?.plan==="free"?`<div style="position:absolute;bottom:${Math.round(28*s)}px;left:0;right:0;text-align:center;z-index:10;"><span style="font-family:'Montserrat',sans-serif;font-size:${Math.round(22*s)}px;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:3px;">studio.buildwithtav.co</span></div>`:""}
+  ${currentUser?.plan==="free"?`<div style="position:absolute;top:${Math.round(28*s)}px;left:0;right:0;text-align:center;z-index:10;"><span style="font-family:'Montserrat',sans-serif;font-size:${Math.round(28*s)}px;font-weight:800;color:#ffffff;text-shadow:0 2px 8px rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.8);letter-spacing:2px;">studio.buildwithtav.co</span></div>`:""}
 </div>
 </body></html>`;
   };
@@ -2233,6 +2241,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
   const isPexelsUser = ["pro","agency","affiliate_licence","white_label"].includes(planLabel);
   const [showPexelsCover, setShowPexelsCover] = useState(false);
   const [showPexelsTemplate, setShowPexelsTemplate] = useState(false);
+  const [showPexelsTmplLib, setShowPexelsTmplLib] = useState(false);
   const [showPexelsQuote, setShowPexelsQuote] = useState(false);
   const NAV_ITEMS = [["generate","Generate"],...(currentUser?.is_admin?[["templates","Templates"]]:[]),["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
   const BURGER_ITEMS = [["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
@@ -3015,7 +3024,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             {!tmplSelected&&(
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:16}}>
                 {[
-                  {id:"dark-fade",label:"Dark Fade",desc:"Bold photo cover, gradient fade, badge, headline, subline.",emoji:"🌑"},
+                  {id:"dark-fade",label:"Classic Theme Page",desc:"Bold photo cover, gradient fade, badge, headline, subline.",emoji:"🌑"},
                   {id:"listicle",label:"Listicle",desc:"Big number left, topic right. Body slides numbered. Up to 11 points.",emoji:"🔢"},
                   {id:"clean-pro",label:"Clean Pro",desc:"Dark Fade cover then clean white or black body slides.",emoji:"✨"},
                   {id:"storytelling",label:"Storytelling",desc:"Pure text on white or black. Badge top left. Dead centre paragraph.",emoji:"📖"},
@@ -3023,13 +3032,21 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   {id:"split",label:"Split",desc:"Two images side by side, one gradient across the bottom. Left and right text.",emoji:"⚡"},
                 ].map(t=>(
                   <div key={t.id} onClick={()=>{
-                    if(tmplSelected){try{localStorage.setItem("bwt_tmpl_session_"+tmplSelected,JSON.stringify({slides:tmplSlides,slideCount:tmplSlideCount,brief:tmplBrief,effect:tmplEffect,font:tmplFont,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum}));}catch{}}
+                    if(tmplSelected){try{localStorage.setItem("bwt_tmpl_session_"+tmplSelected,JSON.stringify({slides:tmplSlides,slideCount:tmplSlideCount,brief:tmplBrief,effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum}));}catch{}}
                     let restored=false;
-                    try{const saved=localStorage.getItem("bwt_tmpl_session_"+t.id);if(saved){const s=JSON.parse(saved);setTmplSlides(s.slides);setTmplSlideCount(s.slideCount);setTmplBrief(s.brief||"");setTmplEffect(s.effect||"gold");setTmplFont(s.font||"Bebas Neue");setTmplPrimary(s.primary||"#BB9900");setTmplSecondary(s.secondary||"#ffffff");setTmplBg(s.bg||"white");setTmplFontStyle(s.fontStyle||"Inter");setTmplRawBox(s.rawBox||"white");setTmplRawPos(s.rawPos||"bottom");setTmplListicleNum(s.listicleNum||6);restored=true;}}catch{}
+                    try{const saved=localStorage.getItem("bwt_tmpl_session_"+t.id);if(saved){const s=JSON.parse(saved);setTmplSlides(s.slides);setTmplSlideCount(s.slideCount);setTmplBrief(s.brief||"");setTmplEffect(s.effect||"clean");setTmplFont(s.font||"Bebas Neue");setTmplFontSize(s.fontSize||82);setTmplPrimary(s.primary||"#BB9900");setTmplSecondary(s.secondary||"#ffffff");setTmplBg(s.bg||"white");setTmplFontStyle(s.fontStyle||"Inter");setTmplRawBox(s.rawBox||"white");setTmplRawPos(s.rawPos||"bottom");setTmplListicleNum(s.listicleNum||6);restored=true;}}catch{}
                     setTmplSelected(t.id);setTmplActiveSlide(0);
                     if(!restored){
                       const defaults=Array(12).fill(null).map((_,i)=>{
-                        const base={image:null,imagePos:{x:50,y:50},image2:null,image2Pos:{x:50,y:50},headline:"",subline:"",headline2:"",subline2:"",bodyText:"",accentText:"",topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:""};
+                        const PLACEHOLDER_IMGS={
+  "dark-fade":"https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=1080&q=80",
+  "listicle":"https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1080&q=80",
+  "clean-pro":"https://images.unsplash.com/photo-1497366216548-37526070297c?w=1080&q=80",
+  "storytelling":null,
+  "raw":"https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1080&q=80",
+  "split":"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1080&q=80",
+};
+const base={image:i===0?(PLACEHOLDER_IMGS[t.id]||null):null,imagePos:{x:50,y:50},image2:i===0?(PLACEHOLDER_IMGS[t.id]||null):null,image2Pos:{x:50,y:50},headline:"",subline:"",headline2:"",subline2:"",bodyText:"",accentText:"",topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:""};
                         if(t.id==="dark-fade"){base.headline=i===0?"Stop posting singles. Start posting carousels.":"";base.subline=i===0?"The algorithm rewards every swipe.":"";}
                         if(t.id==="listicle"&&i===0){base.topicLine="PLACES YOU MUST VISIT BEFORE";base.subject="2026 ENDS";base.subline="Swipe to see them all.";}
                         if(t.id==="listicle"&&i>0){base.headline=["Santorini, Greece","Kyoto, Japan","Amalfi Coast, Italy","Bali, Indonesia","Patagonia, Argentina","Cape Town, South Africa","Iceland","Machu Picchu, Peru","The Maldives","New Zealand","Morocco"][i-1]||"";base.bodyText=["Sunsets you won't find anywhere else.","Cherry blossom and centuries of culture.","The most dramatic coastline in Europe.","Temples, rice fields, and world-class surf.","Mountains that look computer generated.","Beaches, wine, wildlife. All in one place.","Northern lights every clear night.","Lost city of the Incas. Nothing like it.","Overwater bungalows. Turquoise lagoons.","Lord of the Rings meets real adventure.","Deserts, medinas, and mint tea."][i-1]||"";}
@@ -3054,8 +3071,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             )}
             {tmplSelected&&(()=>{
               const isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade",isSplit=tmplSelected==="split";
-              const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:6,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
-              const opts={effect:tmplEffect,font:tmplFont,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree};
+              const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:8,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
+              const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
               const previewHTML=buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,tmplSlideCount,tmplSelected,opts);
               const thumbHTMLs=dTmplSlides.slice(0,tmplSlideCount).map((s,i)=>buildTmplHTML(s||{},i,tmplSlideCount,tmplSelected,opts));
               const downloadSlide=async(idx)=>{
@@ -3098,10 +3115,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               return(<div>
                 <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
                   <button onClick={()=>{
-                    if(tmplSelected){try{localStorage.setItem("bwt_tmpl_session_"+tmplSelected,JSON.stringify({slides:tmplSlides,slideCount:tmplSlideCount,brief:tmplBrief,effect:tmplEffect,font:tmplFont,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum}));}catch{}}
+                    if(tmplSelected){try{localStorage.setItem("bwt_tmpl_session_"+tmplSelected,JSON.stringify({slides:tmplSlides,slideCount:tmplSlideCount,brief:tmplBrief,effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum}));}catch{}}
                     setTmplSelected(null);
                   }} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Templates</button>
-                  <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Dark Fade":isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":isSplit?"Split":"Raw"}</span>
+                  <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Classic Theme Page":isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":isSplit?"Split":"Raw"}</span>
                   {isFree&&<span style={{fontSize:11,color:"#e74c3c",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>Free plan — watermark on exports</span>}
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:28,alignItems:"start",position:"relative"}}>
@@ -3158,6 +3175,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                               </div>
                             ))}
                             <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateSlide("image",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
+                            {isPexelsUser&&<div onClick={()=>setShowPexelsTmplLib(true)} style={{width:52,height:52,borderRadius:7,border:`1.5px solid ${GOLD}44`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:GOLD,fontSize:9,fontWeight:800,flexShrink:0,textAlign:"center",lineHeight:1.2}}>🔍<br/>Pexels</div>}
                           </div>
                           {tmplLibrary.length===0&&<p style={{fontSize:11,color:A.muted,margin:"0 0 6px"}}>Upload photos — they'll save to your library.</p>}
                         </div>
@@ -3273,27 +3291,34 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <button key={id} onClick={()=>setTmplEffect(id)} style={{padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplEffect===id?GOLD:A.border}`,background:tmplEffect===id?"#1a1500":A.bg,color:tmplEffect===id?GOLD:A.muted,fontSize:12,fontWeight:900,cursor:"pointer"}}>{label}</button>
                         ))}
                       </div>
+                      {tmplEffect==="clean"&&<>
+                        <label style={lbl}>Headline Colour</label>
+                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                          <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} placeholder="#ffffff" style={{...inp,flex:1,fontFamily:"monospace",fontSize:15,fontWeight:700,textTransform:"uppercase"}}/>
+                          <div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}>
+                            <div style={{width:"100%",height:"100%",background:tmplSecondary}}/>
+                            <input type="color" value={tmplSecondary} onChange={e=>setTmplSecondary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/>
+                          </div>
+                        </div>
+                        <label style={lbl}>Body / Subline Colour</label>
+                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                          <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} placeholder="#BB9900" style={{...inp,flex:1,fontFamily:"monospace",fontSize:15,fontWeight:700,textTransform:"uppercase"}}/>
+                          <div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}>
+                            <div style={{width:"100%",height:"100%",background:tmplPrimary}}/>
+                            <input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/>
+                          </div>
+                        </div>
+                      </>}
                       <label style={lbl}>Font</label>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
                         {[["Bebas Neue","BEBAS"],["Anton","ANTON"],["Oswald","OSWALD"],["Teko","TEKO"],["Barlow Condensed","BARLOW"],["Archivo Black","ARCHIVO"],["Playfair Display","Playfair"],["Alfa Slab One","Alfa Slab"]].map(([id,label])=>(
                           <button key={id} onClick={()=>setTmplFont(id)} style={{padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplFont===id?GOLD:A.border}`,background:tmplFont===id?"#1a1500":A.bg,color:tmplFont===id?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer"}}>{label}</button>
                         ))}
                       </div>
-                      <label style={lbl}>Primary Colour <span style={{letterSpacing:0,fontWeight:400,textTransform:"none",fontSize:9}}>Effect · line · chevron</span></label>
-                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                        <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} placeholder="#BB9900" style={{...inp,flex:1,fontFamily:"monospace",fontSize:15,fontWeight:700,textTransform:"uppercase"}}/>
-                        <div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}>
-                          <div style={{width:"100%",height:"100%",background:tmplPrimary}}/>
-                          <input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/>
-                        </div>
-                      </div>
-                      <label style={lbl}>Subline & Body Text Colour</label>
-                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                        <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} placeholder="#ffffff" style={{...inp,flex:1,fontFamily:"monospace",fontSize:15,fontWeight:700,textTransform:"uppercase"}}/>
-                        <div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}>
-                          <div style={{width:"100%",height:"100%",background:tmplSecondary}}/>
-                          <input type="color" value={tmplSecondary} onChange={e=>setTmplSecondary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/>
-                        </div>
+                      <label style={lbl}>Headline Size <span style={{letterSpacing:0,fontWeight:400,textTransform:"none",fontSize:9}}>{tmplFontSize}px</span></label>
+                      <input type="range" min={40} max={160} value={tmplFontSize} onChange={e=>setTmplFontSize(Number(e.target.value))} style={{width:"100%",accentColor:GOLD}}/>
+                      <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:A.muted,marginTop:-6}}>
+                        <span>Small</span><span>Default (82)</span><span>Large</span>
                       </div>
                       {isCleanPro&&<><label style={lbl}>Body Background</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
                     </div>}
@@ -4347,6 +4372,19 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             console.error("Quote Pexels save failed:",e);
             setQuotePhotos(prev=>[url,...prev.filter(p=>p!==url)].slice(0,8));
           }
+        }}
+        A={A}
+        GOLD={GOLD}
+      />
+      <PexelsModal
+        open={showPexelsTmplLib}
+        onClose={()=>setShowPexelsTmplLib(false)}
+        onSelect={async(url)=>{
+          setPendingTmplImage(url);
+          const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);
+          setTmplLibrary(next);
+          try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}
+          setShowPexelsTmplLib(false);
         }}
         A={A}
         GOLD={GOLD}
