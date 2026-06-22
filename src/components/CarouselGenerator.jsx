@@ -1078,15 +1078,15 @@ export default function App() {
     const websiteStr=isFree?"studio.buildwithtav.co":(userWebsite||"");const website=websiteStr?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>"+websiteStr+"</div>":"";
     const wm=isFree?"<div style='position:absolute;top:32px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:32px;font-weight:800;color:#ffffff;text-shadow:0 2px 8px rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.8);letter-spacing:1px;'>studio.buildwithtav.co</div>":"";
     const counter=showCounter?"<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+(idx+1)+"/"+total+"</div>":"";
-    function imgTag(s){if(!s||!s.image)return"";const px=(s.imagePos&&s.imagePos.x)||50,py=(s.imagePos&&s.imagePos.y)||50;return"<img src='"+esc(s.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+px+"% "+py+"%;z-index:0;'/>";}
+    function imgTag(s){if(!s||!s.image)return"<div style='position:absolute;inset:0;background:#1a1a1a;z-index:0;display:flex;align-items:center;justify-content:center;'><div style='font-family:-apple-system,sans-serif;font-size:28px;color:rgba(255,255,255,0.25);text-align:center;padding:20px;'>Tap + to add<br/>your image</div></div>";const px=(s.imagePos&&s.imagePos.x)||50,py=(s.imagePos&&s.imagePos.y)||50;const isPlaceholder=s.image&&!s.image.startsWith("data:");const overlay=isPlaceholder?"<div style='position:absolute;bottom:180px;left:0;right:0;text-align:center;z-index:3;pointer-events:none;'><div style='display:inline-block;background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px 20px;font-family:-apple-system,sans-serif;font-size:22px;color:rgba(255,255,255,0.6);'>📷 Replace with your image</div></div>":"";return"<img src='"+esc(s.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+px+"% "+py+"%;z-index:0;'/>"+overlay;}
     function darkFadeCover(s){
       return"<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(s)
         +"<div style='position:absolute;inset:0;background:"+grad+";z-index:1;'></div>"
         +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.638)+"px;white-space:nowrap;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;z-index:5;left:54px;right:54px;top:"+Math.round(H*0.748)+"px;height:5px;background:linear-gradient(to right,transparent 0%,"+primary+" 5%,"+primary+" 95%,transparent 100%);'></div>"
-        +"<div style='position:absolute;z-index:5;left:80px;right:80px;top:"+Math.round(H*0.762)+"px;bottom:"+Math.round(H*0.04)+"px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;overflow:hidden;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((s.headline||""),FS)+"px;font-weight:900;line-height:1.1;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectCSS(effect,primary,secondary)+"'>"+esc((s.headline||"").toUpperCase())+"</div>"
-        +(s.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;color:"+secondary+";text-align:center;font-weight:600;max-width:100%;'>"+esc(s.subline)+"</div>":"")
+        +"<div style='position:absolute;z-index:5;left:80px;right:80px;top:"+Math.round(H*0.762)+"px;bottom:"+Math.round(H*0.04)+"px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:12px;overflow:hidden;padding-bottom:8px;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((s.headline||""),FS)+"px;font-weight:900;line-height:1.1;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;flex-shrink:1;"+effectCSS(effect,primary,secondary)+"'>"+esc((s.headline||"").toUpperCase())+"</div>"
+        +(s.subline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:36px;color:"+secondary+";text-align:center;font-weight:600;max-width:100%;'>"+esc(s.subline)+"</div>":"")
         +"</div>"+website+(isCover?chevron:"")+counter+wm+"</div>";
     }
     let body="";
@@ -1134,9 +1134,9 @@ export default function App() {
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;'>"
         +"<div style='position:absolute;top:140px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
         +"<div style='position:absolute;top:320px;left:"+(SAFE+20)+"px;right:"+(SAFE+20)+"px;bottom:120px;z-index:5;display:flex;flex-direction:column;justify-content:center;gap:52px;'>"
-        +(slide.headline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:"+autoFS((slide.headline||""),FS)+"px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
-        +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:52px;color:"+tS+";line-height:1.65;word-break:break-word;'>"+esc(slide.bodyText).replace(/\n/g,"<br/>")+"</div>":"")
-        +(slide.accentText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:56px;font-weight:700;color:"+primary+";line-height:1.3;word-break:break-word;'>"+esc(slide.accentText)+"</div>":"")
+        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((slide.headline||""),FS)+"px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
+        +(slide.bodyText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:52px;color:"+tS+";line-height:1.65;word-break:break-word;'>"+esc(slide.bodyText).replace(/\n/g,"<br/>")+"</div>":"")
+        +(slide.accentText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:56px;font-weight:700;color:"+primary+";line-height:1.3;word-break:break-word;'>"+esc(slide.accentText)+"</div>":"")
         +(slide.accentText?"<div style='width:110px;height:5px;background:"+AL+";'></div>":"")
         +"</div><div style='position:absolute;bottom:48px;right:"+SAFE+"px;z-index:5;font-size:28px;color:"+tS+";'>"+(idx+1)+"/"+total+"</div>"+wm+"</div>";
     }
@@ -1156,11 +1156,11 @@ export default function App() {
       const bBg=isNone?"transparent":isWB?"rgba(255,255,255,0.93)":"rgba(0,0,0,0.85)";
       const bBorder=isNone?"border:none;":"";
       const txtShadow=isNone?"text-shadow:2px 2px 0 rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.8),-1px -1px 0 rgba(0,0,0,0.9),1px -1px 0 rgba(0,0,0,0.9),-1px 1px 0 rgba(0,0,0,0.9),1px 1px 0 rgba(0,0,0,0.9);":"";
-      const stI=fontStyle==="Playfair Display",stF=fontStyle||"Inter";
+      const stI=fontStyle==="Playfair Display";
       const paras=(slide.rawText||"").split(/\n\n+/);
       const parasHTML=paras.map(p=>p.trim()===""
         ?""
-        :"<div style='display:inline-block;background:"+bBg+";padding:"+(isNone?"0":"18px 36px")+";margin:10px 0;font-family:"+stF+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:56px;font-weight:800;color:"+tCR+";line-height:1.4;"+(stI?"font-style:italic;":"")+txtShadow+"word-break:break-word;white-space:pre-wrap;"+bBorder+"'>"+esc(p.trim())+"</div>"
+        :"<div style='display:inline-block;background:"+bBg+";padding:"+(isNone?"0":"18px 36px")+";margin:10px 0;font-family:"+fontFamily+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:"+autoFS((p.trim()||""),FS)+"px;font-weight:800;color:"+tCR+";line-height:1.4;"+(stI?"font-style:italic;":"")+txtShadow+"word-break:break-word;white-space:pre-wrap;"+bBorder+"'>"+esc(p.trim())+"</div>"
       ).join("<br/>");
       const vAlign=rawPos==="bottom"?"justify-content:flex-end;padding-bottom:140px":"justify-content:center";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#1a1a1a;overflow:hidden;'>"+imgTag(slide)
@@ -1220,7 +1220,8 @@ export default function App() {
       +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:40px;color:"+mutedC+";line-height:1.4;margin:0;'>"+esc(line3)+"</p>"
       +"</div>"
       +"</div>"
-      +(showCounter?"<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+total+"/"+total+"</div>":"")+"</div>";
+      +(showCounter?"<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+total+"/"+total+"</div>":"")
+      +(opts.isFree?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(128,128,128,0.6);'>"+"studio.buildwithtav.co"+"</div>":(opts.userWebsite?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(128,128,128,0.6);'>"+opts.userWebsite+"</div>":""))+"</div>";
     return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
   }
 
@@ -3138,35 +3139,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               const previewHTML=activeIsCtaSlide?ctaHTML:buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,totalSlides,tmplSelected,opts);
               const thumbHTMLs=[...dTmplSlides.slice(0,tmplSlideCount).map((s,i)=>buildTmplHTML(s||{},i,totalSlides,tmplSelected,opts)),...(ctaHTML?[ctaHTML]:[])];
 
-              const INSPO={
-                "dark-fade":["Money Mindset","Motivation","Health & Fitness","Facts You Never Knew","Conspiracy Theories","Discipline Over Motivation"],
-                "listicle":["8 Places To Visit In 2026","5 Things Never To Do In Business","8 Things I Learnt About Money","7 Books That Changed My Life","10 Signs You Need To Quit Your Job","5 Habits Of Highly Successful People"],
-                "clean-pro":["How To Use AI In Your Business","5 Instagram Mistakes You're Making","Why Most People Fail Online","The Strategy Nobody Talks About","How I Get Clients Without Ads","Stop Doing This On Social Media"],
-                "storytelling":["How I Started In My Industry","Something I Was Thinking About Today","Life Advice I Wish I'd Had At 20","The Day Everything Changed","What Failure Taught Me","My Honest Story"],
-                "raw":["A Thought That Hit Me Today","Something Nobody Tells You","The Hard Truth About Success","What I Know Now That I Didn't Then","Stop Waiting. Start Now.","Real Talk — No Filter"],
-                "split":["Before / After","Your Life Now vs In 12 Months","2019 / 2026","Scrolling vs Creating","9-5 vs Freedom","Him / Her","Successful Creator vs Unsuccessful Creator","Then / Now"],
-              };
 
-              const inspoItems=INSPO[tmplSelected]||[];
-
-              const applyInspo=(idea)=>{
-                const parts=idea.split(/\s*[\/vs]+\s*/i);
-                if(isSplit&&parts.length>=2){
-                  setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],headline:parts[0].trim().toUpperCase(),headline2:parts[1].trim().toUpperCase()};return next;});
-                } else if(isListicle){
-                  const words=idea.split(' ');const num=parseInt(words[0]);
-                  if(!isNaN(num)){setTmplListicleNum(num);setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],topicLine:words.slice(1).join(' ').toUpperCase(),subject:""};return next;});}
-                  else{setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],topicLine:idea.toUpperCase(),subject:""};return next;});}
-                } else if(isDarkFade){
-                  setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],headline:idea};return next;});
-                } else if(isStory){
-                  setTmplBrief(idea);
-                } else if(isRaw){
-                  setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],rawText:idea};return next;});
-                } else if(isCleanPro){
-                  setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],headline:idea};return next;});
-                }
-              };
 
               const updateSlide=(field,val)=>setTmplSlides(prev=>{const next=[...prev];next[activeSlide]={...next[activeSlide],[field]:val};return next;});
 
@@ -3181,7 +3154,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   const bytes=atob(data.image),arr=new Uint8Array(bytes.length);
                   for(let j=0;j<bytes.length;j++)arr[j]=bytes.charCodeAt(j);
                   const url=URL.createObjectURL(new Blob([arr],{type:"image/png"}));
-                  const a=document.createElement("a");a.href=url;a.download=`${tmplSelected}-slide-${idx+1}.png`;a.click();URL.revokeObjectURL(url);
+                  const a=document.createElement("a");a.href=url;a.download=tmplSelected+"-slide-"+(idx+1)+".png";a.click();URL.revokeObjectURL(url);
                   await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:5})});
                   setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));
                 }catch(e){console.error(e);alert("Download failed — try again");}
@@ -3201,8 +3174,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     const bytes=atob(data.image),arr=new Uint8Array(bytes.length);
                     for(let j=0;j<bytes.length;j++)arr[j]=bytes.charCodeAt(j);
                     const url=URL.createObjectURL(new Blob([arr],{type:"image/png"}));
-                    const label=ctaHTML&&i===slidesToDownload.length-1?"cta":`slide-${i+1}`;
-                    const a=document.createElement("a");a.href=url;a.download=`${tmplSelected}-${label}.png`;a.click();URL.revokeObjectURL(url);
+                    const label=ctaHTML&&i===slidesToDownload.length-1?"cta":"slide-"+(i+1);
+                    const a=document.createElement("a");a.href=url;a.download=tmplSelected+"-"+label+".png";a.click();URL.revokeObjectURL(url);
                     await new Promise(r=>setTimeout(r,400));
                   }
                   await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:10})});
@@ -3211,13 +3184,30 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 setTmplDownloading(false);
               };
 
+              const generateList=async()=>{
+                if(!tmplBrief&&!tmplSlides.some(s=>s.headline))return;
+                setTmplSuggesting("list");
+                try{
+                  const existingItems=tmplSlides.slice(1,tmplSlideCount).map((s,i)=>s.headline?(i+1)+". "+s.headline+" (already set)":(i+1)+". (generate this)").join("\n");
+                  const prompt="Create a listicle carousel about: \""+( tmplBrief||"the topic based on existing items")+"\".\n\nSlots to fill ("+( tmplSlideCount-1)+" items):\n"+existingItems+"\n\nFor each slot marked (generate this), provide a headline (max 4 words, punchy) and a one-sentence fact/detail (max 15 words).\nFor slots marked (already set), still provide a detail/subline for that headline.\n\nReturn ONLY valid JSON array of "+(tmplSlideCount-1)+" objects with keys: headline (string), bodyText (string). No markdown.";
+                  const r=await fetchWithRetry({model:"claude-sonnet-4-6",max_tokens:800,messages:[{role:"user",content:prompt}]});
+                  const text=r?.content?.[0]?.text?.trim()||"[]";
+                  const bt=String.fromCharCode(96);const clean=text.replace(new RegExp(bt+bt+bt+"json","g"),"").replace(new RegExp(bt+bt+bt,"g"),"").trim();
+                  const items=JSON.parse(clean);
+                  if(Array.isArray(items)){
+                    setTmplSlides(prev=>{const next=[...prev];items.forEach((item,i)=>{const si=i+1;if(si<next.length){if(!next[si].headline&&item.headline)next[si]={...next[si],headline:item.headline};if(item.bodyText)next[si]={...next[si],bodyText:item.bodyText};}});return next;});
+                    if(currentUser?.email){await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:10})});setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+10}));}
+                  }
+                }catch(e){console.error(e);alert("Generation failed — try again");}
+                setTmplSuggesting(null);
+              };
               const generateCta=async()=>{
                 setTmplCtaGenerating(true);
                 try{
-                  const prompt=`Generate 3 lines for a social media CTA card. Offering: "${tmplCtaTopLine||"digital product"}". CTA type: ${tmplCtaType}. ${tmplCtaType==="comment"&&tmplCtaKeyword?`Keyword: ${tmplCtaKeyword}.`:""} Return ONLY valid JSON with keys: topLine (intrigue/hook, max 10 words), keyword (1 word caps if comment type, else empty), rewardLine (what they get, max 12 words). No markdown.`;
+                  const prompt="Generate 3 lines for a social media CTA card. Offering: \"" +(tmplCtaTopLine||"digital product")+"\". CTA type: "+tmplCtaType+". "+(tmplCtaType==="comment"&&tmplCtaKeyword?"Keyword: "+tmplCtaKeyword+".":"")+" Return ONLY valid JSON with keys: topLine (intrigue/hook, max 10 words), keyword (1 word caps if comment type, else empty), rewardLine (what they get, max 12 words). No markdown.";
                   const r=await fetchWithRetry({model:"claude-sonnet-4-6",max_tokens:150,messages:[{role:"user",content:prompt}]});
                   const text=r?.content?.[0]?.text?.trim()||"{}";
-                  const clean=text.replace(/```json|```/g,"").trim();
+                  const bt=String.fromCharCode(96);const clean=text.replace(new RegExp(bt+bt+bt+"json","g"),"").replace(new RegExp(bt+bt+bt,"g"),"").trim();
                   const parsed=JSON.parse(clean);
                   if(parsed.topLine)setTmplCtaTopLine(parsed.topLine);
                   if(parsed.keyword)setTmplCtaKeyword(parsed.keyword);
@@ -3313,18 +3303,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     {/* ── CONTENT TAB ── */}
                     {tmplContentStyleTab==="content"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
 
-                      {/* Inspiration box */}
-                      {inspoItems.length>0&&<div style={{background:A.surface,border:`1.5px solid ${GOLD}33`,borderRadius:10,overflow:"hidden"}}>
-                        <button onClick={()=>setTmplShowInspo(s=>!s)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:"none",border:"none",cursor:"pointer",color:GOLD,fontSize:12,fontWeight:700}}>
-                          <span>💡 Inspiration</span><span style={{fontSize:10,color:A.muted}}>{tmplShowInspo?"hide":"show"}</span>
-                        </button>
-                        {tmplShowInspo&&<div style={{padding:"0 14px 12px",display:"flex",flexWrap:"wrap",gap:6}}>
-                          {inspoItems.map((idea,i)=>(<button key={i} onClick={()=>applyInspo(idea)} style={{background:A.bg,border:`1px solid ${A.border}`,color:A.muted,borderRadius:20,padding:"4px 12px",fontSize:11,cursor:"pointer",transition:"all 0.15s"}} onMouseEnter={e=>{e.currentTarget.style.borderColor=GOLD;e.currentTarget.style.color=GOLD;}} onMouseLeave={e=>{e.currentTarget.style.borderColor=A.border;e.currentTarget.style.color=A.muted;}}>{idea}</button>))}
-                        </div>}
-                      </div>}
 
-                      {/* Slide selector */}
-                      <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
+
+                      {!activeIsCtaSlide&&<><div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
                         <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:10}}>Slide {activeSlide+1} of {tmplSlideCount}</div>
                         <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:12}}>
                           {tmplSlides.slice(0,tmplSlideCount).map((_,i)=>(<button key={i} onClick={()=>setTmplActiveSlide(i)} style={{width:27,height:27,borderRadius:6,background:activeSlide===i?A.text:A.surface,border:`1.5px solid ${activeSlide===i?GOLD:A.border}`,color:activeSlide===i?A.accentText:A.muted,fontSize:12,fontWeight:700,cursor:"pointer"}}>{i+1}</button>))}
@@ -3374,9 +3355,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         {isRaw&&<><label style={lbl}>Your Text</label><p style={{fontSize:11,color:A.muted,margin:"-6px 0 4px"}}>Each paragraph gets its own highlight box.</p><textarea value={slide.rawText||""} onChange={e=>updateSlide("rawText",e.target.value)} placeholder={"The goal isn't to be rich.\n\nIt's to be free."} rows={6} style={{...inp,resize:"vertical",lineHeight:1.6}}/></>}
 
                         {/* AI Brief (inside content panel) */}
-                        {hasAI&&<><label style={{...lbl,color:GOLD}}>AI Brief</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={2} placeholder={isStory?"Your story — names, places, turning point...":isListicle?"What's your list about?":"What's this carousel about?"} style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>Powers ✨ AI Suggest on each slide.</div></>}
-                      </div>
-
+                        {(isCleanPro||isStory)&&<><label style={{...lbl,color:GOLD}}>AI Brief</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={2} placeholder={isStory?"Your story — names, places, turning point...":"What's this carousel about?"} style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>Powers ✨ AI Suggest on each slide.</div></>}
+                        {isListicle&&activeSlide===0&&<><label style={{...lbl,color:GOLD}}>AI — Generate Full List</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={2} placeholder="What's your list about? e.g. places to visit in Europe, productivity habits, business lessons..." style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>Any filled headlines will be used as anchors. Empty slots will be generated.</div><button onClick={generateList} disabled={tmplSuggesting==="list"} style={{background:"linear-gradient(135deg,#1a1500,#0a0a0a)",border:"1px solid "+GOLD,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",marginTop:4}}>{tmplSuggesting==="list"?<><Spin/>Generating list...</>:"✨ Generate Full List (10 credits)"}</button></>}
+                      </div></>
+                      }
                       {/* Optional CTA Card */}
                       {!isRaw&&<div style={{background:A.surface,border:`1.5px solid ${tmplShowCta?GOLD:A.border}`,borderRadius:10,overflow:"hidden"}}>
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px"}}>
@@ -3441,11 +3423,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       </div>
 
                       {/* Headline size */}
-                      <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:8}}>
+                      {!activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:8}}>
                         <label style={lbl}>Headline Size <span style={{letterSpacing:0,fontWeight:400,textTransform:"none",fontSize:9}}>{tmplFontSize}px</span></label>
                         <input type="range" min={40} max={160} value={tmplFontSize} onChange={e=>setTmplFontSize(Number(e.target.value))} style={{width:"100%",accentColor:GOLD}}/>
                         <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:A.muted,marginTop:-4}}><span>Small</span><span>Default (82)</span><span>Large</span></div>
-                      </div>
+                      </div>}
 
                       {/* Slide counter toggle */}
                       {!isListicle&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
