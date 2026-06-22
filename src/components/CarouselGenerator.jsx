@@ -1097,7 +1097,7 @@ export default function App() {
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS2+"px;font-weight:900;line-height:1;"+effectCSS(effect,primary,secondary)+"'>"+String(idx)+"</div>"
         +"<div style='width:"+numLineW2+"px;height:5px;background:"+primary+";'></div></div>"
         +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;padding-bottom:8px;'>"
-        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:900;color:"+secondary+";line-height:1.1;text-transform:uppercase;word-break:break-word;'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
         +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:rgba(255,255,255,0.85);line-height:1.45;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
         +"</div></div>"
         +website+wm+"</div>";
