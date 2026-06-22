@@ -1195,9 +1195,9 @@ export default function App() {
   useEffect(()=>{ const t=setTimeout(()=>setDTmplSlides(tmplSlides),300); return()=>clearTimeout(t); },[JSON.stringify(tmplSlides)]);
   useEffect(()=>{
     if(!pendingTmplImage)return;
-    setTmplSlides(prev=>{const next=[...prev];next[tmplActiveSlide]={...next[tmplActiveSlide],image:pendingTmplImage};return next;});
+    setTmplSlides(prev=>{const next=[...prev];const idx=tmplActiveSlide||0;next[idx]={...next[idx],image:pendingTmplImage};return next;});
     setPendingTmplImage(null);
-  },[pendingTmplImage]);
+  },[pendingTmplImage,tmplActiveSlide]);
 
   // ADMIN-ONLY brand preset functions — only ever called from is_admin-gated UI, touches a separate localStorage key only
   const saveAdminPreset = () => {
