@@ -929,6 +929,7 @@ export default function App() {
   const [tmplFont, setTmplFont] = useState("Bebas Neue");
   const [tmplFontSize, setTmplFontSize] = useState(82);
   const [tmplAccentLineColor, setTmplAccentLineColor] = useState("#BB9900");
+  const [tmplRecentColors, setTmplRecentColors] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_colors")||"[]");}catch{return[];}});
   const [tmplShowCounter, setTmplShowCounter] = useState(false);
   const [tmplRecentFonts, setTmplRecentFonts] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_recent_fonts")||"[]");}catch{return[];}});
   const [tmplContentStyleTab, setTmplContentStyleTab] = useState("content");
@@ -1084,7 +1085,7 @@ export default function App() {
         +"<div style='position:absolute;inset:0;background:"+grad+";z-index:1;'></div>"
         +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.638)+"px;white-space:nowrap;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;z-index:5;left:54px;right:54px;top:"+Math.round(H*0.748)+"px;height:5px;background:linear-gradient(to right,transparent 0%,"+primary+" 5%,"+primary+" 95%,transparent 100%);'></div>"
-        +"<div style='position:absolute;z-index:5;left:80px;right:80px;bottom:"+Math.round(H*0.06)+"px;display:flex;flex-direction:column;align-items:center;gap:12px;overflow:hidden;'>"
+        +"<div style='position:absolute;z-index:5;left:60px;right:60px;bottom:"+Math.round(H*0.04)+"px;max-height:"+Math.round(H*0.32)+"px;display:flex;flex-direction:column;align-items:center;gap:8px;overflow:hidden;'>"
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((s.headline||""),FS)+"px;font-weight:900;line-height:1.1;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;flex-shrink:1;"+effectCSS(effect,primary,secondary)+"'>"+esc((s.headline||"").toUpperCase())+"</div>"
         +(s.subline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:36px;color:"+(effect==="clean"?primary:secondary)+";text-align:center;font-weight:600;max-width:100%;'>"+esc(s.subline)+"</div>":"")
         +"</div>"+website+(isCover?chevron:"")+counter+wm+"</div>";
@@ -1215,7 +1216,7 @@ export default function App() {
       +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:"+textC+";font-weight:600;line-height:1.3;margin:0;'>"+esc(line1)+"</p>"
       +"<div style='width:80px;height:4px;background:"+accent+";'></div>"
       +(ctaType==="comment"?"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;color:"+mutedC+";letter-spacing:3px;text-transform:uppercase;margin:0;'>"+esc(line2)+"</p>":"")
-      +"<p style='font-family:"+fontFamily+",sans-serif;font-size:"+(opts.fontSize||180)+"px;font-weight:900;color:"+accent+";line-height:0.9;margin:0;letter-spacing:4px;'>"+esc((keyword||"").toUpperCase())+"</p>"
+      +"<p style='font-family:"+fontFamily+",sans-serif;font-size:160px;font-weight:900;color:"+accent+";line-height:0.9;margin:0;letter-spacing:4px;'>"+esc((keyword||"").toUpperCase())+"</p>"
       +"<div style='width:80px;height:4px;background:"+accent+";'></div>"
       +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:40px;color:"+mutedC+";line-height:1.4;margin:0;'>"+esc(line3)+"</p>"
       +"</div>"
@@ -3129,7 +3130,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             {tmplSelected&&(()=>{
               const isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade",isSplit=tmplSelected==="split";
               const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:8,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
-              const ctaBgFinal=isCleanPro?tmplBg:tmplCtaBg;const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
+              const ctaBgFinal=(isCleanPro||isStory)?tmplBg:tmplCtaBg;const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
               const ctaLine2Defaults={comment:"Comment the word",follow:"Follow",save:"Save this",share:"Share this",like:"Like this"};
               const ctaKeywordDefaults={comment:tmplCtaKeyword||"GUIDE",follow:"FOLLOW",save:"SAVE",share:"SHARE",like:"LIKE"};
               const ctaLine3Defaults={comment:"and I'll send it straight over",follow:"for more content like this",save:"so you don't lose it",share:"with someone who needs it",like:"if it resonated with you"};
@@ -3191,7 +3192,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   const briefNumMatch=tmplBrief.match(/^(\d+)\s/);
                   const briefNum=briefNumMatch?parseInt(briefNumMatch[1]):null;
                   let targetCount=tmplSlideCount;
-                  if(briefNum&&briefNum>=2&&briefNum<=12){targetCount=briefNum+1;setTmplSlideCount(targetCount);}
+                  if(briefNum&&briefNum>=2&&briefNum<=12){targetCount=briefNum+1;setTmplSlideCount(targetCount);setTmplListicleNum(briefNum);}
                   const numItems=targetCount-1;
                   const existingItems=tmplSlides.slice(1,targetCount).map((s,i)=>s.headline?(i+1)+". "+s.headline+" (keep, generate detail)":(i+1)+". (generate)").join("\n");
                   const prompt="Create a listicle carousel about: \""+tmplBrief+"\". Generate "+numItems+" items. Existing: "+existingItems+". Return ONLY valid JSON with keys: coverTopicLine (string max 6 words), coverSubject (string max 4 words), items (array of "+numItems+" objects with headline max 4 words and bodyText max 15 words). No markdown.";
@@ -3376,12 +3377,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                         {/* AI Brief (inside content panel) */}
                         {isCleanPro&&<><label style={{...lbl,color:GOLD}}>AI Brief</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={2} placeholder="What's this carousel about?" style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>Powers ✨ AI Suggest on each slide.</div></>}
-                        {isStory&&<><label style={{...lbl,color:GOLD}}>AI — Generate Full Story</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={4} placeholder={"Include: who you are, where you started, what happened (the struggle or turning point), how it changed you, and where you are now. Include names, places, emotions, specific moments. The more detail you give, the better the story flows across all slides."} style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>AI will write your story across all {tmplSlideCount} slides, each flowing into the next.</div><button onClick={generateStory} disabled={tmplSuggesting==="story"} style={{background:"linear-gradient(135deg,#1a1500,#0a0a0a)",border:"1px solid "+GOLD,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",marginTop:4}}>{tmplSuggesting==="story"?<><Spin/>Generating story...</>:"✨ Generate Story (10 credits)"}</button></>}
+                        {isStory&&<><label style={{...lbl,color:GOLD}}>AI — Generate Full Story</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={4} placeholder="Describe what this story is about. Include detail — names, places, emotions, timeline, turning points, outcomes. Can be personal, educational, fictional or factual." style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>AI will write your story across all {tmplSlideCount} slides, each flowing into the next.</div><button onClick={generateStory} disabled={tmplSuggesting==="story"} style={{background:"linear-gradient(135deg,#1a1500,#0a0a0a)",border:"1px solid "+GOLD,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",marginTop:4}}>{tmplSuggesting==="story"?<><Spin/>Generating story...</>:"✨ Generate Story (10 credits)"}</button></>}
                         {isListicle&&activeSlide===0&&<><label style={{...lbl,color:GOLD}}>AI — Generate Full List</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={2} placeholder="What's your list about? e.g. places to visit in Europe, productivity habits, business lessons..." style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>Any filled headlines will be used as anchors. Empty slots will be generated.</div><button onClick={generateList} disabled={tmplSuggesting==="list"} style={{background:"linear-gradient(135deg,#1a1500,#0a0a0a)",border:"1px solid "+GOLD,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",marginTop:4}}>{tmplSuggesting==="list"?<><Spin/>Generating list...</>:"✨ Generate Full List (10 credits)"}</button></>}
                       </div></>
                       }
                       {/* Optional CTA Card */}
-                      {!isRaw&&<div style={{background:A.surface,border:`1.5px solid ${tmplShowCta?GOLD:A.border}`,borderRadius:10,overflow:"hidden"}}>
+                      <div style={{background:A.surface,border:`1.5px solid ${tmplShowCta?GOLD:A.border}`,borderRadius:10,overflow:"hidden"}}>
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px"}}>
                           <div>
                             <div style={{fontSize:12,fontWeight:800,color:A.text}}>Optional CTA Card</div>
@@ -3400,22 +3401,21 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <input value={tmplCtaTopLine} onChange={e=>setTmplCtaTopLine(e.target.value)} placeholder={isDarkFade?"Want to build wealth online?":isListicle?"Want more content like this?":isCleanPro?"Want the full strategy?":isStory?"Want to start your own journey?":"Want more like this?"} style={{...inp}}/>
                           <label style={lbl}>Line 2 — Action</label>
                           <input value={tmplCtaLine2} onChange={e=>setTmplCtaLine2(e.target.value)} placeholder={tmplCtaType==="comment"?"Comment the word":tmplCtaType==="follow"?"Follow":tmplCtaType==="save"?"Save this":tmplCtaType==="share"?"Share this":"Like this"} style={{...inp}}/>
-                          <label style={lbl}>{tmplCtaType==="comment"?"Keyword — big bold word":"Big word"} <span style={{fontSize:9,fontWeight:400,textTransform:"none"}}>{tmplFontSize}px</span></label>
-                          <input type="range" min={80} max={240} value={tmplFontSize} onChange={e=>setTmplFontSize(Number(e.target.value))} style={{width:"100%",accentColor:GOLD,marginBottom:4}}/>
+                          <label style={lbl}>{tmplCtaType==="comment"?"Keyword — big bold word":"Big word"}</label>
                           <input value={tmplCtaKeyword} onChange={e=>setTmplCtaKeyword(e.target.value.toUpperCase())} placeholder={tmplCtaType==="comment"?"GUIDE":tmplCtaType==="follow"?"FOLLOW":tmplCtaType==="save"?"SAVE":tmplCtaType==="share"?"SHARE":"LIKE"} style={{...inp,textTransform:"uppercase",fontWeight:800,fontSize:18,letterSpacing:3}}/>
                           <label style={lbl}>Line 3 — Reward / Reason</label>
                           <input value={tmplCtaRewardLine} onChange={e=>setTmplCtaRewardLine(e.target.value)} placeholder={tmplCtaType==="comment"?"and I'll send it straight over":tmplCtaType==="follow"?"for more content like this":tmplCtaType==="save"?"so you don't lose it":tmplCtaType==="share"?"with someone who needs it":"if it resonated with you"} style={{...inp}}/>
-                          {!isCleanPro&&<><label style={lbl}>Background</label>
+                          {!isCleanPro&&!isStory&&<><label style={lbl}>Background</label>
                           <div style={{display:"flex",gap:6}}>{["dark","light"].map(m=>(<button key={m} onClick={()=>setTmplCtaBg(m)} style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${tmplCtaBg===m?GOLD:A.border}`,background:tmplCtaBg===m?"#1a1500":A.bg,color:tmplCtaBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>))}</div></>}
-                          <button onClick={()=>{setTmplActiveSlide(tmplSlideCount);}} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"8px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>Preview CTA slide →</button>
+                          
                         </div>}
-                      </div>}
+                      </div>
 
                     </div>}
 
                     {/* ── STYLE TAB ── */}
                     {tmplContentStyleTab==="style"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
-
+                      {activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,marginBottom:8}}><div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>CTA slide inherits your template colours and font.</div></div>}
                       {/* Effects dropdown */}
                       {!isRaw&&!isStory&&!activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
                         <label style={lbl}>Text Effect</label>
@@ -3427,9 +3427,18 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           {EFFECTS.find(e=>e.id===tmplEffect)?.label||tmplEffect.toUpperCase()}
                         </div>
                         {/* NEON colour picker */}
-                        <label style={lbl}>{tmplEffect==="neon"?"Glow Colour":tmplEffect==="clean"?"Headline Colour":"Effect & Accent Colour"}</label>
-                        <div style={{display:"flex",gap:8,alignItems:"center"}}><input type="text" value={tmplEffect==="clean"?tmplSecondary:tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value)){tmplEffect==="clean"?setTmplSecondary(e.target.value):setTmplPrimary(e.target.value);}}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/><div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplEffect==="clean"?tmplSecondary:tmplPrimary}}/><input type="color" value={tmplEffect==="clean"?tmplSecondary:tmplPrimary} onChange={e=>tmplEffect==="clean"?setTmplSecondary(e.target.value):setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div></div>
-                        {tmplEffect==="clean"&&<><label style={lbl}>Body / Subline Colour</label><div style={{display:"flex",gap:8,alignItems:"center"}}><input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontWeight:700}}/><div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`}}><div style={{width:"100%",height:"100%",background:tmplPrimary}}/><input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div></div></>}
+                        <label style={lbl}>{tmplEffect==="neon"?"Glow Colour":"Headline / Effect Colour"}</label>
+                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                          {[tmplPrimary,...(tmplRecentColors||[])].slice(0,3).map((c,i)=>(<div key={i} onClick={()=>setTmplPrimary(c)} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplPrimary===c?GOLD:A.border}`,cursor:"pointer",flexShrink:0}}/>))}
+                          <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
+                          <div style={{position:"relative",width:36,height:36,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplPrimary}}/><input type="color" value={tmplPrimary} onChange={e=>{setTmplPrimary(e.target.value);setTmplRecentColors(prev=>{const n=[e.target.value,...(prev||[]).filter(c=>c!==e.target.value)].slice(0,3);try{localStorage.setItem("bwt_tmpl_colors",JSON.stringify(n));}catch{}return n;});}} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div>
+                        </div>
+                        <label style={lbl}>Subline / Body Colour</label>
+                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                          {[tmplSecondary,...(tmplRecentColors||[])].slice(0,3).map((c,i)=>(<div key={i} onClick={()=>setTmplSecondary(c)} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplSecondary===c?GOLD:A.border}`,cursor:"pointer",flexShrink:0}}/>))}
+                          <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
+                          <div style={{position:"relative",width:36,height:36,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplSecondary}}/><input type="color" value={tmplSecondary} onChange={e=>{setTmplSecondary(e.target.value);setTmplRecentColors(prev=>{const n=[e.target.value,...(prev||[]).filter(c=>c!==e.target.value)].slice(0,3);try{localStorage.setItem("bwt_tmpl_colors",JSON.stringify(n));}catch{}return n;});}} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div>
+                        </div>
                       </div>}
 
                       {/* Font */}
