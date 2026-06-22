@@ -929,6 +929,7 @@ export default function App() {
   const [tmplFont, setTmplFont] = useState("Bebas Neue");
   const [tmplFontSize, setTmplFontSize] = useState(82);
   const [tmplAccentLineColor, setTmplAccentLineColor] = useState("#BB9900");
+  const [tmplShowCounter, setTmplShowCounter] = useState(false);
   const [tmplRecentFonts, setTmplRecentFonts] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_recent_fonts")||"[]");}catch{return[];}});
   const [tmplContentStyleTab, setTmplContentStyleTab] = useState("content");
   const [tmplShowInspo, setTmplShowInspo] = useState(true);
@@ -937,6 +938,7 @@ export default function App() {
   const [tmplCtaKeyword, setTmplCtaKeyword] = useState("");
   const [tmplCtaTopLine, setTmplCtaTopLine] = useState("");
   const [tmplCtaRewardLine, setTmplCtaRewardLine] = useState("");
+  const [tmplCtaLine2, setTmplCtaLine2] = useState("");
   const [tmplCtaGenerating, setTmplCtaGenerating] = useState(false);
   const [tmplCtaBg, setTmplCtaBg] = useState("dark");
   const [tmplPrimary, setTmplPrimary] = useState("#BB9900");
@@ -1037,13 +1039,13 @@ export default function App() {
 
   // ── buildTmplHTML — generates HTML sent to Puppeteer /api/render-slide ──
   function buildTmplHTML(slide, idx, total, tmpl, opts) {
-    const {effect,font,fontSize,primary,secondary,accentLine,bg,fontStyle,rawBox,rawPos,listicleNum,profUrl,nm,hdl,showTick,isFree,userWebsite}=opts;
+    const {effect,font,fontSize,primary,secondary,accentLine,bg,fontStyle,rawBox,rawPos,listicleNum,profUrl,nm,hdl,showTick,isFree,userWebsite,showCounter}=opts;
     const AL=accentLine||primary;
     const FS=fontSize||82;
     const W=1080,H=1350,SAFE=60,isCover=idx===0;
     const fontFamily=(font||"Bebas Neue").replace(/'/g,"");
     function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-    const gFonts="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Teko:wght@700&family=Barlow+Condensed:wght@800;900&family=Archivo+Black&family=Playfair+Display:ital,wght@0,900;1,900&family=Alfa+Slab+One&family=Inter:wght@400;600;700;800&display=swap";
+    const gFonts="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Barlow+Condensed:wght@800;900&family=Archivo+Black&family=Playfair+Display:ital,wght@0,900;1,900&family=Alfa+Slab+One&family=Cormorant+Garamond:ital,wght@0,700;1,700&family=Josefin+Sans:wght@700&family=Raleway:wght@800;900&family=Quicksand:wght@700&family=Dancing+Script:wght@700&family=Inter:wght@400;600;700;800&display=swap";
     function effectCSS(eff,pri,sec){
       const cs="padding-top:0.15em;display:inline-block;";
       if(eff==="gold") return cs+"background:linear-gradient(180deg,"+sec+" 0%,#ffe44d 20%,"+pri+" 50%,#7a5800 80%,#ffe066 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 4px 8px rgba(140,100,0,0.5));";
@@ -1074,7 +1076,7 @@ export default function App() {
     const chevron="<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+primary+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+primary+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>";
     const websiteStr=isFree?"studio.buildwithtav.co":(userWebsite||"");const website=websiteStr?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>"+websiteStr+"</div>":"";
     const wm=isFree?"<div style='position:absolute;top:32px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:32px;font-weight:800;color:#ffffff;text-shadow:0 2px 8px rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.8);letter-spacing:1px;'>studio.buildwithtav.co</div>":"";
-    const counter="<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+(idx+1)+"/"+total+"</div>";
+    const counter=showCounter?"<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+(idx+1)+"/"+total+"</div>":"";
     function imgTag(s){if(!s||!s.image)return"";const px=(s.imagePos&&s.imagePos.x)||50,py=(s.imagePos&&s.imagePos.y)||50;return"<img src='"+esc(s.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+px+"% "+py+"%;z-index:0;'/>";}
     function darkFadeCover(s){
       return"<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(s)
@@ -1186,6 +1188,35 @@ export default function App() {
         +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"
         +(isCover?chevron:"")+counter+wm+"</div>";
     }
+    return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
+  }
+
+
+  // ── buildCtaHTML — generates CTA final slide ──
+  function buildCtaHTML(opts,ctaType,keyword,line1,line2,line3,bg,nm,hdl,profUrl,showTick,font){
+    const W=1080,H=1350;
+    const fontFamily=(font||"Bebas Neue").replace(/'/g,"");
+    const gFonts="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Barlow+Condensed:wght@800;900&family=Archivo+Black&family=Playfair+Display:ital,wght@0,900;1,900&family=Alfa+Slab+One&family=Cormorant+Garamond:ital,wght@0,700;1,700&family=Josefin+Sans:wght@700&family=Raleway:wght@800;900&family=Quicksand:wght@700&family=Dancing+Script:wght@700&family=Inter:wght@400;600;700;800&display=swap";
+    const isDark=bg==="dark";
+    const bgC=isDark?"#0a0a0a":"#f5f5f5";
+    const textC=isDark?"#ffffff":"#0a0a0a";
+    const mutedC=isDark?"rgba(255,255,255,0.55)":"rgba(0,0,0,0.5)";
+    const accent=opts.primary||"#BB9900";
+    function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+    const tick=showTick?"<span style='display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#1D9BF0;border-radius:50%;margin-left:8px;vertical-align:middle;flex-shrink:0;'><span style='display:block;width:8px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);margin-top:-2px;'></span></span>":"";
+    const av=profUrl?"<img src='"+esc(profUrl)+"' style='width:100%;height:100%;object-fit:cover;border-radius:50%;'/>":"<div style='width:100%;height:100%;background:#4a6a9a;border-radius:50%;'></div>";
+    const badge="<div style='display:flex;align-items:center;gap:18px;'><div style='width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid "+(isDark?"#fff":"#ccc")+";flex-shrink:0;background:#4a6a9a;'>"+av+"</div><div style='display:flex;flex-direction:column;gap:4px;'><div style='display:flex;align-items:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;font-weight:800;color:"+textC+";'>"+esc(nm||"")+tick+"</div><div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:28px;color:"+mutedC+";'>"+esc(hdl||"")+"</div></div></div>";
+    const body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;'>"
+      +"<div style='position:absolute;top:80px;left:60px;z-index:5;'>"+badge+"</div>"
+      +"<div style='display:flex;flex-direction:column;align-items:center;text-align:center;gap:32px;padding:0 80px;margin-top:60px;'>"
+      +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:"+textC+";font-weight:600;line-height:1.3;margin:0;'>"+esc(line1)+"</p>"
+      +"<div style='width:80px;height:4px;background:"+accent+";'></div>"
+      +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;color:"+mutedC+";letter-spacing:3px;text-transform:uppercase;margin:0;'>"+esc(line2)+"</p>"
+      +"<p style='font-family:"+fontFamily+",sans-serif;font-size:180px;font-weight:900;color:"+accent+";line-height:0.9;margin:0;letter-spacing:4px;'>"+esc((keyword||"").toUpperCase())+"</p>"
+      +"<div style='width:80px;height:4px;background:"+accent+";'></div>"
+      +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:40px;color:"+mutedC+";line-height:1.4;margin:0;'>"+esc(line3)+"</p>"
+      +"</div>"
+      +"</div>";
     return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
   }
 
@@ -3093,9 +3124,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             {tmplSelected&&(()=>{
               const isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade",isSplit=tmplSelected==="split";
               const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:8,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
-              const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
-              const previewHTML=buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,tmplSlideCount,tmplSelected,opts);
-              const thumbHTMLs=dTmplSlides.slice(0,tmplSlideCount).map((s,i)=>buildTmplHTML(s||{},i,tmplSlideCount,tmplSelected,opts));
+              const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
+              const ctaLine2Defaults={comment:"Comment the word",follow:"Follow",save:"Save this",share:"Share this",like:"Like this"};
+              const ctaKeywordDefaults={comment:tmplCtaKeyword||"GUIDE",follow:"FOLLOW",save:"SAVE",share:"SHARE",like:"LIKE"};
+              const ctaLine3Defaults={comment:"and I'll send it straight over",follow:"for more content like this",save:"so you don't lose it",share:"with someone who needs it",like:"if it resonated with you"};
+              const ctaHTML=tmplShowCta&&!isRaw?buildCtaHTML(opts,tmplCtaType,ctaKeywordDefaults[tmplCtaType],tmplCtaTopLine||(isDarkFade?"Want to build wealth online?":isListicle?"Want more content like this?":isCleanPro?"Want the full strategy?":isStory?"Want to start your own journey?":"Want more like this?"),tmplCtaLine2||ctaLine2Defaults[tmplCtaType],tmplCtaRewardLine||ctaLine3Defaults[tmplCtaType],tmplCtaBg,name,handle,profileUrl,blueTick,tmplFont):null;
+              const totalSlides=tmplSlideCount+(ctaHTML?1:0);
+              const activeIsCtaSlide=ctaHTML&&activeSlide===tmplSlideCount;
+              const previewHTML=activeIsCtaSlide?ctaHTML:buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,totalSlides,tmplSelected,opts);
+              const thumbHTMLs=[...dTmplSlides.slice(0,tmplSlideCount).map((s,i)=>buildTmplHTML(s||{},i,totalSlides,tmplSelected,opts)),...(ctaHTML?[ctaHTML]:[])];
 
               const INSPO={
                 "dark-fade":["Money Mindset","Motivation","Health & Fitness","Facts You Never Knew","Conspiracy Theories","Discipline Over Motivation"],
@@ -3151,14 +3188,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 if(!canGenerate()){setNav("upgrade");return;}
                 setTmplDownloading(true);
                 try{
-                  for(let i=0;i<tmplSlideCount;i++){
-                    const html=buildTmplHTML(tmplSlides[i],i,tmplSlideCount,tmplSelected,opts);
+                  const slidesToDownload=[...Array(tmplSlideCount).keys()].map(i=>buildTmplHTML(tmplSlides[i],i,totalSlides,tmplSelected,opts));
+                  if(ctaHTML)slidesToDownload.push(ctaHTML);
+                  for(let i=0;i<slidesToDownload.length;i++){
+                    const html=slidesToDownload[i];
                     const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html,width:1080,height:1350})});
                     const data=await res.json();if(!data.image)continue;
                     const bytes=atob(data.image),arr=new Uint8Array(bytes.length);
                     for(let j=0;j<bytes.length;j++)arr[j]=bytes.charCodeAt(j);
                     const url=URL.createObjectURL(new Blob([arr],{type:"image/png"}));
-                    const a=document.createElement("a");a.href=url;a.download=`${tmplSelected}-slide-${i+1}.png`;a.click();URL.revokeObjectURL(url);
+                    const label=ctaHTML&&i===slidesToDownload.length-1?"cta":`slide-${i+1}`;
+                    const a=document.createElement("a");a.href=url;a.download=`${tmplSelected}-${label}.png`;a.click();URL.revokeObjectURL(url);
                     await new Promise(r=>setTimeout(r,400));
                   }
                   await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:10})});
@@ -3244,7 +3284,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       </div>
                     </div>
                     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-                      {thumbHTMLs.map((html,idx)=>(<div key={idx} onClick={()=>setTmplActiveSlide(idx)} style={{cursor:"pointer",position:"relative",flexShrink:0,width:86,height:108,borderRadius:6,overflow:"hidden",border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}><iframe srcDoc={html} style={{width:1080,height:1350,border:"none",transform:"scale(0.0796)",transformOrigin:"top left",pointerEvents:"none"}} scrolling="no"/><div style={{position:"absolute",bottom:3,right:4,background:"rgba(0,0,0,0.7)",borderRadius:3,padding:"1px 5px",fontSize:9,color:"#fff",fontWeight:700,zIndex:2}}>{idx+1}</div></div>))}
+                      {thumbHTMLs.map((html,idx)=>(<div key={idx} onClick={()=>setTmplActiveSlide(idx)} style={{cursor:"pointer",position:"relative",flexShrink:0,width:86,height:108,borderRadius:6,overflow:"hidden",border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}><iframe srcDoc={html} style={{width:1080,height:1350,border:"none",transform:"scale(0.0796)",transformOrigin:"top left",pointerEvents:"none"}} scrolling="no"/><div style={{position:"absolute",bottom:3,right:4,background:idx===tmplSlideCount?"rgba(187,153,0,0.9)":"rgba(0,0,0,0.7)",borderRadius:3,padding:"1px 5px",fontSize:9,color:"#fff",fontWeight:700,zIndex:2}}>{idx===tmplSlideCount?"CTA":idx+1}</div></div>))}
                     </div>
                     <div style={{display:"flex",gap:8}}>
                       <button onClick={()=>downloadSlide(activeSlide)} disabled={tmplDownloadingIdx===activeSlide} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
@@ -3334,11 +3374,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       </div>
 
                       {/* Optional CTA Card */}
-                      <div style={{background:A.surface,border:`1.5px solid ${tmplShowCta?GOLD:A.border}`,borderRadius:10,overflow:"hidden"}}>
+                      {!isRaw&&<div style={{background:A.surface,border:`1.5px solid ${tmplShowCta?GOLD:A.border}`,borderRadius:10,overflow:"hidden"}}>
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px"}}>
                           <div>
                             <div style={{fontSize:12,fontWeight:800,color:A.text}}>Optional CTA Card</div>
-                            <div style={{fontSize:11,color:A.muted}}>Add a final slide with a call to action</div>
+                            <div style={{fontSize:11,color:A.muted}}>Adds a final slide with a call to action</div>
                           </div>
                           <div onClick={()=>setTmplShowCta(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowCta?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
                             <div style={{position:"absolute",top:2,left:tmplShowCta?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
@@ -3346,21 +3386,22 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         </div>
                         {tmplShowCta&&<div style={{padding:"0 14px 14px",display:"flex",flexDirection:"column",gap:10}}>
                           <label style={lbl}>CTA Type</label>
-                          <div style={{display:"flex",gap:6}}>
-                            {["comment","follow","save","share"].map(t=>(<button key={t} onClick={()=>setTmplCtaType(t)} style={{flex:1,padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplCtaType===t?GOLD:A.border}`,background:tmplCtaType===t?"#1a1500":A.bg,color:tmplCtaType===t?GOLD:A.muted,fontSize:11,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{t}</button>))}
+                          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                            {[["comment","Comment"],["follow","Follow"],["save","Save"],["share","Share"],["like","Like"]].map(([t,l])=>(<button key={t} onClick={()=>{setTmplCtaType(t);setTmplCtaLine2("");setTmplCtaKeyword("");setTmplCtaTopLine("");setTmplCtaRewardLine("");}} style={{flex:1,padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplCtaType===t?GOLD:A.border}`,background:tmplCtaType===t?"#1a1500":A.bg,color:tmplCtaType===t?GOLD:A.muted,fontSize:11,fontWeight:700,cursor:"pointer",minWidth:56}}>{l}</button>))}
                           </div>
-                          {tmplCtaType==="comment"&&<><label style={lbl}>Keyword</label><input value={tmplCtaKeyword} onChange={e=>setTmplCtaKeyword(e.target.value.toUpperCase())} placeholder="GUIDE" style={{...inp,textTransform:"uppercase",fontWeight:800,fontSize:16,letterSpacing:2}}/></>}
-                          <label style={lbl}>What you're offering</label>
-                          <input value={tmplCtaTopLine} onChange={e=>setTmplCtaTopLine(e.target.value)} placeholder="e.g. free digital marketing guide" style={{...inp}}/>
-                          <label style={lbl}>Reward line</label>
-                          <input value={tmplCtaRewardLine} onChange={e=>setTmplCtaRewardLine(e.target.value)} placeholder={tmplCtaType==="comment"?`Comment ${tmplCtaKeyword||"KEYWORD"} and I'll send it straight over`:"Follow for more content like this"} style={{...inp}}/>
+                          <label style={lbl}>Line 1 — Hook</label>
+                          <input value={tmplCtaTopLine} onChange={e=>setTmplCtaTopLine(e.target.value)} placeholder={isDarkFade?"Want to build wealth online?":isListicle?"Want more content like this?":isCleanPro?"Want the full strategy?":isStory?"Want to start your own journey?":"Want more like this?"} style={{...inp}}/>
+                          <label style={lbl}>Line 2 — Action</label>
+                          <input value={tmplCtaLine2} onChange={e=>setTmplCtaLine2(e.target.value)} placeholder={tmplCtaType==="comment"?"Comment the word":tmplCtaType==="follow"?"Follow":tmplCtaType==="save"?"Save this":tmplCtaType==="share"?"Share this":"Like this"} style={{...inp}}/>
+                          <label style={lbl}>{tmplCtaType==="comment"?"Keyword — big bold word":"Big word"}</label>
+                          <input value={tmplCtaKeyword} onChange={e=>setTmplCtaKeyword(e.target.value.toUpperCase())} placeholder={tmplCtaType==="comment"?"GUIDE":tmplCtaType==="follow"?"FOLLOW":tmplCtaType==="save"?"SAVE":tmplCtaType==="share"?"SHARE":"LIKE"} style={{...inp,textTransform:"uppercase",fontWeight:800,fontSize:18,letterSpacing:3}}/>
+                          <label style={lbl}>Line 3 — Reward / Reason</label>
+                          <input value={tmplCtaRewardLine} onChange={e=>setTmplCtaRewardLine(e.target.value)} placeholder={tmplCtaType==="comment"?"and I'll send it straight over":tmplCtaType==="follow"?"for more content like this":tmplCtaType==="save"?"so you don't lose it":tmplCtaType==="share"?"with someone who needs it":"if it resonated with you"} style={{...inp}}/>
                           <label style={lbl}>Background</label>
                           <div style={{display:"flex",gap:6}}>{["dark","light"].map(m=>(<button key={m} onClick={()=>setTmplCtaBg(m)} style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${tmplCtaBg===m?GOLD:A.border}`,background:tmplCtaBg===m?"#1a1500":A.bg,color:tmplCtaBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>))}</div>
-                          <button onClick={generateCta} disabled={tmplCtaGenerating} style={{background:`linear-gradient(135deg,#1a1500,#0a0a0a)`,border:`1px solid ${GOLD}`,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                            {tmplCtaGenerating?<><Spin/>Generating...</>:"✨ AI Generate CTA"}
-                          </button>
+                          <button onClick={()=>{setTmplActiveSlide(tmplSlideCount);}} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"8px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>Preview CTA slide →</button>
                         </div>}
-                      </div>
+                      </div>}
 
                     </div>}
 
@@ -3378,9 +3419,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           {EFFECTS.find(e=>e.id===tmplEffect)?.label||tmplEffect.toUpperCase()}
                         </div>
                         {/* NEON colour picker */}
-                        {tmplEffect==="neon"&&<><label style={lbl}>Glow Colour</label><div style={{display:"flex",gap:8,alignItems:"center"}}><input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontWeight:700}}/><div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`}}><div style={{width:"100%",height:"100%",background:tmplPrimary}}/><input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div></div></>}
-                        {/* CLEAN colour pickers */}
-                        {tmplEffect==="clean"&&<><label style={lbl}>Headline Colour</label><div style={{display:"flex",gap:8,alignItems:"center"}}><input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontWeight:700}}/><div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`}}><div style={{width:"100%",height:"100%",background:tmplSecondary}}/><input type="color" value={tmplSecondary} onChange={e=>setTmplSecondary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div></div><label style={lbl}>Body / Subline Colour</label><div style={{display:"flex",gap:8,alignItems:"center"}}><input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontWeight:700}}/><div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`}}><div style={{width:"100%",height:"100%",background:tmplPrimary}}/><input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div></div></>}
+                        <label style={lbl}>{tmplEffect==="neon"?"Glow Colour":tmplEffect==="clean"?"Headline Colour":"Effect Colour"}</label>
+                        <div style={{display:"flex",gap:8,alignItems:"center"}}><input type="text" value={tmplEffect==="clean"?tmplSecondary:tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value)){tmplEffect==="clean"?setTmplSecondary(e.target.value):setTmplPrimary(e.target.value);}}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/><div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplEffect==="clean"?tmplSecondary:tmplPrimary}}/><input type="color" value={tmplEffect==="clean"?tmplSecondary:tmplPrimary} onChange={e=>tmplEffect==="clean"?setTmplSecondary(e.target.value):setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div></div>
+                        {tmplEffect==="clean"&&<><label style={lbl}>Body / Subline Colour</label><div style={{display:"flex",gap:8,alignItems:"center"}}><input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontWeight:700}}/><div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`}}><div style={{width:"100%",height:"100%",background:tmplPrimary}}/><input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div></div></>}
                       </div>}
 
                       {/* Font */}
@@ -3401,6 +3442,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         <input type="range" min={40} max={160} value={tmplFontSize} onChange={e=>setTmplFontSize(Number(e.target.value))} style={{width:"100%",accentColor:GOLD}}/>
                         <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:A.muted,marginTop:-4}}><span>Small</span><span>Default (82)</span><span>Large</span></div>
                       </div>
+
+                      {/* Slide counter toggle */}
+                      {!isListicle&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div>
+                          <div style={{fontSize:12,fontWeight:700,color:A.text}}>Slide Counter</div>
+                          <div style={{fontSize:11,color:A.muted}}>Show 1/6 on every slide</div>
+                        </div>
+                        <div onClick={()=>setTmplShowCounter(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowCounter?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
+                          <div style={{position:"absolute",top:2,left:tmplShowCounter?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
+                        </div>
+                      </div>}
 
                       {/* Accent line colour */}
                       <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
