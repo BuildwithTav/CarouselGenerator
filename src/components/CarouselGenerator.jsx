@@ -1078,7 +1078,7 @@ export default function App() {
     const websiteStr=isFree?"studio.buildwithtav.co":(userWebsite||"");const website=websiteStr?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>"+websiteStr+"</div>":"";
     const wm=isFree?"<div style='position:absolute;top:32px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:32px;font-weight:800;color:#ffffff;text-shadow:0 2px 8px rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.8);letter-spacing:1px;'>studio.buildwithtav.co</div>":"";
     const counter=showCounter?"<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+(idx+1)+"/"+total+"</div>":"";
-    function imgTag(s){if(!s||!s.image)return"<div style='position:absolute;inset:0;background:#1a1a1a;z-index:0;display:flex;align-items:center;justify-content:center;'><div style='font-family:-apple-system,sans-serif;font-size:28px;color:rgba(255,255,255,0.25);text-align:center;padding:20px;'>Tap + to add<br/>your image</div></div>";const px=(s.imagePos&&s.imagePos.x)||50,py=(s.imagePos&&s.imagePos.y)||50;const isPlaceholder=s.image&&!s.image.startsWith("data:");const overlay=isPlaceholder?"<div style='position:absolute;bottom:180px;left:0;right:0;text-align:center;z-index:3;pointer-events:none;'><div style='display:inline-block;background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px 20px;font-family:-apple-system,sans-serif;font-size:22px;color:rgba(255,255,255,0.6);'>📷 Replace with your image</div></div>":"";return"<img src='"+esc(s.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+px+"% "+py+"%;z-index:0;'/>"+overlay;}
+    function imgTag(s){if(!s||!s.image)return"<div style='position:absolute;inset:0;background:#1a1a1a;z-index:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;'><div style='background:rgba(187,153,0,0.15);border:2px dashed rgba(187,153,0,0.6);border-radius:16px;padding:40px 60px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:42px;margin-bottom:16px;'>📷</div><div style='font-family:-apple-system,sans-serif;font-size:34px;font-weight:700;color:#BB9900;'>Upload your image</div><div style='font-family:-apple-system,sans-serif;font-size:26px;color:rgba(255,255,255,0.5);margin-top:8px;'>in the Photo section</div></div></div>";const px=(s.imagePos&&s.imagePos.x)||50,py=(s.imagePos&&s.imagePos.y)||50;const isPlaceholder=s.image&&!s.image.startsWith("data:");const overlay=isPlaceholder?"<div style='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;pointer-events:none;'><div style='background:rgba(0,0,0,0.75);border:2px solid rgba(187,153,0,0.8);border-radius:12px;padding:16px 32px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:28px;font-weight:700;color:#BB9900;'>📷 Replace with your image</div></div></div>":"";return"<img src='"+esc(s.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+px+"% "+py+"%;z-index:0;'/>"+overlay;}
     function darkFadeCover(s){
       return"<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(s)
         +"<div style='position:absolute;inset:0;background:"+grad+";z-index:1;'></div>"
@@ -1086,7 +1086,7 @@ export default function App() {
         +"<div style='position:absolute;z-index:5;left:54px;right:54px;top:"+Math.round(H*0.748)+"px;height:5px;background:linear-gradient(to right,transparent 0%,"+primary+" 5%,"+primary+" 95%,transparent 100%);'></div>"
         +"<div style='position:absolute;z-index:5;left:80px;right:80px;top:"+Math.round(H*0.762)+"px;bottom:"+Math.round(H*0.04)+"px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:12px;overflow:hidden;padding-bottom:8px;'>"
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((s.headline||""),FS)+"px;font-weight:900;line-height:1.1;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;flex-shrink:1;"+effectCSS(effect,primary,secondary)+"'>"+esc((s.headline||"").toUpperCase())+"</div>"
-        +(s.subline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:36px;color:"+secondary+";text-align:center;font-weight:600;max-width:100%;'>"+esc(s.subline)+"</div>":"")
+        +(s.subline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:36px;color:"+(effect==="clean"?primary:secondary)+";text-align:center;font-weight:600;max-width:100%;'>"+esc(s.subline)+"</div>":"")
         +"</div>"+website+(isCover?chevron:"")+counter+wm+"</div>";
     }
     let body="";
@@ -1182,11 +1182,11 @@ export default function App() {
         +"<div style='position:absolute;bottom:280px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;bottom:90px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;'>"
         +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((slide.headline||""),FS)+"px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;text-align:center;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
-        +(slide.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.7);line-height:1.4;text-align:center;'>"+esc(slide.subline)+"</div>":"")
+        +(slide.subline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+(effect==="clean"?primary:"rgba(255,255,255,0.7)")+";line-height:1.4;text-align:center;'>"+esc(slide.subline)+"</div>":"")
         +"</div>"
         +"<div style='position:absolute;bottom:90px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;'>"
         +(slide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((slide.headline2||""),FS)+"px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;text-align:center;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline2.toUpperCase())+"</div>":"")
-        +(slide.subline2?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.7);line-height:1.4;text-align:center;'>"+esc(slide.subline2)+"</div>":"")
+        +(slide.subline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+(effect==="clean"?primary:"rgba(255,255,255,0.7)")+";line-height:1.4;text-align:center;'>"+esc(slide.subline2)+"</div>":"")
         +"</div>"
         +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"
         +(isCover?chevron:"")+counter+wm+"</div>";
@@ -1204,7 +1204,7 @@ export default function App() {
     const bgC=isDark?"#0a0a0a":"#ffffff";
     const textC=isDark?"#ffffff":"#0a0a0a";
     const mutedC=isDark?"rgba(255,255,255,0.55)":"rgba(0,0,0,0.5)";
-    const accent=opts.primary||"#BB9900";
+    const accent=(opts.accentLine||opts.primary)||"#BB9900";
     function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
     const tick=showTick?"<span style='display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#1D9BF0;border-radius:50%;margin-left:8px;vertical-align:middle;flex-shrink:0;'><span style='display:block;width:8px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);margin-top:-2px;'></span></span>":"";
     const av=profUrl?"<img src='"+esc(profUrl)+"' style='width:100%;height:100%;object-fit:cover;border-radius:50%;'/>":"<div style='width:100%;height:100%;background:#4a6a9a;border-radius:50%;'></div>";
@@ -1240,8 +1240,8 @@ export default function App() {
       if(text){
         setTmplSlides(prev=>{const next=[...prev];const field=tmpl==="storytelling"?"storyText":"bodyText";next[idx]={...next[idx],[field]:text};return next;});
         if(currentUser?.email){
-          await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:5})});
-          setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));
+          await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:3})});
+          setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+3}));
         }
       }
     }catch(e){console.error(e);}
@@ -1250,7 +1250,7 @@ export default function App() {
 
   // Top-level debounced slides state — hooks must never be inside IIFE or nested fns
   const [dTmplSlides, setDTmplSlides] = useState(tmplSlides);
-  useEffect(()=>{ const t=setTimeout(()=>setDTmplSlides(tmplSlides),300); return()=>clearTimeout(t); },[JSON.stringify(tmplSlides)]);
+  useEffect(()=>{ const t=setTimeout(()=>setDTmplSlides([...tmplSlides]),300); return()=>clearTimeout(t); },[JSON.stringify(tmplSlides),tmplFont,tmplEffect,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplShowCounter,tmplFontSize]);
   useEffect(()=>{
     if(!pendingTmplImage)return;
     setTmplSlides(prev=>{const next=[...prev];const idx=tmplActiveSlide||0;next[idx]={...next[idx],image:pendingTmplImage};return next;});
@@ -3129,11 +3129,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             {tmplSelected&&(()=>{
               const isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade",isSplit=tmplSelected==="split";
               const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:8,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
-              const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
+              const ctaBgFinal=isCleanPro?tmplBg:tmplCtaBg;const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
               const ctaLine2Defaults={comment:"Comment the word",follow:"Follow",save:"Save this",share:"Share this",like:"Like this"};
               const ctaKeywordDefaults={comment:tmplCtaKeyword||"GUIDE",follow:"FOLLOW",save:"SAVE",share:"SHARE",like:"LIKE"};
               const ctaLine3Defaults={comment:"and I'll send it straight over",follow:"for more content like this",save:"so you don't lose it",share:"with someone who needs it",like:"if it resonated with you"};
-              const ctaHTML=tmplShowCta&&!isRaw?buildCtaHTML(opts,tmplCtaType,ctaKeywordDefaults[tmplCtaType],tmplCtaTopLine||(isDarkFade?"Want to build wealth online?":isListicle?"Want more content like this?":isCleanPro?"Want the full strategy?":isStory?"Want to start your own journey?":"Want more like this?"),tmplCtaLine2||ctaLine2Defaults[tmplCtaType],tmplCtaRewardLine||ctaLine3Defaults[tmplCtaType],tmplCtaBg,name,handle,profileUrl,blueTick,tmplFont,tmplSlideCount+(tmplShowCta?1:0),tmplShowCounter):null;
+              const ctaHTML=tmplShowCta&&!isRaw?buildCtaHTML(opts,tmplCtaType,ctaKeywordDefaults[tmplCtaType],tmplCtaTopLine||(isDarkFade?"Want to build wealth online?":isListicle?"Want more content like this?":isCleanPro?"Want the full strategy?":isStory?"Want to start your own journey?":"Want more like this?"),tmplCtaLine2||ctaLine2Defaults[tmplCtaType],tmplCtaRewardLine||ctaLine3Defaults[tmplCtaType],ctaBgFinal,name,handle,profileUrl,blueTick,tmplFont,tmplSlideCount+(tmplShowCta?1:0),tmplShowCounter):null;
               const totalSlides=tmplSlideCount+(ctaHTML?1:0);
               const activeIsCtaSlide=ctaHTML&&activeSlide===tmplSlideCount;
               const previewHTML=activeIsCtaSlide?ctaHTML:buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,totalSlides,tmplSelected,opts);
@@ -3155,7 +3155,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   for(let j=0;j<bytes.length;j++)arr[j]=bytes.charCodeAt(j);
                   const url=URL.createObjectURL(new Blob([arr],{type:"image/png"}));
                   const a=document.createElement("a");a.href=url;a.download=tmplSelected+"-slide-"+(idx+1)+".png";a.click();URL.revokeObjectURL(url);
-                  await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:5})});
+                  await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:3})});
                   setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));
                 }catch(e){console.error(e);alert("Download failed — try again");}
                 setTmplDownloadingIdx(null);
@@ -3188,16 +3188,20 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 if(!tmplBrief&&!tmplSlides.some(s=>s.headline))return;
                 setTmplSuggesting("list");
                 try{
-                  const existingItems=tmplSlides.slice(1,tmplSlideCount).map((s,i)=>s.headline?(i+1)+". "+s.headline+" (already set)":(i+1)+". (generate this)").join("\n");
-                  const prompt="Create a listicle carousel about: \""+( tmplBrief||"the topic based on existing items")+"\".\n\nSlots to fill ("+( tmplSlideCount-1)+" items):\n"+existingItems+"\n\nFor each slot marked (generate this), provide a headline (max 4 words, punchy) and a one-sentence fact/detail (max 15 words).\nFor slots marked (already set), still provide a detail/subline for that headline.\n\nReturn ONLY valid JSON array of "+(tmplSlideCount-1)+" objects with keys: headline (string), bodyText (string). No markdown.";
-                  const r=await fetchWithRetry({model:"claude-sonnet-4-6",max_tokens:800,messages:[{role:"user",content:prompt}]});
-                  const text=r?.content?.[0]?.text?.trim()||"[]";
+                  const briefNumMatch=tmplBrief.match(/^(\d+)\s/);
+                  const briefNum=briefNumMatch?parseInt(briefNumMatch[1]):null;
+                  let targetCount=tmplSlideCount;
+                  if(briefNum&&briefNum>=2&&briefNum<=12){targetCount=briefNum+1;setTmplSlideCount(targetCount);}
+                  const numItems=targetCount-1;
+                  const existingItems=tmplSlides.slice(1,targetCount).map((s,i)=>s.headline?(i+1)+". "+s.headline+" (keep, generate detail)":(i+1)+". (generate)").join("\n");
+                  const prompt="Create a listicle carousel about: \""+tmplBrief+"\". Generate "+numItems+" items. Existing: "+existingItems+". Return ONLY valid JSON with keys: coverTopicLine (string max 6 words), coverSubject (string max 4 words), items (array of "+numItems+" objects with headline max 4 words and bodyText max 15 words). No markdown.";
+                  const r=await fetchWithRetry({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:prompt}]});
+                  const text=r?.content?.[0]?.text?.trim()||"{}";
                   const bt=String.fromCharCode(96);const clean=text.replace(new RegExp(bt+bt+bt+"json","g"),"").replace(new RegExp(bt+bt+bt,"g"),"").trim();
-                  const items=JSON.parse(clean);
-                  if(Array.isArray(items)){
-                    setTmplSlides(prev=>{const next=[...prev];items.forEach((item,i)=>{const si=i+1;if(si<next.length){if(!next[si].headline&&item.headline)next[si]={...next[si],headline:item.headline};if(item.bodyText)next[si]={...next[si],bodyText:item.bodyText};}});return next;});
-                    if(currentUser?.email){await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:10})});setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+10}));}
-                  }
+                  const result=JSON.parse(clean);
+                  if(result.coverTopicLine||result.coverSubject){setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],topicLine:result.coverTopicLine||next[0].topicLine,subject:result.coverSubject||next[0].subject};return next;});}
+                  if(Array.isArray(result.items)){setTmplSlides(prev=>{const next=[...prev];result.items.forEach((item,i)=>{const si=i+1;if(si<next.length){if(!next[si].headline&&item.headline)next[si]={...next[si],headline:item.headline};if(item.bodyText)next[si]={...next[si],bodyText:item.bodyText};}});return next;});}
+                  if(currentUser?.email){await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:5})});setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));}
                 }catch(e){console.error(e);alert("Generation failed — try again");}
                 setTmplSuggesting(null);
               };
@@ -3284,8 +3288,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       <button onClick={()=>downloadSlide(activeSlide)} disabled={tmplDownloadingIdx===activeSlide} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                         {tmplDownloadingIdx===activeSlide?<><Spin c={A.text}/>Downloading...</>:`↓ Slide ${activeSlide+1}`}
                       </button>
-                      <button onClick={downloadAllTmpl} disabled={tmplDownloading} style={{flex:2,background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,padding:"10px",borderRadius:9,fontSize:13,fontWeight:800,border:`1px solid ${GOLD}33`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                        {tmplDownloading?<><Spin/>Downloading...</>:`↓ Download All ${tmplSlideCount}`}
+                      <button onClick={()=>{if(window.confirm("Please check all slides look correct. This cannot be undone.")){downloadAllTmpl();}}} disabled={tmplDownloading} style={{flex:2,background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,padding:"10px",borderRadius:9,fontSize:13,fontWeight:800,border:`1px solid ${GOLD}33`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                        {tmplDownloading?<><Spin/>Downloading...</>:"↓ Download All (10 credits)"}
                       </button>
                     </div>
                   </div>
@@ -3383,8 +3387,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <input value={tmplCtaKeyword} onChange={e=>setTmplCtaKeyword(e.target.value.toUpperCase())} placeholder={tmplCtaType==="comment"?"GUIDE":tmplCtaType==="follow"?"FOLLOW":tmplCtaType==="save"?"SAVE":tmplCtaType==="share"?"SHARE":"LIKE"} style={{...inp,textTransform:"uppercase",fontWeight:800,fontSize:18,letterSpacing:3}}/>
                           <label style={lbl}>Line 3 — Reward / Reason</label>
                           <input value={tmplCtaRewardLine} onChange={e=>setTmplCtaRewardLine(e.target.value)} placeholder={tmplCtaType==="comment"?"and I'll send it straight over":tmplCtaType==="follow"?"for more content like this":tmplCtaType==="save"?"so you don't lose it":tmplCtaType==="share"?"with someone who needs it":"if it resonated with you"} style={{...inp}}/>
-                          <label style={lbl}>Background</label>
-                          <div style={{display:"flex",gap:6}}>{["dark","light"].map(m=>(<button key={m} onClick={()=>setTmplCtaBg(m)} style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${tmplCtaBg===m?GOLD:A.border}`,background:tmplCtaBg===m?"#1a1500":A.bg,color:tmplCtaBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>))}</div>
+                          {!isCleanPro&&<><label style={lbl}>Background</label>
+                          <div style={{display:"flex",gap:6}}>{["dark","light"].map(m=>(<button key={m} onClick={()=>setTmplCtaBg(m)} style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${tmplCtaBg===m?GOLD:A.border}`,background:tmplCtaBg===m?"#1a1500":A.bg,color:tmplCtaBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>))}</div></>}
                           <button onClick={()=>{setTmplActiveSlide(tmplSlideCount);}} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"8px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer"}}>Preview CTA slide →</button>
                         </div>}
                       </div>}
@@ -3423,17 +3427,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       </div>
 
                       {/* Headline size */}
-                      {!activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:8}}>
-                        <label style={lbl}>Headline Size <span style={{letterSpacing:0,fontWeight:400,textTransform:"none",fontSize:9}}>{tmplFontSize}px</span></label>
-                        <input type="range" min={40} max={160} value={tmplFontSize} onChange={e=>setTmplFontSize(Number(e.target.value))} style={{width:"100%",accentColor:GOLD}}/>
-                        <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:A.muted,marginTop:-4}}><span>Small</span><span>Default (82)</span><span>Large</span></div>
-                      </div>}
+                      
 
                       {/* Slide counter toggle */}
                       {!isListicle&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                         <div>
                           <div style={{fontSize:12,fontWeight:700,color:A.text}}>Slide Counter</div>
-                          <div style={{fontSize:11,color:A.muted}}>Show {tmplSlideCount+(tmplShowCta?1:0)}/{tmplSlideCount+(tmplShowCta?1:0)} on every slide</div>
+                          <div style={{fontSize:11,color:A.muted}}>Show slide number on every slide</div>
                         </div>
                         <div onClick={()=>setTmplShowCounter(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowCounter?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
                           <div style={{position:"absolute",top:2,left:tmplShowCounter?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
