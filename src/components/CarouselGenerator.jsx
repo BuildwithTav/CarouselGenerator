@@ -1080,7 +1080,7 @@ export default function App() {
         +"<div style='width:"+numLineW+"px;height:5px;background:"+primary+";'></div></div>"
         +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:12px;padding-bottom:8px;'>"
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:58px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.2;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase())+"</div>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:110px;font-weight:900;color:"+secondary+";line-height:1.0;word-break:break-word;'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:900;color:"+secondary+";line-height:1.0;word-break:break-word;'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div>"
         +(slide.subline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.6);line-height:1.3;'>"+esc(slide.subline)+"</div>":"")
         +"</div></div>"
         +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"+chevron+counter+wm+"</div>";
@@ -1097,7 +1097,7 @@ export default function App() {
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS2+"px;font-weight:900;line-height:1;"+effectCSS(effect,primary,secondary)+"'>"+String(idx)+"</div>"
         +"<div style='width:"+numLineW2+"px;height:5px;background:"+primary+";'></div></div>"
         +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;padding-bottom:8px;'>"
-        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:68px;font-weight:900;color:"+secondary+";line-height:1.1;text-transform:uppercase;word-break:break-word;'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:900;color:"+secondary+";line-height:1.1;text-transform:uppercase;word-break:break-word;'>"+esc(slide.headline.toUpperCase())+"</div>":"")
         +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:rgba(255,255,255,0.85);line-height:1.45;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
         +"</div></div>"
         +website+wm+"</div>";
@@ -3039,22 +3039,23 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     if(!restored){
                       const defaults=Array(12).fill(null).map((_,i)=>{
                         const PLACEHOLDER_IMGS={
-  "dark-fade":"https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=1080&q=80",
-  "listicle":"https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1080&q=80",
-  "clean-pro":"https://images.unsplash.com/photo-1497366216548-37526070297c?w=1080&q=80",
+  "dark-fade":"https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1080&q=80",
+  "listicle":"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1080&q=80",
+  "clean-pro":"https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1080&q=80",
   "storytelling":null,
-  "raw":"https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1080&q=80",
-  "split":"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1080&q=80",
+  "raw":"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1080&q=80",
+  "split-left":"https://images.unsplash.com/photo-1541480601022-2308c0f02487?w=540&q=80",
+  "split-right":"https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=540&q=80",
 };
-const base={image:i===0?(PLACEHOLDER_IMGS[t.id]||null):null,imagePos:{x:50,y:50},image2:i===0?(PLACEHOLDER_IMGS[t.id]||null):null,image2Pos:{x:50,y:50},headline:"",subline:"",headline2:"",subline2:"",bodyText:"",accentText:"",topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:""};
-                        if(t.id==="dark-fade"){base.headline=i===0?"Stop posting singles. Start posting carousels.":"";base.subline=i===0?"The algorithm rewards every swipe.":"";}
-                        if(t.id==="listicle"&&i===0){base.topicLine="PLACES YOU MUST VISIT BEFORE";base.subject="2026 ENDS";base.subline="Swipe to see them all.";}
+const base={image:i===0?(PLACEHOLDER_IMGS[t.id]||PLACEHOLDER_IMGS[t.id+"-left"]||null):null,imagePos:{x:50,y:50},image2:i===0?(PLACEHOLDER_IMGS[t.id+"-right"]||PLACEHOLDER_IMGS[t.id]||null):null,image2Pos:{x:50,y:50},headline:"",subline:"",headline2:"",subline2:"",bodyText:"",accentText:"",topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:""};
+                        if(t.id==="dark-fade"){base.headline=i===0?"The Secrets The Top 1% Never Reveal About Wealth":"";base.subline=i===0?"Most people will never know this.":"";}
+                        if(t.id==="listicle"&&i===0){base.topicLine="PLACES YOU NEED TO VISIT BEFORE";base.subject="2027 ENDS";base.subline="Swipe to see them all.";}
                         if(t.id==="listicle"&&i>0){base.headline=["Santorini, Greece","Kyoto, Japan","Amalfi Coast, Italy","Bali, Indonesia","Patagonia, Argentina","Cape Town, South Africa","Iceland","Machu Picchu, Peru","The Maldives","New Zealand","Morocco"][i-1]||"";base.bodyText=["Sunsets you won't find anywhere else.","Cherry blossom and centuries of culture.","The most dramatic coastline in Europe.","Temples, rice fields, and world-class surf.","Mountains that look computer generated.","Beaches, wine, wildlife. All in one place.","Northern lights every clear night.","Lost city of the Incas. Nothing like it.","Overwater bungalows. Turquoise lagoons.","Lord of the Rings meets real adventure.","Deserts, medinas, and mint tea."][i-1]||"";}
-                        if(t.id==="clean-pro"&&i===0){base.headline="Most coaches are sleeping on this.";base.subline="The feature that changes everything.";}
+                        if(t.id==="clean-pro"&&i===0){base.headline="You're Using AI Wrong In Your Business";base.subline="Here's what actually works.";}
                         if(t.id==="clean-pro"&&i>0){base.headline=["The timing is everything.","Your DMs are a free lead machine.","Most coaches have no idea this exists.","Set it up once. Let it run forever.","Here's exactly how to do it."][i-1]||"";base.bodyText=["Someone just followed you. They're curious right now.","Instagram now auto-DMs every new follower. No manual outreach.","It captures the lead the moment they follow.","Five minutes of setup. Automated outreach indefinitely.","Settings → Creators → Automated Responses. Turn it on."][i-1]||"";base.accentText=["That's the highest-intent moment you'll ever get.","That's a free lead machine.","Most coaches have no idea this feature exists.","Your ad drives the follow. This captures the lead.","You're already paying for the follower. Don't waste them."][i-1]||"";}
                         if(t.id==="storytelling"){base.storyText=["I went bankrupt at 25.\n\nNot the kind you read about in business books. The kind where you can't look your mum in the eye.","Her name is Carol. She raised three of us on her own. No shortcuts. Just sacrifice.\n\nAnd I'd thrown it all away.","I spent three years on bail waiting for a trial that kept getting cancelled.\n\nCOVID hit. Courts closed. I just had to wait.","The day I got my tag off, I sat in my car for twenty minutes.\n\nNo music. No phone. Just silence.","I found digital marketing while I was still on tag.\n\nI made my first sale at 3am on a Tuesday. I cried.","That's why I built this. Not to flex. To show you what's possible when you stop waiting for permission."][i]||"";}
-                        if(t.id==="split"){base.headline=i===0?"Before":"After";base.subline=i===0?"Where you are now.":"Where you could be.";base.headline2=i===0?"After":"Before";base.subline2=i===0?"Where you could be.":"Where you are now.";}
-                        if(t.id==="raw"){base.rawText=["The day I got my tag off, I sat in my car for 20 minutes.\n\nNo music. No phone.\n\nJust silence.","Most people wait for the perfect moment.\n\nThere isn't one.\n\nStart anyway.","Nobody tells you how lonely the rebuild is.\n\nThey only see the result.","You don't need more information.\n\nYou need to start.","Done is better than perfect.\n\nAlways.","Your story is your strategy."][i]||"";}
+                        if(t.id==="split"){base.headline=i===0?"Your Life Now":"";base.subline=i===0?"The 9-5. The commute. The alarm.":"";base.headline2=i===0?"Your Life In 12 Months":"";base.subline2=i===0?"Your terms. Your time. Your rules.":"";}
+                        if(t.id==="raw"){base.rawText=["The average person spends\n90,000 hours at work\nin their lifetime.\n\nMost hate every single one.","Most people will retire\non 40% of\nwhat wasn't enough anyway.","You don't need more motivation.\n\nYou need a better plan.","Information is free.\n\nExecution is rare.","The goal isn't to be rich.\n\nIt's to be free.","Start before you're ready.\n\nYou'll never be ready."][i]||"";}
                         return base;
                       });
                       setTmplSlides(defaults);setTmplSlideCount(t.id==="listicle"?7:6);setTmplBrief("");
