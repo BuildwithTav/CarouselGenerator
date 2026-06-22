@@ -1026,20 +1026,31 @@ export default function App() {
 
   // ── buildTmplHTML — generates HTML sent to Puppeteer /api/render-slide ──
   function buildTmplHTML(slide, idx, total, tmpl, opts) {
-    const {effect,font,fontSize,primary,secondary,bg,fontStyle,rawBox,rawPos,listicleNum,profUrl,nm,hdl,showTick,isFree,userWebsite}=opts;
+    const {effect,font,fontSize,primary,secondary,accentLine,bg,fontStyle,rawBox,rawPos,listicleNum,profUrl,nm,hdl,showTick,isFree,userWebsite}=opts;
+    const AL=accentLine||primary;
     const FS=fontSize||82;
     const W=1080,H=1350,SAFE=60,isCover=idx===0;
     const fontFamily=(font||"Bebas Neue").replace(/'/g,"");
     function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
     const gFonts="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Teko:wght@700&family=Barlow+Condensed:wght@800;900&family=Archivo+Black&family=Playfair+Display:ital,wght@0,900;1,900&family=Alfa+Slab+One&family=Inter:wght@400;600;700;800&display=swap";
     function effectCSS(eff,pri,sec){
-      if(eff==="gold") return"background:linear-gradient(180deg,"+sec+" 0%,#ffe44d 20%,"+pri+" 50%,#7a5800 80%,#ffe066 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 4px 8px rgba(140,100,0,0.5));";
-      if(eff==="chrome") return"background:linear-gradient(180deg,"+sec+" 0%,#ddd 20%,#777 45%,#bbb 65%,#444 85%,#ccc 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
-      if(eff==="fire") return"background:linear-gradient(180deg,"+sec+" 0%,#ffff00 15%,#ff6600 40%,#cc0000 75%,#660000 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
-      if(eff==="ice") return"background:linear-gradient(180deg,"+sec+" 0%,#d0f0ff 30%,"+pri+" 65%,#1a6090 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
-      if(eff==="neon") return"-webkit-text-fill-color:#fff;color:#fff;text-shadow:0 0 10px "+pri+",0 0 20px "+pri+",0 0 40px "+pri+",0 0 80px "+pri+";";
+      const cs="padding-top:0.15em;display:inline-block;";
+      if(eff==="gold") return cs+"background:linear-gradient(180deg,"+sec+" 0%,#ffe44d 20%,"+pri+" 50%,#7a5800 80%,#ffe066 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 4px 8px rgba(140,100,0,0.5));";
+      if(eff==="chrome") return cs+"background:linear-gradient(180deg,"+sec+" 0%,#ddd 20%,#777 45%,#bbb 65%,#444 85%,#ccc 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
+      if(eff==="fire") return cs+"background:linear-gradient(180deg,"+sec+" 0%,#ffff00 15%,#ff6600 40%,#cc0000 75%,#660000 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
+      if(eff==="ice") return cs+"background:linear-gradient(180deg,"+sec+" 0%,#d0f0ff 30%,"+pri+" 65%,#1a6090 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
+      if(eff==="neon") return"-webkit-text-fill-color:"+pri+";color:"+pri+";text-shadow:0 0 10px "+pri+",0 0 20px "+pri+",0 0 40px "+pri+",0 0 80px "+pri+";";
       if(eff==="3d") return"color:#fff;text-shadow:1px 1px 0 #555,2px 2px 0 #444,3px 3px 0 #333,4px 4px 0 #222,5px 5px 0 #111,6px 6px 8px rgba(0,0,0,0.4);";
-      if(eff==="outline") return"-webkit-text-stroke:4px "+pri+";-webkit-text-fill-color:transparent;color:transparent;";
+      if(eff==="rosegold") return cs+"background:linear-gradient(180deg,#fff0f0 0%,#f4a0b0 25%,#c96a7a 55%,#8b3a4a 85%,#f4a0b0 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
+      if(eff==="glitter") return cs+"background:linear-gradient(135deg,#fff 0%,#f0d060 20%,#fff 40%,#f0d060 60%,#fff 80%,#f0d060 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 6px rgba(240,208,96,0.8));";
+      if(eff==="holographic") return cs+"background:linear-gradient(135deg,#ff6eb4 0%,#a78bfa 25%,#38bdf8 50%,#34d399 75%,#fb923c 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
+      if(eff==="pastel") return"-webkit-text-fill-color:#f9a8d4;color:#f9a8d4;text-shadow:0 2px 12px rgba(249,168,212,0.4);";
+      if(eff==="blush") return cs+"background:linear-gradient(180deg,#ffecd2 0%,#fcb69f 50%,#ff9a9e 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
+      if(eff==="sunset") return cs+"background:linear-gradient(180deg,#fff 0%,#ffd700 20%,#ff8c00 50%,#ff4500 80%,#8b0000 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
+      if(eff==="matrix") return"-webkit-text-fill-color:#00ff41;color:#00ff41;text-shadow:0 0 10px #00ff41,0 0 20px #00ff41,0 0 40px #00ff41;";
+      if(eff==="purplehaze") return"-webkit-text-fill-color:#c084fc;color:#c084fc;text-shadow:0 0 10px #c084fc,0 0 20px #7c3aed,0 0 40px #7c3aed;";
+      if(eff==="shadowpop") return"color:#fff;text-shadow:3px 3px 0 "+pri+",6px 6px 0 rgba(0,0,0,0.3);";
+      if(eff==="duotone") return cs+"background:linear-gradient(180deg,"+pri+" 0%,"+sec+" 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;";
       return"-webkit-text-fill-color:"+sec+";color:"+sec+";text-shadow:0 2px 8px rgba(0,0,0,0.6);";
     }
     function badge(dark){
@@ -1077,7 +1088,7 @@ export default function App() {
         +"<div style='position:absolute;bottom:60px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:32px;'>"
         +"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS+"px;font-weight:900;line-height:0.88;"+effectCSS(effect,primary,secondary)+"'>"+(listicleNum||6)+"</div>"
-        +"<div style='width:"+numLineW+"px;height:5px;background:"+primary+";'></div></div>"
+        +"<div style='width:"+numLineW+"px;height:5px;background:"+AL+";'></div></div>"
         +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:12px;padding-bottom:8px;'>"
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:58px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.2;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU MUST VISIT BEFORE").toUpperCase())+"</div>"
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:900;line-height:1.0;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc((slide.subject||"2026 ENDS").toUpperCase())+"</div>"
@@ -1095,7 +1106,7 @@ export default function App() {
         +"<div style='position:absolute;bottom:80px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:40px;'>"
         +"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"
         +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS2+"px;font-weight:900;line-height:1;"+effectCSS(effect,primary,secondary)+"'>"+String(idx)+"</div>"
-        +"<div style='width:"+numLineW2+"px;height:5px;background:"+primary+";'></div></div>"
+        +"<div style='width:"+numLineW2+"px;height:5px;background:"+AL+";'></div></div>"
         +"<div style='flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;padding-bottom:8px;'>"
         +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
         +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:rgba(255,255,255,0.85);line-height:1.45;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
@@ -1112,7 +1123,7 @@ export default function App() {
         +(slide.headline?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:"+FS+"px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
         +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:52px;color:"+tS+";line-height:1.65;word-break:break-word;'>"+esc(slide.bodyText).replace(/\n/g,"<br/>")+"</div>":"")
         +(slide.accentText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:56px;font-weight:700;color:"+primary+";line-height:1.3;word-break:break-word;'>"+esc(slide.accentText)+"</div>":"")
-        +(slide.accentText?"<div style='width:110px;height:5px;background:"+primary+";'></div>":"")
+        +(slide.accentText?"<div style='width:110px;height:5px;background:"+AL+";'></div>":"")
         +"</div><div style='position:absolute;bottom:48px;right:"+SAFE+"px;z-index:5;font-size:28px;color:"+tS+";'>"+(idx+1)+"/"+total+"</div>"+wm+"</div>";
     }
     else if(tmpl==="storytelling"){
@@ -3021,61 +3032,92 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:1100,margin:"0 auto",width:"100%",paddingBottom:60}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 4px"}}>Templates</h2>
             <p style={{fontSize:14,color:A.muted,margin:"0 0 24px"}}>Pick a design, add your content, download.</p>
+
+            {/* ── TEMPLATE PICKER ── */}
             {!tmplSelected&&(
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:16}}>
                 {[
                   {id:"dark-fade",label:"Classic Theme Page",desc:"Bold photo cover, gradient fade, badge, headline, subline.",emoji:"🌑"},
-                  {id:"listicle",label:"Listicle",desc:"Big number left, topic right. Body slides numbered. Up to 11 points.",emoji:"🔢"},
+                  {id:"listicle",label:"Listicle",desc:"Big number left, topic right. Body slides numbered. Up to 12 points.",emoji:"🔢"},
                   {id:"clean-pro",label:"Clean Pro",desc:"Dark Fade cover then clean white or black body slides.",emoji:"✨"},
                   {id:"storytelling",label:"Storytelling",desc:"Pure text on white or black. Badge top left. Dead centre paragraph.",emoji:"📖"},
                   {id:"raw",label:"Raw",desc:"Your photo. Tight text box. No badge. Authentic, unfiltered.",emoji:"📱"},
-                  {id:"split",label:"Split",desc:"Two images side by side, one gradient across the bottom. Left and right text.",emoji:"⚡"},
+                  {id:"split",label:"Split",desc:"Two images side by side. Left and right text. Perfect for comparisons.",emoji:"⚡"},
                 ].map(t=>(
-                  <div key={t.id} onClick={()=>{
-                    if(tmplSelected){try{localStorage.setItem("bwt_tmpl_session_"+tmplSelected,JSON.stringify({slides:tmplSlides,slideCount:tmplSlideCount,brief:tmplBrief,effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum}));}catch{}}
-                    let restored=false;
-                    try{const saved=localStorage.getItem("bwt_tmpl_session_"+t.id);if(saved){const s=JSON.parse(saved);setTmplSlides(s.slides);setTmplSlideCount(s.slideCount);setTmplBrief(s.brief||"");setTmplEffect(s.effect||"clean");setTmplFont(s.font||"Bebas Neue");setTmplFontSize(s.fontSize||82);setTmplPrimary(s.primary||"#BB9900");setTmplSecondary(s.secondary||"#ffffff");setTmplBg(s.bg||"white");setTmplFontStyle(s.fontStyle||"Inter");setTmplRawBox(s.rawBox||"white");setTmplRawPos(s.rawPos||"bottom");setTmplListicleNum(s.listicleNum||6);restored=true;}}catch{}
-                    setTmplSelected(t.id);setTmplActiveSlide(0);
-                    if(!restored){
-                      const defaults=Array(12).fill(null).map((_,i)=>{
-                        const PLACEHOLDER_IMGS={
-  "dark-fade":"https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1080&q=80",
-  "listicle":"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1080&q=80",
-  "clean-pro":"https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1080&q=80",
-  "storytelling":null,
-  "raw":"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1080&q=80",
-  "split-left":"https://images.unsplash.com/photo-1541480601022-2308c0f02487?w=540&q=80",
-  "split-right":"https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=540&q=80",
-};
-const base={image:i===0?(PLACEHOLDER_IMGS[t.id]||PLACEHOLDER_IMGS[t.id+"-left"]||null):null,imagePos:{x:50,y:50},image2:i===0?(PLACEHOLDER_IMGS[t.id+"-right"]||PLACEHOLDER_IMGS[t.id]||null):null,image2Pos:{x:50,y:50},headline:"",subline:"",headline2:"",subline2:"",bodyText:"",accentText:"",topicLine:"PLACES YOU MUST VISIT BEFORE",subject:"2026 ENDS",storyText:"",rawText:""};
-                        if(t.id==="dark-fade"){base.headline=i===0?"The Secrets The Top 1% Never Reveal About Wealth":"";base.subline=i===0?"Most people will never know this.":"";}
-                        if(t.id==="listicle"&&i===0){base.topicLine="PLACES YOU NEED TO VISIT BEFORE";base.subject="2027 ENDS";base.subline="Swipe to see them all.";}
-                        if(t.id==="listicle"&&i>0){base.headline=["Santorini, Greece","Kyoto, Japan","Amalfi Coast, Italy","Bali, Indonesia","Patagonia, Argentina","Cape Town, South Africa","Iceland","Machu Picchu, Peru","The Maldives","New Zealand","Morocco"][i-1]||"";base.bodyText=["Sunsets you won't find anywhere else.","Cherry blossom and centuries of culture.","The most dramatic coastline in Europe.","Temples, rice fields, and world-class surf.","Mountains that look computer generated.","Beaches, wine, wildlife. All in one place.","Northern lights every clear night.","Lost city of the Incas. Nothing like it.","Overwater bungalows. Turquoise lagoons.","Lord of the Rings meets real adventure.","Deserts, medinas, and mint tea."][i-1]||"";}
-                        if(t.id==="clean-pro"&&i===0){base.headline="You're Using AI Wrong In Your Business";base.subline="Here's what actually works.";}
-                        if(t.id==="clean-pro"&&i>0){base.headline=["The timing is everything.","Your DMs are a free lead machine.","Most coaches have no idea this exists.","Set it up once. Let it run forever.","Here's exactly how to do it."][i-1]||"";base.bodyText=["Someone just followed you. They're curious right now.","Instagram now auto-DMs every new follower. No manual outreach.","It captures the lead the moment they follow.","Five minutes of setup. Automated outreach indefinitely.","Settings → Creators → Automated Responses. Turn it on."][i-1]||"";base.accentText=["That's the highest-intent moment you'll ever get.","That's a free lead machine.","Most coaches have no idea this feature exists.","Your ad drives the follow. This captures the lead.","You're already paying for the follower. Don't waste them."][i-1]||"";}
-                        if(t.id==="storytelling"){base.storyText=["I went bankrupt at 25.\n\nNot the kind you read about in business books. The kind where you can't look your mum in the eye.","Her name is Carol. She raised three of us on her own. No shortcuts. Just sacrifice.\n\nAnd I'd thrown it all away.","I spent three years on bail waiting for a trial that kept getting cancelled.\n\nCOVID hit. Courts closed. I just had to wait.","The day I got my tag off, I sat in my car for twenty minutes.\n\nNo music. No phone. Just silence.","I found digital marketing while I was still on tag.\n\nI made my first sale at 3am on a Tuesday. I cried.","That's why I built this. Not to flex. To show you what's possible when you stop waiting for permission."][i]||"";}
-                        if(t.id==="split"){base.headline=i===0?"Your Life Now":"";base.subline=i===0?"The 9-5. The commute. The alarm.":"";base.headline2=i===0?"Your Life In 12 Months":"";base.subline2=i===0?"Your terms. Your time. Your rules.":"";}
-                        if(t.id==="raw"){base.rawText=["The average person spends\n90,000 hours at work\nin their lifetime.\n\nMost hate every single one.","Most people will retire\non 40% of\nwhat wasn't enough anyway.","You don't need more motivation.\n\nYou need a better plan.","Information is free.\n\nExecution is rare.","The goal isn't to be rich.\n\nIt's to be free.","Start before you're ready.\n\nYou'll never be ready."][i]||"";}
-                        return base;
-                      });
-                      setTmplSlides(defaults);setTmplSlideCount(t.id==="listicle"?7:6);setTmplBrief("");
-                    }
-                  }} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,cursor:"pointer",transition:"border-color 0.2s,transform 0.15s"}}
-                  onMouseEnter={e=>{e.currentTarget.style.borderColor=GOLD;e.currentTarget.style.transform="translateY(-2px)";}}
-                  onMouseLeave={e=>{e.currentTarget.style.borderColor=A.border;e.currentTarget.style.transform="translateY(0)";}}>
-                    <div style={{fontSize:28,marginBottom:8}}>{t.emoji}</div>
-                    <div style={{fontSize:14,fontWeight:800,color:A.text,marginBottom:6}}>{t.label}</div>
-                    <div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>{t.desc}</div>
+                  <div key={t.id} style={{position:"relative"}}>
+                    <div onClick={()=>{
+                      let restored=false;
+                      try{const saved=localStorage.getItem("bwt_tmpl_session_"+t.id);if(saved){const s=JSON.parse(saved);setTmplSlides(s.slides);setTmplSlideCount(s.slideCount);setTmplBrief(s.brief||"");setTmplEffect(s.effect||"clean");setTmplFont(s.font||"Bebas Neue");setTmplFontSize(s.fontSize||82);setTmplPrimary(s.primary||"#BB9900");setTmplSecondary(s.secondary||"#ffffff");setTmplAccentLineColor(s.accentLine||"#BB9900");setTmplBg(s.bg||"white");setTmplFontStyle(s.fontStyle||"Inter");setTmplRawBox(s.rawBox||"white");setTmplRawPos(s.rawPos||"bottom");setTmplListicleNum(s.listicleNum||6);restored=true;}}catch{}
+                      setTmplSelected(t.id);setTmplActiveSlide(0);setTmplContentStyleTab("content");setTmplShowInspo(true);
+                      if(!restored){
+                        const PLACEHOLDER_IMGS={"dark-fade":"https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1080&q=80","listicle":"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1080&q=80","clean-pro":"https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1080&q=80","storytelling":null,"raw":"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1080&q=80","split-left":"https://images.unsplash.com/photo-1541480601022-2308c0f02487?w=540&q=80","split-right":"https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=540&q=80"};
+                        const defaults=Array(12).fill(null).map((_,i)=>{
+                          const base={image:i===0?(PLACEHOLDER_IMGS[t.id]||PLACEHOLDER_IMGS[t.id+"-left"]||null):null,imagePos:{x:50,y:50},image2:i===0?(PLACEHOLDER_IMGS[t.id+"-right"]||PLACEHOLDER_IMGS[t.id]||null):null,image2Pos:{x:50,y:50},headline:"",subline:"",headline2:"",subline2:"",bodyText:"",accentText:"",topicLine:"PLACES YOU NEED TO VISIT BEFORE",subject:"2027 ENDS",storyText:"",rawText:""};
+                          if(t.id==="dark-fade"){base.headline=i===0?"The Secrets The Top 1% Never Reveal About Wealth":"";base.subline=i===0?"Most people will never know this.":"";}
+                          if(t.id==="listicle"&&i===0){base.topicLine="PLACES YOU NEED TO VISIT BEFORE";base.subject="2027 ENDS";base.subline="Swipe to see them all.";}
+                          if(t.id==="listicle"&&i>0){base.headline=["Santorini, Greece","Kyoto, Japan","Amalfi Coast, Italy","Bali, Indonesia","Patagonia, Argentina","Cape Town, South Africa","Iceland","Machu Picchu, Peru","The Maldives","New Zealand","Morocco"][i-1]||"";base.bodyText=["Sunsets you won't find anywhere else.","Cherry blossom and centuries of culture.","The most dramatic coastline in Europe.","Temples, rice fields, and world-class surf.","Mountains that look computer generated.","Beaches, wine, wildlife. All in one place.","Northern lights every clear night.","Lost city of the Incas. Nothing like it.","Overwater bungalows. Turquoise lagoons.","Lord of the Rings meets real adventure.","Deserts, medinas, and mint tea."][i-1]||"";}
+                          if(t.id==="clean-pro"&&i===0){base.headline="You're Using AI Wrong In Your Business";base.subline="Here's what actually works.";}
+                          if(t.id==="clean-pro"&&i>0){base.headline=["The timing is everything.","Your DMs are a free lead machine.","Most businesses have no idea this exists.","Set it up once. Let it run forever.","Here's exactly how to do it."][i-1]||"";base.bodyText=["Someone just followed you. They're curious right now.","Instagram now auto-DMs every new follower. No manual outreach.","It captures the lead the moment they follow.","Five minutes of setup. Automated outreach indefinitely.","Settings → Creators → Automated Responses. Turn it on."][i-1]||"";base.accentText=["That's the highest-intent moment you'll ever get.","That's a free lead machine.","Most businesses have no idea this feature exists.","Your ad drives the follow. This captures the lead.","You're already paying for the follower. Don't waste them."][i-1]||"";}
+                          if(t.id==="storytelling"){base.storyText=["I went bankrupt at 25.\n\nNot the kind you read about in business books. The kind where you can't look your mum in the eye.","Her name is Carol. She raised three of us on her own. No shortcuts. Just sacrifice.\n\nAnd I'd thrown it all away.","I spent three years on bail waiting for a trial that kept getting cancelled.\n\nCOVID hit. Courts closed. I just had to wait.","The day I got my tag off, I sat in my car for twenty minutes.\n\nNo music. No phone. Just silence.","I found digital marketing while I was still on tag.\n\nI made my first sale at 3am on a Tuesday. I cried.","That's why I built this. Not to flex. To show you what's possible when you stop waiting for permission."][i]||"";}
+                          if(t.id==="split"){base.headline=i===0?"Your Life Now":"";base.subline=i===0?"The 9-5. The commute. The alarm.":"";base.headline2=i===0?"Your Life In 12 Months":"";base.subline2=i===0?"Your terms. Your time. Your rules.":"";}
+                          if(t.id==="raw"){base.rawText=["The average person spends\n90,000 hours at work\nin their lifetime.\n\nMost hate every single one.","Most people will retire\non 40% of\nwhat wasn't enough anyway.","You don't need more motivation.\n\nYou need a better plan.","Information is free.\n\nExecution is rare.","The goal isn't to be rich.\n\nIt's to be free.","Start before you're ready.\n\nYou'll never be ready."][i]||"";}
+                          return base;
+                        });
+                        setTmplSlides(defaults);setTmplSlideCount(t.id==="listicle"?7:6);setTmplBrief("");
+                      }
+                    }} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,cursor:"pointer",transition:"border-color 0.2s,transform 0.15s"}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=GOLD;e.currentTarget.style.transform="translateY(-2px)";}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor=A.border;e.currentTarget.style.transform="translateY(0)";}}>
+                      <div style={{fontSize:28,marginBottom:8}}>{t.emoji}</div>
+                      <div style={{fontSize:14,fontWeight:800,color:A.text,marginBottom:6}}>{t.label}</div>
+                      <div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>{t.desc}</div>
+                    </div>
+                    <button onClick={e=>{e.stopPropagation();if(window.confirm("Reset "+t.label+" to defaults?")){localStorage.removeItem("bwt_tmpl_session_"+t.id);}}} style={{position:"absolute",top:8,right:8,background:"none",border:"none",color:A.muted,fontSize:11,cursor:"pointer",padding:"2px 6px",borderRadius:4}} title="Reset to defaults">↺</button>
                   </div>
                 ))}
               </div>
             )}
+
+            {/* ── TEMPLATE EDITOR ── */}
             {tmplSelected&&(()=>{
               const isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade",isSplit=tmplSelected==="split";
               const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:8,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
-              const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
+              const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
               const previewHTML=buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,tmplSlideCount,tmplSelected,opts);
               const thumbHTMLs=dTmplSlides.slice(0,tmplSlideCount).map((s,i)=>buildTmplHTML(s||{},i,tmplSlideCount,tmplSelected,opts));
+
+              const INSPO={
+                "dark-fade":["Money Mindset","Motivation","Health & Fitness","Facts You Never Knew","Conspiracy Theories","Discipline Over Motivation"],
+                "listicle":["8 Places To Visit In 2026","5 Things Never To Do In Business","8 Things I Learnt About Money","7 Books That Changed My Life","10 Signs You Need To Quit Your Job","5 Habits Of Highly Successful People"],
+                "clean-pro":["How To Use AI In Your Business","5 Instagram Mistakes You're Making","Why Most People Fail Online","The Strategy Nobody Talks About","How I Get Clients Without Ads","Stop Doing This On Social Media"],
+                "storytelling":["How I Started In My Industry","Something I Was Thinking About Today","Life Advice I Wish I'd Had At 20","The Day Everything Changed","What Failure Taught Me","My Honest Story"],
+                "raw":["A Thought That Hit Me Today","Something Nobody Tells You","The Hard Truth About Success","What I Know Now That I Didn't Then","Stop Waiting. Start Now.","Real Talk — No Filter"],
+                "split":["Before / After","Your Life Now vs In 12 Months","2019 / 2026","Scrolling vs Creating","9-5 vs Freedom","Him / Her","Successful Creator vs Unsuccessful Creator","Then / Now"],
+              };
+
+              const inspoItems=INSPO[tmplSelected]||[];
+
+              const applyInspo=(idea)=>{
+                const parts=idea.split(/\s*[\/vs]+\s*/i);
+                if(isSplit&&parts.length>=2){
+                  setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],headline:parts[0].trim().toUpperCase(),headline2:parts[1].trim().toUpperCase()};return next;});
+                } else if(isListicle){
+                  const words=idea.split(' ');const num=parseInt(words[0]);
+                  if(!isNaN(num)){setTmplListicleNum(num);setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],topicLine:words.slice(1).join(' ').toUpperCase(),subject:""};return next;});}
+                  else{setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],topicLine:idea.toUpperCase(),subject:""};return next;});}
+                } else if(isDarkFade){
+                  setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],headline:idea};return next;});
+                } else if(isStory){
+                  setTmplBrief(idea);
+                } else if(isRaw){
+                  setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],rawText:idea};return next;});
+                } else if(isCleanPro){
+                  setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],headline:idea};return next;});
+                }
+              };
+
+              const updateSlide=(field,val)=>setTmplSlides(prev=>{const next=[...prev];next[activeSlide]={...next[activeSlide],[field]:val};return next;});
+
               const downloadSlide=async(idx)=>{
                 if(!canGenerate()){setNav("upgrade");return;}
                 setTmplDownloadingIdx(idx);
@@ -3093,6 +3135,7 @@ const base={image:i===0?(PLACEHOLDER_IMGS[t.id]||PLACEHOLDER_IMGS[t.id+"-left"]|
                 }catch(e){console.error(e);alert("Download failed — try again");}
                 setTmplDownloadingIdx(null);
               };
+
               const downloadAllTmpl=async()=>{
                 if(!canGenerate()){setNav("upgrade");return;}
                 setTmplDownloading(true);
@@ -3112,42 +3155,85 @@ const base={image:i===0?(PLACEHOLDER_IMGS[t.id]||PLACEHOLDER_IMGS[t.id+"-left"]|
                 }catch(e){console.error(e);}
                 setTmplDownloading(false);
               };
-              const updateSlide=(field,val)=>setTmplSlides(prev=>{const next=[...prev];next[activeSlide]={...next[activeSlide],[field]:val};return next;});
+
+              const generateCta=async()=>{
+                setTmplCtaGenerating(true);
+                try{
+                  const prompt=`Generate 3 lines for a social media CTA card. Offering: "${tmplCtaTopLine||"digital product"}". CTA type: ${tmplCtaType}. ${tmplCtaType==="comment"&&tmplCtaKeyword?`Keyword: ${tmplCtaKeyword}.`:""} Return ONLY valid JSON with keys: topLine (intrigue/hook, max 10 words), keyword (1 word caps if comment type, else empty), rewardLine (what they get, max 12 words). No markdown.`;
+                  const r=await fetchWithRetry({model:"claude-sonnet-4-6",max_tokens:150,messages:[{role:"user",content:prompt}]});
+                  const text=r?.content?.[0]?.text?.trim()||"{}";
+                  const clean=text.replace(/```json|```/g,"").trim();
+                  const parsed=JSON.parse(clean);
+                  if(parsed.topLine)setTmplCtaTopLine(parsed.topLine);
+                  if(parsed.keyword)setTmplCtaKeyword(parsed.keyword);
+                  if(parsed.rewardLine)setTmplCtaRewardLine(parsed.rewardLine);
+                }catch(e){console.error(e);}
+                setTmplCtaGenerating(false);
+              };
+
+              const EFFECTS=[
+                {id:"clean",label:"CLEAN",style:{color:"#fff",fontWeight:900}},
+                {id:"gold",label:"GOLD",style:{background:"linear-gradient(135deg,#ffe44d,#BB9900,#ffe44d)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+                {id:"chrome",label:"CHROME",style:{background:"linear-gradient(135deg,#ddd,#777,#ccc)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+                {id:"fire",label:"FIRE 🔥",style:{background:"linear-gradient(135deg,#ffff00,#ff6600,#cc0000)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+                {id:"ice",label:"ICE ❄️",style:{background:"linear-gradient(135deg,#d0f0ff,#38bdf8,#1a6090)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+                {id:"neon",label:"NEON",style:{color:"#BB9900",textShadow:"0 0 10px #BB9900,0 0 20px #BB9900",fontWeight:900}},
+                {id:"3d",label:"3D",style:{color:"#fff",textShadow:"2px 2px 0 #555,4px 4px 0 #333,6px 6px 8px rgba(0,0,0,0.4)",fontWeight:900}},
+                {id:"rosegold",label:"ROSE GOLD",style:{background:"linear-gradient(135deg,#f4a0b0,#c96a7a,#f4a0b0)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+                {id:"glitter",label:"✨ GLITTER",style:{background:"linear-gradient(135deg,#fff,#f0d060,#fff,#f0d060)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+                {id:"holographic",label:"HOLO",style:{background:"linear-gradient(135deg,#ff6eb4,#a78bfa,#38bdf8,#34d399)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+                {id:"pastel",label:"PASTEL",style:{color:"#f9a8d4",fontWeight:900}},
+                {id:"blush",label:"BLUSH",style:{background:"linear-gradient(135deg,#ffecd2,#fcb69f,#ff9a9e)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+                {id:"sunset",label:"SUNSET",style:{background:"linear-gradient(135deg,#ffd700,#ff8c00,#ff4500)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+                {id:"matrix",label:"MATRIX",style:{color:"#00ff41",textShadow:"0 0 10px #00ff41",fontWeight:900}},
+                {id:"purplehaze",label:"PURPLE",style:{color:"#c084fc",textShadow:"0 0 10px #c084fc",fontWeight:900}},
+                {id:"shadowpop",label:"SHADOW",style:{color:"#fff",textShadow:"3px 3px 0 #BB9900",fontWeight:900}},
+                {id:"duotone",label:"DUOTONE",style:{background:"linear-gradient(180deg,#BB9900,#fff)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+              ];
+
+              const ALL_FONTS=[
+                {id:"Bebas Neue",label:"Bebas Neue"},
+                {id:"Anton",label:"Anton"},
+                {id:"Oswald",label:"Oswald"},
+                {id:"Barlow Condensed",label:"Barlow Condensed"},
+                {id:"Archivo Black",label:"Archivo Black"},
+                {id:"Alfa Slab One",label:"Alfa Slab One"},
+                {id:"Playfair Display",label:"Playfair Display"},
+                {id:"Cormorant Garamond",label:"Cormorant Garamond"},
+                {id:"Josefin Sans",label:"Josefin Sans"},
+                {id:"Raleway",label:"Raleway"},
+                {id:"Quicksand",label:"Quicksand"},
+                {id:"Dancing Script",label:"Dancing Script"},
+              ];
+
+              const selectFont=(fontId)=>{
+                setTmplFont(fontId);
+                setTmplRecentFonts(prev=>{const next=[fontId,...prev.filter(f=>f!==fontId)].slice(0,4);try{localStorage.setItem("bwt_tmpl_recent_fonts",JSON.stringify(next));}catch{}return next;});
+              };
+
               return(<div>
+                {/* Back button + title */}
                 <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
                   <button onClick={()=>{
-                    if(tmplSelected){try{localStorage.setItem("bwt_tmpl_session_"+tmplSelected,JSON.stringify({slides:tmplSlides,slideCount:tmplSlideCount,brief:tmplBrief,effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum}));}catch{}}
+                    try{localStorage.setItem("bwt_tmpl_session_"+tmplSelected,JSON.stringify({slides:tmplSlides,slideCount:tmplSlideCount,brief:tmplBrief,effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,accentLine:tmplAccentLineColor,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum}));}catch{}
                     setTmplSelected(null);
                   }} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Templates</button>
                   <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Classic Theme Page":isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":isSplit?"Split":"Raw"}</span>
-                  {isFree&&<span style={{fontSize:11,color:"#e74c3c",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>Free plan — watermark on exports</span>}
+                  {isFree&&<span style={{fontSize:11,color:"#e74c3c",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>Free — watermark on exports</span>}
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:28,alignItems:"start",position:"relative"}}>
+
+                {/* Main grid */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:28,alignItems:"start"}}>
+
+                  {/* LEFT — sticky preview */}
                   <div style={{position:"sticky",top:76,alignSelf:"start"}}>
                     <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12}}>
                       <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:A.bg}}>
-                        {(()=>{
-                          const PW=540,PH=Math.round(1350*PW/1080);
-                          return(
-                            <div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}>
-                              <iframe
-                                key={`prev-${activeSlide}`}
-                                srcDoc={previewHTML}
-                                style={{width:1080,height:1350,border:"none",transform:"scale(0.5)",transformOrigin:"top left",pointerEvents:"none",display:"block"}}
-                                scrolling="no"
-                              />
-                            </div>
-                          );
-                        })()}
+                        {(()=>{const PW=540,PH=Math.round(1350*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}><iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:"scale(0.5)",transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/></div>);})()}
                       </div>
                     </div>
                     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-                      {thumbHTMLs.map((html,idx)=>(
-                        <div key={idx} onClick={()=>setTmplActiveSlide(idx)} style={{cursor:"pointer",position:"relative",flexShrink:0,width:86,height:108,borderRadius:6,overflow:"hidden",border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}>
-                          <iframe srcDoc={html} style={{width:1080,height:1350,border:"none",transform:"scale(0.0796)",transformOrigin:"top left",pointerEvents:"none"}} scrolling="no"/>
-                          <div style={{position:"absolute",bottom:3,right:4,background:"rgba(0,0,0,0.7)",borderRadius:3,padding:"1px 5px",fontSize:9,color:"#fff",fontWeight:700,zIndex:2}}>{idx+1}</div>
-                        </div>
-                      ))}
+                      {thumbHTMLs.map((html,idx)=>(<div key={idx} onClick={()=>setTmplActiveSlide(idx)} style={{cursor:"pointer",position:"relative",flexShrink:0,width:86,height:108,borderRadius:6,overflow:"hidden",border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}><iframe srcDoc={html} style={{width:1080,height:1350,border:"none",transform:"scale(0.0796)",transformOrigin:"top left",pointerEvents:"none"}} scrolling="no"/><div style={{position:"absolute",bottom:3,right:4,background:"rgba(0,0,0,0.7)",borderRadius:3,padding:"1px 5px",fontSize:9,color:"#fff",fontWeight:700,zIndex:2}}>{idx+1}</div></div>))}
                     </div>
                     <div style={{display:"flex",gap:8}}>
                       <button onClick={()=>downloadSlide(activeSlide)} disabled={tmplDownloadingIdx===activeSlide} style={{flex:1,background:A.surface,border:`1.5px solid ${A.border}`,color:A.text,padding:"10px",borderRadius:9,fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
@@ -3158,180 +3244,185 @@ const base={image:i===0?(PLACEHOLDER_IMGS[t.id]||PLACEHOLDER_IMGS[t.id+"-left"]|
                       </button>
                     </div>
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                    {/* ── 1. SLIDE CONTENT ── */}
-                    <div style={{background:A.surface,border:`1.5px solid ${activeSlide===0?GOLD:A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
-                      <div style={{fontSize:12,fontWeight:800,color:activeSlide===0?GOLD:A.text}}>{activeSlide===0?"Cover Slide":"Slide "+(activeSlide+1)}</div>
-                      {(isDarkFade||isListicle||(isCleanPro&&activeSlide===0)||isRaw)&&(
-                        <div>
-                          <label style={lbl}>Photo</label>
-                          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
-                            {tmplLibrary.map((p,pi)=>(
-                              <div key={pi} style={{position:"relative",flexShrink:0}}>
-                                <div onClick={()=>updateSlide("image",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${slide.image===p?GOLD:A.border}`,cursor:"pointer"}}>
-                                  <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                                </div>
-                                <div onClick={()=>{if(slide.image===p)updateSlide("image",null);}} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>
-                                <div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(slide.image===p)updateSlide("image",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Permanently remove this image from your library?")){doRemove();if(window.confirm("Don't show this confirmation again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}} title="Remove from library">🗑</div>
-                              </div>
-                            ))}
-                            <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateSlide("image",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
-                            {isPexelsUser&&<div onClick={()=>setShowPexelsTmplLib(true)} style={{width:52,height:52,borderRadius:7,border:`1.5px solid ${GOLD}44`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:GOLD,fontSize:9,fontWeight:800,flexShrink:0,textAlign:"center",lineHeight:1.2}}>🔍<br/>Pexels</div>}
-                          </div>
-                          {tmplLibrary.length===0&&<p style={{fontSize:11,color:A.muted,margin:"0 0 6px"}}>Upload photos — they'll save to your library.</p>}
-                        </div>
-                      )}
-                      {(isDarkFade||(isCleanPro&&activeSlide===0))&&<>
-                        <label style={lbl}>Headline</label>
-                        <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Hook headline" style={{...inp}}/>
-                        <label style={lbl}>Subline</label>
-                        <input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} placeholder="Supporting line (optional)" style={{...inp}}/>
-                      </>}
-                      {isListicle&&activeSlide===0&&<>
-                        <label style={lbl}>Number</label>
-                        <input type="number" min={1} value={tmplListicleNum} onChange={e=>setTmplListicleNum(Math.max(1,parseInt(e.target.value)||1))} style={{...inp,width:80}}/>
-                        <label style={lbl}>Topic Line</label>
-                        <input value={slide.topicLine||""} onChange={e=>updateSlide("topicLine",e.target.value)} style={{...inp}}/>
-                        <label style={lbl}>Subject</label>
-                        <input value={slide.subject||""} onChange={e=>updateSlide("subject",e.target.value)} style={{...inp}}/>
-                        <label style={lbl}>Subline</label>
-                        <input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} style={{...inp}}/>
-                      </>}
-                      {isListicle&&activeSlide>0&&<>
-                        <label style={lbl}>Point {activeSlide} — Headline</label>
-                        <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder={`Point ${activeSlide} headline (optional)`} style={{...inp}}/>
-                        <label style={lbl}>Detail</label>
-                        <div style={{position:"relative"}}>
-                          <textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="The tip, fact or detail" rows={3} style={{...inp,resize:"vertical",paddingRight:72}}/>
-                          <button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button>
-                        </div>
-                      </>}
-                      {isCleanPro&&activeSlide>0&&<>
-                        <label style={lbl}>Headline</label>
-                        <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Headline (optional)" style={{...inp}}/>
-                        <label style={lbl}>Body Text</label>
-                        <div style={{position:"relative"}}>
-                          <textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="Body text" rows={4} style={{...inp,resize:"vertical",paddingRight:72}}/>
-                          <button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button>
-                        </div>
-                        <label style={lbl}>Accent Sub-text</label>
-                        <input value={slide.accentText||""} onChange={e=>updateSlide("accentText",e.target.value)} placeholder="Key takeaway in accent colour" style={{...inp}}/>
-                      </>}
-                      {isStory&&<>
-                        <label style={lbl}>Story Text — Slide {activeSlide+1}</label>
-                        <div style={{position:"relative"}}>
-                          <textarea value={slide.storyText||""} onChange={e=>updateSlide("storyText",e.target.value)} placeholder="Your story paragraph. Use line breaks to separate paragraphs." rows={6} style={{...inp,resize:"vertical",paddingRight:72,lineHeight:1.6}}/>
-                          <button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button>
-                        </div>
-                      </>}
-                      {isSplit&&<>
-                        <label style={lbl}>Left Image</label>
-                        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:4}}>
-                          {tmplLibrary.map((p,pi)=>(
-                            <div key={pi} style={{position:"relative",flexShrink:0}}>
-                              <div onClick={()=>updateSlide("image",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${slide.image===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
-                              {slide.image===p&&<div onClick={()=>updateSlide("image",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}
-                              <div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(slide.image===p)updateSlide("image",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Permanently remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div>
-                            </div>
-                          ))}
-                          <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateSlide("image",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
-                        </div>
-                        <label style={lbl}>Right Image</label>
-                        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:4}}>
-                          {tmplLibrary.map((p,pi)=>(
-                            <div key={pi} style={{position:"relative",flexShrink:0}}>
-                              <div onClick={()=>updateSlide("image2",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${slide.image2===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
-                              {slide.image2===p&&<div onClick={()=>updateSlide("image2",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}
-                              <div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(slide.image2===p)updateSlide("image2",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Permanently remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div>
-                            </div>
-                          ))}
-                          <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateSlide("image2",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
-                        </div>
-                        <label style={lbl}>Left Headline</label>
-                        <input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Before" style={{...inp}}/>
-                        <label style={lbl}>Left Subline</label>
-                        <input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} placeholder="Where you are now." style={{...inp}}/>
-                        <label style={lbl}>Right Headline</label>
-                        <input value={slide.headline2||""} onChange={e=>updateSlide("headline2",e.target.value)} placeholder="After" style={{...inp}}/>
-                        <label style={lbl}>Right Subline</label>
-                        <input value={slide.subline2||""} onChange={e=>updateSlide("subline2",e.target.value)} placeholder="Where you could be." style={{...inp}}/>
-                      </>}
-                      {isRaw&&<>
-                        <label style={lbl}>Your Text</label>
-                        <p style={{fontSize:11,color:A.muted,margin:"-6px 0 4px"}}>Each line gets its own highlight. Blank line = space.</p>
-                        <textarea value={slide.rawText||""} onChange={e=>updateSlide("rawText",e.target.value)} placeholder={"The day I got my tag off\n\nI sat in my car for 20 minutes.\n\nNo music. No phone.\n\nJust silence."} rows={6} style={{...inp,resize:"vertical",lineHeight:1.6}}/>
-                      </>}
+
+                  {/* RIGHT — Content / Style tabs */}
+                  <div style={{display:"flex",flexDirection:"column",gap:0}}>
+
+                    {/* Tab switcher */}
+                    <div style={{display:"flex",marginBottom:12,background:A.surface,borderRadius:10,padding:4,border:`1.5px solid ${A.border}`}}>
+                      {["content","style"].map(tab=>(
+                        <button key={tab} onClick={()=>setTmplContentStyleTab(tab)} style={{flex:1,padding:"8px",borderRadius:7,border:"none",background:tmplContentStyleTab===tab?A.bg:"transparent",color:tmplContentStyleTab===tab?A.text:A.muted,fontSize:13,fontWeight:tmplContentStyleTab===tab?800:500,cursor:"pointer",textTransform:"capitalize",transition:"all 0.15s"}}>{tab}</button>
+                      ))}
                     </div>
-                    {/* ── 2. SLIDE SELECTOR ── */}
-                    <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
-                      <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:10}}>Slide {activeSlide+1} of {tmplSlideCount}</div>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:12}}>
-                        {tmplSlides.slice(0,tmplSlideCount).map((_,i)=>(
-                          <button key={i} onClick={()=>setTmplActiveSlide(i)} style={{width:27,height:27,borderRadius:6,background:activeSlide===i?A.text:A.surface,border:`1.5px solid ${activeSlide===i?GOLD:A.border}`,color:activeSlide===i?A.accentText:A.muted,fontSize:12,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
-                        ))}
+
+                    {/* ── CONTENT TAB ── */}
+                    {tmplContentStyleTab==="content"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+
+                      {/* Inspiration box */}
+                      {inspoItems.length>0&&<div style={{background:A.surface,border:`1.5px solid ${GOLD}33`,borderRadius:10,overflow:"hidden"}}>
+                        <button onClick={()=>setTmplShowInspo(s=>!s)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:"none",border:"none",cursor:"pointer",color:GOLD,fontSize:12,fontWeight:700}}>
+                          <span>💡 Inspiration</span><span style={{fontSize:10,color:A.muted}}>{tmplShowInspo?"hide":"show"}</span>
+                        </button>
+                        {tmplShowInspo&&<div style={{padding:"0 14px 12px",display:"flex",flexWrap:"wrap",gap:6}}>
+                          {inspoItems.map((idea,i)=>(<button key={i} onClick={()=>applyInspo(idea)} style={{background:A.bg,border:`1px solid ${A.border}`,color:A.muted,borderRadius:20,padding:"4px 12px",fontSize:11,cursor:"pointer",transition:"all 0.15s"}} onMouseEnter={e=>{e.currentTarget.style.borderColor=GOLD;e.currentTarget.style.color=GOLD;}} onMouseLeave={e=>{e.currentTarget.style.borderColor=A.border;e.currentTarget.style.color=A.muted;}}>{idea}</button>))}
+                        </div>}
+                      </div>}
+
+                      {/* Slide selector */}
+                      <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
+                        <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted,marginBottom:10}}>Slide {activeSlide+1} of {tmplSlideCount}</div>
+                        <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:12}}>
+                          {tmplSlides.slice(0,tmplSlideCount).map((_,i)=>(<button key={i} onClick={()=>setTmplActiveSlide(i)} style={{width:27,height:27,borderRadius:6,background:activeSlide===i?A.text:A.surface,border:`1.5px solid ${activeSlide===i?GOLD:A.border}`,color:activeSlide===i?A.accentText:A.muted,fontSize:12,fontWeight:700,cursor:"pointer"}}>{i+1}</button>))}
+                        </div>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <span style={{fontSize:11,color:A.muted}}>Slides:</span>
+                          <button onClick={()=>setTmplSlideCount(s=>Math.max(2,s-1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>−</button>
+                          <span style={{fontWeight:800,fontSize:14}}>{tmplSlideCount}</span>
+                          <button onClick={()=>setTmplSlideCount(s=>Math.min(maxSlides,s+1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>+</button>
+                          <span style={{fontSize:10,color:A.muted}}>max {maxSlides}</span>
+                        </div>
                       </div>
-                      <div style={{display:"flex",alignItems:"center",gap:8}}>
-                        <span style={{fontSize:11,color:A.muted}}>Slides:</span>
-                        <button onClick={()=>setTmplSlideCount(s=>Math.max(2,s-1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>−</button>
-                        <span style={{fontWeight:800,fontSize:14}}>{tmplSlideCount}</span>
-                        <button onClick={()=>setTmplSlideCount(s=>Math.min(maxSlides,s+1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>+</button>
-                        <span style={{fontSize:10,color:A.muted}}>max {maxSlides}</span>
+
+                      {/* Slide content inputs */}
+                      <div style={{background:A.surface,border:`1.5px solid ${activeSlide===0?GOLD:A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                        <div style={{fontSize:12,fontWeight:800,color:activeSlide===0?GOLD:A.text}}>{activeSlide===0?"Cover Slide":"Slide "+(activeSlide+1)}</div>
+
+                        {/* Image pickers */}
+                        {(isDarkFade||isListicle||(isCleanPro&&activeSlide===0)||isRaw||isSplit)&&(
+                          <div>
+                            <label style={lbl}>{isSplit?"Left Image":"Photo"}</label>
+                            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
+                              {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateSlide("image",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${slide.image===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div><div onClick={()=>{if(slide.image===p)updateSlide("image",null);}} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div><div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(slide.image===p)updateSlide("image",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
+                              <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateSlide("image",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
+                              {isPexelsUser&&<div onClick={()=>setShowPexelsTmplLib(true)} style={{width:52,height:52,borderRadius:7,border:`1.5px solid ${GOLD}44`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:GOLD,fontSize:9,fontWeight:800,flexShrink:0,textAlign:"center",lineHeight:1.2}}>🔍<br/>Pexels</div>}
+                            </div>
+                            {tmplLibrary.length===0&&<p style={{fontSize:11,color:A.muted,margin:"0 0 6px"}}>Upload photos — they'll save to your library.</p>}
+                          </div>
+                        )}
+
+                        {/* Split right image */}
+                        {isSplit&&<div>
+                          <label style={lbl}>Right Image</label>
+                          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:4}}>
+                            {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateSlide("image2",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${slide.image2===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{slide.image2===p&&<div onClick={()=>updateSlide("image2",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}</div>))}
+                            <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateSlide("image2",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
+                          </div>
+                        </div>}
+
+                        {/* Text inputs per template type */}
+                        {(isDarkFade||(isCleanPro&&activeSlide===0))&&<><label style={lbl}>Headline</label><input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Hook headline" style={{...inp}}/><label style={lbl}>Subline</label><input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} placeholder="Supporting line (optional)" style={{...inp}}/></>}
+                        {isListicle&&activeSlide===0&&<><label style={lbl}>Number</label><input type="number" min={1} value={tmplListicleNum} onChange={e=>setTmplListicleNum(Math.max(1,parseInt(e.target.value)||1))} style={{...inp,width:80}}/><label style={lbl}>Topic Line</label><input value={slide.topicLine||""} onChange={e=>updateSlide("topicLine",e.target.value)} style={{...inp}}/><label style={lbl}>Subject</label><input value={slide.subject||""} onChange={e=>updateSlide("subject",e.target.value)} style={{...inp}}/><label style={lbl}>Subline</label><input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} style={{...inp}}/></>}
+                        {isListicle&&activeSlide>0&&<><label style={lbl}>Point {activeSlide} — Headline</label><input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder={`Point ${activeSlide} headline`} style={{...inp}}/><label style={lbl}>Detail</label><div style={{position:"relative"}}><textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="The tip, fact or detail" rows={3} style={{...inp,resize:"vertical",paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div></>}
+                        {isCleanPro&&activeSlide>0&&<><label style={lbl}>Headline</label><input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Headline" style={{...inp}}/><label style={lbl}>Body Text</label><div style={{position:"relative"}}><textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="Body text" rows={4} style={{...inp,resize:"vertical",paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div><label style={lbl}>Accent Sub-text</label><input value={slide.accentText||""} onChange={e=>updateSlide("accentText",e.target.value)} placeholder="Key takeaway in accent colour" style={{...inp}}/></>}
+                        {isStory&&<><label style={lbl}>Story Text — Slide {activeSlide+1}</label><div style={{position:"relative"}}><textarea value={slide.storyText||""} onChange={e=>updateSlide("storyText",e.target.value)} placeholder="Your story paragraph." rows={6} style={{...inp,resize:"vertical",paddingRight:72,lineHeight:1.6}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div></>}
+                        {isSplit&&<><label style={lbl}>Left Headline</label><input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Before" style={{...inp}}/><label style={lbl}>Left Subline</label><input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} placeholder="Where you are now." style={{...inp}}/><label style={lbl}>Right Headline</label><input value={slide.headline2||""} onChange={e=>updateSlide("headline2",e.target.value)} placeholder="After" style={{...inp}}/><label style={lbl}>Right Subline</label><input value={slide.subline2||""} onChange={e=>updateSlide("subline2",e.target.value)} placeholder="Where you could be." style={{...inp}}/></>}
+                        {isRaw&&<><label style={lbl}>Your Text</label><p style={{fontSize:11,color:A.muted,margin:"-6px 0 4px"}}>Each paragraph gets its own highlight box.</p><textarea value={slide.rawText||""} onChange={e=>updateSlide("rawText",e.target.value)} placeholder={"The goal isn't to be rich.\n\nIt's to be free."} rows={6} style={{...inp,resize:"vertical",lineHeight:1.6}}/></>}
+
+                        {/* AI Brief (inside content panel) */}
+                        {hasAI&&<><label style={{...lbl,color:GOLD}}>AI Brief</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={2} placeholder={isStory?"Your story — names, places, turning point...":isListicle?"What's your list about?":"What's this carousel about?"} style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>Powers ✨ AI Suggest on each slide.</div></>}
                       </div>
-                    </div>
-                    {/* ── 3. AI BRIEF ── */}
-                    {hasAI&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
-                      <label style={{...lbl,color:GOLD,marginBottom:6}}>AI Brief</label>
-                      <textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={3} placeholder={isStory?"Your story — include names, places, feelings, turning point...":isListicle?"What's your list about?":"What's this carousel about?"} style={{...inp,fontSize:12,lineHeight:1.5}}/>
-                      <div style={{fontSize:10,color:A.muted,marginTop:4}}>Powers ✨ AI Suggest on each slide.</div>
-                    </div>}
-                    {/* ── 4. STYLE CONTROLS ── */}
-                    {!isRaw&&!isStory&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
-                      <label style={lbl}>Text Effect</label>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-                        {[["gold","GOLD"],["chrome","CHROME"],["neon","NEON"],["fire","FIRE"],["3d","3D"],["outline","OUTLINE"],["ice","ICE"],["clean","CLEAN"]].map(([id,label])=>(
-                          <button key={id} onClick={()=>setTmplEffect(id)} style={{padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplEffect===id?GOLD:A.border}`,background:tmplEffect===id?"#1a1500":A.bg,color:tmplEffect===id?GOLD:A.muted,fontSize:12,fontWeight:900,cursor:"pointer"}}>{label}</button>
-                        ))}
-                      </div>
-                      {tmplEffect==="clean"&&<>
-                        <label style={lbl}>Headline Colour</label>
-                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                          <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} placeholder="#ffffff" style={{...inp,flex:1,fontFamily:"monospace",fontSize:15,fontWeight:700,textTransform:"uppercase"}}/>
-                          <div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}>
-                            <div style={{width:"100%",height:"100%",background:tmplSecondary}}/>
-                            <input type="color" value={tmplSecondary} onChange={e=>setTmplSecondary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/>
+
+                      {/* Optional CTA Card */}
+                      <div style={{background:A.surface,border:`1.5px solid ${tmplShowCta?GOLD:A.border}`,borderRadius:10,overflow:"hidden"}}>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px"}}>
+                          <div>
+                            <div style={{fontSize:12,fontWeight:800,color:A.text}}>Optional CTA Card</div>
+                            <div style={{fontSize:11,color:A.muted}}>Add a final slide with a call to action</div>
+                          </div>
+                          <div onClick={()=>setTmplShowCta(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowCta?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
+                            <div style={{position:"absolute",top:2,left:tmplShowCta?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
                           </div>
                         </div>
-                        <label style={lbl}>Body / Subline Colour</label>
+                        {tmplShowCta&&<div style={{padding:"0 14px 14px",display:"flex",flexDirection:"column",gap:10}}>
+                          <label style={lbl}>CTA Type</label>
+                          <div style={{display:"flex",gap:6}}>
+                            {["comment","follow","save","share"].map(t=>(<button key={t} onClick={()=>setTmplCtaType(t)} style={{flex:1,padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplCtaType===t?GOLD:A.border}`,background:tmplCtaType===t?"#1a1500":A.bg,color:tmplCtaType===t?GOLD:A.muted,fontSize:11,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{t}</button>))}
+                          </div>
+                          {tmplCtaType==="comment"&&<><label style={lbl}>Keyword</label><input value={tmplCtaKeyword} onChange={e=>setTmplCtaKeyword(e.target.value.toUpperCase())} placeholder="GUIDE" style={{...inp,textTransform:"uppercase",fontWeight:800,fontSize:16,letterSpacing:2}}/></>}
+                          <label style={lbl}>What you're offering</label>
+                          <input value={tmplCtaTopLine} onChange={e=>setTmplCtaTopLine(e.target.value)} placeholder="e.g. free digital marketing guide" style={{...inp}}/>
+                          <label style={lbl}>Reward line</label>
+                          <input value={tmplCtaRewardLine} onChange={e=>setTmplCtaRewardLine(e.target.value)} placeholder={tmplCtaType==="comment"?`Comment ${tmplCtaKeyword||"KEYWORD"} and I'll send it straight over`:"Follow for more content like this"} style={{...inp}}/>
+                          <label style={lbl}>Background</label>
+                          <div style={{display:"flex",gap:6}}>{["dark","light"].map(m=>(<button key={m} onClick={()=>setTmplCtaBg(m)} style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${tmplCtaBg===m?GOLD:A.border}`,background:tmplCtaBg===m?"#1a1500":A.bg,color:tmplCtaBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>))}</div>
+                          <button onClick={generateCta} disabled={tmplCtaGenerating} style={{background:`linear-gradient(135deg,#1a1500,#0a0a0a)`,border:`1px solid ${GOLD}`,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                            {tmplCtaGenerating?<><Spin/>Generating...</>:"✨ AI Generate CTA"}
+                          </button>
+                        </div>}
+                      </div>
+
+                    </div>}
+
+                    {/* ── STYLE TAB ── */}
+                    {tmplContentStyleTab==="style"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+
+                      {/* Effects dropdown */}
+                      {!isRaw&&!isStory&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                        <label style={lbl}>Text Effect</label>
+                        <select value={tmplEffect} onChange={e=>setTmplEffect(e.target.value)} style={{...inp,appearance:"none",cursor:"pointer",fontWeight:700}}>
+                          {EFFECTS.map(ef=>(<option key={ef.id} value={ef.id}>{ef.label}</option>))}
+                        </select>
+                        {/* Preview of selected effect */}
+                        <div style={{padding:"12px",background:A.bg,borderRadius:8,textAlign:"center",fontSize:28,fontWeight:900,...EFFECTS.find(e=>e.id===tmplEffect)?.style}}>
+                          {EFFECTS.find(e=>e.id===tmplEffect)?.label||tmplEffect.toUpperCase()}
+                        </div>
+                        {/* NEON colour picker */}
+                        {tmplEffect==="neon"&&<><label style={lbl}>Glow Colour</label><div style={{display:"flex",gap:8,alignItems:"center"}}><input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontWeight:700}}/><div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`}}><div style={{width:"100%",height:"100%",background:tmplPrimary}}/><input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div></div></>}
+                        {/* CLEAN colour pickers */}
+                        {tmplEffect==="clean"&&<><label style={lbl}>Headline Colour</label><div style={{display:"flex",gap:8,alignItems:"center"}}><input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontWeight:700}}/><div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`}}><div style={{width:"100%",height:"100%",background:tmplSecondary}}/><input type="color" value={tmplSecondary} onChange={e=>setTmplSecondary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div></div><label style={lbl}>Body / Subline Colour</label><div style={{display:"flex",gap:8,alignItems:"center"}}><input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,flex:1,fontFamily:"monospace",fontWeight:700}}/><div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`}}><div style={{width:"100%",height:"100%",background:tmplPrimary}}/><input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div></div></>}
+                      </div>}
+
+                      {/* Font */}
+                      <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                        <label style={lbl}>Font</label>
+                        {/* Recent fonts quick select */}
+                        {tmplRecentFonts.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                          {tmplRecentFonts.map(f=>(<button key={f} onClick={()=>selectFont(f)} style={{padding:"5px 10px",borderRadius:7,border:`1.5px solid ${tmplFont===f?GOLD:A.border}`,background:tmplFont===f?"#1a1500":A.bg,color:tmplFont===f?GOLD:A.muted,fontSize:11,fontWeight:600,cursor:"pointer"}}>{f}</button>))}
+                        </div>}
+                        <select value={tmplFont} onChange={e=>selectFont(e.target.value)} style={{...inp,appearance:"none",cursor:"pointer",fontWeight:700}}>
+                          {ALL_FONTS.map(f=>(<option key={f.id} value={f.id}>{f.label}</option>))}
+                        </select>
+                      </div>
+
+                      {/* Headline size */}
+                      <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:8}}>
+                        <label style={lbl}>Headline Size <span style={{letterSpacing:0,fontWeight:400,textTransform:"none",fontSize:9}}>{tmplFontSize}px</span></label>
+                        <input type="range" min={40} max={160} value={tmplFontSize} onChange={e=>setTmplFontSize(Number(e.target.value))} style={{width:"100%",accentColor:GOLD}}/>
+                        <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:A.muted,marginTop:-4}}><span>Small</span><span>Default (82)</span><span>Large</span></div>
+                      </div>
+
+                      {/* Accent line colour */}
+                      <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                        <label style={lbl}>Accent Line Colour</label>
                         <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                          <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} placeholder="#BB9900" style={{...inp,flex:1,fontFamily:"monospace",fontSize:15,fontWeight:700,textTransform:"uppercase"}}/>
+                          <input type="text" value={tmplAccentLineColor} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplAccentLineColor(e.target.value);}} maxLength={7} placeholder="#BB9900" style={{...inp,flex:1,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
                           <div style={{position:"relative",width:44,height:44,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}>
-                            <div style={{width:"100%",height:"100%",background:tmplPrimary}}/>
-                            <input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/>
+                            <div style={{width:"100%",height:"100%",background:tmplAccentLineColor}}/>
+                            <input type="color" value={tmplAccentLineColor} onChange={e=>setTmplAccentLineColor(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/>
                           </div>
                         </div>
-                      </>}
-                      <label style={lbl}>Font</label>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-                        {[["Bebas Neue","BEBAS"],["Anton","ANTON"],["Oswald","OSWALD"],["Teko","TEKO"],["Barlow Condensed","BARLOW"],["Archivo Black","ARCHIVO"],["Playfair Display","Playfair"],["Alfa Slab One","Alfa Slab"]].map(([id,label])=>(
-                          <button key={id} onClick={()=>setTmplFont(id)} style={{padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplFont===id?GOLD:A.border}`,background:tmplFont===id?"#1a1500":A.bg,color:tmplFont===id?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer"}}>{label}</button>
-                        ))}
                       </div>
-                      <label style={lbl}>Headline Size <span style={{letterSpacing:0,fontWeight:400,textTransform:"none",fontSize:9}}>{tmplFontSize}px</span></label>
-                      <input type="range" min={40} max={160} value={tmplFontSize} onChange={e=>setTmplFontSize(Number(e.target.value))} style={{width:"100%",accentColor:GOLD}}/>
-                      <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:A.muted,marginTop:-6}}>
-                        <span>Small</span><span>Default (82)</span><span>Large</span>
-                      </div>
-                      {isCleanPro&&<><label style={lbl}>Body Background</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
-                    </div>}
-                    {(isStory||isRaw)&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
-                      {isStory&&<><label style={lbl}>Background</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
-                      {isRaw&&<><label style={lbl}>Text Highlight</label><div style={{display:"flex",gap:8}}>{["white","black"].map(m=><button key={m} onClick={()=>setTmplRawBox(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawBox===m?GOLD:A.border}`,background:tmplRawBox===m?"#1a1500":A.bg,color:tmplRawBox===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div><label style={lbl}>Text Position</label><div style={{display:"flex",gap:8}}>{["bottom","centre"].map(m=><button key={m} onClick={()=>setTmplRawPos(m)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplRawPos===m?GOLD:A.border}`,background:tmplRawPos===m?"#1a1500":A.bg,color:tmplRawPos===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>)}</div></>}
-                      <label style={lbl}>Font Style</label>
-                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                        {[["Inter","Clean"],["Times New Roman","Serif"]].map(([id,label])=>(
-                          <button key={id} onClick={()=>setTmplFontStyle(id)} style={{flex:1,padding:"8px 4px",borderRadius:7,border:`1.5px solid ${tmplFontStyle===id?GOLD:A.border}`,background:tmplFontStyle===id?"#1a1500":A.bg,color:tmplFontStyle===id?GOLD:A.muted,fontSize:12,fontWeight:600,cursor:"pointer"}}>{label}</button>
-                        ))}
-                      </div>
+
+                      {/* Background toggle (Clean Pro / Storytelling) */}
+                      {(isCleanPro||isStory)&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:8}}>
+                        <label style={lbl}>Body Background</label>
+                        <div style={{display:"flex",gap:8}}>{["white","black"].map(m=>(<button key={m} onClick={()=>setTmplBg(m)} style={{flex:1,padding:"8px",borderRadius:7,border:`1.5px solid ${tmplBg===m?GOLD:A.border}`,background:tmplBg===m?"#1a1500":A.bg,color:tmplBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>))}</div>
+                      </div>}
+
+                      {/* Raw options */}
+                      {isRaw&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:8}}>
+                        <label style={lbl}>Text Highlight</label>
+                        <div style={{display:"flex",gap:8}}>{["white","black"].map(m=>(<button key={m} onClick={()=>setTmplRawBox(m)} style={{flex:1,padding:"8px",borderRadius:7,border:`1.5px solid ${tmplRawBox===m?GOLD:A.border}`,background:tmplRawBox===m?"#1a1500":A.bg,color:tmplRawBox===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>))}</div>
+                        <label style={lbl}>Text Position</label>
+                        <div style={{display:"flex",gap:8}}>{["bottom","centre"].map(m=>(<button key={m} onClick={()=>setTmplRawPos(m)} style={{flex:1,padding:"8px",borderRadius:7,border:`1.5px solid ${tmplRawPos===m?GOLD:A.border}`,background:tmplRawPos===m?"#1a1500":A.bg,color:tmplRawPos===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>))}</div>
+                      </div>}
+
+                      {/* Storytelling font style */}
+                      {isStory&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:8}}>
+                        <label style={lbl}>Font Style</label>
+                        <div style={{display:"flex",gap:6}}>{[["Inter","Clean"],["Times New Roman","Serif"]].map(([id,label])=>(<button key={id} onClick={()=>setTmplFontStyle(id)} style={{flex:1,padding:"8px",borderRadius:7,border:`1.5px solid ${tmplFontStyle===id?GOLD:A.border}`,background:tmplFontStyle===id?"#1a1500":A.bg,color:tmplFontStyle===id?GOLD:A.muted,fontSize:12,fontWeight:600,cursor:"pointer"}}>{label}</button>))}</div>
+                      </div>}
+
                     </div>}
                   </div>
                 </div>
