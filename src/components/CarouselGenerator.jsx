@@ -928,6 +928,17 @@ export default function App() {
   const [tmplEffect, setTmplEffect] = useState("clean");
   const [tmplFont, setTmplFont] = useState("Bebas Neue");
   const [tmplFontSize, setTmplFontSize] = useState(82);
+  const [tmplAccentLineColor, setTmplAccentLineColor] = useState("#BB9900");
+  const [tmplRecentFonts, setTmplRecentFonts] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_recent_fonts")||"[]");}catch{return[];}});
+  const [tmplContentStyleTab, setTmplContentStyleTab] = useState("content");
+  const [tmplShowInspo, setTmplShowInspo] = useState(true);
+  const [tmplShowCta, setTmplShowCta] = useState(false);
+  const [tmplCtaType, setTmplCtaType] = useState("comment");
+  const [tmplCtaKeyword, setTmplCtaKeyword] = useState("");
+  const [tmplCtaTopLine, setTmplCtaTopLine] = useState("");
+  const [tmplCtaRewardLine, setTmplCtaRewardLine] = useState("");
+  const [tmplCtaGenerating, setTmplCtaGenerating] = useState(false);
+  const [tmplCtaBg, setTmplCtaBg] = useState("dark");
   const [tmplPrimary, setTmplPrimary] = useState("#BB9900");
   const [tmplSecondary, setTmplSecondary] = useState("#ffffff");
   const [tmplBg, setTmplBg] = useState("white");
