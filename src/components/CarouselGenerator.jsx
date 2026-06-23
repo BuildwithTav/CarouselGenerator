@@ -1108,30 +1108,33 @@ export default function App() {
         +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;bottom:100px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:32px;'>"
         +"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS+"px;font-weight:900;line-height:0.88;color:"+AL+";-webkit-text-fill-color:"+AL+";'>"+(listicleNum||6)+"</div>"
-        +"<div style='width:"+numLineW+"px;height:5px;background:"+AL+";'></div></div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS+"px;font-weight:900;line-height:0.88;color:"+AL+";'>"+( listicleNum||6)+"</div>"
+        +"<div style='width:"+numLineW+"px;height:5px;background:"+AL+";'></div>"
+        +"</div>"
         +"<div id='ltz' style='flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;padding-bottom:8px;overflow:hidden;'>"
-        +"<div id='lt' style='font-family:"+fontFamily+",sans-serif;font-size:44px;font-weight:600;color:rgba(255,255,255,0.65);line-height:1.2;white-space:nowrap;'>"+esc((slide.topicLine||"PLACES YOU NEED TO VISIT BEFORE").toUpperCase())+"</div>"
-        +"<div id='ls' style='font-family:"+fontFamily+",sans-serif;font-size:110px;font-weight:900;line-height:1.0;white-space:nowrap;color:"+AL+";-webkit-text-fill-color:"+AL+";'>"+esc((slide.subject||"2027 ENDS").toUpperCase())+"</div>"
-        +(slide.subline?"<div id='lu' style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:34px;color:rgba(255,255,255,0.6);line-height:1.3;white-space:nowrap;'>"+esc(slide.subline)+"</div>":"")
+        +"<div id='lt' style='font-family:"+fontFamily+",sans-serif;font-size:44px;font-weight:600;color:"+secondary+";line-height:1.2;white-space:nowrap;'>"+esc((slide.topicLine||"PLACES YOU NEED TO VISIT BEFORE").toUpperCase())+"</div>"
+        +"<div id='ls' style='font-family:"+fontFamily+",sans-serif;font-size:110px;font-weight:900;line-height:1.0;color:"+AL+";white-space:nowrap;'>"+esc((slide.subject||"2027 ENDS").toUpperCase())+"</div>"
+        +(slide.subline?"<div id='lu' style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+secondary+";line-height:1.3;white-space:nowrap;'>"+esc(slide.subline)+"</div>":"")
         +"</div></div>"
-        +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:rgba(255,255,255,0.45);'>"+websiteStr+"</div>"+chevron+counter+wm+fitScriptLis+"</div>";
+        +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:"+secondary+";opacity:0.5;'>"+websiteStr+"</div>"
+        +chevron+counter+wm+fitScriptLis+"</div>";
     }
     else if(tmpl==="listicle"&&!isCover){
       const lGrad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 40%,rgba(0,0,0,0.15) 54%,rgba(0,0,0,0.55) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.97) 78%,rgba(0,0,0,1) 86%,rgba(0,0,0,1) 100%)";
       const numFS2=String(idx).length>1?260:310;
       const numLineW2=Math.round(numFS2*0.62*String(idx).length)+20;
-      const fitScriptLisBody="<script>(function(){var h=document.getElementById('lbh'+"+idx+");if(!h)return;var zone=document.getElementById('lbz'+"+idx+");if(!zone)return;var maxW=zone.offsetWidth;document.fonts.ready.then(function(){var fs=68;h.style.fontSize=fs+'px';while(fs>28&&Math.ceil(h.scrollWidth/(maxW*0.95))>2){fs-=2;h.style.fontSize=fs+'px';}window.__TEXT_FIT_DONE__=true;});})();<\/script>";
+      const fitScriptLisBody="<script>(function(){var h=document.getElementById('lbh"+idx+"');if(!h)return;var zone=document.getElementById('lbz"+idx+"');if(!zone)return;var maxW=zone.offsetWidth;document.fonts.ready.then(function(){var fs=68;h.style.fontSize=fs+'px';while(fs>28&&Math.ceil(h.scrollWidth/(maxW*0.95))>2){fs-=2;h.style.fontSize=fs+'px';}window.__TEXT_FIT_DONE__=true;});})();<\/script>";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#0a0a0a;overflow:hidden;'>"+imgTag(slide)
         +"<div style='position:absolute;inset:0;background:"+lGrad+";z-index:1;'></div>"
         +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;bottom:80px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:40px;'>"
         +"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS2+"px;font-weight:900;line-height:1;color:"+AL+";-webkit-text-fill-color:"+AL+";'>"+String(idx)+"</div>"
-        +"<div style='width:"+numLineW2+"px;height:5px;background:"+AL+";'></div></div>"
-        +"<div id='lbz'+"+idx+" style='flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;padding-bottom:8px;overflow:hidden;'>"
-        +(slide.headline?"<div id='lbh'+"+idx+" style='font-family:"+fontFamily+",sans-serif;font-size:68px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
-        +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:"+secondary+";opacity:0.85;line-height:1.45;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS2+"px;font-weight:900;line-height:1;color:"+AL+";'>"+String(idx)+"</div>"
+        +"<div style='width:"+numLineW2+"px;height:5px;background:"+AL+";'></div>"
+        +"</div>"
+        +"<div id='lbz"+idx+"' style='flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;padding-bottom:8px;overflow:hidden;'>"
+        +(slide.headline?"<div id='lbh"+idx+"' style='font-family:"+fontFamily+",sans-serif;font-size:68px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;color:"+AL+";'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(slide.bodyText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:44px;color:"+secondary+";line-height:1.45;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
         +"</div></div>"
         +website+wm+fitScriptLisBody+"</div>";
     }
@@ -3435,7 +3438,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     {tmplContentStyleTab==="style"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
                       {activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,marginBottom:8}}><div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>CTA slide inherits your template colours and font.</div></div>}
                       {/* Effects dropdown */}
-                      {!isRaw&&!isStory&&!activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                      {!isRaw&&!isStory&&!activeIsCtaSlide&&!isListicle&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
                         <label style={lbl}>Text Effect</label>
                         <div style={{position:"relative",display:"flex",alignItems:"center"}}><select value={tmplEffect} onChange={e=>setTmplEffect(e.target.value)} style={{...inp,appearance:"none",cursor:"pointer",fontWeight:700,paddingRight:32,width:"100%"}}>
                           {EFFECTS.map(ef=>(<option key={ef.id} value={ef.id}>{ef.label}</option>))}
@@ -3445,13 +3448,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           {EFFECTS.find(e=>e.id===tmplEffect)?.label||tmplEffect.toUpperCase()}
                         </div>
                         {/* NEON colour picker */}
-                        <label style={lbl}>{tmplEffect==="neon"?"Glow Colour":"Headline / Effect Colour"}</label>
+                        <label style={lbl}>{isListicle?"Accent / Headline":"Headline / Effect Colour"}</label>
                         <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4}}>
                           {(tmplFavColors||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0,width:28,height:28,borderRadius:6,background:c||"transparent",border:`2px solid ${c&&tmplPrimary===c?GOLD:A.border}`,cursor:c?"pointer":"default"}} onClick={c?()=>setTmplPrimary(c):undefined}>{!c&&<div style={{position:"relative",overflow:"hidden",width:"100%",height:"100%",borderRadius:6}}><input type="color" defaultValue="#BB9900" onChange={e=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=e.target.value;setTmplFavColors(n);setTmplPrimary(e.target.value);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",inset:-4,opacity:0,cursor:"pointer",width:"calc(100% + 8px)",height:"calc(100% + 8px)"}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#666",fontSize:16,pointerEvents:"none"}}>+</div></div>}{c&&<div onClick={e=>{e.stopPropagation();const n=[...(tmplFavColors||[null,null,null])];n[i]=null;setTmplFavColors(n);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:10}}>×</div>}</div>))}
                           <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,flex:1,minWidth:70,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
                           <div style={{position:"relative",width:34,height:34,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplPrimary}}/><input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div>
                         </div>
-                        <label style={lbl}>{isListicle?"Topic & Text Colour":"Subline / Body Colour"}</label>
+                        <label style={lbl}>{isListicle?"Topic / Subline Text":"Subline / Body Colour"}</label>
                         <div style={{display:"flex",gap:6,alignItems:"center"}}>
                           {(tmplFavColors||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0,width:28,height:28,borderRadius:6,background:c||"transparent",border:`2px solid ${c&&tmplSecondary===c?GOLD:A.border}`,cursor:c?"pointer":"default"}} onClick={c?()=>setTmplSecondary(c):undefined}>{!c&&<div style={{position:"relative",overflow:"hidden",width:"100%",height:"100%",borderRadius:6}}><input type="color" defaultValue="#ffffff" onChange={e=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=e.target.value;setTmplFavColors(n);setTmplSecondary(e.target.value);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",inset:-4,opacity:0,cursor:"pointer",width:"calc(100% + 8px)",height:"calc(100% + 8px)"}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#666",fontSize:16,pointerEvents:"none"}}>+</div></div>}{c&&<div onClick={e=>{e.stopPropagation();const n=[...(tmplFavColors||[null,null,null])];n[i]=null;setTmplFavColors(n);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:10}}>×</div>}</div>))}
                           <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} style={{...inp,flex:1,minWidth:70,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
@@ -3478,7 +3481,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                       {/* Accent line colour */}
 {!activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
-                        <label style={lbl}>{isListicle?"Headline & Accent Colour":"Accent Line Colour"}</label>
+                        <label style={lbl}>{isListicle?"Accent / Headline Colour":"Accent Line Colour"}</label>
                         <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                           {(tmplFavColors||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0}}>{c?<div onClick={e=>{e.stopPropagation();setTmplAccentLineColor(c);}} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplAccentLineColor===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative"}}/>:<div style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden"}}><input type="color" defaultValue="#BB9900" onChange={e=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=e.target.value;setTmplFavColors(n);setTmplAccentLineColor(e.target.value);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",inset:-4,opacity:0,cursor:"pointer",width:"calc(100% + 8px)",height:"calc(100% + 8px)"}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16,pointerEvents:"none"}}>+</div></div>}{c&&<div onClick={()=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=null;setTmplFavColors(n);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:2,pointerEvents:"auto"}}>×</div>}</div>))}
                           <input type="text" value={tmplAccentLineColor} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplAccentLineColor(e.target.value);}} maxLength={7} placeholder="#BB9900" style={{...inp,flex:1,minWidth:70,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
