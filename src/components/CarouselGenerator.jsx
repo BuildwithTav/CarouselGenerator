@@ -1102,18 +1102,18 @@ export default function App() {
       const numDigits=String(listicleNum||6).length;
       const numFS=numDigits>2?240:numDigits>1?360:520;
       const numLineW=Math.min(Math.round(numFS*0.55*numDigits)+10,Math.round(numFS*numDigits*0.6));
-      const fitScriptLis="<script>(function(){var t=document.getElementById('lt');var s=document.getElementById('ls');var u=document.getElementById('lu');var zone=document.getElementById('ltz');if(!zone)return;var maxW=zone.offsetWidth;document.fonts.ready.then(function(){[{el:t,max:44,single:true},{el:s,max:110,single:false},{el:u,max:34,single:true}].forEach(function(item){if(!item.el)return;var fs=item.max;item.el.style.fontSize=fs+'px';if(item.single){while(fs>18&&item.el.scrollWidth>maxW){fs-=2;item.el.style.fontSize=fs+'px';}}else{var lines=Math.ceil(item.el.scrollWidth/(maxW*0.95));while(fs>28&&lines>2){fs-=2;item.el.style.fontSize=fs+'px';lines=Math.ceil(item.el.scrollWidth/(maxW*0.95));}}});window.__TEXT_FIT_DONE__=true;});})();<\/script>";
+      const fitScriptLis="<script>(function(){function fit(el,max,twoLine){if(!el)return;var zone=el.parentElement;var maxW=zone?zone.offsetWidth:800;var fs=max;el.style.fontSize=fs+'px';if(twoLine){while(fs>28&&Math.ceil(el.scrollWidth/(maxW*0.95))>2){fs-=2;el.style.fontSize=fs+'px';}}else{while(fs>18&&el.scrollWidth>maxW){fs-=2;el.style.fontSize=fs+'px';}}}document.fonts.ready.then(function(){fit(document.getElementById('lt'),44,false);fit(document.getElementById('ls'),110,true);fit(document.getElementById('lu'),34,false);window.__TEXT_FIT_DONE__=true;}).catch(function(){fit(document.getElementById('lt'),44,false);fit(document.getElementById('ls'),110,true);fit(document.getElementById('lu'),34,false);window.__TEXT_FIT_DONE__=true;});})();<\/script>";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(slide)
         +"<div style='position:absolute;inset:0;background:"+cf+";z-index:1;'></div>"
         +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;bottom:100px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:32px;'>"
         +"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS+"px;font-weight:900;line-height:0.88;color:"+AL+";'>"+(listicleNum||6)+"</div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS+"px;font-weight:900;line-height:0.88;"+effectCSS(effect,AL,secondary)+"'>"+(listicleNum||6)+"</div>"
         +"<div style='width:"+numLineW+"px;height:5px;background:"+AL+";'></div>"
         +"</div>"
         +"<div id='ltz' style='flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;padding-bottom:8px;overflow:hidden;'>"
         +"<div id='lt' style='font-family:"+fontFamily+",sans-serif;font-size:44px;font-weight:600;color:"+secondary+";line-height:1.2;white-space:nowrap;'>"+esc((slide.topicLine||"PLACES YOU NEED TO VISIT BEFORE").toUpperCase())+"</div>"
-        +"<div id='ls' style='font-family:"+fontFamily+",sans-serif;font-size:110px;font-weight:900;line-height:1.0;color:"+AL+";white-space:nowrap;'>"+esc((slide.subject||"2027 ENDS").toUpperCase())+"</div>"
+        +"<div id='ls' style='font-family:"+fontFamily+",sans-serif;font-size:110px;font-weight:900;line-height:1.0;"+effectCSS(effect,AL,secondary)+"white-space:nowrap;'>"+esc((slide.subject||"2027 ENDS").toUpperCase())+"</div>"
         +(slide.subline?"<div id='lu' style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+secondary+";line-height:1.3;white-space:nowrap;'>"+esc(slide.subline)+"</div>":"")
         +"</div></div>"
         +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:"+secondary+";opacity:0.5;'>"+websiteStr+"</div>"
@@ -1129,11 +1129,11 @@ export default function App() {
         +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;bottom:80px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:40px;'>"
         +"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS2+"px;font-weight:900;line-height:1;color:"+AL+";'>"+String(idx)+"</div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS2+"px;font-weight:900;line-height:1;"+effectCSS(effect,AL,secondary)+"'>"+String(idx)+"</div>"
         +"<div style='width:"+numLineW2+"px;height:5px;background:"+AL+";'></div>"
         +"</div>"
         +"<div id='lbz"+idx+"' style='flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;padding-bottom:8px;overflow:hidden;'>"
-        +(slide.headline?"<div id='lbh"+idx+"' style='font-family:"+fontFamily+",sans-serif;font-size:68px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;color:"+AL+";'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(slide.headline?"<div id='lbh"+idx+"' style='font-family:"+fontFamily+",sans-serif;font-size:68px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,AL,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
         +(slide.bodyText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:44px;color:"+secondary+";line-height:1.45;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
         +"</div></div>"
         +website+wm+fitScriptLisBody+"</div>";
