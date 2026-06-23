@@ -1130,7 +1130,7 @@ export default function App() {
         +"</div>"
         +"<div id='ltz' style='flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;padding-bottom:8px;overflow:hidden;'>"
         +"<div id='lt' style='font-family:"+fontFamily+",sans-serif;font-size:44px;font-weight:600;color:"+secondary+";line-height:1.2;white-space:nowrap;'>"+esc((slide.topicLine||"PLACES YOU NEED TO VISIT BEFORE").toUpperCase())+"</div>"
-        +"<div id='ls' style='font-family:"+fontFamily+",sans-serif;font-size:110px;font-weight:900;line-height:1.0;"+effectCSS(effect,AL,secondary)+"white-space:nowrap;'>"+esc((slide.subject||"2027 ENDS").toUpperCase())+"</div>"
+        +"<div id='ls' style='font-family:"+fontFamily+",sans-serif;font-size:110px;font-weight:900;line-height:1.0;word-break:break-word;"+effectCSS(effect,AL,secondary)+"'>"+esc((slide.subject||"2027 ENDS").toUpperCase())+"</div>"
         +(slide.subline?"<div id='lu' style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+secondary+";line-height:1.3;white-space:nowrap;'>"+esc(slide.subline)+"</div>":"")
         +"</div></div>"
         +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:"+secondary+";opacity:0.5;'>"+websiteStr+"</div>"
@@ -3222,7 +3222,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   if(briefNum&&briefNum>=2&&briefNum<=12){targetCount=briefNum+1;setTmplSlideCount(targetCount);setTmplListicleNum(briefNum);}
                   const numItems=targetCount-1;
                   const existingItems=tmplSlides.slice(1,targetCount).map((s,i)=>s.headline?(i+1)+". "+s.headline+" (keep, generate detail)":(i+1)+". (generate)").join("\n");
-                  const prompt="Create a listicle carousel about: \""+tmplBrief+"\". Generate "+numItems+" items. Existing: "+existingItems+". Return ONLY valid JSON with keys: coverTopicLine (string max 6 words), coverSubject (string max 4 words), items (array of "+numItems+" objects with headline max 4 words and bodyText max 15 words). No markdown.";
+                  const prompt="Create a listicle carousel about: \""+tmplBrief+"\". Generate "+numItems+" items. Existing: "+existingItems+". Return ONLY valid JSON with keys: coverTopicLine (max 6 words, describes the topic e.g. PLACES YOU NEED TO VISIT), coverSubject (max 3 words, the punchy hook WITHOUT the number e.g. BEFORE YOU DIE or ENDS 2027 — never start with the number), items (array of "+numItems+" objects with headline max 4 words and bodyText max 15 words). No markdown.";
                   const r=await fetchWithRetry({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:prompt}]});
                   const text=r?.content?.[0]?.text?.trim()||"{}";
                   const bt=String.fromCharCode(96);const clean=text.replace(new RegExp(bt+bt+bt+"json","g"),"").replace(new RegExp(bt+bt+bt,"g"),"").trim();
