@@ -3455,7 +3455,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <div style={{position:"relative",width:34,height:34,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplAccentLineColor}}/><input type="color" value={tmplAccentLineColor} onChange={e=>setTmplAccentLineColor(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div>
                         </div>
                       </div>}
-}
                         </div>
                         {/* NEON colour picker */}
                         {!isListicle&&<><label style={lbl}>{tmplEffect==="neon"?"Glow Colour":"Headline / Effect Colour"}</label>
