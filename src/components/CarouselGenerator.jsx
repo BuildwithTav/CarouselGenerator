@@ -3438,7 +3438,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     {tmplContentStyleTab==="style"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
                       {activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,marginBottom:8}}><div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>CTA slide inherits your template colours and font.</div></div>}
                       {/* Effects dropdown */}
-                      {!isRaw&&!isStory&&!activeIsCtaSlide&&!isListicle&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                      {!isRaw&&!isStory&&!activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
                         <label style={lbl}>Text Effect</label>
                         <div style={{position:"relative",display:"flex",alignItems:"center"}}><select value={tmplEffect} onChange={e=>setTmplEffect(e.target.value)} style={{...inp,appearance:"none",cursor:"pointer",fontWeight:700,paddingRight:32,width:"100%"}}>
                           {EFFECTS.map(ef=>(<option key={ef.id} value={ef.id}>{ef.label}</option>))}
