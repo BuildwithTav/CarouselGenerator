@@ -1081,14 +1081,19 @@ export default function App() {
     const counter=showCounter?"<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+(idx+1)+"/"+total+"</div>":"";
     function imgTag(s){if(!s||!s.image)return"<div style='position:absolute;inset:0;background:#1a1a1a;z-index:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;'><div style='background:rgba(187,153,0,0.15);border:2px dashed rgba(187,153,0,0.6);border-radius:16px;padding:40px 60px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:42px;margin-bottom:16px;'>📷</div><div style='font-family:-apple-system,sans-serif;font-size:34px;font-weight:700;color:#BB9900;'>Upload your image</div><div style='font-family:-apple-system,sans-serif;font-size:26px;color:rgba(255,255,255,0.5);margin-top:8px;'>in the Photo section</div></div></div>";const px=(s.imagePos&&s.imagePos.x)||50,py=(s.imagePos&&s.imagePos.y)||50;const isPlaceholder=s.image&&!s.image.startsWith("data:");const overlay=isPlaceholder?"<div style='position:absolute;top:60px;left:50%;transform:translateX(-50%);z-index:3;pointer-events:none;'><div style='background:rgba(0,0,0,0.75);border:2px solid rgba(187,153,0,0.8);border-radius:12px;padding:16px 32px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:28px;font-weight:700;color:#BB9900;'>📷 Replace with your image</div></div></div>":"";return"<img src='"+esc(s.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+px+"% "+py+"%;z-index:0;'/>"+overlay;}
     function darkFadeCover(s){
+      const headlineText=esc((s.headline||"").toUpperCase());
+      const sublineText=s.subline?esc(s.subline):"";
+      const effectStyle=effectCSS(effect,primary,secondary);
+      const sublineColor=effect==="clean"?primary:secondary;
+      const fitScript="<script>(function(){var h=document.getElementById('hl');if(!h)return;var zone=document.getElementById('tz');var maxW=zone.offsetWidth;var maxH=zone.offsetHeight;var fs=88;h.style.fontSize=fs+'px';function fits(){return h.scrollWidth<=maxW&&h.offsetHeight<=(maxH*0.7);}document.fonts.ready.then(function(){while(fs>36&&!fits()){fs-=2;h.style.fontSize=fs+'px';}window.__TEXT_FIT_DONE__=true;});})();<\/script>";
       return"<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(s)
         +"<div style='position:absolute;inset:0;background:"+grad+";z-index:1;'></div>"
         +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.638)+"px;white-space:nowrap;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;z-index:5;left:54px;right:54px;top:"+Math.round(H*0.748)+"px;height:5px;background:linear-gradient(to right,transparent 0%,"+primary+" 5%,"+primary+" 95%,transparent 100%);'></div>"
-        +"<div style='position:absolute;z-index:5;left:60px;right:60px;bottom:"+Math.round(H*0.04)+"px;max-height:"+Math.round(H*0.32)+"px;display:flex;flex-direction:column;align-items:center;gap:8px;overflow:hidden;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((s.headline||""),FS)+"px;font-weight:900;line-height:1.1;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;flex-shrink:1;"+effectCSS(effect,primary,secondary)+"'>"+esc((s.headline||"").toUpperCase())+"</div>"
-        +(s.subline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:36px;color:"+(effect==="clean"?primary:secondary)+";text-align:center;font-weight:600;max-width:100%;'>"+esc(s.subline)+"</div>":"")
-        +"</div>"+website+(isCover?chevron:"")+counter+wm+"</div>";
+        +"<div id='tz' style='position:absolute;z-index:5;left:60px;right:60px;bottom:"+Math.round(H*0.09)+"px;height:"+Math.round(H*0.22)+"px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:16px;overflow:hidden;'>"
+        +"<div id='hl' style='font-family:"+fontFamily+",sans-serif;font-size:88px;font-weight:900;line-height:1.1;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectStyle+"'>"+headlineText+"</div>"
+        +(sublineText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+sublineColor+";text-align:center;font-weight:600;max-width:100%;flex-shrink:0;'>"+sublineText+"</div>":"")
+        +"</div>"+website+(isCover?chevron:"")+counter+wm+fitScript+"</div>";
     }
     let body="";
     if(tmpl==="dark-fade"){body=darkFadeCover(slide);}
@@ -3461,7 +3466,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         </div>}
 
                       {/* Headline size slider */}
-                      {!activeIsCtaSlide&&!isStory&&!isRaw&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:8}}>
+                      {!activeIsCtaSlide&&!isStory&&!isRaw&&!isDarkFade&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:8}}>
                         <label style={lbl}>Headline Size <span style={{letterSpacing:0,fontWeight:400,textTransform:"none",fontSize:9}}>{tmplFontSize}px</span></label>
                         <input type="range" min={32} max={120} value={tmplFontSize} onChange={e=>setTmplFontSize(Number(e.target.value))} style={{width:"100%",accentColor:GOLD}}/>
                         <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:A.muted,marginTop:-4}}><span>Small</span><span>{({"dark-fade":72,"listicle":82,"clean-pro":64,"split":56}[tmplSelected]||72)}px default</span><span>Large</span></div>
