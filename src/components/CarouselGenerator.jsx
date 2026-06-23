@@ -1085,12 +1085,12 @@ export default function App() {
       const sublineText=s.subline?esc(s.subline):"";
       const effectStyle=effectCSS(effect,primary,secondary);
       const sublineColor=effect==="clean"?primary:secondary;
-      const fitScript="<script>(function(){var h=document.getElementById('hl');if(!h)return;var zone=document.getElementById('tz');var maxW=zone.offsetWidth;var maxH=zone.offsetHeight;var fs=88;h.style.fontSize=fs+'px';function fits(){return h.scrollWidth<=maxW&&h.offsetHeight<=(maxH*0.7);}document.fonts.ready.then(function(){while(fs>36&&!fits()){fs-=2;h.style.fontSize=fs+'px';}window.__TEXT_FIT_DONE__=true;});})();<\/script>";
+      const fitScript="<script>(function(){var h=document.getElementById('hl');if(!h)return;var zone=document.getElementById('tz');var maxW=zone.offsetWidth;var maxH=zone.offsetHeight;var fs=88;h.style.fontSize=fs+'px';function fits(){return h.scrollWidth<=maxW&&zone.scrollHeight<=maxH;}document.fonts.ready.then(function(){while(fs>36&&!fits()){fs-=2;h.style.fontSize=fs+'px';}window.__TEXT_FIT_DONE__=true;});})();<\/script>";
       return"<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(s)
         +"<div style='position:absolute;inset:0;background:"+grad+";z-index:1;'></div>"
         +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.638)+"px;white-space:nowrap;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;z-index:5;left:54px;right:54px;top:"+Math.round(H*0.748)+"px;height:5px;background:linear-gradient(to right,transparent 0%,"+primary+" 5%,"+primary+" 95%,transparent 100%);'></div>"
-        +"<div id='tz' style='position:absolute;z-index:5;left:60px;right:60px;bottom:"+Math.round(H*0.09)+"px;height:"+Math.round(H*0.22)+"px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:16px;overflow:hidden;'>"
+        +"<div id='tz' style='position:absolute;z-index:5;left:60px;right:60px;top:"+Math.round(H*0.762)+"px;height:"+Math.round(H*0.21)+"px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:16px;overflow:hidden;'>"
         +"<div id='hl' style='font-family:"+fontFamily+",sans-serif;font-size:88px;font-weight:900;line-height:1.1;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectStyle+"'>"+headlineText+"</div>"
         +(sublineText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+sublineColor+";text-align:center;font-weight:600;max-width:100%;flex-shrink:0;'>"+sublineText+"</div>":"")
         +"</div>"+website+(isCover?chevron:"")+counter+wm+fitScript+"</div>";
