@@ -1088,14 +1088,15 @@ export default function App() {
       const headlineText=esc((s.headline||"").toUpperCase());
       const sublineText=s.subline?esc(s.subline):"";
       const effectStyle=effectCSS(effect,primary,secondary);
-      const fitScript="<script>(function(){var h=document.getElementById('hl');if(!h)return;var zone=document.getElementById('tz');var maxH=zone.offsetHeight;var fs=88;h.style.fontSize=fs+'px';function fits(){return zone.scrollHeight<=maxH;}document.fonts.ready.then(function(){while(fs>36&&!fits()){fs-=2;h.style.fontSize=fs+'px';}window.__TEXT_FIT_DONE__=true;}).catch(function(){window.__TEXT_FIT_DONE__=true;});})();<\/script>";
+      const sublineColor=secondary;
+      const fitScript="<script>(function(){var h=document.getElementById('hl');if(!h)return;var zone=document.getElementById('tz');var maxW=zone.offsetWidth;var maxH=zone.offsetHeight;var fs=88;h.style.fontSize=fs+'px';function fits(){return zone.scrollHeight<=maxH;}document.fonts.ready.then(function(){while(fs>36&&!fits()){fs-=2;h.style.fontSize=fs+'px';}window.__TEXT_FIT_DONE__=true;}).catch(function(){window.__TEXT_FIT_DONE__=true;});})();<\/script>";
       return"<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(s)
         +"<div style='position:absolute;inset:0;background:"+grad+";z-index:1;'></div>"
         +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.638)+"px;white-space:nowrap;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;z-index:5;left:54px;right:54px;top:"+Math.round(H*0.748)+"px;height:5px;background:linear-gradient(to right,transparent 0%,"+AL+" 5%,"+AL+" 95%,transparent 100%);'></div>"
         +"<div id='tz' style='position:absolute;z-index:5;left:60px;right:60px;top:"+Math.round(H*0.762)+"px;height:"+Math.round(H*0.21)+"px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:16px;overflow:hidden;'>"
         +"<div id='hl' style='font-family:"+fontFamily+",sans-serif;font-size:88px;font-weight:900;line-height:1.1;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectStyle+"'>"+headlineText+"</div>"
-        +(sublineText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+secondary+";text-align:center;font-weight:600;max-width:100%;flex-shrink:0;'>"+sublineText+"</div>":"")
+        +(sublineText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+sublineColor+";text-align:center;font-weight:600;max-width:100%;flex-shrink:0;'>"+sublineText+"</div>":"")
         +"</div>"+website+(isCover?chevron:"")+counter+wm+fitScript+"</div>";
     }
     let body="";
@@ -1107,7 +1108,21 @@ export default function App() {
       const numLineW=Math.min(Math.round(numFS*0.55*numDigits)+10,Math.round(numFS*numDigits*0.6));
       const EC=effectColor(effect,AL);
       const fitScriptLis="<script>(function(){function fit(el,max,twoLine){if(!el)return;var zone=el.parentElement;var maxW=zone?zone.offsetWidth:800;var fs=max;el.style.fontSize=fs+'px';if(twoLine){while(fs>28&&Math.ceil(el.scrollWidth/(maxW*0.95))>2){fs-=2;el.style.fontSize=fs+'px';}}else{while(fs>18&&el.scrollWidth>maxW){fs-=2;el.style.fontSize=fs+'px';}}}document.fonts.ready.then(function(){fit(document.getElementById('lt'),44,false);fit(document.getElementById('ls'),110,true);fit(document.getElementById('lu'),34,false);window.__TEXT_FIT_DONE__=true;}).catch(function(){window.__TEXT_FIT_DONE__=true;});})();<\/script>";
-      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(slide)+"<div style='position:absolute;inset:0;background:"+cf+";z-index:1;'></div>"+"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"+"<div style='position:absolute;bottom:100px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:32px;'>"+"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"+"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS+"px;font-weight:900;line-height:0.88;"+effectCSS(effect,AL,secondary)+"'>"+(listicleNum||6)+"</div>"+"<div style='width:"+numLineW+"px;height:5px;background:"+EC+";'></div>"+"</div>"+"<div id='ltz' style='flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;padding-bottom:8px;overflow:hidden;'>"+"<div id='lt' style='font-family:"+fontFamily+",sans-serif;font-size:44px;font-weight:600;color:"+secondary+";line-height:1.2;white-space:nowrap;'>"+esc((slide.topicLine||"PLACES YOU NEED TO VISIT BEFORE").toUpperCase())+"</div>"+"<div id='ls' style='font-family:"+fontFamily+",sans-serif;font-size:110px;font-weight:900;line-height:1.0;word-break:break-word;"+effectCSS(effect,AL,secondary)+"'>"+esc((slide.subject||"2027 ENDS").toUpperCase())+"</div>"+(slide.subline?"<div id='lu' style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+secondary+";line-height:1.3;white-space:nowrap;'>"+esc(slide.subline)+"</div>":"")+"</div></div>"+"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:"+secondary+";opacity:0.5;'>"+websiteStr+"</div>"+chevron+counter+wm+fitScriptLis+"</div>";
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(slide)
+        +"<div style='position:absolute;inset:0;background:"+cf+";z-index:1;'></div>"
+        +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
+        +"<div style='position:absolute;bottom:100px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:32px;'>"
+        +"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS+"px;font-weight:900;line-height:0.88;"+effectCSS(effect,AL,secondary)+"'>"+(listicleNum||6)+"</div>"
+        +"<div style='width:"+numLineW+"px;height:5px;background:"+EC+";'></div>"
+        +"</div>"
+        +"<div id='ltz' style='flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;padding-bottom:8px;overflow:hidden;'>"
+        +"<div id='lt' style='font-family:"+fontFamily+",sans-serif;font-size:44px;font-weight:600;color:"+secondary+";line-height:1.2;white-space:nowrap;'>"+esc((slide.topicLine||"PLACES YOU NEED TO VISIT BEFORE").toUpperCase())+"</div>"
+        +"<div id='ls' style='font-family:"+fontFamily+",sans-serif;font-size:110px;font-weight:900;line-height:1.0;word-break:break-word;"+effectCSS(effect,AL,secondary)+"'>"+esc((slide.subject||"2027 ENDS").toUpperCase())+"</div>"
+        +(slide.subline?"<div id='lu' style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+secondary+";line-height:1.3;white-space:nowrap;'>"+esc(slide.subline)+"</div>":"")
+        +"</div></div>"
+        +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-size:22px;color:"+secondary+";opacity:0.5;'>"+websiteStr+"</div>"
+        +chevron+counter+wm+fitScriptLis+"</div>";
     }
     else if(tmpl==="listicle"&&!isCover){
       const lGrad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 40%,rgba(0,0,0,0.15) 54%,rgba(0,0,0,0.55) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.97) 78%,rgba(0,0,0,1) 86%,rgba(0,0,0,1) 100%)";
@@ -1115,7 +1130,19 @@ export default function App() {
       const numLineW2=Math.round(numFS2*0.62*String(idx).length)+20;
       const EC2=effectColor(effect,AL);
       const fitScriptLisBody="<script>(function(){var h=document.getElementById('lbh"+idx+"');if(!h)return;var zone=document.getElementById('lbz"+idx+"');if(!zone)return;var maxW=zone.offsetWidth;document.fonts.ready.then(function(){var fs=68;h.style.fontSize=fs+'px';while(fs>28&&Math.ceil(h.scrollWidth/(maxW*0.95))>2){fs-=2;h.style.fontSize=fs+'px';}window.__TEXT_FIT_DONE__=true;}).catch(function(){window.__TEXT_FIT_DONE__=true;});})();<\/script>";
-      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#0a0a0a;overflow:hidden;'>"+imgTag(slide)+"<div style='position:absolute;inset:0;background:"+lGrad+";z-index:1;'></div>"+"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"+"<div style='position:absolute;bottom:80px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:40px;'>"+"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"+"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS2+"px;font-weight:900;line-height:1;"+effectCSS(effect,AL,secondary)+"'>"+String(idx)+"</div>"+"<div style='width:"+numLineW2+"px;height:5px;background:"+EC2+";'></div>"+"</div>"+"<div id='lbz"+idx+"' style='flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;padding-bottom:8px;overflow:hidden;'>"+(slide.headline?"<div id='lbh"+idx+"' style='font-family:"+fontFamily+",sans-serif;font-size:68px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,AL,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")+(slide.bodyText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:44px;color:"+secondary+";line-height:1.45;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")+"</div></div>"+website+wm+fitScriptLisBody+"</div>";
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#0a0a0a;overflow:hidden;'>"+imgTag(slide)
+        +"<div style='position:absolute;inset:0;background:"+lGrad+";z-index:1;'></div>"
+        +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
+        +"<div style='position:absolute;bottom:80px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:40px;'>"
+        +"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS2+"px;font-weight:900;line-height:1;"+effectCSS(effect,AL,secondary)+"'>"+String(idx)+"</div>"
+        +"<div style='width:"+numLineW2+"px;height:5px;background:"+EC2+";'></div>"
+        +"</div>"
+        +"<div id='lbz"+idx+"' style='flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;padding-bottom:8px;overflow:hidden;'>"
+        +(slide.headline?"<div id='lbh"+idx+"' style='font-family:"+fontFamily+",sans-serif;font-size:68px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,AL,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(slide.bodyText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:44px;color:"+secondary+";line-height:1.45;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
+        +"</div></div>"
+        +website+wm+fitScriptLisBody+"</div>";
     }
     else if(tmpl==="clean-pro"&&isCover){body=darkFadeCover(slide);}
     else if(tmpl==="clean-pro"&&!isCover){
@@ -3184,7 +3211,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   if(briefNum&&briefNum>=2&&briefNum<=12){targetCount=briefNum+1;setTmplSlideCount(targetCount);setTmplListicleNum(briefNum);}
                   const numItems=targetCount-1;
                   const existingItems=tmplSlides.slice(1,targetCount).map((s,i)=>s.headline?(i+1)+". "+s.headline+" (keep, generate detail)":(i+1)+". (generate)").join("\n");
-                  const prompt="Create a listicle carousel about: \""+tmplBrief+"\". Generate "+numItems+" items. Existing: "+existingItems+". Return ONLY valid JSON with keys: coverTopicLine (max 6 words, describes the topic), coverSubject (max 3 words, punchy hook WITHOUT the number - never start with the number), items (array of "+numItems+" objects with headline max 4 words and bodyText max 15 words). No markdown.";
+                  const prompt="Create a listicle carousel about: \""+tmplBrief+"\". Generate "+numItems+" items. Existing: "+existingItems+". Return ONLY valid JSON with keys: coverTopicLine (max 6 words, describes the topic), coverSubject (max 3 words, punchy hook WITHOUT the number — never start with the number), items (array of "+numItems+" objects with headline max 4 words and bodyText max 15 words). No markdown.";
                   const r=await fetchWithRetry({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:prompt}]});
                   const text=r?.content?.[0]?.text?.trim()||"{}";
                   const bt=String.fromCharCode(96);const clean=text.replace(new RegExp(bt+bt+bt+"json","g"),"").replace(new RegExp(bt+bt+bt,"g"),"").trim();
@@ -3232,16 +3259,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 {id:"chrome",label:"CHROME",style:{background:"linear-gradient(135deg,#ddd,#777,#ccc)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
                 {id:"fire",label:"FIRE 🔥",style:{background:"linear-gradient(135deg,#ffff00,#ff6600,#cc0000)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
                 {id:"ice",label:"ICE ❄️",style:{background:"linear-gradient(135deg,#d0f0ff,#38bdf8,#1a6090)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
-                
-                {id:"3d",label:"3D",style:{color:"#fff",textShadow:"2px 2px 0 #555,4px 4px 0 #333,6px 6px 8px rgba(0,0,0,0.4)",fontWeight:900}},
+                                {id:"3d",label:"3D",style:{color:"#fff",textShadow:"2px 2px 0 #555,4px 4px 0 #333,6px 6px 8px rgba(0,0,0,0.4)",fontWeight:900}},
                 {id:"rosegold",label:"ROSE GOLD",style:{background:"linear-gradient(135deg,#f4a0b0,#c96a7a,#f4a0b0)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
                 {id:"glitter",label:"✨ GLITTER",style:{background:"linear-gradient(135deg,#fff,#f0d060,#fff,#f0d060)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
                 {id:"holographic",label:"HOLO",style:{background:"linear-gradient(135deg,#ff6eb4,#a78bfa,#38bdf8,#34d399)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
                 {id:"pastel",label:"PASTEL",style:{color:"#f9a8d4",fontWeight:900}},
                 {id:"blush",label:"BLUSH",style:{background:"linear-gradient(135deg,#ffecd2,#fcb69f,#ff9a9e)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
                 {id:"sunset",label:"SUNSET",style:{background:"linear-gradient(135deg,#ffd700,#ff8c00,#ff4500)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
-                
-                {id:"purplehaze",label:"PURPLE",style:{color:"#c084fc",textShadow:"0 0 10px #c084fc",fontWeight:900}},
+                                {id:"purplehaze",label:"PURPLE",style:{color:"#c084fc",textShadow:"0 0 10px #c084fc",fontWeight:900}},
                 {id:"shadowpop",label:"SHADOW",style:{color:"#fff",textShadow:"3px 3px 0 #BB9900",fontWeight:900}},
                 {id:"duotone",label:"DUOTONE",style:{background:"linear-gradient(180deg,#BB9900,#fff)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
               ];
@@ -3251,7 +3276,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 {id:"Anton",label:"Anton"},
                 {id:"Oswald",label:"Oswald"},
                 {id:"Barlow Condensed",label:"Barlow Condensed"},
-                                {id:"Alfa Slab One",label:"Alfa Slab One"},
+                ,
+                {id:"Alfa Slab One",label:"Alfa Slab One"},
                 {id:"Playfair Display",label:"Playfair Display"},
                 {id:"Cormorant Garamond",label:"Cormorant Garamond"},
                 {id:"Josefin Sans",label:"Josefin Sans"},
@@ -3416,23 +3442,21 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                     {/* ── STYLE TAB ── */}
                     {tmplContentStyleTab==="style"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
-
-                      {/* CTA info */}
-                      {activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}><div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>CTA slide inherits your template colours and font.</div></div>}
-
-                      {/* Effects */}
+                      {activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,marginBottom:8}}><div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>CTA slide inherits your template colours and font.</div></div>}
+                      {/* Effects dropdown */}
                       {!isRaw&&!isStory&&!activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
                         <label style={lbl}>Text Effect</label>
                         <div style={{position:"relative",display:"flex",alignItems:"center"}}><select value={tmplEffect} onChange={e=>setTmplEffect(e.target.value)} style={{...inp,appearance:"none",cursor:"pointer",fontWeight:700,paddingRight:32,width:"100%"}}>
                           {EFFECTS.map(ef=>(<option key={ef.id} value={ef.id}>{ef.label}</option>))}
                         </select><div style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:GOLD,fontSize:14}}>▼</div></div>
+                        {/* Preview of selected effect */}
                         <div style={{padding:"12px",background:A.bg,borderRadius:8,textAlign:"center",fontSize:28,fontWeight:900,...EFFECTS.find(e=>e.id===tmplEffect)?.style}}>
                           {EFFECTS.find(e=>e.id===tmplEffect)?.label||tmplEffect.toUpperCase()}
                         </div>
-                      </div>}
-
                       {/* Colour pickers - grouped */}
+                      </div>}
                       {!activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
+                        {/* Headline/Accent colour - only when NO EFFECT */}
                         {tmplEffect==="none"&&<>
                           <label style={lbl}>{isListicle?"Accent / Headline":"Headline Colour"}</label>
                           <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
@@ -3441,6 +3465,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                             <div style={{position:"relative",width:34,height:34,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:isListicle?tmplAccentLineColor:tmplPrimary}}/><input type="color" value={isListicle?tmplAccentLineColor:tmplPrimary} onChange={e=>{isListicle?setTmplAccentLineColor(e.target.value):setTmplPrimary(e.target.value);}} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div>
                           </div>
                         </>}
+                        {/* Subline / topic colour - always show */}
                         <label style={lbl}>{isListicle?"Topic / Subline Text":"Subline Colour"}</label>
                         <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                           {(tmplFavColors||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0,width:28,height:28,borderRadius:6,background:c||"transparent",border:`2px solid ${c&&tmplSecondary===c?GOLD:A.border}`,cursor:c?"pointer":"default"}} onClick={c?()=>setTmplSecondary(c):undefined}>{!c&&<div style={{position:"relative",overflow:"hidden",width:"100%",height:"100%",borderRadius:6}}><input type="color" defaultValue="#ffffff" onChange={e=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=e.target.value;setTmplFavColors(n);setTmplSecondary(e.target.value);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",inset:-4,opacity:0,cursor:"pointer",width:"calc(100% + 8px)",height:"calc(100% + 8px)"}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#666",fontSize:16,pointerEvents:"none"}}>+</div></div>}{c&&<div onClick={e=>{e.stopPropagation();const n=[...(tmplFavColors||[null,null,null])];n[i]=null;setTmplFavColors(n);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:10}}>×</div>}</div>))}
@@ -3449,20 +3474,18 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         </div>
                       </div>}
 
-                      {/* Font */}
                       {!activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
                         <label style={lbl}>Font</label>
                         {/* Recent fonts quick select */}
                         {tmplRecentFonts.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                          {tmplRecentFonts.map(f=>(<button key={f} onClick={()=>selectFont(f)} style={{fontSize:11,fontFamily:f,padding:"4px 10px",borderRadius:6,border:`1.5px solid ${tmplFont===f?GOLD:A.border}`,background:tmplFont===f?"#1a1500":A.bg,color:tmplFont===f?GOLD:A.text,cursor:"pointer"}}>{f}</button>))}
+                          {tmplRecentFonts.map(f=>(<button key={f} onClick={()=>selectFont(f)} style={{padding:"5px 10px",borderRadius:7,border:`1.5px solid ${tmplFont===f?GOLD:A.border}`,background:tmplFont===f?"#1a1500":A.bg,color:tmplFont===f?GOLD:A.muted,fontSize:11,fontWeight:600,cursor:"pointer"}}>{f}</button>))}
                         </div>}
-                        <div style={{position:"relative",display:"flex",alignItems:"center"}}><select value={tmplFont} onChange={e=>selectFont(e.target.value)} style={{...inp,appearance:"none",cursor:"pointer",fontWeight:700,paddingRight:32,width:"100%"}}>{ALL_FONTS.map(f=>(<option key={f.id} value={f.id}>{f.label}</option>))}</select><div style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:GOLD,fontSize:14}}>▼</div></div>
-                      </div>}
 
-                      {/* Headline size slider - not for Classic or Storytelling */}
+                      {/* Headline size slider */}
                       {!activeIsCtaSlide&&!isStory&&!isRaw&&!isDarkFade&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:8}}>
                         <label style={lbl}>Headline Size <span style={{letterSpacing:0,fontWeight:400,textTransform:"none",fontSize:9}}>{tmplFontSize}px</span></label>
                         <input type="range" min={32} max={120} value={tmplFontSize} onChange={e=>setTmplFontSize(Number(e.target.value))} style={{width:"100%",accentColor:GOLD}}/>
+                        <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:A.muted,marginTop:-4}}><span>Small</span><span>Default (72)</span><span>Large</span></div>
                       </div>}
 
                       {/* Background toggle (Clean Pro / Storytelling) */}
@@ -3476,24 +3499,22 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         <label style={lbl}>Text Size <span style={{fontSize:9,fontWeight:400,textTransform:"none"}}>{tmplFontSize}px</span></label>
                         <input type="range" min={24} max={80} value={tmplFontSize} onChange={e=>setTmplFontSize(Number(e.target.value))} style={{width:"100%",accentColor:GOLD}}/>
                         <label style={lbl}>Text Highlight</label>
-                        <div style={{display:"flex",gap:8}}>{["white","black","none"].map(m=>(<button key={m} onClick={()=>setTmplRawBox(m)} style={{flex:1,padding:"8px",borderRadius:7,border:`1.5px solid ${tmplRawBox===m?GOLD:A.border}`,background:tmplRawBox===m?"#1a1500":A.bg,color:tmplRawBox===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m==="none"?"None":m}</button>))}</div>
+                        <div style={{display:"flex",gap:8}}>{["white","black","none"].map(m=>(<button key={m} onClick={()=>setTmplRawBox(m)} style={{flex:1,padding:"8px",borderRadius:7,border:`1.5px solid ${tmplRawBox===m?GOLD:A.border}`,background:tmplRawBox===m?"#1a1500":A.bg,color:tmplRawBox===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>))}</div>
                         <label style={lbl}>Text Position</label>
-                        <div style={{display:"flex",gap:8}}>{["bottom","centre"].map(m=>(<button key={m} onClick={()=>setTmplRawPos(m)} style={{flex:1,padding:"8px",borderRadius:7,border:`1.5px solid ${tmplRawPos===m?GOLD:A.border}`,background:tmplRawPos===m?"#1a1500":A.bg,color:tmplRawPos===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{label}</button>))}</div>
+                        <div style={{display:"flex",gap:8}}>{["bottom","centre"].map(m=>(<button key={m} onClick={()=>setTmplRawPos(m)} style={{flex:1,padding:"8px",borderRadius:7,border:`1.5px solid ${tmplRawPos===m?GOLD:A.border}`,background:tmplRawPos===m?"#1a1500":A.bg,color:tmplRawPos===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>))}</div>
                       </div>}
 
                       {/* Storytelling font style */}
                       {isStory&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:8}}>
                         <label style={lbl}>Font Style</label>
-                        <div style={{display:"flex",gap:6}}>{[["Inter","Clean"],["Times New Roman","Serif"],["Courier New","Mono"]].map(([font,label])=>(<button key={font} onClick={()=>setTmplFont(font)} style={{flex:1,padding:"8px",borderRadius:7,border:`1.5px solid ${tmplFont===font?GOLD:A.border}`,background:tmplFont===font?"#1a1500":A.bg,color:tmplFont===font?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer"}}>{label}</button>))}</div>
+                        <div style={{display:"flex",gap:6}}>{[["Inter","Clean"],["Times New Roman","Serif"]].map(([id,label])=>(<button key={id} onClick={()=>setTmplFontStyle(id)} style={{flex:1,padding:"8px",borderRadius:7,border:`1.5px solid ${tmplFontStyle===id?GOLD:A.border}`,background:tmplFontStyle===id?"#1a1500":A.bg,color:tmplFontStyle===id?GOLD:A.muted,fontSize:12,fontWeight:600,cursor:"pointer"}}>{label}</button>))}</div>
                       </div>}
 
                     </div>}
-
                   </div>
                 </div>
               </div>);
             })()}
-          </div>
         )}
 
          {nav==="brand"&&(
