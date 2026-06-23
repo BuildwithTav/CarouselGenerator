@@ -1127,11 +1127,11 @@ export default function App() {
         +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;bottom:80px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:40px;'>"
         +"<div style='flex-shrink:0;display:flex;flex-direction:column;gap:14px;'>"
-        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS2+"px;font-weight:900;line-height:1;color:"+secondary+";'>"+String(idx)+"</div>"
+        +"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+numFS2+"px;font-weight:900;line-height:1;color:"+AL+";-webkit-text-fill-color:"+AL+";'>"+String(idx)+"</div>"
         +"<div style='width:"+numLineW2+"px;height:5px;background:"+AL+";'></div></div>"
         +"<div id='lbz'+"+idx+" style='flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;padding-bottom:8px;overflow:hidden;'>"
         +(slide.headline?"<div id='lbh'+"+idx+" style='font-family:"+fontFamily+",sans-serif;font-size:68px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
-        +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:rgba(255,255,255,0.85);line-height:1.45;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
+        +(slide.bodyText?"<div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:"+secondary+";opacity:0.85;line-height:1.45;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
         +"</div></div>"
         +website+wm+fitScriptLisBody+"</div>";
     }
