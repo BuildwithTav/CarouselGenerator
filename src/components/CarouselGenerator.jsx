@@ -932,6 +932,8 @@ export default function App() {
   const [tmplFavColors, setTmplFavColors] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_fav_colors")||"[null,null,null]");}catch{return[null,null,null];}});
   const [tmplShowCounter, setTmplShowCounter] = useState(false);
   const [tmplShowWebsite, setTmplShowWebsite] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(()=>{const check=()=>setIsMobile(window.innerWidth<768);check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]);
   const [tmplRecentFonts, setTmplRecentFonts] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_recent_fonts")||"[]");}catch{return[];}});
   const [tmplContentStyleTab, setTmplContentStyleTab] = useState("content");
   const [tmplShowInspo, setTmplShowInspo] = useState(true);
@@ -3318,13 +3320,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 </div>
 
                 {/* Main grid */}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:28,alignItems:"start"}}>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 380px",gap:isMobile?16:28,alignItems:"start"}}>
 
                   {/* LEFT — sticky preview */}
-                  <div style={{position:"sticky",top:76,alignSelf:"start"}}>
+                  <div style={{position:isMobile?"relative":"sticky",top:76,alignSelf:"start"}}>
                     <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12}}>
                       <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:A.bg}}>
-                        {(()=>{const PW=540,PH=Math.round(1350*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}><iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:"scale(0.5)",transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/></div>);})()}
+                        {(()=>{const PW=isMobile?Math.min(window.innerWidth-32,540):540,PH=Math.round(1350*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}><iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/></div>);})()}
                       </div>
                     </div>
                     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
