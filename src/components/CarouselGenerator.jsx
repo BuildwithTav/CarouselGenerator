@@ -2346,6 +2346,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         .mobile-nav{display:none!important}
         .desktop-reset{display:inline-flex}
         @media(max-width:768px){
+          input,textarea,select{font-size:16px!important}
           .desktop-nav{display:none!important}
           .mobile-nav{display:flex!important}
           nav{padding:0 12px!important}
@@ -3319,12 +3320,19 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   {isFree&&<span style={{fontSize:11,color:"#e74c3c",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>Free — watermark on exports</span>}
                 </div>
 
+                {/* Mobile slide count - above preview */}
+                {isMobile&&<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8,padding:"0 4px"}}>
+                  <span style={{fontSize:12,color:A.muted}}>Slides:</span>
+                  <button onClick={()=>setTmplSlideCount(s=>Math.max(2,s-1))} style={{width:28,height:28,borderRadius:6,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:16,cursor:"pointer"}}>−</button>
+                  <span style={{fontWeight:800,fontSize:15}}>{tmplSlideCount}</span>
+                  <button onClick={()=>setTmplSlideCount(s=>Math.min(maxSlides,s+1))} style={{width:28,height:28,borderRadius:6,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:16,cursor:"pointer"}}>+</button>
+                </div>}
                 {/* Main grid */}
-                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 380px",gap:isMobile?16:28,alignItems:"start",paddingTop:isMobile?0:0}}>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 380px",gap:isMobile?16:28,alignItems:"start",paddingTop:isMobile?Math.round(1350*(Math.min(window.innerWidth-32,540))/1080)+80:0}}>
 
                   {/* LEFT — sticky preview */}
                   <div style={{position:"relative",alignSelf:"start"}}>
-                    <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:isMobile?"visible":"hidden",marginBottom:12,position:isMobile?"sticky":"relative",top:isMobile?56:0,zIndex:isMobile?100:0}}>
+                    <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:isMobile?"visible":"hidden",marginBottom:12,position:isMobile?"fixed":"relative",top:isMobile?56:0,zIndex:isMobile?100:0,left:isMobile?0:"auto",right:isMobile?0:"auto",background:isMobile?A.bg:"transparent",padding:isMobile?"0 16px 8px":"0"}}>
                       <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:A.bg}}>
                         {(()=>{const PW=isMobile?Math.min(window.innerWidth-32,540):540,PH=Math.round(1350*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}><iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/></div>);})()}
                       </div>
@@ -3362,13 +3370,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:12}}>
                           {tmplSlides.slice(0,tmplSlideCount).map((_,i)=>(<button key={i} onClick={()=>setTmplActiveSlide(i)} style={{width:27,height:27,borderRadius:6,background:activeSlide===i?A.text:A.surface,border:`1.5px solid ${activeSlide===i?GOLD:A.border}`,color:activeSlide===i?A.accentText:A.muted,fontSize:12,fontWeight:700,cursor:"pointer"}}>{i+1}</button>))}
                         </div>
-                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        {!isMobile&&<div style={{display:"flex",alignItems:"center",gap:8}}>
                           <span style={{fontSize:11,color:A.muted}}>Slides:</span>
                           <button onClick={()=>setTmplSlideCount(s=>Math.max(2,s-1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>−</button>
                           <span style={{fontWeight:800,fontSize:14}}>{tmplSlideCount}</span>
                           <button onClick={()=>setTmplSlideCount(s=>Math.min(maxSlides,s+1))} style={{width:24,height:24,borderRadius:5,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:14,cursor:"pointer"}}>+</button>
                           <span style={{fontSize:10,color:A.muted}}>max {maxSlides}</span>
-                        </div>
+                        </div>}
                       </div>
 
                       {/* Slide content inputs */}
