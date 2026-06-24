@@ -933,7 +933,27 @@ export default function App() {
   const [tmplShowCounter, setTmplShowCounter] = useState(false);
   const [tmplShowWebsite, setTmplShowWebsite] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  useEffect(()=>{const check=()=>setIsMobile(window.innerWidth<768);check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]);
+  useEffect(()=>{const check=()=>setIsMobile(window.innerWidth<768);check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]); 
+  useEffect(()=>{
+    if(!window.visualViewport)return;
+    const onResize=()=>{
+      const vv=window.visualViewport;
+      // Keyboard opened - viewport shrank
+      if(vv.height<window.innerHeight*0.75){
+        const focused=document.activeElement;
+        if(focused&&(focused.tagName==="INPUT"||focused.tagName==="TEXTAREA")){
+          setTimeout(()=>{
+            focused.scrollIntoView({block:"center",behavior:"smooth"});
+            // Clamp scroll so page cant scroll into blank area
+            const maxScroll=document.documentElement.scrollHeight-vv.height;
+            if(window.scrollY>maxScroll)window.scrollTo({top:maxScroll,behavior:"smooth"});
+          },100);
+        }
+      }
+    };
+    window.visualViewport.addEventListener("resize",onResize);
+    return()=>window.visualViewport.removeEventListener("resize",onResize);
+  },[]);
   const [tmplRecentFonts, setTmplRecentFonts] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_recent_fonts")||"[]");}catch{return[];}});
   const [tmplContentStyleTab, setTmplContentStyleTab] = useState("content");
   const [tmplShowInspo, setTmplShowInspo] = useState(true);
