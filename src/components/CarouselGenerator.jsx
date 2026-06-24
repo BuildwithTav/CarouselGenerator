@@ -3323,8 +3323,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 380px",gap:isMobile?16:28,alignItems:"start",paddingTop:isMobile?0:0}}>
 
                   {/* LEFT — sticky preview */}
-                  <div style={{position:"sticky",top:isMobile?56:76,alignSelf:"start"}}>
-                    <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:isMobile?"visible":"hidden",marginBottom:12}}>
+                  <div style={{position:"relative",alignSelf:"start"}}>
+                    <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:isMobile?"visible":"hidden",marginBottom:12,position:isMobile?"sticky":"relative",top:isMobile?56:0,zIndex:isMobile?100:0}}>
                       <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:A.bg}}>
                         {(()=>{const PW=isMobile?Math.min(window.innerWidth-32,540):540,PH=Math.round(1350*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}><iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/></div>);})()}
                       </div>
