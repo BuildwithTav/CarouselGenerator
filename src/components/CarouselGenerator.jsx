@@ -2338,7 +2338,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
   const MAIN_NAV = [["generate","Generate"],...(currentUser?.is_admin?[["templates","Templates"]]:[])];
 
   return (
-    <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"Plus Jakarta Sans,system-ui,sans-serif",overflowX:"hidden"}}>
+    <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"Plus Jakarta Sans,system-ui,sans-serif"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
         @keyframes spin{to{transform:rotate(360deg)}}
@@ -2350,7 +2350,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           .mobile-nav{display:flex!important}
           nav{padding:0 12px!important}
           .desktop-reset{display:none!important}
-          body,html,#__next{width:100%!important;max-width:100vw!important;overflow-x:hidden!important}
+          body,html,#__next{width:100%!important;max-width:100vw!important}
           nav{width:100%!important;max-width:100vw!important}
           .mobile-edit-btn{display:none!important}
           .mobile-drawer{display:none!important}
