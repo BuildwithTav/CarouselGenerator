@@ -1209,15 +1209,15 @@ export default function App() {
         +"<div style='position:absolute;top:0;left:"+HW+"px;width:"+HW+"px;height:"+H+"px;overflow:hidden;'>"+imgR+"</div>"
         +"<div style='position:absolute;inset:0;background:"+splitGrad+";z-index:2;'></div>"
         +divider
-        +"<div style='position:absolute;bottom:360px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
-        +"<div style='position:absolute;bottom:210px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:flex-start;overflow:hidden;height:130px;'>"
+        +"<div style='position:absolute;bottom:320px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
+        +"<div style='position:absolute;bottom:170px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:flex-start;overflow:hidden;height:130px;'>"
         +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:52px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
         +"</div>"
-        +"<div style='position:absolute;bottom:210px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:flex-start;overflow:hidden;height:130px;'>"
+        +"<div style='position:absolute;bottom:170px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:flex-start;overflow:hidden;height:130px;'>"
         +(slide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:52px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline2.toUpperCase())+"</div>":"")
         +"</div>"
-        +(slide.subline?"<div style='position:absolute;bottom:150px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;font-family:"+fontFamily+",sans-serif;font-size:32px;color:"+secondary+";line-height:1.3;text-align:center;overflow:hidden;height:90px;display:block;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;'>"+esc(slide.subline)+"</div>":"")
-        +(slide.subline2?"<div style='position:absolute;bottom:150px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;font-family:"+fontFamily+",sans-serif;font-size:32px;color:"+secondary+";line-height:1.3;text-align:center;overflow:hidden;height:90px;display:block;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;'>"+esc(slide.subline2)+"</div>":"")
+        +(slide.subline?"<div style='position:absolute;bottom:90px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;font-family:"+fontFamily+",sans-serif;font-size:36px;color:"+secondary+";line-height:1.3;text-align:center;overflow:hidden;height:90px;display:block;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;'>"+esc(slide.subline)+"</div>":"")
+        +(slide.subline2?"<div style='position:absolute;bottom:90px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;font-family:"+fontFamily+",sans-serif;font-size:36px;color:"+secondary+";line-height:1.3;text-align:center;overflow:hidden;height:90px;display:block;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;'>"+esc(slide.subline2)+"</div>":"")
         +website
         +(isCover?chevron:"")+counter+wm+"</div>";
     }
