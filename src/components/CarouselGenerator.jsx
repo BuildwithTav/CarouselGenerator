@@ -1065,7 +1065,7 @@ export default function App() {
     const W=1080,H=1350,SAFE=60,isCover=idx===0;
     const fontFamily=(font||"Bebas Neue").replace(/'/g,"");
     function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-    const gFonts="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Barlow+Condensed:wght@800;900&family=Archivo+Black&family=Playfair+Display:ital,wght@0,900;1,900&family=Alfa+Slab+One&family=Cormorant+Garamond:ital,wght@0,700;1,700&family=Josefin+Sans:wght@700&family=Raleway:wght@800;900&family=Quicksand:wght@700&family=Dancing+Script:wght@700&family=Inter:wght@400;600;700;800&display=swap";
+    const gFonts="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Barlow+Condensed:wght@800;900&family=Archivo+Black&family=Playfair+Display:ital,wght@0,900;1,900&family=Alfa+Slab+One&family=Cormorant+Garamond:ital,wght@0,700;1,700&family=Josefin+Sans:wght@700&family=Raleway:wght@800;900&family=Quicksand:wght@700&family=Dancing+Script:wght@700&family=Inter:wght@400;600;700;800&family=Poppins:wght@400;600;700;800&family=Montserrat:wght@400;600;700;800&display=swap";
     function effectCSS(eff,pri,sec){
       const cs="padding-top:0.15em;display:inline-block;";
       if(eff==="gold") return cs+"background:linear-gradient(180deg,"+sec+" 0%,#ffe44d 20%,"+pri+" 50%,#7a5800 80%,#ffe066 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 4px 8px rgba(140,100,0,0.5));";
@@ -1158,11 +1158,11 @@ export default function App() {
     else if(tmpl==="clean-pro"&&isCover){body=darkFadeCover(slide);}
     else if(tmpl==="clean-pro"&&!isCover){
       const isW=bg==="white",bgC=isW?"#ffffff":"#0a0a0a",tM=isW?"#0a0a0a":"#ffffff";
-      const tS=isW?"rgba(0,0,0,0.5)":"rgba(255,255,255,0.75)";
+      const tS=isW?"rgba(0,0,0,0.5)":"#E8E5E0";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;'>"
         +"<div style='position:absolute;top:140px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
         +"<div style='position:absolute;top:320px;left:"+(SAFE+20)+"px;right:"+(SAFE+20)+"px;bottom:120px;z-index:5;display:flex;flex-direction:column;justify-content:center;gap:52px;'>"
-        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((slide.headline||""),FS)+"px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
+        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
         +(slide.bodyText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:52px;color:"+tS+";line-height:1.65;word-break:break-word;'>"+esc(slide.bodyText).replace(/\n/g,"<br/>")+"</div>":"")
         +(slide.accentText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:56px;font-weight:700;color:"+AL+";line-height:1.3;word-break:break-word;'>"+esc(slide.accentText)+"</div>":"")
         +(slide.accentText?"<div style='width:110px;height:5px;background:"+AL+";'></div>":"")
@@ -3464,6 +3464,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         {/* Preview of selected effect */}
                         <div style={{padding:"12px",background:A.bg,borderRadius:8,textAlign:"center",fontSize:28,fontWeight:900,...EFFECTS.find(e=>e.id===tmplEffect)?.style}}>
                           {EFFECTS.find(e=>e.id===tmplEffect)?.label||tmplEffect.toUpperCase()}
+                        </div>
+                        </>}
                       {/* Accent line colour */}
 <label style={lbl}>{isListicle?"Accent / Headline Colour":"Accent / Effect"}</label>
                         <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
@@ -3471,16 +3473,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <input type="text" value={tmplAccentLineColor} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplAccentLineColor(e.target.value);}} maxLength={7} placeholder="#BB9900" style={{...inp,flex:1,minWidth:70,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
                           <div style={{position:"relative",width:34,height:34,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplAccentLineColor}}/><input type="color" value={tmplAccentLineColor} onChange={e=>setTmplAccentLineColor(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div>
                         </div>
-                        </div>
-                        </>}
+
                         {(isDarkFade||isCleanPro)&&<><label style={lbl}>Headline Colour</label>
                         <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4}}>
                           {(tmplFavColors||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0}}>{c?<div onClick={()=>setTmplPrimary(c)} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplPrimary===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative",pointerEvents:"auto"}}/>:<div onClick={e=>e.currentTarget.querySelector('input[type="color"]').click()} style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden",cursor:"pointer"}}><input type="color" defaultValue="#BB9900" onChange={e=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=e.target.value;setTmplFavColors(n);setTmplPrimary(e.target.value);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",inset:-4,opacity:0,cursor:"pointer",width:"calc(100% + 8px)",height:"calc(100% + 8px)"}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16}}>+</div></div>}{c&&<div onClick={()=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=null;setTmplFavColors(n);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:2,pointerEvents:"auto"}}>×</div>}</div>))}
                           <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,flex:1,minWidth:70,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
                           <div style={{position:"relative",width:34,height:34,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplPrimary}}/><input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div>
                         </div>
-                        </>
-                        }
+                        </>}
+
                         {!isCleanPro&&<><label style={lbl}>{isListicle?"Topic / Subline Text":"Subline / Body Colour"}</label>
                         <div style={{display:"flex",gap:6,alignItems:"center"}}>
                           {(tmplFavColors||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0}}>{c?<div onClick={()=>setTmplSecondary(c)} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplSecondary===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative",pointerEvents:"auto"}}/>:<div onClick={e=>e.currentTarget.querySelector('input[type="color"]').click()} style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden",cursor:"pointer"}}><input type="color" defaultValue="#ffffff" onChange={e=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=e.target.value;setTmplFavColors(n);setTmplSecondary(e.target.value);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",inset:-4,opacity:0,cursor:"pointer",width:"calc(100% + 8px)",height:"calc(100% + 8px)"}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16}}>+</div></div>}{c&&<div onClick={()=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=null;setTmplFavColors(n);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:2,pointerEvents:"auto"}}>×</div>}</div>))}
