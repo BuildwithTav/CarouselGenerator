@@ -934,6 +934,33 @@ export default function App() {
   const [tmplShowWebsite, setTmplShowWebsite] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   useEffect(()=>{const check=()=>setIsMobile(window.innerWidth<768);check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]); 
+  useEffect(()=>{
+    if(!window.visualViewport||!isMobile)return;
+    let maxScroll=0;
+    const onResize=()=>{
+      const vv=window.visualViewport;
+      const keyboardOpen=vv.height<window.innerHeight*0.8;
+      if(keyboardOpen){
+        // Clamp scroll so cant drag into blank space below keyboard
+        maxScroll=document.documentElement.scrollHeight-vv.height;
+        if(window.scrollY>maxScroll)window.scrollTo(0,maxScroll);
+      }
+    };
+    const onScroll=()=>{
+      if(!window.visualViewport)return;
+      const vv=window.visualViewport;
+      const keyboardOpen=vv.height<window.innerHeight*0.8;
+      if(keyboardOpen&&maxScroll>0&&window.scrollY>maxScroll){
+        window.scrollTo(0,maxScroll);
+      }
+    };
+    window.visualViewport.addEventListener("resize",onResize);
+    window.addEventListener("scroll",onScroll,{passive:true});
+    return()=>{
+      window.visualViewport.removeEventListener("resize",onResize);
+      window.removeEventListener("scroll",onScroll);
+    };
+  },[isMobile]); 
   
   const [tmplRecentFonts, setTmplRecentFonts] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_recent_fonts")||"[]");}catch{return[];}});
   const [tmplContentStyleTab, setTmplContentStyleTab] = useState("content");
