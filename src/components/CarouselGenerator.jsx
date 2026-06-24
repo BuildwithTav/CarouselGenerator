@@ -935,31 +935,35 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(()=>{const check=()=>setIsMobile(window.innerWidth<768);check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]); 
   useEffect(()=>{
-    if(!window.visualViewport||!isMobile)return;
-    let maxScroll=0;
+    if(!isMobile||!window.visualViewport)return;
+    let lastVH=window.visualViewport.height;
     const onResize=()=>{
       const vv=window.visualViewport;
-      const keyboardOpen=vv.height<window.innerHeight*0.8;
-      if(keyboardOpen){
-        // Clamp scroll so cant drag into blank space below keyboard
-        maxScroll=document.documentElement.scrollHeight-vv.height;
-        if(window.scrollY>maxScroll)window.scrollTo(0,maxScroll);
-      }
-    };
-    const onScroll=()=>{
-      if(!window.visualViewport)return;
-      const vv=window.visualViewport;
-      const keyboardOpen=vv.height<window.innerHeight*0.8;
-      if(keyboardOpen&&maxScroll>0&&window.scrollY>maxScroll){
-        window.scrollTo(0,maxScroll);
+      const keyboardJustOpened=vv.height<lastVH*0.9;
+      lastVH=vv.height;
+      if(keyboardJustOpened){
+        const el=document.activeElement;
+        if(!el||!(el.tagName==="INPUT"||el.tagName==="TEXTAREA"))return;
+        // Wait for iOS to finish its scroll, then reposition
+        setTimeout(()=>{
+          const rect=el.getBoundingClientRect();
+          const vvH=window.visualViewport.height;
+          const buffer=80;
+          // If input is below visible area above keyboard, scroll it into view
+          if(rect.bottom>vvH-buffer){
+            const scrollBy=rect.bottom-(vvH-buffer);
+            window.scrollBy({top:scrollBy,behavior:"smooth"});
+          }
+          // If iOS over-scrolled and input is above visible area, scroll back
+          else if(rect.top<60){
+            const scrollBy=rect.top-60;
+            window.scrollBy({top:scrollBy,behavior:"smooth"});
+          }
+        },350);
       }
     };
     window.visualViewport.addEventListener("resize",onResize);
-    window.addEventListener("scroll",onScroll,{passive:true});
-    return()=>{
-      window.visualViewport.removeEventListener("resize",onResize);
-      window.removeEventListener("scroll",onScroll);
-    };
+    return()=>window.visualViewport.removeEventListener("resize",onResize);
   },[isMobile]); 
   
   const [tmplRecentFonts, setTmplRecentFonts] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_recent_fonts")||"[]");}catch{return[];}});
