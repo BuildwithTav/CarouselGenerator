@@ -1122,6 +1122,7 @@ export default function App() {
       const numFS=numDigits>2?240:numDigits>1?360:520;
       const numLineW=Math.min(Math.round(numFS*0.55*numDigits)+10,Math.round(numFS*numDigits*0.6));
       const fitScriptLis="<script>(function(){function fit(el,max,twoLine){if(!el)return;var zone=el.parentElement;var maxW=zone?zone.offsetWidth:800;var fs=max;el.style.fontSize=fs+'px';if(twoLine){while(fs>28&&Math.ceil(el.scrollWidth/(maxW*0.95))>2){fs-=2;el.style.fontSize=fs+'px';}}else{while(fs>18&&el.scrollWidth>maxW){fs-=2;el.style.fontSize=fs+'px';}}}document.fonts.ready.then(function(){fit(document.getElementById('lt'),44,false);fit(document.getElementById('ls'),110,true);fit(document.getElementById('lu'),34,false);window.__TEXT_FIT_DONE__=true;}).catch(function(){fit(document.getElementById('lt'),44,false);fit(document.getElementById('ls'),110,true);fit(document.getElementById('lu'),34,false);window.__TEXT_FIT_DONE__=true;});})();<\/script>";
+      const splitChevron=isCover?"<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='36' height='25' viewBox='0 0 36 25' fill='none'><polyline points='3,3 12,12 3,22' stroke='"+AL+"' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='14,3 23,12 14,22' stroke='"+AL+"' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>":"";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(slide)
         +"<div style='position:absolute;inset:0;background:"+cf+";z-index:1;'></div>"
         +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
@@ -1203,23 +1204,23 @@ export default function App() {
       const HW=Math.floor(W/2);
       const imgL=slide.image?"<img src='"+esc(slide.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+(slide.imagePos?.x||50)+"% "+(slide.imagePos?.y||50)+"%;z-index:0;'/>":"";
       const imgR=slide.image2?"<img src='"+esc(slide.image2)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+(slide.image2Pos?.x||50)+"% "+(slide.image2Pos?.y||50)+"%;z-index:0;'/>":"";
-      const divider="<div style='position:absolute;left:"+HW+"px;top:0;width:3px;height:100%;background:"+primary+";z-index:1;opacity:0.5;'></div>";
+      const divider="<div style='position:absolute;left:"+HW+"px;top:0;width:3px;height:100%;background:"+AL+";z-index:1;opacity:0.5;'></div>";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"
         +"<div style='position:absolute;top:0;left:0;width:"+HW+"px;height:"+H+"px;overflow:hidden;'>"+imgL+"</div>"
         +"<div style='position:absolute;top:0;left:"+HW+"px;width:"+HW+"px;height:"+H+"px;overflow:hidden;'>"+imgR+"</div>"
         +"<div style='position:absolute;inset:0;background:"+splitGrad+";z-index:2;'></div>"
         +divider
         +"<div style='position:absolute;bottom:280px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
-        +"<div style='position:absolute;bottom:90px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;overflow:hidden;max-height:320px;'>"
-        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((slide.headline||""),Math.min(FS,56))+"px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;text-align:center;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
-        +(slide.subline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:26px;color:"+(effect==="clean"?primary:"rgba(255,255,255,0.7)")+";line-height:1.3;text-align:center;word-break:break-word;'>"+esc(slide.subline)+"</div>":"")
+        +"<div style='position:absolute;bottom:90px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;display:flex;flex-direction:column;gap:10px;align-items:flex-start;text-align:center;justify-content:flex-end;overflow:hidden;height:320px;'>"
+        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((slide.headline||""),Math.min(FS,56))+"px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(slide.subline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:26px;color:"+secondary+";line-height:1.3;text-align:center;word-break:break-word;'>"+esc(slide.subline)+"</div>":"")
         +"</div>"
-        +"<div style='position:absolute;bottom:90px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;overflow:hidden;max-height:320px;'>"
-        +(slide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((slide.headline2||""),Math.min(FS,56))+"px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;text-align:center;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline2.toUpperCase())+"</div>":"")
-        +(slide.subline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:26px;color:"+(effect==="clean"?primary:"rgba(255,255,255,0.7)")+";line-height:1.3;text-align:center;word-break:break-word;'>"+esc(slide.subline2)+"</div>":"")
+        +"<div style='position:absolute;bottom:90px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;display:flex;flex-direction:column;gap:10px;align-items:flex-start;text-align:center;justify-content:flex-end;overflow:hidden;height:320px;'>"
+        +(slide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+autoFS((slide.headline2||""),Math.min(FS,56))+"px;font-weight:900;line-height:1.05;text-transform:uppercase;word-break:break-word;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline2.toUpperCase())+"</div>":"")
+        +(slide.subline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:26px;color:"+secondary+";line-height:1.3;text-align:center;word-break:break-word;'>"+esc(slide.subline2)+"</div>":"")
         +"</div>"
-        +"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>studio.buildwithtav.co</div>"
-        +(isCover?chevron:"")+counter+wm+"</div>";
+        +website
+        +splitChevron+counter+wm+"</div>";
     }
     return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
   }
@@ -3478,6 +3479,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           {EFFECTS.find(e=>e.id===tmplEffect)?.label||tmplEffect.toUpperCase()}
                         </div>
                         </>}
+                        {!isSplit&&<>
                       {/* Accent line colour */}
 <label style={lbl}>{isListicle?"Accent / Headline Colour":"Accent / Effect"}</label>
                         <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
@@ -3485,8 +3487,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <input type="text" value={tmplAccentLineColor} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplAccentLineColor(e.target.value);}} maxLength={7} placeholder="#BB9900" style={{...inp,flex:1,minWidth:70,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
                           <div style={{position:"relative",width:34,height:34,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplAccentLineColor}}/><input type="color" value={tmplAccentLineColor} onChange={e=>setTmplAccentLineColor(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div>
                         </div>
+                        </>}
 
-                        {(isDarkFade||isCleanPro)&&<><label style={lbl}>Headline Colour</label>
+                        {(isDarkFade||isCleanPro||isSplit)&&<><label style={lbl}>{isSplit?"Headline Colour":"Headline Colour"}</label>
                         <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4}}>
                           {(tmplFavColors||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0}}>{c?<div onClick={()=>setTmplPrimary(c)} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplPrimary===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative",pointerEvents:"auto"}}/>:<div onClick={e=>e.currentTarget.querySelector('input[type="color"]').click()} style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden",cursor:"pointer"}}><input type="color" defaultValue="#BB9900" onChange={e=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=e.target.value;setTmplFavColors(n);setTmplPrimary(e.target.value);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",inset:-4,opacity:0,cursor:"pointer",width:"calc(100% + 8px)",height:"calc(100% + 8px)"}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16}}>+</div></div>}{c&&<div onClick={()=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=null;setTmplFavColors(n);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:2,pointerEvents:"auto"}}>×</div>}</div>))}
                           <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,flex:1,minWidth:70,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
