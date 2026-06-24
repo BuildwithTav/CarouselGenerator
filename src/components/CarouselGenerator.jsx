@@ -2348,8 +2348,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         .desktop-reset{display:inline-flex}
         @media(max-width:768px){
           input,textarea,select{font-size:16px!important}
-          body{overflow:hidden!important}
-          #__next{height:100dvh!important;overflow-y:scroll!important;-webkit-overflow-scrolling:touch!important}
           .desktop-nav{display:none!important}
           .mobile-nav{display:flex!important}
           nav{padding:0 12px!important}
