@@ -933,26 +933,14 @@ export default function App() {
   const [tmplShowCounter, setTmplShowCounter] = useState(false);
   const [tmplShowWebsite, setTmplShowWebsite] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(0);
   useEffect(()=>{const check=()=>setIsMobile(window.innerWidth<768);check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]); 
   useEffect(()=>{
-    if(!window.visualViewport)return;
-    const onResize=()=>{
-      const vv=window.visualViewport;
-      // Keyboard opened - viewport shrank
-      if(vv.height<window.innerHeight*0.75){
-        const focused=document.activeElement;
-        if(focused&&(focused.tagName==="INPUT"||focused.tagName==="TEXTAREA")){
-          setTimeout(()=>{
-            focused.scrollIntoView({block:"center",behavior:"smooth"});
-            // Clamp scroll so page cant scroll into blank area
-            const maxScroll=document.documentElement.scrollHeight-vv.height;
-            if(window.scrollY>maxScroll)window.scrollTo({top:maxScroll,behavior:"smooth"});
-          },100);
-        }
-      }
-    };
-    window.visualViewport.addEventListener("resize",onResize);
-    return()=>window.visualViewport.removeEventListener("resize",onResize);
+    const vv=window.visualViewport||{height:window.innerHeight,addEventListener:()=>{},removeEventListener:()=>{}};
+    const onResize=()=>setViewportHeight(vv.height);
+    onResize();
+    vv.addEventListener("resize",onResize);
+    return()=>vv.removeEventListener("resize",onResize);
   },[]);
   const [tmplRecentFonts, setTmplRecentFonts] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_recent_fonts")||"[]");}catch{return[];}});
   const [tmplContentStyleTab, setTmplContentStyleTab] = useState("content");
@@ -2604,7 +2592,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         </div>
       )}
 
-      <div style={{maxWidth:1200,margin:"0 auto",padding:"20px 16px"}}>
+      <div style={{maxWidth:1200,margin:"0 auto",padding:"20px 16px",height:isMobile&&viewportHeight?(viewportHeight-56):"auto",overflowY:isMobile&&viewportHeight?"auto":"visible",WebkitOverflowScrolling:"touch"}}>
 
         {nav==="quotes"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:960,margin:"0 auto"}}>
