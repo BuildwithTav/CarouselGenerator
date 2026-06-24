@@ -933,17 +933,8 @@ export default function App() {
   const [tmplShowCounter, setTmplShowCounter] = useState(false);
   const [tmplShowWebsite, setTmplShowWebsite] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [keyboardOpen, setKeyboardOpen] = useState(false);
   useEffect(()=>{const check=()=>setIsMobile(window.innerWidth<768);check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]); 
-  useEffect(()=>{
-    if(!isMobile||!window.visualViewport)return;
-    const onResize=()=>{
-      const vv=window.visualViewport;
-      setKeyboardOpen(vv.height<window.innerHeight*0.8);
-    };
-    window.visualViewport.addEventListener("resize",onResize);
-    return()=>window.visualViewport.removeEventListener("resize",onResize);
-  },[isMobile]); 
+ 
   
   const [tmplRecentFonts, setTmplRecentFonts] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_recent_fonts")||"[]");}catch{return[];}});
   const [tmplContentStyleTab, setTmplContentStyleTab] = useState("content");
@@ -3343,7 +3334,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                   {/* LEFT — sticky preview */}
                   <div style={{display:isMobile?"contents":"block",position:isMobile?"static":"relative",alignSelf:"start"}}>
-                    <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12,position:isMobile?"sticky":"relative",top:isMobile?(keyboardOpen?"9999px":"calc(56px + env(safe-area-inset-top, 0px))"):0,zIndex:isMobile?10:0}}>
+                    <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12,position:isMobile?"sticky":"relative",top:isMobile?"calc(56px + env(safe-area-inset-top, 0px))":0,zIndex:isMobile?10:0}}>
                       <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:A.bg}}>
                         {(()=>{const PW=isMobile?Math.min(window.innerWidth-32,540):540,PH=Math.round(1350*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}><iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/></div>);})()}
                       </div>
