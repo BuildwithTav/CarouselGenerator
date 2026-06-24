@@ -3324,7 +3324,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                   {/* LEFT — sticky preview */}
                   <div style={{position:"sticky",top:isMobile?0:76,alignSelf:"start"}}>
-                    <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12}}>
+                    <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:isMobile?"visible":"hidden",marginBottom:12}}>
                       <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:A.bg}}>
                         {(()=>{const PW=isMobile?Math.min(window.innerWidth-32,540):540,PH=Math.round(1350*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}><iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/></div>);})()}
                       </div>
@@ -3370,27 +3370,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <span style={{fontSize:10,color:A.muted}}>max {maxSlides}</span>
                         </div>
                       </div>
-
-                      {/* Slide counter toggle */}
-                      {!isListicle&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                        <div>
-                          <div style={{fontSize:12,fontWeight:700,color:A.text}}>Slide Counter</div>
-                          <div style={{fontSize:11,color:A.muted}}>Show slide number on every slide</div>
-                        </div>
-                        <div onClick={()=>setTmplShowCounter(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowCounter?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
-                          <div style={{position:"absolute",top:2,left:tmplShowCounter?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
-                        </div>
-                      </div>}
-                      {/* Website footer toggle */}
-                      {!isListicle&&!isStory&&!isRaw&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                        <div>
-                          <div style={{fontSize:12,fontWeight:700,color:A.text}}>Website Footer</div>
-                          <div style={{fontSize:11,color:A.muted}}>Show your website on every slide</div>
-                        </div>
-                        <div onClick={()=>setTmplShowWebsite(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowWebsite?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
-                          <div style={{position:"absolute",top:2,left:tmplShowWebsite?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
-                        </div>
-                      </div>}
 
                       {/* Slide content inputs */}
                       <div style={{background:A.surface,border:`1.5px solid ${activeSlide===0?GOLD:A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
@@ -3467,6 +3446,27 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                     {/* ── STYLE TAB ── */}
                     {tmplContentStyleTab==="style"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+                      {/* Slide counter toggle */}
+                      {!isListicle&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div>
+                          <div style={{fontSize:12,fontWeight:700,color:A.text}}>Slide Counter</div>
+                          <div style={{fontSize:11,color:A.muted}}>Show slide number on every slide</div>
+                        </div>
+                        <div onClick={()=>setTmplShowCounter(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowCounter?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
+                          <div style={{position:"absolute",top:2,left:tmplShowCounter?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
+                        </div>
+                      </div>}
+                      {/* Website footer toggle */}
+                      {!isListicle&&!isStory&&!isRaw&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div>
+                          <div style={{fontSize:12,fontWeight:700,color:A.text}}>Website Footer</div>
+                          <div style={{fontSize:11,color:A.muted}}>Show your website on every slide</div>
+                        </div>
+                        <div onClick={()=>setTmplShowWebsite(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowWebsite?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
+                          <div style={{position:"absolute",top:2,left:tmplShowWebsite?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
+                        </div>
+                      </div>}
+
                       {activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,marginBottom:8}}><div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>CTA slide inherits your template font. Accent colour and CTA word follow the Accent colour in the Visuals tab.</div></div>}
                       {/* Effects dropdown */}
                       {!isRaw&&!isStory&&!activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
