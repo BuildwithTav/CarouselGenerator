@@ -1122,7 +1122,6 @@ export default function App() {
       const numFS=numDigits>2?240:numDigits>1?360:520;
       const numLineW=Math.min(Math.round(numFS*0.55*numDigits)+10,Math.round(numFS*numDigits*0.6));
       const fitScriptLis="<script>(function(){function fit(el,max,twoLine){if(!el)return;var zone=el.parentElement;var maxW=zone?zone.offsetWidth:800;var fs=max;el.style.fontSize=fs+'px';if(twoLine){while(fs>28&&Math.ceil(el.scrollWidth/(maxW*0.95))>2){fs-=2;el.style.fontSize=fs+'px';}}else{while(fs>18&&el.scrollWidth>maxW){fs-=2;el.style.fontSize=fs+'px';}}}document.fonts.ready.then(function(){fit(document.getElementById('lt'),44,false);fit(document.getElementById('ls'),110,true);fit(document.getElementById('lu'),34,false);window.__TEXT_FIT_DONE__=true;}).catch(function(){fit(document.getElementById('lt'),44,false);fit(document.getElementById('ls'),110,true);fit(document.getElementById('lu'),34,false);window.__TEXT_FIT_DONE__=true;});})();<\/script>";
-      const splitChevron=isCover?"<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='36' height='25' viewBox='0 0 36 25' fill='none'><polyline points='3,3 12,12 3,22' stroke='"+AL+"' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='14,3 23,12 14,22' stroke='"+AL+"' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>":"";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(slide)
         +"<div style='position:absolute;inset:0;background:"+cf+";z-index:1;'></div>"
         +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
@@ -1220,7 +1219,7 @@ export default function App() {
         +(slide.subline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:26px;color:"+secondary+";line-height:1.3;text-align:center;word-break:break-word;'>"+esc(slide.subline2)+"</div>":"")
         +"</div>"
         +website
-        +splitChevron+counter+wm+"</div>";
+        +(isCover?chevron:"")+counter+wm+"</div>";
     }
     return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
   }
