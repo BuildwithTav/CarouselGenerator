@@ -2352,8 +2352,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           .desktop-reset{display:none!important}
           body,html,#__next{width:100%!important;max-width:100vw!important;overflow-x:hidden!important}
           nav{width:100%!important;max-width:100vw!important}
-          .mobile-edit-btn{display:flex!important}
-          .mobile-drawer{display:block!important}
+          .mobile-edit-btn{display:none!important}
+          .mobile-drawer{display:none!important}
           .preview-scroll-area{padding-bottom:120px!important}
           .desktop-only{display:none!important}
           .cover-format-grid{grid-template-columns:1fr!important}
@@ -2363,7 +2363,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           .quotes-mobile-preview{display:flex!important}
           .quotes-format-card{display:none!important}
           .cmd-hint{display:none!important}
-          .desktop-edit-panel{display:none!important}
+          .desktop-edit-panel{display:flex!important;flex-direction:column!important}
           .topic-row input{width:100%!important;flex:unset!important}
 
           /* Brand tab */
@@ -3320,10 +3320,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 </div>
 
                 {/* Main grid */}
-                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 380px",gap:isMobile?16:28,alignItems:"start"}}>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 380px",gap:isMobile?16:28,alignItems:"start",paddingTop:isMobile?0:0}}>
 
                   {/* LEFT — sticky preview */}
-                  <div style={{position:isMobile?"relative":"sticky",top:76,alignSelf:"start"}}>
+                  <div style={{position:"sticky",top:isMobile?0:76,alignSelf:"start"}}>
                     <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12}}>
                       <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:A.bg}}>
                         {(()=>{const PW=isMobile?Math.min(window.innerWidth-32,540):540,PH=Math.round(1350*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}><iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/></div>);})()}
