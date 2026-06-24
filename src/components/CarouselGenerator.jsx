@@ -1100,7 +1100,7 @@ export default function App() {
     function darkFadeCover(s){
       const headlineText=esc((s.headline||"").toUpperCase());
       const sublineText=s.subline?esc(s.subline):"";
-      const effectStyle=effectCSS(effect,AL,secondary);
+      const effectStyle=effect==="none"?("color:"+primary+";-webkit-text-fill-color:"+primary+";"):effectCSS(effect,AL,secondary);
       const sublineColor=effect==="clean"?primary:secondary;
       const fitScript="<script>(function(){var h=document.getElementById('hl');if(!h)return;var zone=document.getElementById('tz');var maxW=zone.offsetWidth;var maxH=zone.offsetHeight;var fs=88;h.style.fontSize=fs+'px';function fits(){return zone.scrollHeight<=maxH;}document.fonts.ready.then(function(){while(fs>36&&!fits()){fs-=2;h.style.fontSize=fs+'px';}window.__TEXT_FIT_DONE__=true;});})();<\/script>";
       return"<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(s)
