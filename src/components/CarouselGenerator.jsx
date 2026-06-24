@@ -933,34 +933,13 @@ export default function App() {
   const [tmplShowCounter, setTmplShowCounter] = useState(false);
   const [tmplShowWebsite, setTmplShowWebsite] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   useEffect(()=>{const check=()=>setIsMobile(window.innerWidth<768);check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]); 
   useEffect(()=>{
     if(!isMobile||!window.visualViewport)return;
-    let lastVH=window.visualViewport.height;
     const onResize=()=>{
       const vv=window.visualViewport;
-      const keyboardJustOpened=vv.height<lastVH*0.9;
-      lastVH=vv.height;
-      if(keyboardJustOpened){
-        const el=document.activeElement;
-        if(!el||!(el.tagName==="INPUT"||el.tagName==="TEXTAREA"))return;
-        // Wait for iOS to finish its scroll, then reposition
-        setTimeout(()=>{
-          const rect=el.getBoundingClientRect();
-          const vvH=window.visualViewport.height;
-          const buffer=80;
-          // If input is below visible area above keyboard, scroll it into view
-          if(rect.bottom>vvH-buffer){
-            const scrollBy=rect.bottom-(vvH-buffer);
-            window.scrollBy({top:scrollBy,behavior:"smooth"});
-          }
-          // If iOS over-scrolled and input is above visible area, scroll back
-          else if(rect.top<60){
-            const scrollBy=rect.top-60;
-            window.scrollBy({top:scrollBy,behavior:"smooth"});
-          }
-        },350);
-      }
+      setKeyboardOpen(vv.height<window.innerHeight*0.8);
     };
     window.visualViewport.addEventListener("resize",onResize);
     return()=>window.visualViewport.removeEventListener("resize",onResize);
@@ -3364,7 +3343,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                   {/* LEFT — sticky preview */}
                   <div style={{display:isMobile?"contents":"block",position:isMobile?"static":"relative",alignSelf:"start"}}>
-                    <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12,position:isMobile?"sticky":"relative",top:isMobile?"calc(56px + env(safe-area-inset-top, 0px))":0,zIndex:isMobile?10:0}}>
+                    <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12,position:isMobile?"sticky":"relative",top:isMobile?(keyboardOpen?"9999px":"calc(56px + env(safe-area-inset-top, 0px))"):0,zIndex:isMobile?10:0}}>
                       <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:A.bg}}>
                         {(()=>{const PW=isMobile?Math.min(window.innerWidth-32,540):540,PH=Math.round(1350*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}><iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/></div>);})()}
                       </div>
