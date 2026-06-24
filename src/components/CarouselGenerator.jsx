@@ -931,6 +931,7 @@ export default function App() {
   const [tmplAccentLineColor, setTmplAccentLineColor] = useState("#BB9900");
   const [tmplFavColors, setTmplFavColors] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_fav_colors")||"[null,null,null]");}catch{return[null,null,null];}});
   const [tmplShowCounter, setTmplShowCounter] = useState(false);
+  const [tmplShowWebsite, setTmplShowWebsite] = useState(true);
   const [tmplRecentFonts, setTmplRecentFonts] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_recent_fonts")||"[]");}catch{return[];}});
   const [tmplContentStyleTab, setTmplContentStyleTab] = useState("content");
   const [tmplShowInspo, setTmplShowInspo] = useState(true);
@@ -1093,7 +1094,8 @@ export default function App() {
     }
     const grad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 28%,rgba(0,0,0,0.08) 44%,rgba(0,0,0,0.35) 54%,rgba(0,0,0,0.65) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.96) 78%,rgba(0,0,0,0.99) 88%,rgba(0,0,0,1) 100%)";
     const chevron="<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+effectColor(effect,AL)+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+effectColor(effect,AL)+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>";
-    const websiteStr=isFree?"studio.buildwithtav.co":(userWebsite||"");const website=websiteStr?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>"+websiteStr+"</div>":"";
+    const websiteStr=isFree?"studio.buildwithtav.co":(userWebsite||"");const {showWebsite}=opts;
+    const website=showWebsite&&websiteStr?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>"+websiteStr+"</div>":"";
     const wm=isFree?"<div style='position:absolute;top:32px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:32px;font-weight:800;color:#ffffff;text-shadow:0 2px 8px rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.8);letter-spacing:1px;'>studio.buildwithtav.co</div>":"";
     const counter=showCounter?"<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+(idx+1)+"/"+total+"</div>":"";
     function imgTag(s){if(!s||!s.image)return"<div style='position:absolute;inset:0;background:#1a1a1a;z-index:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;'><div style='background:rgba(187,153,0,0.15);border:2px dashed rgba(187,153,0,0.6);border-radius:16px;padding:40px 60px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:42px;margin-bottom:16px;'>📷</div><div style='font-family:-apple-system,sans-serif;font-size:34px;font-weight:700;color:#BB9900;'>Upload your image</div><div style='font-family:-apple-system,sans-serif;font-size:26px;color:rgba(255,255,255,0.5);margin-top:8px;'>in the Photo section</div></div></div>";const px=(s.imagePos&&s.imagePos.x)||50,py=(s.imagePos&&s.imagePos.y)||50;const isPlaceholder=s.image&&!s.image.startsWith("data:");const overlay=isPlaceholder?"<div style='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;pointer-events:none;white-space:nowrap;'><div style='background:rgba(0,0,0,0.75);border:2px solid rgba(187,153,0,0.8);border-radius:12px;padding:16px 32px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:28px;font-weight:700;color:#BB9900;'>📷 Replace with your image</div></div></div>":"";return"<img src='"+esc(s.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+px+"% "+py+"%;z-index:0;'/>"+overlay;}
@@ -1166,7 +1168,7 @@ export default function App() {
         +(slide.bodyText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:52px;color:"+tS+";line-height:1.65;word-break:break-word;'>"+esc(slide.bodyText).replace(/\n/g,"<br/>")+"</div>":"")
         +(slide.accentText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:56px;font-weight:700;color:"+AL+";line-height:1.3;word-break:break-word;'>"+esc(slide.accentText)+"</div>":"")
         +(slide.accentText?"<div style='width:110px;height:5px;background:"+AL+";'></div>":"")
-        +"</div><div style='position:absolute;top:48px;right:"+SAFE+"px;z-index:5;font-size:28px;color:"+tS+";'>"+(idx+1)+"/"+total+"</div>"+(websiteStr?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:"+tS+";'>" +websiteStr+"</div>":"")+wm+"</div>";
+        +"</div>"+counter+(websiteStr?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:"+tS+";'>" +websiteStr+"</div>":"")+wm+"</div>";
     }
     else if(tmpl==="storytelling"){
       const isW=bg==="white",bgC=isW?"#ffffff":"#0a0a0a",tC=isW?"#0a0a0a":"#ffffff";
@@ -1177,7 +1179,7 @@ export default function App() {
         +"<div style='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:200px 120px;z-index:5;'>"
         +"<div style='font-family:"+stF+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;"+(stI?"font-style:italic;":"")+"font-weight:400;color:"+tC+";line-height:1.7;text-align:center;'>"
         +esc(slide.storyText||"").replace(/\n\n/g,"</p><p style='margin-top:1.2em;'>").replace(/\n/g,"<br/>")
-        +"</div></div>"+sw+counter+website+wm+"</div>";
+        +"</div></div>"+sw+counter+wm+"</div>";
     }
     else if(tmpl==="raw"){
       const isNone=rawBox==="none",isWB=rawBox==="white",tCR=isNone?"#ffffff":isWB?"#0a0a0a":"#ffffff";
@@ -1194,7 +1196,7 @@ export default function App() {
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#1a1a1a;overflow:hidden;'>"+imgTag(slide)
         +"<div style='position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;"+vAlign+";padding:80px 80px;text-align:center;'>"
         +parasHTML
-        +"</div>"+counter+wm+"</div>";
+        +"</div>"+wm+"</div>";
     }
     else if(tmpl==="split"){
       const splitGrad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 38%,rgba(0,0,0,0.08) 52%,rgba(0,0,0,0.42) 62%,rgba(0,0,0,0.82) 72%,rgba(0,0,0,0.97) 82%,rgba(0,0,0,1) 100%)";
@@ -3157,7 +3159,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             {tmplSelected&&(()=>{
               const isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade",isSplit=tmplSelected==="split";
               const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:8,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
-              const ctaBgFinal=(isCleanPro||isStory)?tmplBg:tmplCtaBg;const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
+              const ctaBgFinal=(isCleanPro||isStory)?tmplBg:tmplCtaBg;const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
               const ctaLine2Defaults={comment:"Comment the word",follow:"Follow",save:"Save this",share:"Share this",like:"Like this"};
               const ctaKeywordDefaults={comment:tmplCtaKeyword||"GUIDE",follow:"FOLLOW",save:"SAVE",share:"SHARE",like:"LIKE"};
               const ctaLine3Defaults={comment:"and I'll send it straight over",follow:"for more content like this",save:"so you don't lose it",share:"with someone who needs it",like:"if it resonated with you"};
@@ -3377,6 +3379,16 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <div style={{position:"absolute",top:2,left:tmplShowCounter?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
                         </div>
                       </div>}
+                      {/* Website footer toggle */}
+                      {!isListicle&&!isStory&&!isRaw&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div>
+                          <div style={{fontSize:12,fontWeight:700,color:A.text}}>Website Footer</div>
+                          <div style={{fontSize:11,color:A.muted}}>Show your website on every slide</div>
+                        </div>
+                        <div onClick={()=>setTmplShowWebsite(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowWebsite?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
+                          <div style={{position:"absolute",top:2,left:tmplShowWebsite?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
+                        </div>
+                      </div>}
 
                       {/* Slide content inputs */}
                       <div style={{background:A.surface,border:`1.5px solid ${activeSlide===0?GOLD:A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
@@ -3411,7 +3423,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         {isCleanPro&&activeSlide>0&&<><label style={lbl}>Headline</label><input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Headline" style={{...inp}}/><label style={lbl}>Body Text</label><div style={{position:"relative"}}><textarea value={slide.bodyText||""} onChange={e=>updateSlide("bodyText",e.target.value)} placeholder="Body text" rows={4} style={{...inp,resize:"vertical",paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div><label style={lbl}>Accent Sub-text</label><input value={slide.accentText||""} onChange={e=>updateSlide("accentText",e.target.value)} placeholder="Key takeaway in accent colour" style={{...inp}}/></>}
                         {isStory&&<><label style={lbl}>Story Text — Slide {activeSlide+1}</label><div style={{position:"relative"}}><textarea value={slide.storyText||""} onChange={e=>updateSlide("storyText",e.target.value)} placeholder="Your story paragraph." rows={6} style={{...inp,resize:"vertical",paddingRight:72,lineHeight:1.6}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div></>}
                         {isSplit&&<><label style={lbl}>Left Headline</label><input value={slide.headline||""} onChange={e=>updateSlide("headline",e.target.value)} placeholder="Before" style={{...inp}}/><label style={lbl}>Left Subline</label><input value={slide.subline||""} onChange={e=>updateSlide("subline",e.target.value)} placeholder="Where you are now." style={{...inp}}/><label style={lbl}>Right Headline</label><input value={slide.headline2||""} onChange={e=>updateSlide("headline2",e.target.value)} placeholder="After" style={{...inp}}/><label style={lbl}>Right Subline</label><input value={slide.subline2||""} onChange={e=>updateSlide("subline2",e.target.value)} placeholder="Where you could be." style={{...inp}}/></>}
-                        {isRaw&&<><label style={lbl}>Your Text</label><p style={{fontSize:11,color:A.muted,margin:"-6px 0 4px"}}>Each paragraph gets its own highlight box.</p><textarea value={slide.rawText||""} onChange={e=>updateSlide("rawText",e.target.value)} placeholder={"The goal isn't to be rich.\n\nIt's to be free."} rows={6} style={{...inp,resize:"vertical",lineHeight:1.6}}/></>}
+                        {isRaw&&!activeIsCtaSlide&&<><label style={lbl}>Your Text</label><p style={{fontSize:11,color:A.muted,margin:"-6px 0 4px"}}>Each paragraph gets its own highlight box.</p><textarea value={slide.rawText||""} onChange={e=>updateSlide("rawText",e.target.value)} placeholder={"The goal isn't to be rich.\n\nIt's to be free."} rows={6} style={{...inp,resize:"vertical",lineHeight:1.6}}/></>}
 
                         {/* AI Brief (inside content panel) */}
                         {isCleanPro&&<><label style={{...lbl,color:GOLD}}>AI Brief</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={2} placeholder="What's this carousel about?" style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>Powers ✨ AI Suggest on each slide.</div></>}
@@ -3453,7 +3465,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                     {/* ── STYLE TAB ── */}
                     {tmplContentStyleTab==="style"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
-                      {activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,marginBottom:8}}><div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>CTA slide inherits your template colours and font.</div></div>}
+                      {activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,marginBottom:8}}><div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>CTA slide inherits your template font. Accent colour and CTA word follow the Accent colour in the Visuals tab.</div></div>}
                       {/* Effects dropdown */}
                       {!isRaw&&!isStory&&!activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
                         {!isCleanPro&&<>
@@ -3515,7 +3527,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       </div>}
 
                       {/* Raw options */}
-                      {isRaw&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:8}}>
+                      {isRaw&&!activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:8}}>
                         <label style={lbl}>Text Size <span style={{fontSize:9,fontWeight:400,textTransform:"none"}}>{tmplFontSize}px</span></label>
                         <input type="range" min={24} max={80} value={tmplFontSize} onChange={e=>setTmplFontSize(Number(e.target.value))} style={{width:"100%",accentColor:GOLD}}/>
                         <label style={lbl}>Text Highlight</label>
