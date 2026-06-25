@@ -1356,6 +1356,14 @@ export default function App() {
   const [name, setName] = useState(S?.name||"");
   const [handle, setHandle] = useState(S?.handle||"");
   const [blueTick, setBlueTick] = useState(S?.blueTick??false);
+  const activeIsCtaSlide=tmplShowCta&&tmplActiveSlide===tmplSlideCount;
+  const activeSlide=tmplActiveSlide;
+  const isDarkFade=tmplSelected==="dark-fade";
+  const isListicle=tmplSelected==="listicle";
+  const isCleanPro=tmplSelected==="clean-pro";
+  const isStory=tmplSelected==="storytelling";
+  const isRaw=tmplSelected==="raw";
+  const isSplit=tmplSelected==="split";
   useEffect(()=>{
     if(!tmplSelected)return;
     const isFree=currentUser?.plan==="free";
@@ -3186,16 +3194,16 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
             {/* ── TEMPLATE EDITOR ── */}
             {tmplSelected&&(()=>{
-              const isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade",isSplit=tmplSelected==="split";
-              const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:8,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
+              const __isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade",isSplit=tmplSelected==="split";
+              const hasAI=_isListicle||isCleanPro||isStory,maxSlides=_isListicle?12:8,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
               const ctaBgFinal=(isCleanPro||isStory)?tmplBg:tmplCtaBg;const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
               const ctaLine2Defaults={comment:"Comment the word",follow:"Follow",save:"Save this",share:"Share this",like:"Like this"};
               const ctaKeywordDefaults={comment:tmplCtaKeyword||"GUIDE",follow:"FOLLOW",save:"SAVE",share:"SHARE",like:"LIKE"};
               const ctaLine3Defaults={comment:"and I'll send it straight over",follow:"for more content like this",save:"so you don't lose it",share:"with someone who needs it",like:"if it resonated with you"};
-              const ctaHTML=tmplShowCta?buildCtaHTML(opts,tmplCtaType,ctaKeywordDefaults[tmplCtaType],tmplCtaTopLine||(isDarkFade?"Want to build wealth online?":isListicle?"Want more content like this?":isCleanPro?"Want the full strategy?":isStory?"Want to start your own journey?":"Want more like this?"),tmplCtaLine2||ctaLine2Defaults[tmplCtaType],tmplCtaRewardLine||ctaLine3Defaults[tmplCtaType],ctaBgFinal,name,handle,profileUrl,blueTick,isStory?tmplFontStyle:tmplFont,tmplSlideCount+(tmplShowCta?1:0),tmplShowCounter):null;
+              const ctaHTML=tmplShowCta?buildCtaHTML(opts,tmplCtaType,ctaKeywordDefaults[tmplCtaType],tmplCtaTopLine||(isDarkFade?"Want to build wealth online?":_isListicle?"Want more content like this?":isCleanPro?"Want the full strategy?":isStory?"Want to start your own journey?":"Want more like this?"),tmplCtaLine2||ctaLine2Defaults[tmplCtaType],tmplCtaRewardLine||ctaLine3Defaults[tmplCtaType],ctaBgFinal,name,handle,profileUrl,blueTick,isStory?tmplFontStyle:tmplFont,tmplSlideCount+(tmplShowCta?1:0),tmplShowCounter):null;
               const totalSlides=tmplSlideCount+(ctaHTML?1:0);
-              const activeIsCtaSlide=ctaHTML&&activeSlide===tmplSlideCount;
-              const previewHTML=activeIsCtaSlide?ctaHTML:buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,totalSlides,tmplSelected,opts);
+              const __activeIsCtaSlide=ctaHTML&&activeSlide===tmplSlideCount;
+              const previewHTML=_activeIsCtaSlide?ctaHTML:buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,totalSlides,tmplSelected,opts);
               const thumbHTMLs=[...dTmplSlides.slice(0,tmplSlideCount).map((s,i)=>buildTmplHTML(s||{},i,totalSlides,tmplSelected,opts)),...(ctaHTML?[ctaHTML]:[])];
 
 
@@ -3342,7 +3350,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     try{localStorage.setItem("bwt_tmpl_session_"+tmplSelected,JSON.stringify({slides:tmplSlides,slideCount:tmplSlideCount,brief:tmplBrief,effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,accentLine:tmplAccentLineColor,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum}));}catch{}
                     setTmplSelected(null);
                   }} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Templates</button>
-                  <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Classic Theme Page":isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":isSplit?"Split":"Raw"}</span>
+                  <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Classic Theme Page":_isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":isSplit?"Split":"Raw"}</span>
                   {isFree&&<span style={{fontSize:11,color:"#e74c3c",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>Free — watermark on exports</span>}
                 </div>
 
