@@ -2555,8 +2555,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             </button>
           </div>
           {nav==="generate"&&view==="preview"&&<>
-            <button onClick={()=>generate(lastTopic)} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:8}}>↺ Regenerate</button>
-            <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
+            <button onClick={()=>generate(lastTopic)} className="desktop-only" style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600,marginLeft:8}}>↺ Regenerate</button>
+            <button onClick={()=>{setView("setup");setSlides([]);setNav("generate");}} className="desktop-only" style={{background:"transparent",border:`1.5px solid ${A.border}`,color:A.muted,padding:"5px 12px",borderRadius:7,fontSize:12,fontWeight:600}}>← New</button>
           </>}
           {/* Credit counter — desktop only */}
           {currentUser&&(
@@ -3961,10 +3961,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             <div style={{display:isMobile?"block":"grid",gridTemplateColumns:"1fr 360px",gap:28,alignItems:"start"}}>
               <div style={{paddingBottom:140,position:isMobile?"static":"relative"}}>
                 <button onClick={()=>setEditDrawerOpen(true)} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontSize:14,fontWeight:700,color:A.text,cursor:"pointer",marginBottom:8,textAlign:"center"}}>Edit Slide {active+1}</button>
-                <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
+                <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12,flexDirection:isMobile?"column":"row",alignItems:isMobile?"center":"flex-start"}}>
                   {slides.map((slide,i)=>(
-                    <div key={i} data-slide-index={i}>
-                    <SlidePreview slide={slide} idx={i} total={slides.length} opts={slideOpts(i)} onClick={()=>setActive(i)} isActive={active===i} isCover={i===0} showWatermark={currentUser?.plan==="free"}/>
+                    <div key={i} data-slide-index={i} style={{width:isMobile&&active===i?"100%":"auto",position:isMobile&&active===i?"sticky":"relative",top:isMobile&&active===i?"calc(56px + env(safe-area-inset-top,0px))":0,zIndex:isMobile&&active===i?10:0}}>
+                    <SlidePreview slide={slide} idx={i} total={slides.length} opts={slideOpts(i)} onClick={()=>setActive(i)} isActive={active===i} isCover={i===0} showWatermark={currentUser?.plan==="free"} previewSize={isMobile?(active===i?(keyboardOpen?Math.min(window.innerWidth-32,540)/2:Math.min(window.innerWidth-32,540)):100):undefined}/>
                     </div>
                   ))}
                 </div>
