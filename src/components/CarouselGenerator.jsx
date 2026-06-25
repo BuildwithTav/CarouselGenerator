@@ -935,6 +935,18 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(false);
   const [tmplDrawerOpen, setTmplDrawerOpen] = useState(false);
   const [tmplPreviewHTML, setTmplPreviewHTML] = useState("");
+  useEffect(()=>{
+    if(!tmplSelected)return;
+    const isFree=currentUser?.plan==="free";
+    const website=isFree?"studio.buildwithtav.co":(currentUser?.website||"");
+    const drawerOpts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
+    const totalSl=tmplSlideCount+(tmplShowCta?1:0);
+    const isCtaSlide=tmplActiveSlide===tmplSlideCount&&tmplShowCta;
+    const html=isCtaSlide
+      ?buildCtaHTML(drawerOpts,tmplCtaType,tmplCtaKeyword||"",tmplCtaTopLine||"",tmplCtaLine2||"",tmplCtaRewardLine||"",tmplBg,name,handle,profileUrl,blueTick,tmplSelected==="storytelling"?tmplFontStyle:tmplFont,totalSl,tmplShowCounter)
+      :buildTmplHTML(dTmplSlides[tmplActiveSlide]||{},tmplActiveSlide,totalSl,tmplSelected,drawerOpts);
+    setTmplPreviewHTML(html);
+  },[tmplActiveSlide,tmplSelected,tmplSlideCount,tmplShowCta,tmplEffect,tmplFont,tmplFontSize,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplFontStyle,dTmplSlides,currentUser?.plan]);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   useEffect(()=>{const check=()=>setIsMobile(window.innerWidth<768);check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]); 
   useEffect(()=>{
@@ -3183,7 +3195,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               const totalSlides=tmplSlideCount+(ctaHTML?1:0);
               const activeIsCtaSlide=ctaHTML&&activeSlide===tmplSlideCount;
               const previewHTML=activeIsCtaSlide?ctaHTML:buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,totalSlides,tmplSelected,opts);
-              if(tmplPreviewHTML!==previewHTML)setTmplPreviewHTML(previewHTML);
               const thumbHTMLs=[...dTmplSlides.slice(0,tmplSlideCount).map((s,i)=>buildTmplHTML(s||{},i,totalSlides,tmplSelected,opts)),...(ctaHTML?[ctaHTML]:[])];
 
 
