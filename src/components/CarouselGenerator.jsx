@@ -4404,7 +4404,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             </div>
             {/* Mini preview */}
             <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
-              {(()=>{const PW=200;const PH=Math.round(1350*PW/1080);return(<div style={{width:PW,height:PH,position:"relative",overflow:"hidden",borderRadius:6,border:`1.5px solid ${A.border}`}}><iframe key={`tmpl-drawer-${tmplActiveSlide}`} srcDoc={tmplPreviewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none"}} scrolling="no"/></div>);})()}
+              <SlidePreview
+                slide={dTmplSlides[tmplActiveSlide]||{}}
+                idx={tmplActiveSlide}
+                total={tmplSlideCount+(tmplShowCta?1:0)}
+                opts={{effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree:currentUser?.plan==="free",userWebsite:currentUser?.plan==="free"?"studio.buildwithtav.co":(currentUser?.website||"")}}
+                onClick={()=>{}}
+                isActive={false}
+                isCover={tmplActiveSlide===0}
+                previewSize={200}
+                showWatermark={currentUser?.plan==="free"}
+              />
             </div>
           </div>
           {/* Scrollable content/style panel */}
