@@ -3960,11 +3960,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             </div>
             <div style={{display:isMobile?"block":"grid",gridTemplateColumns:"1fr 360px",gap:28,alignItems:"start"}}>
               <div style={{paddingBottom:140,position:isMobile?"static":"relative"}}>
-                <button onClick={()=>setEditDrawerOpen(true)} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontSize:14,fontWeight:700,color:A.text,cursor:"pointer",marginBottom:8,textAlign:"center"}}>Edit Slide {active+1}</button>
-                <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12,flexDirection:isMobile?"column":"row",alignItems:isMobile?"center":"flex-start"}}>
+                {/* Active slide - big preview */}
+                <div style={{position:isMobile?"sticky":"sticky",top:isMobile?"calc(56px + env(safe-area-inset-top,0px))":76,zIndex:10,background:A.bg,marginBottom:8}}>
+                  {(()=>{const isPortrait=slideOpts(active).ratio==="portrait";const PW=isMobile?(keyboardOpen?Math.min(window.innerWidth-32,540)/2:Math.min(window.innerWidth-32,540)):540;const PH=Math.round((isPortrait?1920:1350)*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto",borderRadius:8,border:`1.5px solid ${A.border}`}}><SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={true} isCover={active===0} showWatermark={currentUser?.plan==="free"} previewSize={PW}/></div>);})()}
+                </div>
+                {/* Thumbnails row */}
+                <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
                   {slides.map((slide,i)=>(
-                    <div key={i} data-slide-index={i} style={{width:isMobile&&active===i?"100%":"auto",position:isMobile&&active===i?"sticky":"relative",top:isMobile&&active===i?"calc(56px + env(safe-area-inset-top,0px))":0,zIndex:isMobile&&active===i?10:0}}>
-                    <SlidePreview slide={slide} idx={i} total={slides.length} opts={slideOpts(i)} onClick={()=>setActive(i)} isActive={active===i} isCover={i===0} showWatermark={currentUser?.plan==="free"} previewSize={isMobile?(active===i?(keyboardOpen?Math.min(window.innerWidth-32,540)/2:Math.min(window.innerWidth-32,540)):100):undefined}/>
+                    <div key={i} data-slide-index={i} onClick={()=>setActive(i)} style={{cursor:"pointer",opacity:active===i?1:0.6,transition:"opacity 0.15s",outline:active===i?`2px solid ${GOLD}`:"none",borderRadius:6,overflow:"hidden"}}>
+                      <SlidePreview slide={slide} idx={i} total={slides.length} opts={slideOpts(i)} onClick={()=>setActive(i)} isActive={active===i} isCover={i===0} showWatermark={currentUser?.plan==="free"} previewSize={86}/>
                     </div>
                   ))}
                 </div>
