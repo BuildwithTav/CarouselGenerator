@@ -3379,7 +3379,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   </div>
 
                   {/* RIGHT — Content / Style tabs */}
-                  <div className="tmpl-edit-panel" style={{display:isMobile?"none":"flex",flexDirection:"column",gap:0}}>
+                  <div className="tmpl-edit-panel" style={{display:isMobile?(tmplDrawerOpen?"flex":"none"):"flex",flexDirection:"column",gap:0,position:isMobile&&tmplDrawerOpen?"fixed":"relative",bottom:0,left:0,right:0,top:isMobile&&tmplDrawerOpen?"auto":"auto",zIndex:isMobile&&tmplDrawerOpen?1002:"auto",height:isMobile&&tmplDrawerOpen?"calc(88svh - 310px)":"auto",overflowY:isMobile&&tmplDrawerOpen?"auto":"visible",padding:isMobile&&tmplDrawerOpen?"0 16px 40px":0,background:isMobile&&tmplDrawerOpen?A.bg:"transparent",WebkitOverflowScrolling:"touch"}}>
 
                     {/* Tab switcher */}
                     <div style={{display:"flex",marginBottom:12,background:A.surface,borderRadius:10,padding:4,border:`1.5px solid ${A.border}`}}>
@@ -4409,16 +4409,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           </div>
           {/* Scrollable content/style panel */}
           <div className="tmpl-drawer-panel" style={{overflowY:"auto",padding:"0 16px 40px",flex:1,WebkitOverflowScrolling:"touch",display:"flex",flexDirection:"column",gap:0}}>
-            <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:8}}>
-              {tmplContentStyleTab==="content"&&<>
-                <div><label style={lbl}>Headline</label><textarea value={(dTmplSlides[tmplActiveSlide]||{}).headline||""} onChange={e=>setTmplSlides(ss=>{const n=[...ss];n[tmplActiveSlide]={...n[tmplActiveSlide],headline:e.target.value};return n;})} rows={3} style={{...inp,fontSize:16,resize:"none",lineHeight:1.5}}/></div>
-                <div><label style={lbl}>Subline</label><input value={(dTmplSlides[tmplActiveSlide]||{}).subline||""} onChange={e=>setTmplSlides(ss=>{const n=[...ss];n[tmplActiveSlide]={...n[tmplActiveSlide],subline:e.target.value};return n;})} style={{...inp,fontSize:16}}/></div>
-                <div><label style={lbl}>Body Text</label><textarea value={(dTmplSlides[tmplActiveSlide]||{}).bodyText||""} onChange={e=>setTmplSlides(ss=>{const n=[...ss];n[tmplActiveSlide]={...n[tmplActiveSlide],bodyText:e.target.value};return n;})} rows={4} style={{...inp,fontSize:16,resize:"none",lineHeight:1.6}}/></div>
-                <div><label style={lbl}>Accent Text</label><input value={(dTmplSlides[tmplActiveSlide]||{}).accentText||""} onChange={e=>setTmplSlides(ss=>{const n=[...ss];n[tmplActiveSlide]={...n[tmplActiveSlide],accentText:e.target.value};return n;})} style={{...inp,fontSize:16}}/></div>
-              </>}
-              {tmplContentStyleTab==="style"&&<div style={{padding:"8px 0",color:A.muted,fontSize:13,textAlign:"center"}}>Use Style tab on desktop for full style options.</div>}
-            </div>
-            
           </div>
         </div>}
 
