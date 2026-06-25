@@ -1357,6 +1357,7 @@ export default function App() {
   const [handle, setHandle] = useState(S?.handle||"");
   const [blueTick, setBlueTick] = useState(S?.blueTick??false);
   const activeSlide=tmplActiveSlide;
+  const slide=tmplSlides[activeSlide]||{};
   const activeIsCtaSlide=tmplShowCta&&tmplActiveSlide===tmplSlideCount;
   const isDarkFade=tmplSelected==="dark-fade";
   const isListicle=tmplSelected==="listicle";
@@ -3195,7 +3196,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             {/* ── TEMPLATE EDITOR ── */}
             {tmplSelected&&(()=>{
 
-              const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:8,isFree=currentUser?.plan==="free",slide=tmplSlides[activeSlide]||{};
+              const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:8,isFree=currentUser?.plan==="free";
               const ctaBgFinal=(isCleanPro||isStory)?tmplBg:tmplCtaBg;const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
               const ctaLine2Defaults={comment:"Comment the word",follow:"Follow",save:"Save this",share:"Share this",like:"Like this"};
               const ctaKeywordDefaults={comment:tmplCtaKeyword||"GUIDE",follow:"FOLLOW",save:"SAVE",share:"SHARE",like:"LIKE"};
