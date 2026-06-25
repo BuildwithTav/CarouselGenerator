@@ -940,7 +940,7 @@ export default function App() {
   useEffect(()=>{const check=()=>setIsMobile(window.innerWidth<768);check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]); 
   useEffect(()=>{
     if(!window.visualViewport)return;
-    let _kbTimer;const onResize=()=>{clearTimeout(_kbTimer);_kbTimer=setTimeout(()=>setKeyboardOpen(window.visualViewport.height<window.innerHeight*0.8),150);};
+    let _kbTimer;const onResize=()=>{const isOpen=window.visualViewport.height<window.innerHeight*0.8;if(isOpen){clearTimeout(_kbTimer);setKeyboardOpen(true);}else{clearTimeout(_kbTimer);_kbTimer=setTimeout(()=>setKeyboardOpen(false),500);}};
     window.visualViewport.addEventListener("resize",onResize);
     return()=>window.visualViewport.removeEventListener("resize",onResize);
   },[]); 
