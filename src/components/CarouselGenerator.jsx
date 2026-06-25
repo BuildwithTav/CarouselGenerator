@@ -4377,7 +4377,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         <>
 
         {/* Templates mobile drawer */}
-        {isMobile&&tmplDrawerOpen&&<div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:1001,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0",display:"flex",flexDirection:"column",maxHeight:"88svh"}}>
+        {tmplDrawerOpen&&<div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:1001,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0",display:"flex",flexDirection:"column",maxHeight:"88svh"}}>
           {/* Fixed header */}
           <div style={{flexShrink:0,padding:"12px 16px 0",background:A.bg,borderRadius:"20px 20px 0 0"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
