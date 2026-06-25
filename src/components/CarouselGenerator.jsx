@@ -940,7 +940,7 @@ export default function App() {
   useEffect(()=>{const check=()=>setIsMobile(window.innerWidth<768);check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]); 
   useEffect(()=>{
     if(!window.visualViewport)return;
-    const onResize=()=>setKeyboardOpen(window.visualViewport.height<window.innerHeight*0.8);
+    let _kbTimer;const onResize=()=>{clearTimeout(_kbTimer);_kbTimer=setTimeout(()=>setKeyboardOpen(window.visualViewport.height<window.innerHeight*0.8),150);};
     window.visualViewport.addEventListener("resize",onResize);
     return()=>window.visualViewport.removeEventListener("resize",onResize);
   },[]); 
@@ -4020,7 +4020,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             <div style={{display:isMobile?"block":"grid",gridTemplateColumns:"1fr 360px",gap:28,alignItems:"start"}}>
               <div style={{display:isMobile?"contents":"block",paddingBottom:isMobile?0:140}}>
                 {/* Active slide - big preview */}
-                <div style={{position:isMobile?"sticky":"sticky",top:isMobile?"-80px":76,zIndex:10,background:A.bg,marginBottom:8}}>
+                <div style={{position:isMobile?"sticky":"sticky",top:isMobile?"-40px":76,zIndex:10,background:A.bg,marginBottom:8}}>
                   {(()=>{const isPortrait=slideOpts(active).ratio==="portrait";const PW=isMobile?(keyboardOpen?Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)/2:Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)):540;const PH=Math.round((isPortrait?1920:1350)*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto",borderRadius:8,border:`1.5px solid ${A.border}`}}><SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={true} isCover={active===0} showWatermark={currentUser?.plan==="free"} previewSize={PW}/></div>);})()}
                 </div>
                 {/* Thumbnails row */}
