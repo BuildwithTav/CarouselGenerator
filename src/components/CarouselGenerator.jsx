@@ -934,6 +934,7 @@ export default function App() {
   const [tmplShowWebsite, setTmplShowWebsite] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [tmplDrawerOpen, setTmplDrawerOpen] = useState(false);
+  const [tmplPreviewHTML, setTmplPreviewHTML] = useState("");
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   useEffect(()=>{const check=()=>setIsMobile(window.innerWidth<768);check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]); 
   useEffect(()=>{
@@ -3182,6 +3183,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               const totalSlides=tmplSlideCount+(ctaHTML?1:0);
               const activeIsCtaSlide=ctaHTML&&activeSlide===tmplSlideCount;
               const previewHTML=activeIsCtaSlide?ctaHTML:buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,totalSlides,tmplSelected,opts);
+              if(tmplPreviewHTML!==previewHTML)setTmplPreviewHTML(previewHTML);
               const thumbHTMLs=[...dTmplSlides.slice(0,tmplSlideCount).map((s,i)=>buildTmplHTML(s||{},i,totalSlides,tmplSelected,opts)),...(ctaHTML?[ctaHTML]:[])];
 
 
@@ -4389,7 +4391,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             </div>
             {/* Mini preview */}
             <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
-              {(()=>{const drawerOpts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:tmplProfUrl,nm:tmplNm,hdl:tmplHdl,showTick:tmplShowTick,isFree:currentUser?.plan==="free",userWebsite:currentUser?.plan==="free"?"studio.buildwithtav.co":(currentUser?.website||"")};const totalSl=tmplSlideCount+(tmplShowCta?1:0);const isCtaSlide=tmplActiveSlide===tmplSlideCount&&tmplShowCta;const dHtml=isCtaSlide?buildCtaHTML(drawerOpts,tmplCtaType,tmplCtaKeyword,tmplCtaLine1,tmplCtaLine2,tmplCtaLine3,tmplBg,tmplNm,tmplHdl,tmplProfUrl,tmplShowTick,tmplFont,totalSl,tmplShowCounter):buildTmplHTML(dTmplSlides[tmplActiveSlide]||{},tmplActiveSlide,totalSl,tmplSelected,drawerOpts);const PW=200;const PH=Math.round(1350*PW/1080);return(<div style={{width:PW,height:PH,position:"relative",overflow:"hidden",borderRadius:6,border:`1.5px solid ${A.border}`}}><iframe key={`tmpl-drawer-${tmplActiveSlide}`} srcDoc={dHtml} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none"}} scrolling="no"/></div>);})()} 
+              {(()=>{const PW=200;const PH=Math.round(1350*PW/1080);return(<div style={{width:PW,height:PH,position:"relative",overflow:"hidden",borderRadius:6,border:`1.5px solid ${A.border}`}}><iframe key={`tmpl-drawer-${tmplActiveSlide}`} srcDoc={tmplPreviewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none"}} scrolling="no"/></div>);})()}
             </div>
           </div>
           {/* Scrollable content/style panel */}
