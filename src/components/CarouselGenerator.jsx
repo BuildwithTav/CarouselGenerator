@@ -2362,8 +2362,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           .desktop-reset{display:none!important}
           body,html,#__next{width:100%!important;max-width:100vw!important}
           nav{width:100%!important;max-width:100vw!important}
-          .mobile-edit-btn{display:none!important}
-          .mobile-drawer{display:none!important}
+          .mobile-edit-btn{display:flex!important}
+          .mobile-drawer{display:block!important}
           .preview-scroll-area{padding-bottom:120px!important}
           .desktop-only{display:none!important}
           .cover-format-grid{grid-template-columns:1fr!important}
@@ -3958,8 +3958,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               ))}
               <button onClick={()=>{setSlides([]);setView("setup");setActive(0);setDownloadDone(false);}} style={{marginLeft:"auto",padding:"5px 14px",borderRadius:7,border:`1.5px solid ${A.border}`,background:A.surface,color:A.text,fontSize:12,fontWeight:700,cursor:"pointer"}}>+ New</button>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 360px",gap:28,alignItems:"start"}}>
-              <div style={{paddingBottom:140}}>
+            <div style={{display:isMobile?"block":"grid",gridTemplateColumns:"1fr 360px",gap:28,alignItems:"start"}}>
+              <div style={{paddingBottom:140,position:isMobile?"static":"relative"}}>
                 <button onClick={()=>setEditDrawerOpen(true)} className="mobile-edit-btn" style={{display:"none",width:"100%",padding:"12px",background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,fontSize:14,fontWeight:700,color:A.text,cursor:"pointer",marginBottom:8,textAlign:"center"}}>Edit Slide {active+1}</button>
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
                   {slides.map((slide,i)=>(
@@ -4002,7 +4002,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 )}
               </div>
 
-              <div className="desktop-edit-panel" style={{display:"flex",flexDirection:"column",gap:12}}>
+              <div className="tmpl-edit-panel" style={{display:"flex",flexDirection:"column",gap:12}}>
                 <div style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:A.muted}}>Edit Slide {active+1}</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
                   {slides.map((s,i)=>(
