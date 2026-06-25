@@ -2375,7 +2375,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           .quotes-format-card{display:none!important}
           .cmd-hint{display:none!important}
           .desktop-edit-panel{display:none!important}
-          .tmpl-edit-panel{display:none!important}
           .gen-edit-panel{display:none!important}
           .tmpl-drawer-panel{display:flex!important;flex-direction:column!important}
           .topic-row input{width:100%!important;flex:unset!important}
@@ -3347,7 +3346,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   <div style={{display:isMobile?"contents":"block",position:isMobile?"static":"relative",alignSelf:"start"}}>
                     <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12,position:isMobile?"sticky":"relative",top:isMobile?"calc(56px + env(safe-area-inset-top, 0px))":0,zIndex:isMobile?10:0}}>
                       <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:A.bg}}>
-                        {(()=>{const PW=isMobile?(keyboardOpen?Math.min(window.innerWidth-32,540)/2:Math.min(window.innerWidth-32,540)):540,PH=Math.round(1350*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}><iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/></div>);})()}
+                        {(()=>{const PW=isMobile?(keyboardOpen?Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)/2:Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)):540,PH=Math.round(1350*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}><iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/></div>);})()}
                       </div>
                     </div>
                     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
@@ -3965,8 +3964,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             <div style={{display:isMobile?"block":"grid",gridTemplateColumns:"1fr 360px",gap:28,alignItems:"start"}}>
               <div style={{display:isMobile?"contents":"block",paddingBottom:isMobile?0:140}}>
                 {/* Active slide - big preview */}
-                <div style={{position:isMobile?"sticky":"sticky",top:isMobile?"calc(56px + env(safe-area-inset-top,0px))":76,zIndex:10,background:A.bg,marginBottom:8}}>
-                  {(()=>{const isPortrait=slideOpts(active).ratio==="portrait";const PW=isMobile?(keyboardOpen?Math.min(window.innerWidth-32,540)/2:Math.min(window.innerWidth-32,540)):540;const PH=Math.round((isPortrait?1920:1350)*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto",borderRadius:8,border:`1.5px solid ${A.border}`}}><SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={true} isCover={active===0} showWatermark={currentUser?.plan==="free"} previewSize={PW}/></div>);})()}
+                <div style={{position:isMobile?"sticky":"sticky",top:isMobile?0:76,zIndex:10,background:A.bg,marginBottom:8}}>
+                  {(()=>{const isPortrait=slideOpts(active).ratio==="portrait";const PW=isMobile?(keyboardOpen?Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)/2:Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)):540;const PH=Math.round((isPortrait?1920:1350)*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto",borderRadius:8,border:`1.5px solid ${A.border}`}}><SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={true} isCover={active===0} showWatermark={currentUser?.plan==="free"} previewSize={PW}/></div>);})()}
                 </div>
                 {/* Thumbnails row */}
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
@@ -4410,6 +4409,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         </div>}
 
         <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1001,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0"}}>
+          {slides.length>0&&<>
           <div style={{display:"flex",flexDirection:"column",maxHeight:"88svh"}}>
           {/* Fixed header with preview - does not scroll */}
           <div style={{flexShrink:0,padding:"12px 16px 0",borderRadius:"20px 20px 0 0",background:A.bg}}>
@@ -4450,6 +4450,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           </div>
           </div>
           </div>
+          </>
+}
         </div>
       </>
       )}
