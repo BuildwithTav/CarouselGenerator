@@ -4372,11 +4372,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           </div>
         )}
 
-      {/* Mobile edit drawer */}
-      {editDrawerOpen&&slides[active]&&(
-        <>
-
-        {/* Templates mobile drawer */}
+      {/* Templates mobile drawer */}
+{/* Templates mobile drawer */}
         {tmplDrawerOpen&&<div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:1001,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0",display:"flex",flexDirection:"column",maxHeight:"88svh"}}>
           {/* Fixed header */}
           <div style={{flexShrink:0,padding:"12px 16px 0",background:A.bg,borderRadius:"20px 20px 0 0"}}>
@@ -4610,6 +4607,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     </div>}
           </div>
         </div>}
+
+      {/* Mobile edit drawer */}
+      {editDrawerOpen&&slides[active]&&(
+        <>
+
+
 
         <div className="mobile-drawer" style={{display:"none",position:"fixed",bottom:0,left:0,right:0,zIndex:1001,background:A.bg,borderTop:`2px solid ${A.border}`,borderRadius:"20px 20px 0 0"}}>
           {slides.length>0&&<>
