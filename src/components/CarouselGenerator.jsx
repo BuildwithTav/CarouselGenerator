@@ -2373,7 +2373,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           .quotes-mobile-preview{display:flex!important}
           .quotes-format-card{display:none!important}
           .cmd-hint{display:none!important}
-          .desktop-edit-panel{display:flex!important;flex-direction:column!important}
+          .desktop-edit-panel{display:none!important}
+          .tmpl-edit-panel{display:flex!important;flex-direction:column!important}
           .topic-row input{width:100%!important;flex:unset!important}
 
           /* Brand tab */
@@ -3360,7 +3361,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   </div>
 
                   {/* RIGHT — Content / Style tabs */}
-                  <div style={{display:isMobile?"block":"flex",flexDirection:"column",gap:0}}>
+                  <div className="tmpl-edit-panel" style={{display:isMobile?"block":"flex",flexDirection:"column",gap:0}}>
 
                     {/* Tab switcher */}
                     <div style={{display:"flex",marginBottom:12,background:A.surface,borderRadius:10,padding:4,border:`1.5px solid ${A.border}`}}>
