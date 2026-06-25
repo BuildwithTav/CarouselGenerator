@@ -3379,7 +3379,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   </div>
 
                   {/* RIGHT — Content / Style tabs */}
-                  <div className="tmpl-edit-panel" style={{display:isMobile?(tmplDrawerOpen?"flex":"none"):"flex",flexDirection:"column",gap:0,position:isMobile&&tmplDrawerOpen?"fixed":"relative",bottom:0,left:0,right:0,top:isMobile&&tmplDrawerOpen?"auto":"auto",zIndex:isMobile&&tmplDrawerOpen?1002:"auto",height:isMobile&&tmplDrawerOpen?"calc(88svh - 310px)":"auto",overflowY:isMobile&&tmplDrawerOpen?"auto":"visible",padding:isMobile&&tmplDrawerOpen?"0 16px 40px":0,background:isMobile&&tmplDrawerOpen?A.bg:"transparent",WebkitOverflowScrolling:"touch"}}>
+                  <div className="tmpl-edit-panel" style={{display:isMobile?(tmplDrawerOpen?"flex":"none"):"flex",flexDirection:"column",gap:0,position:isMobile&&tmplDrawerOpen?"fixed":"relative",top:isMobile&&tmplDrawerOpen?"calc(12svh + 310px)":"auto",bottom:isMobile&&tmplDrawerOpen?0:"auto",left:isMobile&&tmplDrawerOpen?0:"auto",right:isMobile&&tmplDrawerOpen?0:"auto",zIndex:isMobile&&tmplDrawerOpen?1002:"auto",overflowY:isMobile&&tmplDrawerOpen?"auto":"visible",padding:isMobile&&tmplDrawerOpen?"0 16px 40px":0,background:isMobile&&tmplDrawerOpen?A.bg:"transparent",WebkitOverflowScrolling:isMobile&&tmplDrawerOpen?"touch":"unset"}}>
 
                     {/* Tab switcher */}
                     <div style={{display:"flex",marginBottom:12,background:A.surface,borderRadius:10,padding:4,border:`1.5px solid ${A.border}`}}>
