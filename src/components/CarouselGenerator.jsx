@@ -933,7 +933,14 @@ export default function App() {
   const [tmplShowCounter, setTmplShowCounter] = useState(false);
   const [tmplShowWebsite, setTmplShowWebsite] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   useEffect(()=>{const check=()=>setIsMobile(window.innerWidth<768);check();window.addEventListener("resize",check);return()=>window.removeEventListener("resize",check);},[]); 
+  useEffect(()=>{
+    if(!window.visualViewport)return;
+    const onResize=()=>setKeyboardOpen(window.visualViewport.height<window.innerHeight*0.8);
+    window.visualViewport.addEventListener("resize",onResize);
+    return()=>window.visualViewport.removeEventListener("resize",onResize);
+  },[]); 
  
   
   const [tmplRecentFonts, setTmplRecentFonts] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_recent_fonts")||"[]");}catch{return[];}});
@@ -3330,13 +3337,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   <button onClick={()=>setTmplSlideCount(s=>Math.min(maxSlides,s+1))} style={{width:28,height:28,borderRadius:6,border:`1px solid ${A.border}`,background:A.bg,color:A.text,fontSize:16,cursor:"pointer"}}>+</button>
                 </div>}
                 {/* Main grid */}
-                <div style={{display:isMobile?"block":"grid",gridTemplateColumns:"1fr 380px",gap:28,alignItems:"start"}}>
+                <div style={{display:isMobile?(keyboardOpen?"flex":"block"):"grid",gridTemplateColumns:isMobile?"":"1fr 380px",gap:isMobile?0:28,alignItems:"start",flexDirection:"row"}}>
 
                   {/* LEFT — sticky preview */}
-                  <div style={{display:isMobile?"contents":"block",position:isMobile?"static":"relative",alignSelf:"start"}}>
-                    <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12,position:isMobile?"sticky":"relative",top:isMobile?"calc(56px + env(safe-area-inset-top, 0px))":0,zIndex:isMobile?10:0}}>
+                  <div style={{display:isMobile?"contents":"block",position:isMobile?"static":"relative",alignSelf:"start",width:isMobile&&keyboardOpen?150:"auto",flexShrink:0}}>
+                    <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12,position:isMobile&&!keyboardOpen?"sticky":"relative",top:isMobile&&!keyboardOpen?"calc(56px + env(safe-area-inset-top, 0px))":0,zIndex:isMobile?10:0}}>
                       <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:A.bg}}>
-                        {(()=>{const PW=isMobile?Math.min(window.innerWidth-32,540):540,PH=Math.round(1350*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}><iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/></div>);})()}
+                        {(()=>{const PW=isMobile?(keyboardOpen?140:Math.min(window.innerWidth-32,540)):540,PH=Math.round(1350*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}><iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/></div>);})()}
                       </div>
                     </div>
                     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
@@ -3353,7 +3360,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   </div>
 
                   {/* RIGHT — Content / Style tabs */}
-                  <div style={{display:isMobile?"block":"flex",flexDirection:"column",gap:0}}>
+                  <div style={{display:isMobile?"block":"flex",flexDirection:"column",gap:0,flex:isMobile&&keyboardOpen?1:undefined,overflowY:isMobile&&keyboardOpen?"auto":"visible",WebkitOverflowScrolling:"touch"}}>
 
                     {/* Tab switcher */}
                     <div style={{display:"flex",marginBottom:12,background:A.surface,borderRadius:10,padding:4,border:`1.5px solid ${A.border}`}}>
