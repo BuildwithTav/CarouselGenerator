@@ -1356,6 +1356,45 @@ export default function App() {
   const [name, setName] = useState(S?.name||"");
   const [handle, setHandle] = useState(S?.handle||"");
   const [blueTick, setBlueTick] = useState(S?.blueTick??false);
+  // Component-level vars for drawer
+  const generateList=()=>{};
+  const generateStory=()=>{};
+  const activeIsCtaSlide=tmplShowCta&&tmplActiveSlide===tmplSlideCount;
+  const ALL_FONTS=[
+  {id:"Inter",label:"Inter"},
+  {id:"Poppins",label:"Poppins"},
+  {id:"Montserrat",label:"Montserrat"},
+  {id:"Bebas Neue",label:"Bebas Neue"},
+  {id:"Anton",label:"Anton"},
+  {id:"Oswald",label:"Oswald"},
+  {id:"Barlow Condensed",label:"Barlow Condensed"},
+    {id:"Alfa Slab One",label:"Alfa Slab One"},
+  {id:"Playfair Display",label:"Playfair Display"},
+  {id:"Cormorant Garamond",label:"Cormorant Garamond"},
+  {id:"Josefin Sans",label:"Josefin Sans"},
+  {id:"Raleway",label:"Raleway"},
+  {id:"Quicksand",label:"Quicksand"},
+  {id:"Dancing Script",label:"Dancing Script"},
+              ];
+  const isListicle=tmplSelected==="listicle";
+  const selectFont=(fontId)=>{setTmplFont(fontId);setTmplRecentFonts(prev=>[fontId,...prev.filter(f=>f!==fontId)].slice(0,8));};
+  const EFFECTS=[
+  {id:"none",label:"NO EFFECT",style:{color:"#fff",fontWeight:900}},
+  {id:"gold",label:"GOLD",style:{background:"linear-gradient(135deg,#ffe44d,#BB9900,#ffe44d)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+  {id:"chrome",label:"CHROME",style:{background:"linear-gradient(135deg,#ddd,#777,#ccc)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+  {id:"fire",label:"FIRE 🔥",style:{background:"linear-gradient(135deg,#ffff00,#ff6600,#cc0000)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+  {id:"ice",label:"ICE ❄️",style:{background:"linear-gradient(135deg,#d0f0ff,#38bdf8,#1a6090)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+    {id:"3d",label:"3D",style:{color:"#fff",textShadow:"2px 2px 0 #555,4px 4px 0 #333,6px 6px 8px rgba(0,0,0,0.4)",fontWeight:900}},
+  {id:"rosegold",label:"ROSE GOLD",style:{background:"linear-gradient(135deg,#f4a0b0,#c96a7a,#f4a0b0)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+  {id:"glitter",label:"✨ GLITTER",style:{background:"linear-gradient(135deg,#fff,#f0d060,#fff,#f0d060)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+  {id:"holographic",label:"HOLO",style:{background:"linear-gradient(135deg,#ff6eb4,#a78bfa,#38bdf8,#34d399)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+  {id:"pastel",label:"PASTEL",style:{color:"#f9a8d4",fontWeight:900}},
+  {id:"blush",label:"BLUSH",style:{background:"linear-gradient(135deg,#ffecd2,#fcb69f,#ff9a9e)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+  {id:"sunset",label:"SUNSET",style:{background:"linear-gradient(135deg,#ffd700,#ff8c00,#ff4500)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+    {id:"purplehaze",label:"PURPLE",style:{color:"#c084fc",textShadow:"0 0 10px #c084fc",fontWeight:900}},
+  {id:"shadowpop",label:"SHADOW",style:{color:"#fff",textShadow:"3px 3px 0 #BB9900",fontWeight:900}},
+  {id:"duotone",label:"DUOTONE",style:{background:"linear-gradient(180deg,#BB9900,#fff)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
+              ];
   useEffect(()=>{
     if(!tmplSelected)return;
     const isFree=currentUser?.plan==="free";
@@ -3186,16 +3225,16 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
             {/* ── TEMPLATE EDITOR ── */}
             {tmplSelected&&(()=>{
-              const isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade",isSplit=tmplSelected==="split";
-              const hasAI=isListicle||isCleanPro||isStory,maxSlides=isListicle?12:8,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
+              const _iife_isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade",isSplit=tmplSelected==="split";
+              const hasAI=_iife_isListicle||isCleanPro||isStory,maxSlides=_iife_isListicle?12:8,isFree=currentUser?.plan==="free",activeSlide=tmplActiveSlide||0,slide=tmplSlides[activeSlide]||{};
               const ctaBgFinal=(isCleanPro||isStory)?tmplBg:tmplCtaBg;const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
               const ctaLine2Defaults={comment:"Comment the word",follow:"Follow",save:"Save this",share:"Share this",like:"Like this"};
               const ctaKeywordDefaults={comment:tmplCtaKeyword||"GUIDE",follow:"FOLLOW",save:"SAVE",share:"SHARE",like:"LIKE"};
               const ctaLine3Defaults={comment:"and I'll send it straight over",follow:"for more content like this",save:"so you don't lose it",share:"with someone who needs it",like:"if it resonated with you"};
-              const ctaHTML=tmplShowCta?buildCtaHTML(opts,tmplCtaType,ctaKeywordDefaults[tmplCtaType],tmplCtaTopLine||(isDarkFade?"Want to build wealth online?":isListicle?"Want more content like this?":isCleanPro?"Want the full strategy?":isStory?"Want to start your own journey?":"Want more like this?"),tmplCtaLine2||ctaLine2Defaults[tmplCtaType],tmplCtaRewardLine||ctaLine3Defaults[tmplCtaType],ctaBgFinal,name,handle,profileUrl,blueTick,isStory?tmplFontStyle:tmplFont,tmplSlideCount+(tmplShowCta?1:0),tmplShowCounter):null;
+              const ctaHTML=tmplShowCta?buildCtaHTML(opts,tmplCtaType,ctaKeywordDefaults[tmplCtaType],tmplCtaTopLine||(isDarkFade?"Want to build wealth online?":_iife_isListicle?"Want more content like this?":isCleanPro?"Want the full strategy?":isStory?"Want to start your own journey?":"Want more like this?"),tmplCtaLine2||ctaLine2Defaults[tmplCtaType],tmplCtaRewardLine||ctaLine3Defaults[tmplCtaType],ctaBgFinal,name,handle,profileUrl,blueTick,isStory?tmplFontStyle:tmplFont,tmplSlideCount+(tmplShowCta?1:0),tmplShowCounter):null;
               const totalSlides=tmplSlideCount+(ctaHTML?1:0);
-              const activeIsCtaSlide=ctaHTML&&activeSlide===tmplSlideCount;
-              const previewHTML=activeIsCtaSlide?ctaHTML:buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,totalSlides,tmplSelected,opts);
+              const _iife_activeIsCtaSlide=ctaHTML&&activeSlide===tmplSlideCount;
+              const previewHTML=_iife_activeIsCtaSlide?ctaHTML:buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,totalSlides,tmplSelected,opts);
               const thumbHTMLs=[...dTmplSlides.slice(0,tmplSlideCount).map((s,i)=>buildTmplHTML(s||{},i,totalSlides,tmplSelected,opts)),...(ctaHTML?[ctaHTML]:[])];
 
 
@@ -3243,7 +3282,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 setTmplDownloading(false);
               };
 
-              const generateList=async()=>{
+              const _iife_generateList=async()=>{
                 if(!tmplBrief&&!tmplSlides.some(s=>s.headline))return;
                 setTmplSuggesting("list");
                 try{
@@ -3257,14 +3296,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   const r=await fetchWithRetry({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:prompt}]});
                   const text=r?.content?.[0]?.text?.trim()||"{}";
                   const bt=String.fromCharCode(96);const clean=text.replace(new RegExp(bt+bt+bt+"json","g"),"").replace(new RegExp(bt+bt+bt,"g"),"").trim();
-                  const result=JSON.parse(clean);
-                  if(result.coverTopicLine||result.coverSubject){setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],topicLine:result.coverTopicLine||next[0].topicLine,subject:result.coverSubject||next[0].subject};return next;});}
-                  if(Array.isArray(result.items)){setTmplSlides(prev=>{const next=[...prev];result.items.forEach((item,i)=>{const si=i+1;if(si<next.length){if(item.headline)next[si]={...next[si],headline:item.headline};if(item.bodyText)next[si]={...next[si],bodyText:item.bodyText};}});return next;});}
+                  const _iife_result=JSON.parse(clean);
+                  if(_iife_result.coverTopicLine||_iife_result.coverSubject){setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],topicLine:_iife_result.coverTopicLine||next[0].topicLine,subject:_iife_result.coverSubject||next[0].subject};return next;});}
+                  if(Array.isArray(_iife_result.items)){setTmplSlides(prev=>{const next=[...prev];_iife_result.items.forEach((item,i)=>{const si=i+1;if(si<next.length){if(item.headline)next[si]={...next[si],headline:item.headline};if(item.bodyText)next[si]={...next[si],bodyText:item.bodyText};}});return next;});}
                   if(currentUser?.email){await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:5})});setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));}
                 }catch(e){console.error(e);alert("Generation failed — try again");}
                 setTmplSuggesting(null);
               };
-              const generateStory=async()=>{
+              const _iife_generateStory=async()=>{
                 if(!tmplBrief)return;
                 setTmplSuggesting("story");
                 try{
@@ -3295,7 +3334,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 setTmplCtaGenerating(false);
               };
 
-              const EFFECTS=[
+              const _iife_EFFECTS=[
                 {id:"none",label:"NO EFFECT",style:{color:"#fff",fontWeight:900}},
                 {id:"gold",label:"GOLD",style:{background:"linear-gradient(135deg,#ffe44d,#BB9900,#ffe44d)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
                 {id:"chrome",label:"CHROME",style:{background:"linear-gradient(135deg,#ddd,#777,#ccc)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
@@ -3313,7 +3352,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 {id:"duotone",label:"DUOTONE",style:{background:"linear-gradient(180deg,#BB9900,#fff)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
               ];
 
-              const ALL_FONTS=[
+              const _iife_ALL_FONTS=[
                 {id:"Inter",label:"Inter"},
                 {id:"Poppins",label:"Poppins"},
                 {id:"Montserrat",label:"Montserrat"},
@@ -3330,7 +3369,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 {id:"Dancing Script",label:"Dancing Script"},
               ];
 
-              const selectFont=(fontId)=>{
+              const _iife_selectFont=(fontId)=>{
                 setTmplFont(fontId);
                 setTmplRecentFonts(prev=>{const next=[fontId,...prev.filter(f=>f!==fontId)].slice(0,4);try{localStorage.setItem("bwt_tmpl_recent_fonts",JSON.stringify(next));}catch{}return next;});
               };
@@ -3342,7 +3381,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     try{localStorage.setItem("bwt_tmpl_session_"+tmplSelected,JSON.stringify({slides:tmplSlides,slideCount:tmplSlideCount,brief:tmplBrief,effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,accentLine:tmplAccentLineColor,primary:tmplPrimary,secondary:tmplSecondary,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum}));}catch{}
                     setTmplSelected(null);
                   }} style={{background:"none",border:`1px solid ${A.border}`,color:A.muted,padding:"6px 14px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer"}}>← Templates</button>
-                  <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Classic Theme Page":isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":isSplit?"Split":"Raw"}</span>
+                  <span style={{fontSize:15,fontWeight:800,color:GOLD}}>{isDarkFade?"Classic Theme Page":_iife_isListicle?"Listicle":isCleanPro?"Clean Pro":isStory?"Storytelling":isSplit?"Split":"Raw"}</span>
                   {isFree&&<span style={{fontSize:11,color:"#e74c3c",background:"rgba(231,76,60,0.1)",border:"1px solid rgba(231,76,60,0.3)",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>Free — watermark on exports</span>}
                 </div>
 
