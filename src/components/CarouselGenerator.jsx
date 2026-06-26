@@ -1145,9 +1145,9 @@ export default function App() {
         +"<div style='width:"+numLineW+"px;height:5px;background:"+effectColor(effect,AL)+";'></div>"
         +"</div>"
         +"<div id='ltz' style='flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;padding-bottom:8px;overflow:hidden;'>"
-        +"<div id='lt' style='font-family:"+fontFamily+",sans-serif;font-size:44px;font-weight:600;color:"+secondary+";line-height:1.2;white-space:nowrap;'>"+esc((slide.topicLine||"PLACES YOU NEED TO VISIT BEFORE").toUpperCase())+"</div>"
+        +"<div id='lt' style='font-family:"+fontFamily+",sans-serif;font-size:44px;font-weight:600;color:"+secondary+";line-height:1.2;white-space:pre-wrap;word-break:break-word;'>"+esc((slide.topicLine||"PLACES YOU NEED TO VISIT BEFORE").toUpperCase())+"</div>"
         +"<div id='ls' style='font-family:"+fontFamily+",sans-serif;font-size:110px;font-weight:900;line-height:1.0;word-break:break-word;"+effectCSS(effect,AL,secondary)+"'>"+esc((slide.subject||"2027 ENDS").toUpperCase())+"</div>"
-        +(slide.subline?"<div id='lu' style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+(effect==="clean"?primary:secondary)+";line-height:1.3;white-space:nowrap;'>"+esc(slide.subline)+"</div>":"")
+        +(slide.subline?"<div id='lu' style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+(effect==="clean"?primary:secondary)+";line-height:1.3;white-space:pre-wrap;word-break:break-word;'>"+esc(slide.subline)+"</div>":"")
         +"</div></div>"
         +website
         +chevron+counter+wm+fitScriptLis+"</div>";
@@ -1224,11 +1224,11 @@ export default function App() {
         +"<div style='position:absolute;inset:0;background:"+splitGrad+";z-index:2;'></div>"
         +divider
         +"<div style='position:absolute;bottom:320px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
-        +"<div style='position:absolute;bottom:170px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:flex-start;overflow:hidden;height:130px;'>"
-        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:52px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +"<div style='position:absolute;bottom:170px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:flex-start;overflow:hidden;height:180px;'>"
+        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:72px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
         +"</div>"
-        +"<div style='position:absolute;bottom:170px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:flex-start;overflow:hidden;height:130px;'>"
-        +(slide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:52px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline2.toUpperCase())+"</div>":"")
+        +"<div style='position:absolute;bottom:170px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:flex-start;overflow:hidden;height:180px;'>"
+        +(slide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:72px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline2.toUpperCase())+"</div>":"")
         +"</div>"
         +(slide.subline?"<div style='position:absolute;bottom:90px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;font-family:"+fontFamily+",sans-serif;font-size:36px;color:"+secondary+";line-height:1.3;text-align:center;overflow:hidden;height:90px;display:block;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;'>"+esc(slide.subline)+"</div>":"")
         +(slide.subline2?"<div style='position:absolute;bottom:90px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;font-family:"+fontFamily+",sans-serif;font-size:36px;color:"+secondary+";line-height:1.3;text-align:center;overflow:hidden;height:90px;display:block;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;'>"+esc(slide.subline2)+"</div>":"")
@@ -1937,6 +1937,13 @@ Return ONLY valid JSON, nothing else.` }
     return () => clearInterval(interval);
   }, [currentUser?.email]);
 
+  // Proactively refresh Supabase token every 45 mins to prevent session expiry
+  useEffect(()=>{
+    if (!currentUser) return;
+    const tokenInterval = setInterval(()=>{ tryRefreshSession().catch(()=>{}); }, 45*60*1000);
+    return () => clearInterval(tokenInterval);
+  }, [currentUser?.email]);
+
   // Handle ?tab= URL param to navigate to specific tab on load
   useEffect(()=>{
     if (typeof window === "undefined") return;
@@ -2606,7 +2613,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           {/* Desktop nav - all items */}
           <div style={{display:"none"}} className="desktop-nav">
             {NAV_ITEMS.map(([id,label])=>(
-              <button key={id} onClick={()=>setNav(id)} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 14px",fontSize:13,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
+              <button key={id} onClick={()=>{setNav(id);setTmplDrawerOpen(false);}} style={{background:"none",border:"none",borderBottom:nav===id?`2px solid ${GOLD}`:"2px solid transparent",color:nav===id?A.text:A.muted,padding:"0 14px",fontSize:13,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
                 {label}
               </button>
             ))}
@@ -2614,7 +2621,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           {/* Mobile nav - Generate + Quotes + Burger */}
           <div style={{display:"flex",alignItems:"stretch"}} className="mobile-nav">
             {MAIN_NAV.map(([id,label])=>(
-              <button key={id} onClick={()=>{setNav(id);setMenuOpen(false);}} style={{background:"none",border:"none",borderBottom:nav===id?`3px solid ${GOLD}`:"3px solid transparent",color:nav===id?A.text:A.muted,padding:"0 20px",fontSize:15,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
+              <button key={id} onClick={()=>{setNav(id);setMenuOpen(false);setTmplDrawerOpen(false);}} style={{background:"none",border:"none",borderBottom:nav===id?`3px solid ${GOLD}`:"3px solid transparent",color:nav===id?A.text:A.muted,padding:"0 20px",fontSize:15,fontWeight:nav===id?700:500,height:56,display:"flex",alignItems:"center",cursor:"pointer",flexShrink:0}}>
                 {label}
               </button>
             ))}
