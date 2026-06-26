@@ -1953,6 +1953,7 @@ Return ONLY valid JSON, nothing else.` }
   }, []);
 
   const isMobileDevice = () => true;
+  const isIosSafari = () => { try { const ua=navigator.userAgent; return /iP(ad|hone|od)/.test(ua)&&/WebKit/.test(ua)&&!/CriOS|FxiOS|EdgiOS/.test(ua); } catch { return false; } };
 
   const slideHasCustomImage = (_c_opts, isCover) => {
     // Cover photo only applies to slide 1 (isCover)
@@ -3276,10 +3277,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html,width:1080,height:1350})});
                   const data=await res.json();
                   if(!data.image)throw new Error(data.error||"Render failed");
-                  const bytes=atob(data.image),arr=new Uint8Array(bytes.length);
-                  for(let j=0;j<bytes.length;j++)arr[j]=bytes.charCodeAt(j);
-                  const url=URL.createObjectURL(new Blob([arr],{type:"image/png"}));
-                  const a=document.createElement("a");a.href=url;a.download=tmplSelected+"-slide-"+(idx+1)+".png";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+                  const a=document.createElement("a");a.href="data:image/png;base64,"+data.image;a.download=tmplSelected+"-slide-"+(idx+1)+".png";document.body.appendChild(a);a.click();document.body.removeChild(a);
                   await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:3})});
                   setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));
                 }catch(e){console.error(e);alert("Download failed — try again");}
@@ -3296,11 +3294,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     const html=slidesToDownload[i];
                     const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html,width:1080,height:1350})});
                     const data=await res.json();if(!data.image)continue;
-                    const bytes=atob(data.image),arr=new Uint8Array(bytes.length);
-                    for(let j=0;j<bytes.length;j++)arr[j]=bytes.charCodeAt(j);
-                    const url=URL.createObjectURL(new Blob([arr],{type:"image/png"}));
                     const label=ctaHTML&&i===slidesToDownload.length-1?"cta":"slide-"+(i+1);
-                    const a=document.createElement("a");a.href=url;a.download=tmplSelected+"-"+label+".png";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+                    const a=document.createElement("a");a.href="data:image/png;base64,"+data.image;a.download=tmplSelected+"-"+label+".png";document.body.appendChild(a);a.click();document.body.removeChild(a);
                     await new Promise(r=>setTimeout(r,800));
                   }
                   await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:10})});
