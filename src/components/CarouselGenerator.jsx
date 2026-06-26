@@ -793,7 +793,7 @@ export default function App() {
         if (refreshed) {
           const newToken = getToken();
           fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+newToken}, body: JSON.stringify({ action:"me" }) })
-            .then(r=>r.json()).then(d=>{ if (d.user) { setCurrentUser(d.user); setShowAuthModal(false); } else { clearToken(); setShowAuthModal(true); } })
+            .then(r=>r.json()).then(d=>{ if (d.user) { setCurrentUser(d.user); setShowAuthModal(false); } else { setShowAuthModal(true); } })
             .catch(()=>{ setShowAuthModal(true); })
             .finally(()=>setAuthLoading(false));
         } else {
@@ -876,6 +876,17 @@ export default function App() {
   };
 
   const logout = () => { clearToken(); setCurrentUser(null); setOtpSent(false); setOtpCode(""); setAuthEmail(""); setShowAuthModal(true); };
+
+  // Authenticated fetch — auto-refreshes token on 401 and retries once
+  const authFetch = async (url, body) => {
+    const makeReq = (token) => fetch(url, {method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(body)});
+    const res = await makeReq(getToken());
+    if (res.status === 401) {
+      const refreshed = await tryRefreshSession();
+      if (refreshed) return makeReq(getToken());
+    }
+    return res;
+  };
 
   const refreshUser = async () => {
     const token = getToken();
@@ -1946,12 +1957,6 @@ Return ONLY valid JSON, nothing else.` }
     return () => clearInterval(interval);
   }, [currentUser?.email]);
 
-  // Proactively refresh Supabase token every 45 mins to prevent session expiry
-  useEffect(()=>{
-    if (!currentUser) return;
-    const tokenInterval = setInterval(()=>{ tryRefreshSession().catch(()=>{}); }, 45*60*1000);
-    return () => clearInterval(tokenInterval);
-  }, [currentUser?.email]);
 
   // Handle ?tab= URL param to navigate to specific tab on load
   useEffect(()=>{
@@ -3303,13 +3308,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 setTmplDownloadingIdx(idx);
                 try{
                   const html=buildTmplHTML(tmplSlides[idx],idx,totalSlides,tmplSelected,opts);
-                  const blob=await renderTmplSlideViaCanvas(html);
-                  if(!blob)throw new Error("Render failed");
-                  await new Promise((res,rej)=>{
-                    const r=new FileReader();r.onload=()=>{
-                      const a=document.createElement("a");a.href=r.result;a.download=tmplSelected+"-slide-"+(idx+1)+".png";document.body.appendChild(a);a.click();document.body.removeChild(a);res();
-                    };r.onerror=rej;r.readAsDataURL(blob);
-                  });
+                  const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html,width:1080,height:1350})});
+                  const data=await res.json();
+                  if(!data.image)throw new Error(data.error||"Render failed");
+                  const a=document.createElement("a");a.href="data:image/png;base64,"+data.image;a.download=tmplSelected+"-slide-"+(idx+1)+".png";document.body.appendChild(a);a.click();document.body.removeChild(a);
                   await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:3})});
                   setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));
                 }catch(e){console.error(e);alert("Download failed — try again");}
@@ -3320,7 +3322,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 if(!canGenerate()){setNav("upgrade");return;}
                 setTmplDownloading(true);
                 try{
-                  // Load JSZip
                   await new Promise((res,rej)=>{
                     if(window.JSZip)return res();
                     const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);setTimeout(res,5000);
@@ -3331,8 +3332,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   for(let i=0;i<slidesToDownload.length;i++){
                     const label=ctaHTML&&i===slidesToDownload.length-1?"cta":"slide-"+(i+1);
                     try{
-                      const blob=await renderTmplSlideViaCanvas(slidesToDownload[i]);
-                      if(blob)zip.file(`${tmplSelected}-${label}.png`,blob);
+                      const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html:slidesToDownload[i],width:1080,height:1350})});
+                      const data=await res.json();
+                      if(data.image){
+                        const bytes=atob(data.image),arr=new Uint8Array(bytes.length);
+                        for(let j=0;j<bytes.length;j++)arr[j]=bytes.charCodeAt(j);
+                        zip.file(`${tmplSelected}-${label}.png`,arr);
+                      }
                     }catch(e){console.error("Slide",i+1,"failed:",e);}
                   }
                   const zipBlob=await zip.generateAsync({type:"blob"});
