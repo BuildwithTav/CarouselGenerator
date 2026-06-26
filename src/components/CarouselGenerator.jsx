@@ -1418,7 +1418,7 @@ export default function App() {
       ?buildCtaHTML(drawerOpts,tmplCtaType,tmplCtaKeyword||_ctaKwDef[tmplCtaType]||"",tmplCtaTopLine||_ctaTopDef,tmplCtaLine2||_ctaL2Def[tmplCtaType]||"",tmplCtaRewardLine||_ctaL3Def[tmplCtaType]||"",tmplBg,name,handle,profileUrl,blueTick,tmplSelected==="storytelling"?tmplFontStyle:tmplFont,totalSl,tmplShowCounter)
       :buildTmplHTML(dTmplSlides[tmplActiveSlide]||{},tmplActiveSlide,totalSl,tmplSelected,drawerOpts);
     setTmplPreviewHTML(_c_html);
-  },[tmplActiveSlide,tmplSelected,tmplSlideCount,tmplShowCta,tmplEffect,tmplFont,tmplFontSize,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplFontStyle,dTmplSlides,currentUser?.plan]);
+  },[tmplActiveSlide,tmplSelected,tmplSlideCount,tmplShowCta,tmplEffect,tmplFont,tmplFontSize,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplFontStyle,dTmplSlides,currentUser?.plan,tmplShowWebsite,tmplCtaBg,tmplCtaType,tmplShowCounter,name,handle,profileUrl,blueTick,tmplDrawerOpen]);
   const [website, setWebsite] = useState(S?.website||"");
   const [showWebsite, setShowWebsite] = useState(S?.showWebsite??false);
   const [voiceProfile, setVoiceProfile] = useState(S?.voiceProfile||"");
