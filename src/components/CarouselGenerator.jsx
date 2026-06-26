@@ -1407,7 +1407,7 @@ export default function App() {
     if(!tmplSelected)return;
     const _compIsFree=currentUser?.plan==="free";
     const website=_compIsFree?"studio.buildwithtav.co":(currentUser?.website||"");
-    const drawerOpts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,_compIsFree,userWebsite:website};
+    const drawerOpts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,_compIsFree,userWebsite:currentUser?.plan==="free"?"studio.buildwithtav.co":(currentUser?.website||"")};
     const totalSl=tmplSlideCount+(tmplShowCta?1:0);
     const isCtaSlide=tmplActiveSlide===tmplSlideCount&&tmplShowCta;
     const _ctaKwDef={comment:tmplCtaKeyword||"GUIDE",follow:"FOLLOW",save:"SAVE",share:"SHARE",like:"LIKE"};
@@ -1415,7 +1415,7 @@ export default function App() {
     const _ctaL3Def={comment:"and I'll send it straight over",follow:"for more",save:"for later",share:"with someone",like:"if this helped"};
     const _ctaTopDef=isDarkFade?"Want to build wealth online?":isListicle?"Want more content like this?":isCleanPro?"Want the full strategy?":isStory?"Want to start your own journey?":"Want more like this?";
     const _c_html=isCtaSlide
-      ?buildCtaHTML(drawerOpts,tmplCtaType,tmplCtaKeyword||_ctaKwDef[tmplCtaType]||"",tmplCtaTopLine||_ctaTopDef,tmplCtaLine2||_ctaL2Def[tmplCtaType]||"",tmplCtaRewardLine||_ctaL3Def[tmplCtaType]||"",tmplBg,name,handle,profileUrl,blueTick,tmplSelected==="storytelling"?tmplFontStyle:tmplFont,totalSl,tmplShowCounter)
+      ?buildCtaHTML(drawerOpts,tmplCtaType,tmplCtaKeyword||_ctaKwDef[tmplCtaType]||"",tmplCtaTopLine||_ctaTopDef,tmplCtaLine2||_ctaL2Def[tmplCtaType]||"",tmplCtaRewardLine||_ctaL3Def[tmplCtaType]||"",(isCleanPro||isStory)?tmplBg:tmplCtaBg,name,handle,profileUrl,blueTick,tmplSelected==="storytelling"?tmplFontStyle:tmplFont,totalSl,tmplShowCounter)
       :buildTmplHTML(dTmplSlides[tmplActiveSlide]||{},tmplActiveSlide,totalSl,tmplSelected,drawerOpts);
     setTmplPreviewHTML(_c_html);
   },[tmplActiveSlide,tmplSelected,tmplSlideCount,tmplShowCta,tmplEffect,tmplFont,tmplFontSize,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplFontStyle,dTmplSlides,currentUser?.plan,tmplShowWebsite,tmplCtaBg,tmplCtaType,tmplShowCounter,name,handle,profileUrl,blueTick,tmplDrawerOpen]);
