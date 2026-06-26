@@ -347,7 +347,7 @@ function buildSlideHTML(_compSlide, idx, total, _c_opts, isCover = false) {
   const base = `
     @import url('${gFonts}');
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-    _c_html, body { width:${W}px; height:${H}px; overflow:hidden; background:${bgForOpacity||effectiveSlideBg}; }
+    html, body { width:${W}px; height:${H}px; overflow:hidden; background:${bgForOpacity||effectiveSlideBg}; }
     ._compSlide { width:${W}px; height:${H}px; overflow:hidden; background:${bgForOpacity||effectiveSlideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; box-shadow:inset 0 0 0 3px ${C.dark?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.15)"}; }
     .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; object-position:${isCover?`${coverPos2.x}% ${coverPos2.y}%`:`${templatePos.x}% ${templatePos.y}%`}; opacity:${(photoOpacity||100)/100}; }
     .bg-ov { position:absolute; inset:0; z-index:1; pointer-events:none; }
@@ -551,7 +551,7 @@ function buildSlideHTML(_compSlide, idx, total, _c_opts, isCover = false) {
 
   const coverStyle = isCover ? coverLayouts[coverPos] || coverLayouts.centre : "";
 
-  return `<!DOCTYPE _c_html><_c_html><head><meta charset="utf-8">
+  return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>${base}${isCover ? coverStyle : (layouts[layout]||layouts.standard)}</style>
 </head><body>
 <div class="_compSlide">
@@ -582,7 +582,7 @@ function buildSlideHTML(_compSlide, idx, total, _c_opts, isCover = false) {
     return `<div class="swipe"><div class="swipe-dots">${dots}</div>${label}</div>`;
   })()}
 </div>
-</body></_c_html>`;
+</body></html>`;
 }
 
 // ─── PREVIEW ─────────────────────────────────────────────
@@ -1235,7 +1235,7 @@ export default function App() {
         +website
         +(isCover?chevron:"")+counter+wm+"</div>";
     }
-    return"<!DOCTYPE _c_html><_c_html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></_c_html>";
+    return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
   }
 
 
@@ -1266,7 +1266,7 @@ export default function App() {
       +"</div>"
       +(showCounter?"<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+total+"/"+total+"</div>":"")
       +(_c_opts._compIsFree?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(128,128,128,0.6);'>"+"studio.buildwithtav.co"+"</div>":(_c_opts.userWebsite?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(128,128,128,0.6);'>"+_c_opts.userWebsite+"</div>":""))+"</div>";
-    return"<!DOCTYPE _c_html><_c_html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></_c_html>";
+    return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
   }
 
   // ── Template AI suggest ──────────────────────────────────────────────────
@@ -1410,8 +1410,12 @@ export default function App() {
     const drawerOpts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,_compIsFree,userWebsite:website};
     const totalSl=tmplSlideCount+(tmplShowCta?1:0);
     const isCtaSlide=tmplActiveSlide===tmplSlideCount&&tmplShowCta;
+    const _ctaKwDef={comment:tmplCtaKeyword||"GUIDE",follow:"FOLLOW",save:"SAVE",share:"SHARE",like:"LIKE"};
+    const _ctaL2Def={comment:"Comment the word",follow:"Follow",save:"Save this",share:"Share this",like:"Like this"};
+    const _ctaL3Def={comment:"and I'll send it straight over",follow:"for more",save:"for later",share:"with someone",like:"if this helped"};
+    const _ctaTopDef=isDarkFade?"Want to build wealth online?":isListicle?"Want more content like this?":isCleanPro?"Want the full strategy?":isStory?"Want to start your own journey?":"Want more like this?";
     const _c_html=isCtaSlide
-      ?buildCtaHTML(drawerOpts,tmplCtaType,tmplCtaKeyword||"",tmplCtaTopLine||"",tmplCtaLine2||"",tmplCtaRewardLine||"",tmplBg,name,handle,profileUrl,blueTick,tmplSelected==="storytelling"?tmplFontStyle:tmplFont,totalSl,tmplShowCounter)
+      ?buildCtaHTML(drawerOpts,tmplCtaType,tmplCtaKeyword||_ctaKwDef[tmplCtaType]||"",tmplCtaTopLine||_ctaTopDef,tmplCtaLine2||_ctaL2Def[tmplCtaType]||"",tmplCtaRewardLine||_ctaL3Def[tmplCtaType]||"",tmplBg,name,handle,profileUrl,blueTick,tmplSelected==="storytelling"?tmplFontStyle:tmplFont,totalSl,tmplShowCounter)
       :buildTmplHTML(dTmplSlides[tmplActiveSlide]||{},tmplActiveSlide,totalSl,tmplSelected,drawerOpts);
     setTmplPreviewHTML(_c_html);
   },[tmplActiveSlide,tmplSelected,tmplSlideCount,tmplShowCta,tmplEffect,tmplFont,tmplFontSize,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplFontStyle,dTmplSlides,currentUser?.plan]);
@@ -2285,11 +2289,11 @@ Return ONLY a JSON array of ${needed} strings.`;
     const tHandle = { classic: classicHandle, luxury: luxuryHandle, feminine: feminineHandle, raw: rawHandle, custom: "" }[tmpl] || (showHandle&&handleStr?`<div style="position:absolute;bottom:${handleBottom}px;left:0;right:0;text-align:center;z-index:6;"><span style="color:${accent};font-size:${Math.round(26*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:3px;opacity:0.85;">${esc(handleStr)}</span></div>`:"");
     const cardBg = tmpl === "feminine" ? femBg : hasBgImg ? "#FFFFFF" : bg;
 
-    return `<!DOCTYPE _c_html><_c_html><head><meta charset="utf-8">
+    return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>
 @import url('${gFonts}');
 *{box-sizing:border-box;margin:0;padding:0;}
-_c_html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
+html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 ._compSlide{width:${W}px;height:${H}px;background:${cardBg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${contentPadTop}px ${contentPadX}px ${contentPadBottom}px;position:relative;}
 .bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:${(effectiveQuoteOpacity||100)/100};}
 .bg-ov{position:absolute;inset:0;z-index:1;pointer-events:none;}
@@ -2310,7 +2314,7 @@ _c_html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
   ${tHandle}
   ${currentUser?.plan==="free"?`<div style="position:absolute;top:${Math.round(28*s)}px;left:0;right:0;text-align:center;z-index:10;"><span style="font-family:'Montserrat',sans-serif;font-size:${Math.round(28*s)}px;font-weight:800;color:#ffffff;text-shadow:0 2px 8px rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.8);letter-spacing:2px;">studio.buildwithtav.co</span></div>`:""}
 </div>
-</body></_c_html>`;
+</body></html>`;
   };
 
   const downloadQuote = async (quoteText, i) => {
@@ -2422,7 +2426,7 @@ _c_html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           .mobile-nav{display:flex!important}
           nav{padding:0 12px!important}
           .desktop-reset{display:none!important}
-          body,_c_html,#__next{width:100%!important;max-width:100vw!important}
+          body,html,#__next{width:100%!important;max-width:100vw!important}
           nav{width:100%!important;max-width:100vw!important}
           .mobile-edit-btn{display:flex!important}
           .mobile-drawer{display:block!important}
@@ -3427,8 +3431,8 @@ _c_html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   {/* RIGHT — Content / Style tabs */}
                   <div className="tmpl-edit-panel" style={{display:isMobile?"none":"flex",flexDirection:"column",gap:0}}>
 
-                    {/* Tab switcher */}
-                    <div style={{display:"flex",marginBottom:12,background:A.surface,borderRadius:10,padding:4,border:`1.5px solid ${A.border}`}}>
+                    {/* Tab switcher - hidden on mobile, drawer has its own */}
+                    <div style={{display:isMobile?"none":"flex",marginBottom:12,background:A.surface,borderRadius:10,padding:4,border:`1.5px solid ${A.border}`}}>
                       {["content","style"].map(tab=>(
                         <button key={tab} onClick={()=>setTmplContentStyleTab(tab)} style={{flex:1,padding:"8px",borderRadius:7,border:"none",background:tmplContentStyleTab===tab?A.bg:"transparent",color:tmplContentStyleTab===tab?A.text:A.muted,fontSize:13,fontWeight:tmplContentStyleTab===tab?800:500,cursor:"pointer",textTransform:"capitalize",transition:"all 0.15s"}}>{tab}</button>
                       ))}
