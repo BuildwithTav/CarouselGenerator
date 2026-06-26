@@ -1223,7 +1223,7 @@ export default function App() {
         +"<div style='position:absolute;top:0;left:"+HW+"px;width:"+HW+"px;height:"+H+"px;overflow:hidden;'>"+imgR+"</div>"
         +"<div style='position:absolute;inset:0;background:"+splitGrad+";z-index:2;'></div>"
         +divider
-        +"<div style='position:absolute;bottom:320px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
+        +"<div style='position:absolute;bottom:470px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;bottom:220px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:flex-start;overflow:hidden;height:220px;'>"
         +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:96px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
         +"</div>"
@@ -3279,7 +3279,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   const bytes=atob(data.image),arr=new Uint8Array(bytes.length);
                   for(let j=0;j<bytes.length;j++)arr[j]=bytes.charCodeAt(j);
                   const url=URL.createObjectURL(new Blob([arr],{type:"image/png"}));
-                  const a=document.createElement("a");a.href=url;a.download=tmplSelected+"-slide-"+(idx+1)+".png";a.click();URL.revokeObjectURL(url);
+                  const a=document.createElement("a");a.href=url;a.download=tmplSelected+"-slide-"+(idx+1)+".png";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
                   await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:3})});
                   setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));
                 }catch(e){console.error(e);alert("Download failed — try again");}
@@ -3300,8 +3300,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     for(let j=0;j<bytes.length;j++)arr[j]=bytes.charCodeAt(j);
                     const url=URL.createObjectURL(new Blob([arr],{type:"image/png"}));
                     const label=ctaHTML&&i===slidesToDownload.length-1?"cta":"slide-"+(i+1);
-                    const a=document.createElement("a");a.href=url;a.download=tmplSelected+"-"+label+".png";a.click();URL.revokeObjectURL(url);
-                    await new Promise(r=>setTimeout(r,400));
+                    const a=document.createElement("a");a.href=url;a.download=tmplSelected+"-"+label+".png";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+                    await new Promise(r=>setTimeout(r,800));
                   }
                   await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:10})});
                   setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+10}));
