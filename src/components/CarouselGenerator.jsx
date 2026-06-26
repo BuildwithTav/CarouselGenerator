@@ -4331,10 +4331,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   <div style={{display:"flex",flexDirection:"column",gap:6}}>
                     {[
                       ["Carousel generation","10 credits"],
+                      ["Template AI — full story or list","10 credits"],
+                      ["Template download all","10 credits"],
                       ["Quote card batch","10 credits"],
                       ["AI caption","5 credits"],
                       ["AI rewrite","5 credits"],
-                      ["Download","5 credits"],
+                      ["Single slide download","5 credits"],
+                      ["Quote card download","5 credits"],
+                      ["Template AI — per slide","3 credits"],
+                      ["Template single slide download","3 credits"],
                       ["Photo upload","Free"],
                     ].map(([action,cost])=>(
                       <div key={action} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:`1px solid ${A.border}`}}>
