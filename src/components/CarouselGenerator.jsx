@@ -794,9 +794,18 @@ export default function App() {
           const newToken = getToken();
           fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+newToken}, body: JSON.stringify({ action:"me" }) })
             .then(r=>r.json()).then(d=>{ if (d.user) { setCurrentUser(d.user); setShowAuthModal(false); } else { clearToken(); setShowAuthModal(true); } })
-            .catch(()=>{ clearToken(); setShowAuthModal(true); })
+            .catch(()=>{ setShowAuthModal(true); })
             .finally(()=>setAuthLoading(false));
-        } else { setAuthLoading(false); setShowAuthModal(true); }
+        } else {
+          // Refresh failed — could be network issue, try me with existing token if any
+          const existingToken = getToken();
+          if (existingToken) {
+            fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+existingToken}, body: JSON.stringify({ action:"me" }) })
+              .then(r=>r.json()).then(d=>{ if (d.user) { setCurrentUser(d.user); setShowAuthModal(false); } else { setShowAuthModal(true); } })
+              .catch(()=>{ setShowAuthModal(true); })
+              .finally(()=>setAuthLoading(false));
+          } else { setAuthLoading(false); setShowAuthModal(true); }
+        }
       });
       return;
     }
@@ -821,12 +830,12 @@ export default function App() {
           if (refreshed) {
             const newToken = getToken();
             fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+newToken}, body: JSON.stringify({ action:"me" }) })
-              .then(r=>r.json()).then(d2=>{ if (d2.user) { setCurrentUser(d2.user); setShowAuthModal(false); } else { clearToken(); setShowAuthModal(true); } })
-              .catch(()=>{ clearToken(); setShowAuthModal(true); });
-          } else { clearToken(); setShowAuthModal(true); }
+              .then(r=>r.json()).then(d2=>{ if (d2.user) { setCurrentUser(d2.user); setShowAuthModal(false); } else { setShowAuthModal(true); } })
+              .catch(()=>{ setShowAuthModal(true); });
+          } else { setShowAuthModal(true); }
         });
       }
-    }).catch(()=>{ clearToken(); setShowAuthModal(true); })
+    }).catch(()=>{ setShowAuthModal(true); })
     .finally(()=>setAuthLoading(false));
   }, []);
 
@@ -1999,6 +2008,26 @@ Return ONLY valid JSON, nothing else.` }
           canvas.toBlob(b=>{document.body.removeChild(iframe);res(b);},"image/png",1.0);
         } catch(e){document.body.removeChild(iframe);rej(e);}
       },2500);
+    });
+  };
+
+  const renderTmplSlideViaCanvas = (html) => {
+    return new Promise((res,rej) => {
+      const W=1080, H=1350;
+      const iframe = document.createElement("iframe");
+      iframe.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
+      document.body.appendChild(iframe);
+      const doc = iframe.contentDocument||iframe.contentWindow?.document;
+      doc.open(); doc.write(html); doc.close();
+      setTimeout(async()=>{
+        try {
+          const win=iframe.contentWindow;
+          await new Promise(r=>{const s=doc.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=r;s.onerror=r;doc.head.appendChild(s);setTimeout(r,5000);});
+          if(!win.html2canvas) throw new Error("no h2c");
+          const canvas=await win.html2canvas(doc.body,{useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+          canvas.toBlob(b=>{document.body.removeChild(iframe);res(b);},"image/png",1.0);
+        } catch(e){document.body.removeChild(iframe);rej(e);}
+      },3000);
     });
   };
 
@@ -3273,11 +3302,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 if(!canGenerate()){setNav("upgrade");return;}
                 setTmplDownloadingIdx(idx);
                 try{
-                  const html=buildTmplHTML(tmplSlides[idx],idx,tmplSlideCount,tmplSelected,opts);
-                  const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html,width:1080,height:1350})});
-                  const data=await res.json();
-                  if(!data.image)throw new Error(data.error||"Render failed");
-                  const a=document.createElement("a");a.href="data:image/png;base64,"+data.image;a.download=tmplSelected+"-slide-"+(idx+1)+".png";document.body.appendChild(a);a.click();document.body.removeChild(a);
+                  const html=buildTmplHTML(tmplSlides[idx],idx,totalSlides,tmplSelected,opts);
+                  const blob=await renderTmplSlideViaCanvas(html);
+                  if(!blob)throw new Error("Render failed");
+                  await new Promise((res,rej)=>{
+                    const r=new FileReader();r.onload=()=>{
+                      const a=document.createElement("a");a.href=r.result;a.download=tmplSelected+"-slide-"+(idx+1)+".png";document.body.appendChild(a);a.click();document.body.removeChild(a);res();
+                    };r.onerror=rej;r.readAsDataURL(blob);
+                  });
                   await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:3})});
                   setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));
                 }catch(e){console.error(e);alert("Download failed — try again");}
@@ -3288,19 +3320,28 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 if(!canGenerate()){setNav("upgrade");return;}
                 setTmplDownloading(true);
                 try{
+                  // Load JSZip
+                  await new Promise((res,rej)=>{
+                    if(window.JSZip)return res();
+                    const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);setTimeout(res,5000);
+                  });
+                  const zip=new window.JSZip();
                   const slidesToDownload=[...Array(tmplSlideCount).keys()].map(i=>buildTmplHTML(tmplSlides[i],i,totalSlides,tmplSelected,opts));
                   if(ctaHTML)slidesToDownload.push(ctaHTML);
                   for(let i=0;i<slidesToDownload.length;i++){
-                    const html=slidesToDownload[i];
-                    const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html,width:1080,height:1350})});
-                    const data=await res.json();if(!data.image)continue;
                     const label=ctaHTML&&i===slidesToDownload.length-1?"cta":"slide-"+(i+1);
-                    const a=document.createElement("a");a.href="data:image/png;base64,"+data.image;a.download=tmplSelected+"-"+label+".png";document.body.appendChild(a);a.click();document.body.removeChild(a);
-                    await new Promise(r=>setTimeout(r,800));
+                    try{
+                      const blob=await renderTmplSlideViaCanvas(slidesToDownload[i]);
+                      if(blob)zip.file(`${tmplSelected}-${label}.png`,blob);
+                    }catch(e){console.error("Slide",i+1,"failed:",e);}
                   }
+                  const zipBlob=await zip.generateAsync({type:"blob"});
+                  const url=URL.createObjectURL(zipBlob);
+                  const a=document.createElement("a");a.href=url;a.download=tmplSelected+"-slides.zip";document.body.appendChild(a);a.click();document.body.removeChild(a);
+                  setTimeout(()=>URL.revokeObjectURL(url),2000);
                   await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:10})});
                   setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+10}));
-                }catch(e){console.error(e);}
+                }catch(e){console.error(e);alert("Download failed — try again");}
                 setTmplDownloading(false);
               };
 
