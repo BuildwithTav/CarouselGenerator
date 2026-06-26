@@ -13,8 +13,8 @@ export async function POST(req) {
       return Response.json({ error: "No HTML provided" }, { status: 400 });
     }
  
-    // Strip any remaining base64 images
-    const cleanHtml = html.replace(/src="data:image\/[^"]{100,}"/g, 'src=""');
+    // Pass HTML through as-is — base64 images are needed for correct rendering
+    const cleanHtml = html;
  
     let browser;
     try {
@@ -48,7 +48,9 @@ export async function POST(req) {
  
       const page = await browser.newPage();
       await page.setViewport({ width: width || 1080, height: height || 1350 });
-      await page.setContent(cleanHtml, { waitUntil: 'networkidle0', timeout: 20000 });
+      await page.setContent(cleanHtml, { waitUntil: 'networkidle0', timeout: 25000 });
+      // Give fonts extra time to render
+      await new Promise(r => setTimeout(r, 1000));
  
       const screenshot = await page.screenshot({
         type: 'png',
@@ -71,4 +73,3 @@ export async function POST(req) {
     return Response.json({ error: e.message }, { status: 500 });
   }
 }
- 
