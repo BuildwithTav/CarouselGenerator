@@ -1403,11 +1403,13 @@ export default function App() {
   {id:"shadowpop",label:"SHADOW",style:{color:"#fff",textShadow:"3px 3px 0 #BB9900",fontWeight:900}},
   {id:"duotone",label:"DUOTONE",style:{background:"linear-gradient(180deg,#BB9900,#fff)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontWeight:900}},
               ];
+
+  const [website, setWebsite] = useState(S?.website||"");
   useEffect(()=>{
     if(!tmplSelected)return;
     const _compIsFree=currentUser?.plan==="free";
     const website=_compIsFree?"studio.buildwithtav.co":(currentUser?.website||"");
-    const drawerOpts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,_compIsFree,userWebsite:currentUser?.plan==="free"?"studio.buildwithtav.co":(currentUser?.website||"")};
+    const drawerOpts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree:currentUser?.plan==="free",userWebsite:website};
     const totalSl=tmplSlideCount+(tmplShowCta?1:0);
     const isCtaSlide=tmplActiveSlide===tmplSlideCount&&tmplShowCta;
     const _ctaKwDef={comment:tmplCtaKeyword||"GUIDE",follow:"FOLLOW",save:"SAVE",share:"SHARE",like:"LIKE"};
@@ -1418,8 +1420,7 @@ export default function App() {
       ?buildCtaHTML(drawerOpts,tmplCtaType,tmplCtaKeyword||_ctaKwDef[tmplCtaType]||"",tmplCtaTopLine||_ctaTopDef,tmplCtaLine2||_ctaL2Def[tmplCtaType]||"",tmplCtaRewardLine||_ctaL3Def[tmplCtaType]||"",(isCleanPro||isStory)?tmplBg:tmplCtaBg,name,handle,profileUrl,blueTick,tmplSelected==="storytelling"?tmplFontStyle:tmplFont,totalSl,tmplShowCounter)
       :buildTmplHTML(dTmplSlides[tmplActiveSlide]||{},tmplActiveSlide,totalSl,tmplSelected,drawerOpts);
     setTmplPreviewHTML(_c_html);
-  },[tmplActiveSlide,tmplSelected,tmplSlideCount,tmplShowCta,tmplEffect,tmplFont,tmplFontSize,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplFontStyle,dTmplSlides,currentUser?.plan,tmplShowWebsite,tmplCtaBg,tmplCtaType,tmplShowCounter,name,handle,profileUrl,blueTick,tmplDrawerOpen]);
-  const [website, setWebsite] = useState(S?.website||"");
+  },[tmplActiveSlide,tmplSelected,tmplSlideCount,tmplShowCta,tmplEffect,tmplFont,tmplFontSize,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplFontStyle,dTmplSlides,currentUser?.plan,tmplShowWebsite,tmplCtaBg,tmplCtaType,tmplShowCounter,name,handle,profileUrl,blueTick,tmplDrawerOpen,website]);
   const [showWebsite, setShowWebsite] = useState(S?.showWebsite??false);
   const [voiceProfile, setVoiceProfile] = useState(S?.voiceProfile||"");
   const [businessType, setBusinessType] = useState(S?.businessType||"marketer");
@@ -4460,7 +4461,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           {/* Scrollable content/style panel */}
           <div className="tmpl-drawer-panel" style={{overflowY:"auto",padding:"0 16px 40px",flex:1,WebkitOverflowScrolling:"touch",display:"flex",flexDirection:"column",gap:0}}>
             {/* Tab switcher */}
-            <div style={{display:"flex",marginBottom:12,background:A.surface,borderRadius:10,padding:4,border:`1.5px solid ${A.border}`,marginTop:8}}>
+            <div style={{display:"none",marginBottom:12,background:A.surface,borderRadius:10,padding:4,border:`1.5px solid ${A.border}`,marginTop:8}}>
               {["content","style"].map(tab=>(
                 <button key={tab} onClick={()=>setTmplContentStyleTab(tab)} style={{flex:1,padding:"8px",borderRadius:7,border:"none",background:tmplContentStyleTab===tab?A.bg:"transparent",color:tmplContentStyleTab===tab?A.text:A.muted,fontSize:13,fontWeight:tmplContentStyleTab===tab?700:500,cursor:"pointer",textTransform:"capitalize"}}>{tab}</button>
               ))}
