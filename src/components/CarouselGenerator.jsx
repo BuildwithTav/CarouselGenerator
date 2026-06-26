@@ -120,10 +120,10 @@ async function sampleImageBrightness(imageUrl) {
         canvas.width = 300; canvas.height = 200;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, img.width * 0.35, img.height * 0.25, 0, 0, 300, 200);
-        const data = ctx.getImageData(0, 0, 300, 200).data;
+        const _c_data = ctx.getImageData(0, 0, 300, 200)._c_data;
         let total = 0, count = 0;
-        for (let i = 0; i < data.length; i += 16) {
-          total += (data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114);
+        for (let i = 0; i < _c_data.length; i += 16) {
+          total += (_c_data[i] * 0.299 + _c_data[i+1] * 0.587 + _c_data[i+2] * 0.114);
           count++;
         }
         resolve((total / count) < 128 ? "dark" : "light");
@@ -159,10 +159,10 @@ function PexelsModal({ open, onClose, onSelect, A, GOLD }) {
     if (p === 1) setPxResults([]);
     try {
       const res = await fetch("/api/pexels?" + new URLSearchParams({ query: q.trim(), per_page: "20", page: String(p) }));
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setPxResults(prev => p === 1 ? data.photos : [...prev, ...data.photos]);
-      setPxHasMore(!!data.next_page);
+      const _c_data = await res.json();
+      if (_c_data.error) throw new Error(_c_data.error);
+      setPxResults(prev => p === 1 ? _c_data.photos : [...prev, ..._c_data.photos]);
+      setPxHasMore(!!_c_data.next_page);
       setPxPage(p);
     } catch(e) { setPxError("Search failed — check your connection and try again."); }
     setPxLoading(false);
@@ -258,22 +258,22 @@ function PexelsModal({ open, onClose, onSelect, A, GOLD }) {
 
 // ─── SLIDE HTML BUILDER ───────────────────────────────────
 
-function buildSlideHTML(_compSlide, idx, total, opts, isCover = false) {
+function buildSlideHTML(_compSlide, idx, total, _c_opts, isCover = false) {
   const {
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
     coverImageUrl, coverPosition, badgeArea, photoOpacity, customColourDark, slideTextDark,
     profileUrl, name, handle, blueTick, websiteUrl, showNums,
     accentColor, ratio, coverImgPos, templateImgPos, bgColour, gradientMode,
-  } = opts;
+  } = _c_opts;
   const coverPos2 = coverImgPos || {x:50,y:50};
   const templatePos = templateImgPos || {x:50,y:50};
 
   const accent = accentColor || GOLD;
-  const noImage = bgMode === "custom" && !opts.templateBgUrl && !(isCover ? !!coverImageUrl : false);
+  const noImage = bgMode === "custom" && !_c_opts.templateBgUrl && !(isCover ? !!coverImageUrl : false);
   const effectiveColourDark = isCover ? (customColourDark??true) : (slideTextDark??true);
   const isDark = bgMode === "dark" ? true : bgMode === "light" ? false : noImage ? false : (bgMode === "colour" || bgMode === "custom" || !!coverImageUrl) ? effectiveColourDark : true;
   const colourTextDark = !isDark;
-  const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (opts.bgColour||"#1a1a2e") : (bgMode === "custom" && !opts.templateBgUrl && !(isCover && opts.coverImageUrl)) ? "#F5F3EF" : "#0A0A0A";
+  const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (_c_opts.bgColour||"#1a1a2e") : (bgMode === "custom" && !_c_opts.templateBgUrl && !(isCover && _c_opts.coverImageUrl)) ? "#F5F3EF" : "#0A0A0A";
   // For image/cover photo modes: if opacity < 100, white shows behind faded photo
   const bgForOpacity = (bgMode === "custom" || (isCover && !!coverImageUrl)) && (photoOpacity||100) < 100 ? "#FFFFFF" : null;
   const coverHasImage = isCover && !!coverImageUrl;
@@ -285,7 +285,7 @@ function buildSlideHTML(_compSlide, idx, total, opts, isCover = false) {
     ? (coverImageUrl || null)  // cover only uses its own photo, never the template image
     : (bgMode === "custom" ? templateBgUrl : null);
   // Cover _compSlide background: if no cover photo, inherit slideBg from Visual tab setting (but "custom" mode falls to dark)
-  const coverFallbackBg = (!isCover || coverImageUrl) ? slideBg : (bgMode === "custom" && !opts.templateBgUrl ? "#F5F3EF" : bgMode === "custom" ? "#0A0A0A" : slideBg);
+  const coverFallbackBg = (!isCover || coverImageUrl) ? slideBg : (bgMode === "custom" && !_c_opts.templateBgUrl ? "#F5F3EF" : bgMode === "custom" ? "#0A0A0A" : slideBg);
   const effectiveSlideBg = isCover ? coverFallbackBg : slideBg;
   const forceLight = (coverHasImage || (bgMode === "custom" && bgImageUrl)) ? !effectiveColourDark : false;
   const C = {
@@ -347,12 +347,12 @@ function buildSlideHTML(_compSlide, idx, total, opts, isCover = false) {
   const base = `
     @import url('${gFonts}');
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-    html, body { width:${W}px; height:${H}px; overflow:hidden; background:${bgForOpacity||effectiveSlideBg}; }
+    _c_html, body { width:${W}px; height:${H}px; overflow:hidden; background:${bgForOpacity||effectiveSlideBg}; }
     ._compSlide { width:${W}px; height:${H}px; overflow:hidden; background:${bgForOpacity||effectiveSlideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; box-shadow:inset 0 0 0 3px ${C.dark?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.15)"}; }
     .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; object-position:${isCover?`${coverPos2.x}% ${coverPos2.y}%`:`${templatePos.x}% ${templatePos.y}%`}; opacity:${(photoOpacity||100)/100}; }
     .bg-ov { position:absolute; inset:0; z-index:1; pointer-events:none; }
     .noise { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0.3;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+      background-image:url("_c_data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
       background-repeat:repeat; }
     .bk { position:absolute; width:52px; height:52px; z-index:3; }
     .tl { top:44px; left:52px; border-top:2.5px solid ${C.accent}; border-left:2.5px solid ${C.accent}; opacity:${C.dark?0.4:0.7}; }
@@ -551,7 +551,7 @@ function buildSlideHTML(_compSlide, idx, total, opts, isCover = false) {
 
   const coverStyle = isCover ? coverLayouts[coverPos] || coverLayouts.centre : "";
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8">
+  return `<!DOCTYPE _c_html><_c_html><head><meta charset="utf-8">
 <style>${base}${isCover ? coverStyle : (layouts[layout]||layouts.standard)}</style>
 </head><body>
 <div class="_compSlide">
@@ -582,26 +582,26 @@ function buildSlideHTML(_compSlide, idx, total, opts, isCover = false) {
     return `<div class="swipe"><div class="swipe-dots">${dots}</div>${label}</div>`;
   })()}
 </div>
-</body></html>`;
+</body></_c_html>`;
 }
 
 // ─── PREVIEW ─────────────────────────────────────────────
 
-function SlidePreview({ _compSlide, idx, total, opts, onClick, isActive, isCover, previewSize, showWatermark }) {
+function SlidePreview({ _compSlide, idx, total, _c_opts, onClick, isActive, isCover, previewSize, showWatermark }) {
   const ref = useRef(null);
-  const isPortrait = opts.ratio === "portrait";
+  const isPortrait = _c_opts.ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1350;
   const previewW = previewSize || (isPortrait ? 180 : 280);
   const scale = previewW / W;
   const previewH = Math.round(H * scale);
-  const html = buildSlideHTML(_compSlide, idx, total, opts, isCover);
+  const _c_html = buildSlideHTML(_compSlide, idx, total, _c_opts, isCover);
 
   useEffect(() => {
     const iframe = ref.current; if (!iframe) return;
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
     if (!doc) return;
-    doc.open(); doc.write(html); doc.close();
-  }, [html]);
+    doc.open(); doc.write(_c_html); doc.close();
+  }, [_c_html]);
 
   return (
     <div onClick={onClick} title={_compSlide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#0A0A0A":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:previewW, height:previewH, flexShrink:0 }}>
@@ -611,36 +611,36 @@ function SlidePreview({ _compSlide, idx, total, opts, onClick, isActive, isCover
 }
 
 // ─── DOWNLOAD ────────────────────────────────────────────
-async function downloadSlideAsPNG(_compSlide, idx, total, opts, filename, isCover=false) {
+async function downloadSlideAsPNG(_compSlide, idx, total, _c_opts, filename, isCover=false) {
   const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   const needsServer = mobile;
   let blob;
   if (needsServer) {
-    const isPortrait = opts.ratio==="portrait";
+    const isPortrait = _c_opts.ratio==="portrait";
     const W=1080, H=isPortrait?1920:1350;
-    const html = buildSlideHTML(_compSlide,idx,total,opts,isCover);
+    const _c_html = buildSlideHTML(_compSlide,idx,total,_c_opts,isCover);
     const res = await fetch("/api/render-_compSlide", {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ html, width:W, height:H })
+      body: JSON.stringify({ _c_html, width:W, height:H })
     });
-    const data = await res.json();
-    console.log("Slide render response:", res.status, data.error||"ok", "hasImage:", !!data.image);
-    if (!data.image) throw new Error(data.error||"Render failed");
-    const byteChars = atob(data.image);
+    const _c_data = await res.json();
+    console.log("Slide render response:", res.status, _c_data.error||"ok", "hasImage:", !!_c_data.image);
+    if (!_c_data.image) throw new Error(_c_data.error||"Render failed");
+    const byteChars = atob(_c_data.image);
     const byteArr = new Uint8Array(byteChars.length);
     for (let j=0;j<byteChars.length;j++) byteArr[j]=byteChars.charCodeAt(j);
     blob = new Blob([byteArr],{type:"image/png"});
   } else {
     blob = await new Promise((resolve, reject) => {
-      const isPortrait = opts.ratio === "portrait";
+      const isPortrait = _c_opts.ratio === "portrait";
       const W = 1080, H = isPortrait ? 1920 : 1350;
-      const html = buildSlideHTML(_compSlide, idx, total, opts, isCover);
+      const _c_html = buildSlideHTML(_compSlide, idx, total, _c_opts, isCover);
       const iframe = document.createElement("iframe");
       iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
       document.body.appendChild(iframe);
       const doc = iframe.contentDocument || iframe.contentWindow?.document;
-      doc.open(); doc.write(html); doc.close();
+      doc.open(); doc.write(_c_html); doc.close();
       setTimeout(async () => {
         try {
           const win = iframe.contentWindow;
@@ -661,14 +661,14 @@ async function downloadSlideAsPNG(_compSlide, idx, total, opts, filename, isCove
 
 
 
-function QuotePreview({ html, W, H, scale }) {
+function QuotePreview({ _c_html, W, H, scale }) {
   const ref = useRef(null);
   useEffect(() => {
     const iframe = ref.current; if (!iframe) return;
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
     if (!doc) return;
-    doc.open(); doc.write(html); doc.close();
-  }, [html]);
+    doc.open(); doc.write(_c_html); doc.close();
+  }, [_c_html]);
   return <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin allow-scripts"/>;
 }
 
@@ -775,13 +775,13 @@ export default function App() {
     const refresh = getRefreshToken();
     if (!refresh) return false;
     try {
-      const { data, error } = await import("@supabase/supabase-js").then(({createClient}) => {
+      const { _c_data, error } = await import("@supabase/supabase-js").then(({createClient}) => {
         const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
         return sb.auth.refreshSession({ refresh_token: refresh });
       });
-      if (error || !data?.session) return false;
-      setToken(data.session.access_token);
-      setRefreshToken(data.session.refresh_token);
+      if (error || !_c_data?.session) return false;
+      setToken(_c_data.session.access_token);
+      setRefreshToken(_c_data.session.refresh_token);
       return true;
     } catch { return false; }
   };
@@ -853,7 +853,7 @@ export default function App() {
       const d = await r.json();
       if (d.error) { setAuthError("Invalid code — check your email and try again."); }
       else { 
-        // Clear any stale localStorage data from previous user
+        // Clear any stale localStorage _c_data from previous user
         try { 
           const keysToKeep = ["cs_token","cs_refresh"];
           Object.keys(localStorage).forEach(k => { if(!keysToKeep.includes(k)) localStorage.removeItem(k); });
@@ -1054,8 +1054,8 @@ export default function App() {
   // useDebouncedValue removed — hooks must be at top level, not in nested functions
 
   // ── buildTmplHTML — generates HTML sent to Puppeteer /api/render-_compSlide ──
-  function buildTmplHTML(_compSlide, idx, total, tmpl, opts) {
-    const {effect,font,fontSize,primary,secondary,accentLine,bg,fontStyle,rawBox,rawPos,listicleNum,profUrl,nm,hdl,showTick,_compIsFree,userWebsite,showCounter}=opts;
+  function buildTmplHTML(_compSlide, idx, total, tmpl, _c_opts) {
+    const {effect,font,fontSize,primary,secondary,accentLine,bg,fontStyle,rawBox,rawPos,listicleNum,profUrl,nm,hdl,showTick,_compIsFree,userWebsite,showCounter}=_c_opts;
     const AL=accentLine||primary;
     const FS=fontSize||82;
     function effectColor(eff,al){
@@ -1108,11 +1108,11 @@ export default function App() {
     }
     const grad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 28%,rgba(0,0,0,0.08) 44%,rgba(0,0,0,0.35) 54%,rgba(0,0,0,0.65) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.96) 78%,rgba(0,0,0,0.99) 88%,rgba(0,0,0,1) 100%)";
     const chevron="<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+effectColor(effect,AL)+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+effectColor(effect,AL)+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>";
-    const websiteStr=_compIsFree?"studio.buildwithtav.co":(userWebsite||"");const {showWebsite}=opts;
+    const websiteStr=_compIsFree?"studio.buildwithtav.co":(userWebsite||"");const {showWebsite}=_c_opts;
     const website=showWebsite&&websiteStr?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>"+websiteStr+"</div>":"";
     const wm=_compIsFree?"<div style='position:absolute;top:32px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:32px;font-weight:800;color:#ffffff;text-shadow:0 2px 8px rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.8);letter-spacing:1px;'>studio.buildwithtav.co</div>":"";
     const counter=showCounter?"<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+(idx+1)+"/"+total+"</div>":"";
-    function imgTag(s){if(!s||!s.image)return"<div style='position:absolute;inset:0;background:#1a1a1a;z-index:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;'><div style='background:rgba(187,153,0,0.15);border:2px dashed rgba(187,153,0,0.6);border-radius:16px;padding:40px 60px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:42px;margin-bottom:16px;'>📷</div><div style='font-family:-apple-system,sans-serif;font-size:34px;font-weight:700;color:#BB9900;'>Upload your image</div><div style='font-family:-apple-system,sans-serif;font-size:26px;color:rgba(255,255,255,0.5);margin-top:8px;'>in the Photo section</div></div></div>";const px=(s.imagePos&&s.imagePos.x)||50,py=(s.imagePos&&s.imagePos.y)||50;const isPlaceholder=s.image&&!s.image.startsWith("data:");const overlay=isPlaceholder?"<div style='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;pointer-events:none;white-space:nowrap;'><div style='background:rgba(0,0,0,0.75);border:2px solid rgba(187,153,0,0.8);border-radius:12px;padding:16px 32px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:28px;font-weight:700;color:#BB9900;'>📷 Replace with your image</div></div></div>":"";return"<img src='"+esc(s.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+px+"% "+py+"%;z-index:0;'/>"+overlay;}
+    function imgTag(s){if(!s||!s.image)return"<div style='position:absolute;inset:0;background:#1a1a1a;z-index:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;'><div style='background:rgba(187,153,0,0.15);border:2px dashed rgba(187,153,0,0.6);border-radius:16px;padding:40px 60px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:42px;margin-bottom:16px;'>📷</div><div style='font-family:-apple-system,sans-serif;font-size:34px;font-weight:700;color:#BB9900;'>Upload your image</div><div style='font-family:-apple-system,sans-serif;font-size:26px;color:rgba(255,255,255,0.5);margin-top:8px;'>in the Photo section</div></div></div>";const px=(s.imagePos&&s.imagePos.x)||50,py=(s.imagePos&&s.imagePos.y)||50;const isPlaceholder=s.image&&!s.image.startsWith("_c_data:");const overlay=isPlaceholder?"<div style='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;pointer-events:none;white-space:nowrap;'><div style='background:rgba(0,0,0,0.75);border:2px solid rgba(187,153,0,0.8);border-radius:12px;padding:16px 32px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:28px;font-weight:700;color:#BB9900;'>📷 Replace with your image</div></div></div>":"";return"<img src='"+esc(s.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+px+"% "+py+"%;z-index:0;'/>"+overlay;}
     function darkFadeCover(s){
       const headlineText=esc((s.headline||"").toUpperCase());
       const sublineText=s.subline?esc(s.subline):"";
@@ -1235,12 +1235,12 @@ export default function App() {
         +website
         +(isCover?chevron:"")+counter+wm+"</div>";
     }
-    return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
+    return"<!DOCTYPE _c_html><_c_html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></_c_html>";
   }
 
 
   // ── buildCtaHTML — generates CTA final _compSlide ──
-  function buildCtaHTML(opts,ctaType,keyword,line1,line2,line3,bg,nm,hdl,profUrl,showTick,font,total,showCounter){
+  function buildCtaHTML(_c_opts,ctaType,keyword,line1,line2,line3,bg,nm,hdl,profUrl,showTick,font,total,showCounter){
     const W=1080,H=1350;
     const fontFamily=(font||"Bebas Neue").replace(/'/g,"");
     const gFonts="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Barlow+Condensed:wght@800;900&family=Archivo+Black&family=Playfair+Display:ital,wght@0,900;1,900&family=Alfa+Slab+One&family=Cormorant+Garamond:ital,wght@0,700;1,700&family=Josefin+Sans:wght@700&family=Raleway:wght@800;900&family=Quicksand:wght@700&family=Dancing+Script:wght@700&family=Inter:wght@400;600;700;800&display=swap";
@@ -1248,7 +1248,7 @@ export default function App() {
     const bgC=isDark?"#0a0a0a":"#ffffff";
     const textC=isDark?"#ffffff":"#0a0a0a";
     const mutedC=isDark?"rgba(255,255,255,0.55)":"rgba(0,0,0,0.5)";
-    const accent=(opts.accentLine||opts.primary)||"#BB9900";
+    const accent=(_c_opts.accentLine||_c_opts.primary)||"#BB9900";
     function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
     const tick=showTick?"<span style='display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#1D9BF0;border-radius:50%;margin-left:8px;vertical-align:middle;flex-shrink:0;'><span style='display:block;width:8px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);margin-top:-2px;'></span></span>":"";
     const av=profUrl?"<img src='"+esc(profUrl)+"' style='width:100%;height:100%;object-fit:cover;border-radius:50%;'/>":"<div style='width:100%;height:100%;background:#4a6a9a;border-radius:50%;'></div>";
@@ -1265,8 +1265,8 @@ export default function App() {
       +"</div>"
       +"</div>"
       +(showCounter?"<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+total+"/"+total+"</div>":"")
-      +(opts._compIsFree?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(128,128,128,0.6);'>"+"studio.buildwithtav.co"+"</div>":(opts.userWebsite?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(128,128,128,0.6);'>"+opts.userWebsite+"</div>":""))+"</div>";
-    return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
+      +(_c_opts._compIsFree?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(128,128,128,0.6);'>"+"studio.buildwithtav.co"+"</div>":(_c_opts.userWebsite?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(128,128,128,0.6);'>"+_c_opts.userWebsite+"</div>":""))+"</div>";
+    return"<!DOCTYPE _c_html><_c_html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></_c_html>";
   }
 
   // ── Template AI suggest ──────────────────────────────────────────────────
@@ -1282,7 +1282,7 @@ export default function App() {
       const r=await fetchWithRetry({model:"claude-sonnet-4-6",max_tokens:80,messages:[{role:"user",content:prompt}]});
       const text=r?.content?.[0]?.text?.trim()||"";
       if(text){
-        setTmplSlides(prev=>{const next=[...prev];const field=tmpl==="storytelling"?"storyText":"bodyText";next[idx]={...next[idx],[field]:text};return next;});
+        setTmplSlides(prev=>{const _c_next=[...prev];const field=tmpl==="storytelling"?"storyText":"bodyText";_c_next[idx]={..._c_next[idx],[field]:text};return _c_next;});
         if(currentUser?.email){
           await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()},body:JSON.stringify({action:"increment-downloads",email:currentUser.email,credits:3})});
           setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+3}));
@@ -1297,7 +1297,7 @@ export default function App() {
   useEffect(()=>{ const t=setTimeout(()=>setDTmplSlides([...tmplSlides]),300); return()=>clearTimeout(t); },[JSON.stringify(tmplSlides),tmplFont,tmplEffect,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplShowCounter,tmplFontSize]);
   useEffect(()=>{
     if(!pendingTmplImage)return;
-    setTmplSlides(prev=>{const next=[...prev];const idx=tmplActiveSlide||0;next[idx]={...next[idx],image:pendingTmplImage};return next;});
+    setTmplSlides(prev=>{const _c_next=[...prev];const idx=tmplActiveSlide||0;_c_next[idx]={..._c_next[idx],image:pendingTmplImage};return _c_next;});
     setPendingTmplImage(null);
   },[pendingTmplImage,tmplActiveSlide]);
 
@@ -1312,9 +1312,9 @@ export default function App() {
       headlineStyle, bgMode, bgColour, customColourDark, slideTextDark, accentColor, fontId,
       templateBgUrl, photoOpacity, templateOpacity, overlayDark,
     };
-    const next = [...adminPresets.filter(p=>p.label!==trimmed), snapshot];
-    setAdminPresets(next);
-    try { localStorage.setItem("bwt_admin_presets", JSON.stringify(next)); } catch {}
+    const _c_next = [...adminPresets.filter(p=>p.label!==trimmed), snapshot];
+    setAdminPresets(_c_next);
+    try { localStorage.setItem("bwt_admin_presets", JSON.stringify(_c_next)); } catch {}
     setAdminActivePreset(snapshot.id);
     setAdminPresetName("");
   };
@@ -1334,9 +1334,9 @@ export default function App() {
 
   const deleteAdminPreset = (id) => {
     if (!confirm("Delete this preset?")) return;
-    const next = adminPresets.filter(p=>p.id!==id);
-    setAdminPresets(next);
-    try { localStorage.setItem("bwt_admin_presets", JSON.stringify(next)); } catch {}
+    const _c_next = adminPresets.filter(p=>p.id!==id);
+    setAdminPresets(_c_next);
+    try { localStorage.setItem("bwt_admin_presets", JSON.stringify(_c_next)); } catch {}
     if (adminActivePreset===id) setAdminActivePreset(null);
   };
 
@@ -1361,8 +1361,13 @@ export default function App() {
   const generateStory=()=>{};
   const activeIsCtaSlide=tmplShowCta&&tmplActiveSlide===tmplSlideCount;
   const activeSlide=tmplActiveSlide;
+  const isDarkFade=tmplSelected==="dark-fade";
+  const isCleanPro=tmplSelected==="clean-pro";
+  const isStory=tmplSelected==="storytelling";
+  const isRaw=tmplSelected==="raw";
+  const isSplit=tmplSelected==="split";
   const _compSlide=tmplSlides[activeSlide]||{};
-  const updateTmplSlide=(field,val)=>setTmplSlides(prev=>{const next=[...prev];next[activeSlide]={...next[activeSlide],[field]:val};return next;});
+  const updateTmplSlide=(field,val)=>setTmplSlides(prev=>{const _c_next=[...prev];_c_next[activeSlide]={..._c_next[activeSlide],[field]:val};return _c_next;});
   const ALL_FONTS=[
   {id:"Inter",label:"Inter"},
   {id:"Poppins",label:"Poppins"},
@@ -1405,10 +1410,10 @@ export default function App() {
     const drawerOpts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,_compIsFree,userWebsite:website};
     const totalSl=tmplSlideCount+(tmplShowCta?1:0);
     const isCtaSlide=tmplActiveSlide===tmplSlideCount&&tmplShowCta;
-    const html=isCtaSlide
+    const _c_html=isCtaSlide
       ?buildCtaHTML(drawerOpts,tmplCtaType,tmplCtaKeyword||"",tmplCtaTopLine||"",tmplCtaLine2||"",tmplCtaRewardLine||"",tmplBg,name,handle,profileUrl,blueTick,tmplSelected==="storytelling"?tmplFontStyle:tmplFont,totalSl,tmplShowCounter)
       :buildTmplHTML(dTmplSlides[tmplActiveSlide]||{},tmplActiveSlide,totalSl,tmplSelected,drawerOpts);
-    setTmplPreviewHTML(html);
+    setTmplPreviewHTML(_c_html);
   },[tmplActiveSlide,tmplSelected,tmplSlideCount,tmplShowCta,tmplEffect,tmplFont,tmplFontSize,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplFontStyle,dTmplSlides,currentUser?.plan]);
   const [website, setWebsite] = useState(S?.website||"");
   const [showWebsite, setShowWebsite] = useState(S?.showWebsite??false);
@@ -1439,9 +1444,9 @@ export default function App() {
     const key = isQuote ? "bwt_recent_quote_fonts" : "bwt_recent_fonts";
     const setter = isQuote ? setRecentQuoteFonts : setRecentFonts;
     setter(prev => {
-      const next = [id, ...prev.filter(f=>f!==id)].slice(0,5);
-      try { localStorage.setItem(key, JSON.stringify(next)); } catch {}
-      return next;
+      const _c_next = [id, ...prev.filter(f=>f!==id)].slice(0,5);
+      try { localStorage.setItem(key, JSON.stringify(_c_next)); } catch {}
+      return _c_next;
     });
   };
   const [headlineStyle, setHeadlineStyle] = useState(S?.headlineStyle||"bold");
@@ -1536,17 +1541,17 @@ export default function App() {
   }, []);
 
   const addToSharedLibrary = async (url) => {
-    const next = [url, ...coverPhotos.filter(p => p !== url)].slice(0, 10);
-    setCoverPhotos(next);
-    setTemplatePhotos(next);
+    const _c_next = [url, ...coverPhotos.filter(p => p !== url)].slice(0, 10);
+    setCoverPhotos(_c_next);
+    setTemplatePhotos(_c_next);
   };
 
   const removeFromSharedLibrary = (url) => {
-    const next = coverPhotos.filter(p => p !== url);
-    setCoverPhotos(next);
-    setTemplatePhotos(next);
-    if (activeCoverPhoto === url) { setActiveCoverPhoto(next[0] || null); if(!next[0]){if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);} }
-    if (templateBgUrl === url) { setTemplateBgUrl(next[0] || null); if(!next[0]) setSlideTextDark(false); }
+    const _c_next = coverPhotos.filter(p => p !== url);
+    setCoverPhotos(_c_next);
+    setTemplatePhotos(_c_next);
+    if (activeCoverPhoto === url) { setActiveCoverPhoto(_c_next[0] || null); if(!_c_next[0]){if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);} }
+    if (templateBgUrl === url) { setTemplateBgUrl(_c_next[0] || null); if(!_c_next[0]) setSlideTextDark(false); }
   };
 
   const profileRef = useRef(null);
@@ -1563,14 +1568,14 @@ export default function App() {
     if (typeof window === "undefined") return;
     if (typeof window === "undefined") return;
     // Never save base64 images to localStorage — only save real Blob URLs
-    const safeProfileUrl = profileUrl?.startsWith('data:') ? '' : profileUrl;
-    const safeQuoteBg = quoteBgCustomUrl?.startsWith('data:') ? null : quoteBgCustomUrl;
-    const safeTemplateBg = templateBgUrl?.startsWith('data:') ? null : templateBgUrl;
-    const safeCoverPhotos = coverPhotos.filter(p => !p?.startsWith('data:'));
-    const safeActiveCover = activeCoverPhoto?.startsWith('data:') ? '' : activeCoverPhoto;
+    const safeProfileUrl = profileUrl?.startsWith('_c_data:') ? '' : profileUrl;
+    const safeQuoteBg = quoteBgCustomUrl?.startsWith('_c_data:') ? null : quoteBgCustomUrl;
+    const safeTemplateBg = templateBgUrl?.startsWith('_c_data:') ? null : templateBgUrl;
+    const safeCoverPhotos = coverPhotos.filter(p => !p?.startsWith('_c_data:'));
+    const safeActiveCover = activeCoverPhoto?.startsWith('_c_data:') ? '' : activeCoverPhoto;
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,quotePhotos,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
-           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("data:")),overlayDark,photoOpacity,templateOpacity,ratio,bgColour,customColourDark,slideTextDark,audienceType,customActiveSlot,textDensity});
+           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("_c_data:")),overlayDark,photoOpacity,templateOpacity,ratio,bgColour,customColourDark,slideTextDark,audienceType,customActiveSlot,textDensity});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
       bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType,customActiveSlot,textDensity,quotePhotos]);
@@ -1590,23 +1595,23 @@ export default function App() {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ imageData: url, filename: `cover-${Date.now()}.jpg` })
       });
-      const data = await res.json();
-      if (data.url) {
-        const next = [data.url, ...coverPhotos.filter(p => !p.startsWith('data:'))].slice(0, 10);
-        setCoverPhotos(next);
-        setTemplatePhotos(next);
-        setActiveCoverPhoto(data.url);
+      const _c_data = await res.json();
+      if (_c_data.url) {
+        const _c_next = [_c_data.url, ...coverPhotos.filter(p => !p.startsWith('_c_data:'))].slice(0, 10);
+        setCoverPhotos(_c_next);
+        setTemplatePhotos(_c_next);
+        setActiveCoverPhoto(_c_data.url);
       } else {
-        const next = [url, ...coverPhotos].slice(0, 10);
-        setCoverPhotos(next);
-        setTemplatePhotos(next);
+        const _c_next = [url, ...coverPhotos].slice(0, 10);
+        setCoverPhotos(_c_next);
+        setTemplatePhotos(_c_next);
         setActiveCoverPhoto(url);
       }
     } catch(e) {
       console.error('Cover upload failed:', e);
-      const next = [url, ...coverPhotos].slice(0, 10);
-      setCoverPhotos(next);
-      setTemplatePhotos(next);
+      const _c_next = [url, ...coverPhotos].slice(0, 10);
+      setCoverPhotos(_c_next);
+      setTemplatePhotos(_c_next);
       setActiveCoverPhoto(url);
     }
   };
@@ -1628,11 +1633,11 @@ export default function App() {
           }
         }
         if (!res.ok) throw new Error(`${res.status}`);
-        const data = await res.json();
+        const _c_data = await res.json();
         if (countCredit && currentUser) {
           refreshUser();
         }
-        return data;
+        return _c_data;
       } catch(e) { if(i===tries) throw e; await new Promise(r=>setTimeout(r, 2000+i*1000)); }
     }
   };
@@ -1658,10 +1663,10 @@ export default function App() {
     const briefSection = angle.trim() ? `\nSPECIFIC BRIEF — follow this exactly: ${angle.trim()}` : "";
     const inspiration = imgBase64 ? `\nINSPIRATION IMAGE: The topic has been extracted from the image and is shown above. Use that exact topic. Write the carousel entirely in my voice with fresh copy — do not reproduce any text from the image.` : "";
     const styles = [
-      "myth-busting: challenge a common belief head-on, use data or logic to flip it",
+      "myth-busting: challenge a common belief head-on, use _c_data or logic to flip it",
       "story-driven: open with a relatable scenario, build tension, then resolve with insight",
       "contrarian: take the position most people disagree with and defend it with evidence",
-      "data-driven: lead with a surprising stat or number on every _compSlide, back every claim",
+      "_c_data-driven: lead with a surprising stat or number on every _compSlide, back every claim",
       "step-by-step: practical, sequential, each _compSlide one concrete action",
       "empathetic: speak directly to the frustration, validate it, then reframe it",
     ];
@@ -1696,7 +1701,7 @@ RULES:
 - Final _compSlide (hero) CTA: MUST have body text (1-2 sentences reinforcing why they should act — make it specific to the topic, not generic). Then cta_items with ONE fresh, specific call to action written for this exact carousel. Never repeat the same CTA twice. Never invent a download, product, or link. Keep it to follow, save, share, or comment — but write the wording fresh every time.
 - Only final _compSlide gets cta. All others cta is null.
 - No HTML, no cite tags, plain text only
-- NO invented statistics or fabricated data. Only use facts you are confident are accurate and well-established. If uncertain, frame as a principle, observation, or opinion — never as a stated fact. Every body text must be specific and genuinely useful, not a generic statement dressed as insight.
+- NO invented statistics or fabricated _c_data. Only use facts you are confident are accurate and well-established. If uncertain, frame as a principle, observation, or opinion — never as a stated fact. Every body text must be specific and genuinely useful, not a generic statement dressed as insight.
 
 Return ONLY valid JSON array:
 [{"tag":"LABEL","headline":"text","body":"text","accent_word":"word","layout":"type","items":[],"vs_label":"VS","icon_symbol":"◆","cta_items":[],"cta":null}]`;
@@ -1715,7 +1720,7 @@ Return ONLY valid JSON array:
         role: "user",
         content: inspirationImg
           ? [
-              { type:"image", source:{ type:"base64", media_type:(inspirationImg.match(/data:(image\/[a-z]+);/)?.[1]||"image/jpeg"), data: inspirationImg.split(",")[1] }},
+              { type:"image", source:{ type:"base64", media_type:(inspirationImg.match(/_c_data:(image\/[a-z]+);/)?.[1]||"image/jpeg"), _c_data: inspirationImg.split(",")[1] }},
               { type:"text", text: buildPrompt(t, inspirationImg) }
             ]
           : buildPrompt(t, null)
@@ -1786,14 +1791,14 @@ Return ONLY valid JSON array:
 
   const extractTopicFromImage = async (imgBase64) => {
     try {
-      const mediaType = imgBase64.match(/data:(image\/[a-z]+);/)?.[1] || "image/jpeg";
+      const mediaType = imgBase64.match(/_c_data:(image\/[a-z]+);/)?.[1] || "image/jpeg";
       const d = await fetchWithRetry({
         model: "claude-sonnet-4-6",
         max_tokens: 200,
         messages: [{
           role: "user",
           content: [
-            { type: "image", source: { type: "base64", media_type: mediaType, data: imgBase64.split(",")[1] }},
+            { type: "image", source: { type: "base64", media_type: mediaType, _c_data: imgBase64.split(",")[1] }},
             { type: "text", text: `Analyse this carousel image. Return a JSON object with exactly two fields:
 1. "topic": the main topic or headline in 10 words or less
 2. "brief": a 1-2 line brief describing the structure, tone, and angle of this carousel (e.g. "Title: X. Slides cover A, B, C. Tone is direct and punchy. Final _compSlide has follow CTA.")
@@ -1861,7 +1866,7 @@ Return ONLY valid JSON, nothing else.` }
       const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:600, messages:[{ role:"user", content:`Rewrite this carousel _compSlide for a ${btLabel3} whose audience is ${audDesc3}.\n\nInstruction: "${rewritePrompt}"\n\nCurrent _compSlide:\n${JSON.stringify(slides[active],null,2)}\n\nVoice: ${voiceProfile||"Direct, honest, specific. No hype."}\n\nKeep same JSON structure. Improve only what the instruction asks. Return ONLY valid JSON object. No markdown.` }] }, 4, true);
       const raw = (d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
       const m = raw.match(/\{[\s\S]*\}/);
-      if (m) { const next=[...slides]; next[active]=sanitize(JSON.parse(m[0])); setSlides(next); setRewritePrompt("");
+      if (m) { const _c_next=[...slides]; _c_next[active]=sanitize(JSON.parse(m[0])); setSlides(_c_next); setRewritePrompt("");
         // Charge 5 credits for rewrite
         if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
           await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email, credits: 5 }) });
@@ -1873,7 +1878,7 @@ Return ONLY valid JSON, nothing else.` }
     setRewriting(false);
   };
 
-  const updateSlide = (k,v) => { const next=[...slides]; next[active]={...next[active],[k]:v}; setSlides(next); };
+  const updateSlide = (k,v) => { const _c_next=[...slides]; _c_next[active]={..._c_next[active],[k]:v}; setSlides(_c_next); };
 
   const handleDrag = (e, setter, containerRef) => {
     const el = containerRef.current;
@@ -1920,7 +1925,7 @@ Return ONLY valid JSON, nothing else.` }
     }
   },[]);
 
-  // Refresh user data every 60 seconds so credit/plan changes show without signing out
+  // Refresh user _c_data every 60 seconds so credit/plan changes show without signing out
   useEffect(()=>{
     if (!currentUser) return;
     const interval = setInterval(()=>{ refreshUser(); }, 60000);
@@ -1937,41 +1942,41 @@ Return ONLY valid JSON, nothing else.` }
 
   const isMobileDevice = () => true;
 
-  const slideHasCustomImage = (opts, isCover) => {
+  const slideHasCustomImage = (_c_opts, isCover) => {
     // Cover photo only applies to _compSlide 1 (isCover)
-    if (isCover && opts.coverImageUrl) return true;
+    if (isCover && _c_opts.coverImageUrl) return true;
     // Template image applies to all non-cover slides
-    if (!isCover && opts.templateBgUrl && opts.bgMode === "custom") return true;
+    if (!isCover && _c_opts.templateBgUrl && _c_opts.bgMode === "custom") return true;
     return false;
   };
 
-  const renderSlideViaServer = async (_compSlide, idx, total, opts, isCover) => {
-    const isPortrait = opts.ratio==="portrait";
+  const renderSlideViaServer = async (_compSlide, idx, total, _c_opts, isCover) => {
+    const isPortrait = _c_opts.ratio==="portrait";
     const W=1080, H=isPortrait?1920:1350;
-    const html = buildSlideHTML(_compSlide,idx,total,opts,isCover);
+    const _c_html = buildSlideHTML(_compSlide,idx,total,_c_opts,isCover);
     const res = await fetch("/api/render-_compSlide", {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ html, width:W, height:H })
+      body: JSON.stringify({ _c_html, width:W, height:H })
     });
-    const data = await res.json();
-    if (!data.image) throw new Error(data.error||"Render failed");
-    const byteChars = atob(data.image);
+    const _c_data = await res.json();
+    if (!_c_data.image) throw new Error(_c_data.error||"Render failed");
+    const byteChars = atob(_c_data.image);
     const byteArr = new Uint8Array(byteChars.length);
     for (let j=0;j<byteChars.length;j++) byteArr[j]=byteChars.charCodeAt(j);
     return new Blob([byteArr],{type:"image/png"});
   };
 
-  const renderSlideViaCanvas = (_compSlide, idx, total, opts, isCover) => {
+  const renderSlideViaCanvas = (_compSlide, idx, total, _c_opts, isCover) => {
     return new Promise((res,rej) => {
-      const isPortrait = opts.ratio==="portrait";
+      const isPortrait = _c_opts.ratio==="portrait";
       const W=1080, H=isPortrait?1920:1350;
-      const html = buildSlideHTML(_compSlide,idx,total,opts,isCover);
+      const _c_html = buildSlideHTML(_compSlide,idx,total,_c_opts,isCover);
       const iframe = document.createElement("iframe");
       iframe.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
       document.body.appendChild(iframe);
       const doc = iframe.contentDocument||iframe.contentWindow?.document;
-      doc.open(); doc.write(html); doc.close();
+      doc.open(); doc.write(_c_html); doc.close();
       setTimeout(async()=>{
         try {
           const win=iframe.contentWindow;
@@ -2001,10 +2006,10 @@ Return ONLY valid JSON, nothing else.` }
         let blob = null;
         for (let attempt=0; attempt<2; attempt++) {
           try {
-            const opts = slideOpts(i);
+            const _c_opts = slideOpts(i);
             blob = mobile
-            ? await renderSlideViaServer(slides[i],i,slides.length,opts,i===0)
-            : await renderSlideViaCanvas(slides[i],i,slides.length,opts,i===0);
+            ? await renderSlideViaServer(slides[i],i,slides.length,_c_opts,i===0)
+            : await renderSlideViaCanvas(slides[i],i,slides.length,_c_opts,i===0);
             if (blob) break;
           } catch(e) {
             console.error("Slide",i+1,"attempt",attempt+1,"failed:",e);
@@ -2064,12 +2069,12 @@ Return ONLY a JSON array of ${needed} strings.`;
       const m = raw.match(/\[[\s\S]*\]/);
       if (m) {
         const generated = JSON.parse(m[0]);
-        const next = [...quoteInputs];
+        const _c_next = [...quoteInputs];
         let gi = 0;
-        for (let i=0; i<next.length && gi<generated.length; i++) {
-          if (!next[i].trim()) { next[i] = generated[gi++]; }
+        for (let i=0; i<_c_next.length && gi<generated.length; i++) {
+          if (!_c_next[i].trim()) { _c_next[i] = generated[gi++]; }
         }
-        setQuoteInputs(next);
+        setQuoteInputs(_c_next);
         // Charge 10 credits for quote generation
         if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
           await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email, credits: 10 }) });
@@ -2280,11 +2285,11 @@ Return ONLY a JSON array of ${needed} strings.`;
     const tHandle = { classic: classicHandle, luxury: luxuryHandle, feminine: feminineHandle, raw: rawHandle, custom: "" }[tmpl] || (showHandle&&handleStr?`<div style="position:absolute;bottom:${handleBottom}px;left:0;right:0;text-align:center;z-index:6;"><span style="color:${accent};font-size:${Math.round(26*s)}px;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:3px;opacity:0.85;">${esc(handleStr)}</span></div>`:"");
     const cardBg = tmpl === "feminine" ? femBg : hasBgImg ? "#FFFFFF" : bg;
 
-    return `<!DOCTYPE html><html><head><meta charset="utf-8">
+    return `<!DOCTYPE _c_html><_c_html><head><meta charset="utf-8">
 <style>
 @import url('${gFonts}');
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
+_c_html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 ._compSlide{width:${W}px;height:${H}px;background:${cardBg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${contentPadTop}px ${contentPadX}px ${contentPadBottom}px;position:relative;}
 .bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:${(effectiveQuoteOpacity||100)/100};}
 .bg-ov{position:absolute;inset:0;z-index:1;pointer-events:none;}
@@ -2305,13 +2310,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
   ${tHandle}
   ${currentUser?.plan==="free"?`<div style="position:absolute;top:${Math.round(28*s)}px;left:0;right:0;text-align:center;z-index:10;"><span style="font-family:'Montserrat',sans-serif;font-size:${Math.round(28*s)}px;font-weight:800;color:#ffffff;text-shadow:0 2px 8px rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.8);letter-spacing:2px;">studio.buildwithtav.co</span></div>`:""}
 </div>
-</body></html>`;
+</body></_c_html>`;
   };
 
   const downloadQuote = async (quoteText, i) => {
     const isPortrait = quoteFormat === "portrait";
     const W = 1080, H = isPortrait ? 1920 : 1350;
-    const html = buildQuoteHTML(quoteText, null, quoteTextColor);
+    const _c_html = buildQuoteHTML(quoteText, null, quoteTextColor);
     const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const needsServer = mobile && !!quoteBgCustomUrl;
 
@@ -2319,11 +2324,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
       const res = await fetch("/api/render-_compSlide", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ html, width: W, height: H })
+        body: JSON.stringify({ _c_html, width: W, height: H })
       });
-      const data = await res.json();
-      if (!data.image) throw new Error(data.error || "Render failed");
-      const byteChars = atob(data.image);
+      const _c_data = await res.json();
+      if (!_c_data.image) throw new Error(_c_data.error || "Render failed");
+      const byteChars = atob(_c_data.image);
       const byteArr = new Uint8Array(byteChars.length);
       for (let j=0; j<byteChars.length; j++) byteArr[j] = byteChars.charCodeAt(j);
       return new Blob([byteArr], {type:"image/png"});
@@ -2334,7 +2339,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
       iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
       document.body.appendChild(iframe);
       const doc = iframe.contentDocument || iframe.contentWindow?.document;
-      doc.open(); doc.write(html); doc.close();
+      doc.open(); doc.write(_c_html); doc.close();
       setTimeout(async () => {
         try {
           const win = iframe.contentWindow;
@@ -2417,7 +2422,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           .mobile-nav{display:flex!important}
           nav{padding:0 12px!important}
           .desktop-reset{display:none!important}
-          body,html,#__next{width:100%!important;max-width:100vw!important}
+          body,_c_html,#__next{width:100%!important;max-width:100vw!important}
           nav{width:100%!important;max-width:100vw!important}
           .mobile-edit-btn{display:flex!important}
           .mobile-drawer{display:block!important}
@@ -2687,7 +2692,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                               <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                             </div>
                             {quoteBgCustomUrl===p&&<div onClick={()=>{setQuoteBgCustomUrl(null);setQuoteTextColor("#FFFFFF");}} style={{position:"absolute",top:-4,right:-4,width:14,height:14,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
-                            <div onClick={()=>{if(window.confirm("Remove this image from your library? This cannot be undone.")){const next=quotePhotos.filter((_,j)=>j!==i);setQuotePhotos(next);if(quoteBgCustomUrl===p){setQuoteBgCustomUrl(next[0]||null);if(!next[0])setQuoteTextColor("#FFFFFF");}}}} style={{position:"absolute",bottom:-4,right:-4,width:14,height:14,borderRadius:"50%",background:"#333",color:"#fff",fontSize:7,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
+                            <div onClick={()=>{if(window.confirm("Remove this image from your library? This cannot be undone.")){const _c_next=quotePhotos.filter((_,j)=>j!==i);setQuotePhotos(_c_next);if(quoteBgCustomUrl===p){setQuoteBgCustomUrl(_c_next[0]||null);if(!_c_next[0])setQuoteTextColor("#FFFFFF");}}}} style={{position:"absolute",bottom:-4,right:-4,width:14,height:14,borderRadius:"50%",background:"#333",color:"#fff",fontSize:7,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
                           </div>
                         ))}
                         {quotePhotos.length < 10 && (
@@ -2723,8 +2728,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               {(()=>{
                 const isP=quoteFormat==="portrait";
                 const W=1080,H=isP?1920:1350,pw=180,scale=pw/W;
-                const html=buildQuoteHTML("Your quote will appear here",null,quoteTextColor);
-                return <div style={{width:pw,height:Math.round(H*scale),borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,margin:"0 auto"}}><QuotePreview key={html} html={html} W={W} H={H} scale={scale}/></div>;
+                const _c_html=buildQuoteHTML("Your quote will appear here",null,quoteTextColor);
+                return <div style={{width:pw,height:Math.round(H*scale),borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,margin:"0 auto"}}><QuotePreview key={_c_html} _c_html={_c_html} W={W} H={H} scale={scale}/></div>;
               })()}
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24,marginBottom:24,alignItems:"start"}} className="quotes-layout">
@@ -2757,7 +2762,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                             <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                           </div>
                           {quoteBgCustomUrl===p&&<div onClick={()=>{setQuoteBgCustomUrl(null);setQuoteTextColor("#FFFFFF");}} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
-                          <div onClick={()=>{if(window.confirm("Remove this image from your library? This cannot be undone.")){const next=quotePhotos.filter((_,j)=>j!==i);setQuotePhotos(next);if(quoteBgCustomUrl===p){setQuoteBgCustomUrl(next[0]||null);if(!next[0])setQuoteTextColor("#FFFFFF");}}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
+                          <div onClick={()=>{if(window.confirm("Remove this image from your library? This cannot be undone.")){const _c_next=quotePhotos.filter((_,j)=>j!==i);setQuotePhotos(_c_next);if(quoteBgCustomUrl===p){setQuoteBgCustomUrl(_c_next[0]||null);if(!_c_next[0])setQuoteTextColor("#FFFFFF");}}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
                         </div>
                       ))}
                       {quotePhotos.length < 10 && (
@@ -2776,10 +2781,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                             headers:{'Content-Type':'application/json'},
                             body: JSON.stringify({ imageData: base64, filename: `quotebg-${Date.now()}.jpg` })
                           });
-                          const data = await res.json();
-                          if (data.url) {
-                            setQuoteBgCustomUrl(data.url);
-                            setQuotePhotos(prev => [data.url, ...prev.filter(p=>p!==data.url)].slice(0,10));
+                          const _c_data = await res.json();
+                          if (_c_data.url) {
+                            setQuoteBgCustomUrl(_c_data.url);
+                            setQuotePhotos(prev => [_c_data.url, ...prev.filter(p=>p!==_c_data.url)].slice(0,10));
                           }
                         } catch(err) { console.error('Quote BG upload failed:', err); }
                       };
@@ -2809,12 +2814,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     {quoteBgCustomUrl&&(()=>{
                       const isP = quoteFormat==="portrait";
                       const W=1080,H=isP?1920:1350,scale=280/W;
-                      const html=buildQuoteHTML("Your quote will appear here");
+                      const _c_html=buildQuoteHTML("Your quote will appear here");
                       return (
                         <div>
                           <label style={{...lbl,marginBottom:8}}>Preview — check safe zone</label>
                           <div style={{width:280,height:H*scale,borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                            <QuotePreview html={html} W={W} H={H} scale={scale}/>
+                            <QuotePreview _c_html={_c_html} W={W} H={H} scale={scale}/>
                           </div>
                         </div>
                       );
@@ -2919,11 +2924,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               {(()=>{
               const isP = quoteFormat==="portrait";
               const W=1080,H=isP?1920:1350,pw=240,scale=pw/W;
-              const html=buildQuoteHTML("Your quote will appear here", null, quoteTextColor);
+              const _c_html=buildQuoteHTML("Your quote will appear here", null, quoteTextColor);
               return (
                 <div style={{marginBottom:16,display:"flex",justifyContent:"center"}}>
                   <div style={{width:pw,height:Math.round(H*scale),borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                    <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
+                    <QuotePreview key={_c_html} _c_html={_c_html} W={W} H={H} scale={scale}/>
                   </div>
                 </div>
               );
@@ -2953,7 +2958,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 {quoteInputs.map((q,i)=>(
                   <div key={i} style={{display:"flex",alignItems:"flex-start",gap:10}}>
                     <span style={{fontSize:12,fontWeight:700,color:A.muted,paddingTop:12,width:20,flexShrink:0}}>{i+1}</span>
-                    <textarea value={q} onChange={e=>{const next=[...quoteInputs];next[i]=e.target.value;setQuoteInputs(next);}} placeholder={`Quote ${i+1}...`} rows={2} style={{...inp,resize:"vertical",lineHeight:1.5,flex:1}}/>
+                    <textarea value={q} onChange={e=>{const _c_next=[...quoteInputs];_c_next[i]=e.target.value;setQuoteInputs(_c_next);}} placeholder={`Quote ${i+1}...`} rows={2} style={{...inp,resize:"vertical",lineHeight:1.5,flex:1}}/>
                   </div>
                 ))}
               </div>
@@ -2974,11 +2979,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   {quoteInputs.filter(q=>q.trim()).map((q,i)=>{
                     const isP=quoteFormat==="portrait";
                     const W=1080,H=isP?1920:1350,scale=220/W;
-                    const html=buildQuoteHTML(q, null, quoteTextColor);
+                    const _c_html=buildQuoteHTML(q, null, quoteTextColor);
                     return (
                       <div key={i} style={{display:"flex",flexDirection:"column",gap:6,alignItems:"center"}}>
-                        <div onClick={()=>setExpandedQuote(html)} style={{width:220,height:Math.round(H*scale),borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,flexShrink:0,cursor:"pointer"}}>
-                          <QuotePreview key={html} html={html} W={W} H={H} scale={scale}/>
+                        <div onClick={()=>setExpandedQuote(_c_html)} style={{width:220,height:Math.round(H*scale),borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,flexShrink:0,cursor:"pointer"}}>
+                          <QuotePreview key={_c_html} _c_html={_c_html} W={W} H={H} scale={scale}/>
                         </div>
                         <button onClick={async()=>{
                           if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
@@ -2990,9 +2995,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                             document.body.appendChild(a); a.click(); document.body.removeChild(a);
                             setTimeout(()=>URL.revokeObjectURL(url),1000);
                             const entry={id:Date.now(),text:q,date:new Date().toLocaleDateString(),font:quoteFont,bgMode:quoteBgMode};
-                            const next=[entry,...quoteHistory].slice(0,20);
-                            setQuoteHistory(next);
-                            try{localStorage.setItem("bwt_quote_history",JSON.stringify(next));}catch{}
+                            const _c_next=[entry,...quoteHistory].slice(0,20);
+                            setQuoteHistory(_c_next);
+                            try{localStorage.setItem("bwt_quote_history",JSON.stringify(_c_next));}catch{}
                             if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
                               await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email, credits: 5 }) });
                               refreshUser();
@@ -3008,7 +3013,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 {expandedQuote&&(
                   <div onClick={()=>setExpandedQuote(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.9)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
                     <div style={{width:"min(340px,90vw)",height:"min(450px,80vh)",borderRadius:12,overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
-                      <QuotePreview html={expandedQuote} W={1080} H={1350} scale={340/1080}/>
+                      <QuotePreview _c_html={expandedQuote} W={1080} H={1350} scale={340/1080}/>
                     </div>
                   </div>
                 )}
@@ -3154,7 +3159,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             <div>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
                 <div style={{fontSize:14,fontWeight:700}}>Quote Cards</div>
-                {quoteHistory.length>0&&<button onClick={()=>{if(window.confirm("Clear quote history?")){const next=[];setQuoteHistory(next);try{localStorage.setItem("bwt_quote_history",JSON.stringify(next));}catch{}}}} style={{background:"none",border:`1.5px solid ${A.border}`,borderRadius:7,padding:"4px 10px",fontSize:11,color:"#c0392b",fontWeight:600,cursor:"pointer"}}>Clear</button>}
+                {quoteHistory.length>0&&<button onClick={()=>{if(window.confirm("Clear quote history?")){const _c_next=[];setQuoteHistory(_c_next);try{localStorage.setItem("bwt_quote_history",JSON.stringify(_c_next));}catch{}}}} style={{background:"none",border:`1.5px solid ${A.border}`,borderRadius:7,padding:"4px 10px",fontSize:11,color:"#c0392b",fontWeight:600,cursor:"pointer"}}>Clear</button>}
               </div>
               {quoteHistory.length===0
                 ? <div style={{textAlign:"center",padding:"30px 0",color:A.muted,fontSize:13}}>No quotes downloaded yet.</div>
@@ -3406,7 +3411,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       </div>
                     </div>
                     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-                      {thumbHTMLs.map((html,idx)=>(<div key={idx} onClick={()=>setTmplActiveSlide(idx)} style={{cursor:"pointer",position:"relative",flexShrink:0,width:86,height:108,borderRadius:6,overflow:"hidden",border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}><iframe srcDoc={html} style={{width:1080,height:1350,border:"none",transform:"scale(0.0796)",transformOrigin:"top left",pointerEvents:"none"}} scrolling="no"/><div style={{position:"absolute",bottom:3,right:4,background:idx===tmplSlideCount?"rgba(187,153,0,0.9)":"rgba(0,0,0,0.7)",borderRadius:3,padding:"1px 5px",fontSize:9,color:"#fff",fontWeight:700,zIndex:2}}>{idx===tmplSlideCount?"CTA":idx+1}</div></div>))}
+                      {thumbHTMLs.map((_c_html,idx)=>(<div key={idx} onClick={()=>setTmplActiveSlide(idx)} style={{cursor:"pointer",position:"relative",flexShrink:0,width:86,height:108,borderRadius:6,overflow:"hidden",border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}><iframe srcDoc={_c_html} style={{width:1080,height:1350,border:"none",transform:"scale(0.0796)",transformOrigin:"top left",pointerEvents:"none"}} scrolling="no"/><div style={{position:"absolute",bottom:3,right:4,background:idx===tmplSlideCount?"rgba(187,153,0,0.9)":"rgba(0,0,0,0.7)",borderRadius:3,padding:"1px 5px",fontSize:9,color:"#fff",fontWeight:700,zIndex:2}}>{idx===tmplSlideCount?"CTA":idx+1}</div></div>))}
                     </div>
                     {isMobile&&<button onClick={()=>setTmplDrawerOpen(true)} style={{display:"block",width:"100%",padding:"14px",background:GOLD,border:"none",borderRadius:10,fontWeight:700,fontSize:15,color:"#000",cursor:"pointer",marginBottom:8}}>✏️ Edit Slide {activeSlide+1}</button>}
                     <div style={{display:"flex",gap:8}}>
@@ -3457,8 +3462,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <div>
                             <label style={lbl}>{isSplit?"Left Image":"Photo"}</label>
                             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
-                              {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${_compSlide.image===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{_compSlide.image===p&&<div onClick={()=>updateTmplSlide("image",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(_compSlide.image===p)updateTmplSlide("image",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
-                              <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateTmplSlide("image",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
+                              {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${_compSlide.image===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{_compSlide.image===p&&<div onClick={()=>updateTmplSlide("image",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const _c_next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(_c_next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(_c_next));}catch{}if(_compSlide.image===p)updateTmplSlide("image",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
+                              <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateTmplSlide("image",url);const _c_next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(_c_next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(_c_next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
                               {isPexelsUser&&<div onClick={()=>setShowPexelsTmplLib(true)} style={{width:52,height:52,borderRadius:7,border:`1.5px solid ${GOLD}44`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:GOLD,fontSize:9,fontWeight:800,flexShrink:0,textAlign:"center",lineHeight:1.2}}>🔍<br/>Pexels</div>}
                             </div>
                             {tmplLibrary.length===0&&<p style={{fontSize:11,color:A.muted,margin:"0 0 6px"}}>Upload photos — they'll save to your library.</p>}
@@ -3469,8 +3474,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         {isSplit&&<div>
                           <label style={lbl}>Right Image</label>
                           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:4}}>
-                            {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image2",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${_compSlide.image2===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{_compSlide.image2===p&&<div onClick={()=>updateTmplSlide("image2",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(_compSlide.image2===p)updateTmplSlide("image2",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
-                            <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateTmplSlide("image2",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
+                            {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image2",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${_compSlide.image2===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{_compSlide.image2===p&&<div onClick={()=>updateTmplSlide("image2",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const _c_next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(_c_next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(_c_next));}catch{}if(_compSlide.image2===p)updateTmplSlide("image2",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
+                            <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateTmplSlide("image2",url);const _c_next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(_c_next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(_c_next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
                           </div>
                         </div>}
 
@@ -3485,7 +3490,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                         {/* AI Brief (inside content panel) */}
                         {isCleanPro&&<><label style={{...lbl,color:GOLD}}>AI Brief</label><div style={{position:"relative"}}><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={3} placeholder="What's this carousel about?" style={{...inp,fontSize:11,lineHeight:1.5,paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div><div style={{fontSize:10,color:A.muted,marginTop:4}}>Generates content for this _compSlide.</div></>}
-                        {isStory&&activeSlide===0&&<><label style={{...lbl,color:GOLD}}>AI — Generate Full Story</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={4} placeholder="Describe what this story is about. Include detail — names, places, emotions, timeline, turning points, outcomes. Can be personal, educational, fictional or factual." style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>AI will write your story across all {tmplSlideCount} slides, each flowing into the next.</div><button onClick={generateStory} disabled={tmplSuggesting==="story"} style={{background:"linear-gradient(135deg,#1a1500,#0a0a0a)",border:"1px solid "+GOLD,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",marginTop:4}}>{tmplSuggesting==="story"?<><Spin/>Generating story...</>:"✨ Generate Story (10 credits)"}</button></>}
+                        {isStory&&activeSlide===0&&<><label style={{...lbl,color:GOLD}}>AI — Generate Full Story</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={4} placeholder="Describe what this story is about. Include detail — names, places, emotions, timeline, turning points, outcomes. Can be personal, educational, fictional or factual." style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>AI will write your story across all {tmplSlideCount} slides, each flowing into the _c_next.</div><button onClick={generateStory} disabled={tmplSuggesting==="story"} style={{background:"linear-gradient(135deg,#1a1500,#0a0a0a)",border:"1px solid "+GOLD,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",marginTop:4}}>{tmplSuggesting==="story"?<><Spin/>Generating story...</>:"✨ Generate Story (10 credits)"}</button></>}
                         {isListicle&&activeSlide===0&&<><label style={{...lbl,color:GOLD}}>AI — Generate Full List</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={2} placeholder="What's your list about? e.g. places to visit in Europe, productivity habits, business lessons..." style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>Any filled headlines will be used as anchors. Empty slots will be generated.</div><button onClick={generateList} disabled={tmplSuggesting==="list"} style={{background:"linear-gradient(135deg,#1a1500,#0a0a0a)",border:"1px solid "+GOLD,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",marginTop:4}}>{tmplSuggesting==="list"?<><Spin/>Generating list...</>:"✨ Generate Full List (10 credits)"}</button></>}
                       </div></>
                       }
@@ -3677,8 +3682,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           headers:{'Content-Type':'application/json'},
                           body: JSON.stringify({ imageData: base64, filename: `profile-${Date.now()}.jpg` })
                         });
-                        const data = await res.json();
-                        if (data.url) setProfileUrl(data.url); // replace with real Blob URL — this triggers localStorage save
+                        const _c_data = await res.json();
+                        if (_c_data.url) setProfileUrl(_c_data.url); // replace with real Blob URL — this triggers localStorage save
                       } catch(err) { console.error('Upload failed, using base64:', err); }
                     };
                     reader.readAsDataURL(file);
@@ -3733,7 +3738,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                         </div>
                         {activeCoverPhoto===p&&<div onClick={()=>{setActiveCoverPhoto(null);if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);}} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
-                        <div onClick={()=>{if(window.confirm("Remove this photo from your library? This cannot be undone.")){const next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(next);setTemplatePhotos(next);if(activeCoverPhoto===p){setActiveCoverPhoto(next[0]||null);if(!next[0]){if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);}}}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
+                        <div onClick={()=>{if(window.confirm("Remove this photo from your library? This cannot be undone.")){const _c_next=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(_c_next);setTemplatePhotos(_c_next);if(activeCoverPhoto===p){setActiveCoverPhoto(_c_next[0]||null);if(!_c_next[0]){if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);}}}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
                       </div>
                     ))}
                     {coverPhotos.length < 10 && (
@@ -3767,7 +3772,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     return (
                       <div style={{marginBottom:14}}>
                         <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                          <SlidePreview _compSlide={coverSlide} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
+                          <SlidePreview _compSlide={coverSlide} idx={0} total={1} _c_opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
                         </div>
                         <p style={{color:A.muted,fontSize:11,marginTop:8}}>{activeCoverPhoto?"Select a position below to adjust badge and headline placement.":"No cover photo selected — showing your background defaults as set in the Visual tab."}</p>
                       </div>
@@ -3971,12 +3976,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                             headers:{'Content-Type':'application/json'},
                             body: JSON.stringify({ imageData: base64, filename: `template-${Date.now()}.jpg` })
                           });
-                          const data = await res.json();
-                          if (data.url) {
-                            setTemplateBgUrl(data.url);
-                            const next = [data.url, ...coverPhotos.filter(p=>p!==data.url)].slice(0,10);
-                            setCoverPhotos(next);
-                            setTemplatePhotos(next);
+                          const _c_data = await res.json();
+                          if (_c_data.url) {
+                            setTemplateBgUrl(_c_data.url);
+                            const _c_next = [_c_data.url, ...coverPhotos.filter(p=>p!==_c_data.url)].slice(0,10);
+                            setCoverPhotos(_c_next);
+                            setTemplatePhotos(_c_next);
                           }
                         } catch(err) { console.error('Template upload failed:', err); }
                       };
@@ -3985,7 +3990,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     </div>
                   )}
                   <div style={{padding:8,background:A.bg,borderRadius:12,border:`1.5px solid ${A.border}`,marginTop:16}}><div style={{borderRadius:8,overflow:"hidden"}}>
-                    <SlidePreview _compSlide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
+                    <SlidePreview _compSlide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} _c_opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
                   </div></div>
                   <p style={{color:A.muted,fontSize:11,marginTop:8}}>{bgMode==="custom"&&templateBgUrl?"Image selected — use White/Dark text to match.":bgMode==="custom"?"No image selected — showing background defaults.":`Preview reflects your ${bgMode} background setting.`}</p>
                   <div style={{display:"flex",gap:8,marginTop:10}}>
@@ -4021,13 +4026,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               <div style={{display:isMobile?"contents":"block",paddingBottom:isMobile?0:140}}>
                 {/* Active _compSlide - big preview */}
                 <div style={{position:isMobile?"sticky":"sticky",top:isMobile?"-40px":76,zIndex:10,background:A.bg,marginBottom:8}}>
-                  {(()=>{const isPortrait=slideOpts(active).ratio==="portrait";const PW=isMobile?(keyboardOpen?Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)/2:Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)):540;const PH=Math.round((isPortrait?1920:1350)*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto",borderRadius:8,border:`1.5px solid ${A.border}`}}><SlidePreview _compSlide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={true} isCover={active===0} showWatermark={currentUser?.plan==="free"} previewSize={PW}/></div>);})()}
+                  {(()=>{const isPortrait=slideOpts(active).ratio==="portrait";const PW=isMobile?(keyboardOpen?Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)/2:Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)):540;const PH=Math.round((isPortrait?1920:1350)*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto",borderRadius:8,border:`1.5px solid ${A.border}`}}><SlidePreview _compSlide={slides[active]} idx={active} total={slides.length} _c_opts={slideOpts(active)} onClick={()=>{}} isActive={true} isCover={active===0} showWatermark={currentUser?.plan==="free"} previewSize={PW}/></div>);})()}
                 </div>
                 {/* Thumbnails row */}
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
                   {slides.map((_compSlide,i)=>(
-                    <div key={i} data-_compSlide-index={i} onClick={()=>setActive(i)} style={{cursor:"pointer",opacity:active===i?1:0.6,transition:"opacity 0.15s",outline:active===i?`2px solid ${GOLD}`:"none",borderRadius:6,overflow:"hidden"}}>
-                      <SlidePreview _compSlide={_compSlide} idx={i} total={slides.length} opts={slideOpts(i)} onClick={()=>setActive(i)} isActive={active===i} isCover={i===0} showWatermark={currentUser?.plan==="free"} previewSize={86}/>
+                    <div key={i} _c_data-_compSlide-index={i} onClick={()=>setActive(i)} style={{cursor:"pointer",opacity:active===i?1:0.6,transition:"opacity 0.15s",outline:active===i?`2px solid ${GOLD}`:"none",borderRadius:6,overflow:"hidden"}}>
+                      <SlidePreview _compSlide={_compSlide} idx={i} total={slides.length} _c_opts={slideOpts(i)} onClick={()=>setActive(i)} isActive={active===i} isCover={i===0} showWatermark={currentUser?.plan==="free"} previewSize={86}/>
                     </div>
                   ))}
                 </div>
@@ -4493,8 +4498,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <div>
                             <label style={lbl}>{isSplit?"Left Image":"Photo"}</label>
                             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
-                              {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${_compSlide.image===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{_compSlide.image===p&&<div onClick={()=>updateTmplSlide("image",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(_compSlide.image===p)updateTmplSlide("image",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
-                              <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateTmplSlide("image",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
+                              {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${_compSlide.image===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{_compSlide.image===p&&<div onClick={()=>updateTmplSlide("image",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const _c_next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(_c_next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(_c_next));}catch{}if(_compSlide.image===p)updateTmplSlide("image",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
+                              <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateTmplSlide("image",url);const _c_next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(_c_next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(_c_next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
                               {isPexelsUser&&<div onClick={()=>setShowPexelsTmplLib(true)} style={{width:52,height:52,borderRadius:7,border:`1.5px solid ${GOLD}44`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:GOLD,fontSize:9,fontWeight:800,flexShrink:0,textAlign:"center",lineHeight:1.2}}>🔍<br/>Pexels</div>}
                             </div>
                             {tmplLibrary.length===0&&<p style={{fontSize:11,color:A.muted,margin:"0 0 6px"}}>Upload photos — they'll save to your library.</p>}
@@ -4505,8 +4510,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         {isSplit&&<div>
                           <label style={lbl}>Right Image</label>
                           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:4}}>
-                            {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image2",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${_compSlide.image2===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{_compSlide.image2===p&&<div onClick={()=>updateTmplSlide("image2",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(_compSlide.image2===p)updateTmplSlide("image2",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
-                            <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateTmplSlide("image2",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
+                            {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image2",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${_compSlide.image2===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{_compSlide.image2===p&&<div onClick={()=>updateTmplSlide("image2",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const _c_next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(_c_next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(_c_next));}catch{}if(_compSlide.image2===p)updateTmplSlide("image2",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
+                            <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateTmplSlide("image2",url);const _c_next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(_c_next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(_c_next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
                           </div>
                         </div>}
 
@@ -4521,7 +4526,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                         {/* AI Brief (inside content panel) */}
                         {isCleanPro&&<><label style={{...lbl,color:GOLD}}>AI Brief</label><div style={{position:"relative"}}><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={3} placeholder="What's this carousel about?" style={{...inp,fontSize:11,lineHeight:1.5,paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div><div style={{fontSize:10,color:A.muted,marginTop:4}}>Generates content for this _compSlide.</div></>}
-                        {isStory&&activeSlide===0&&<><label style={{...lbl,color:GOLD}}>AI — Generate Full Story</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={4} placeholder="Describe what this story is about. Include detail — names, places, emotions, timeline, turning points, outcomes. Can be personal, educational, fictional or factual." style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>AI will write your story across all {tmplSlideCount} slides, each flowing into the next.</div><button onClick={generateStory} disabled={tmplSuggesting==="story"} style={{background:"linear-gradient(135deg,#1a1500,#0a0a0a)",border:"1px solid "+GOLD,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",marginTop:4}}>{tmplSuggesting==="story"?<><Spin/>Generating story...</>:"✨ Generate Story (10 credits)"}</button></>}
+                        {isStory&&activeSlide===0&&<><label style={{...lbl,color:GOLD}}>AI — Generate Full Story</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={4} placeholder="Describe what this story is about. Include detail — names, places, emotions, timeline, turning points, outcomes. Can be personal, educational, fictional or factual." style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>AI will write your story across all {tmplSlideCount} slides, each flowing into the _c_next.</div><button onClick={generateStory} disabled={tmplSuggesting==="story"} style={{background:"linear-gradient(135deg,#1a1500,#0a0a0a)",border:"1px solid "+GOLD,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",marginTop:4}}>{tmplSuggesting==="story"?<><Spin/>Generating story...</>:"✨ Generate Story (10 credits)"}</button></>}
                         {isListicle&&activeSlide===0&&<><label style={{...lbl,color:GOLD}}>AI — Generate Full List</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={2} placeholder="What's your list about? e.g. places to visit in Europe, productivity habits, business lessons..." style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>Any filled headlines will be used as anchors. Empty slots will be generated.</div><button onClick={generateList} disabled={tmplSuggesting==="list"} style={{background:"linear-gradient(135deg,#1a1500,#0a0a0a)",border:"1px solid "+GOLD,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",marginTop:4}}>{tmplSuggesting==="list"?<><Spin/>Generating list...</>:"✨ Generate Full List (10 credits)"}</button></>}
                       </div></>
                       }
@@ -4682,12 +4687,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             {/* Slide number buttons */}
             <div style={{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap"}}>
             {slides.map((_,i)=>(
-              <button key={i} onClick={()=>{setActive(i);setTimeout(()=>{const el=document.querySelector(`[data-_compSlide-index='${i}']`);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},100);}} style={{width:36,height:36,borderRadius:8,background:active===i?A.text:A.surface,border:`1.5px solid ${active===i?GOLD:A.border}`,color:active===i?A.accentText:A.muted,fontSize:13,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
+              <button key={i} onClick={()=>{setActive(i);setTimeout(()=>{const el=document.querySelector(`[_c_data-_compSlide-index='${i}']`);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},100);}} style={{width:36,height:36,borderRadius:8,background:active===i?A.text:A.surface,border:`1.5px solid ${active===i?GOLD:A.border}`,color:active===i?A.accentText:A.muted,fontSize:13,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
             ))}
             </div>
             {/* Pinned _compSlide preview - fixed thumbnail, full _compSlide scaled to fit */}
             <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
-              <SlidePreview _compSlide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={false} isCover={active===0} previewSize={200} showWatermark={currentUser?.plan==="free"}/>
+              <SlidePreview _compSlide={slides[active]} idx={active} total={slides.length} _c_opts={slideOpts(active)} onClick={()=>{}} isActive={false} isCover={active===0} previewSize={200} showWatermark={currentUser?.plan==="free"}/>
             </div>
           </div>
           {/* Scrollable edit fields */}
@@ -4870,19 +4875,19 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               headers:{"Content-Type":"application/json"},
               body: JSON.stringify({ imageData: url, filename: `template-pexels-${Date.now()}.jpg` }),
             });
-            const data = await res.json();
-            if (data.url) {
-              setTemplateBgUrl(data.url);
-              const next = [data.url,...coverPhotos.filter(p=>p!==data.url)].slice(0,10);
-              setCoverPhotos(next); setTemplatePhotos(next);
+            const _c_data = await res.json();
+            if (_c_data.url) {
+              setTemplateBgUrl(_c_data.url);
+              const _c_next = [_c_data.url,...coverPhotos.filter(p=>p!==_c_data.url)].slice(0,10);
+              setCoverPhotos(_c_next); setTemplatePhotos(_c_next);
             } else {
-              const next = [url,...coverPhotos.filter(p=>p!==url)].slice(0,10);
-              setCoverPhotos(next); setTemplatePhotos(next);
+              const _c_next = [url,...coverPhotos.filter(p=>p!==url)].slice(0,10);
+              setCoverPhotos(_c_next); setTemplatePhotos(_c_next);
             }
           } catch(e) {
             console.error("Template Pexels save failed:",e);
-            const next = [url,...coverPhotos.filter(p=>p!==url)].slice(0,10);
-            setCoverPhotos(next); setTemplatePhotos(next);
+            const _c_next = [url,...coverPhotos.filter(p=>p!==url)].slice(0,10);
+            setCoverPhotos(_c_next); setTemplatePhotos(_c_next);
           }
         }}
         A={A}
@@ -4899,10 +4904,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               headers:{"Content-Type":"application/json"},
               body: JSON.stringify({ imageData: url, filename: `quotebg-pexels-${Date.now()}.jpg` }),
             });
-            const data = await res.json();
-            if (data.url) {
-              setQuoteBgCustomUrl(data.url);
-              setQuotePhotos(prev=>[data.url,...prev.filter(p=>p!==data.url)].slice(0,8));
+            const _c_data = await res.json();
+            if (_c_data.url) {
+              setQuoteBgCustomUrl(_c_data.url);
+              setQuotePhotos(prev=>[_c_data.url,...prev.filter(p=>p!==_c_data.url)].slice(0,8));
             } else {
               setQuotePhotos(prev=>[url,...prev.filter(p=>p!==url)].slice(0,8));
             }
@@ -4919,9 +4924,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         onClose={()=>setShowPexelsTmplLib(false)}
         onSelect={async(url)=>{
           setPendingTmplImage(url);
-          const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);
-          setTmplLibrary(next);
-          try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}
+          const _c_next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);
+          setTmplLibrary(_c_next);
+          try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(_c_next));}catch{}
           setShowPexelsTmplLib(false);
         }}
         A={A}
