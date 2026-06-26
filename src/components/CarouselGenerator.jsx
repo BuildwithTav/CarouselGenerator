@@ -1409,7 +1409,7 @@ export default function App() {
     if(!tmplSelected)return;
     const _compIsFree=currentUser?.plan==="free";
     const website=_compIsFree?"studio.buildwithtav.co":(currentUser?.website||"");
-    const drawerOpts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree:currentUser?.plan==="free",userWebsite:website};
+    const drawerOpts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree:currentUser?.plan==="free",_compIsFree:currentUser?.plan==="free",userWebsite:website};
     const totalSl=tmplSlideCount+(tmplShowCta?1:0);
     const isCtaSlide=tmplActiveSlide===tmplSlideCount&&tmplShowCta;
     const _ctaKwDef={comment:tmplCtaKeyword||"GUIDE",follow:"FOLLOW",save:"SAVE",share:"SHARE",like:"LIKE"};
