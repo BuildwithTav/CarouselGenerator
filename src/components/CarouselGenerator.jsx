@@ -71,14 +71,14 @@ const BUSINESS_TYPES = [
 ];
 
 const BRIEF_PLACEHOLDERS = {
-  marketer:   "Title: The reason your content gets views but zero clients.\nSlides 2-4: one specific reason each, keep it direct.\nFinal slide: follow CTA only.",
-  coach:      "Title: The question every client asks me in week one.\nSlides 2-4: break down the answer step by step.\nFinal slide: one soft CTA only.",
-  fitness:    "Title: Why most people quit the gym after 3 weeks.\nSlides 2-4: one real reason each with a fix.\nFinal slide: follow for daily tips.",
-  beauty:     "Title: What nobody tells you about your skincare routine.\nSlides 2-4: one insight per slide, specific.\nFinal slide: follow CTA only.",
-  restaurant: "Title: The one thing that keeps customers coming back.\nSlides 2-4: specific details — food, service, atmosphere.\nFinal slide: follow to see behind the scenes.",
-  realestate: "Title: What nobody tells you before buying your first home.\nSlides 2-4: one honest insight each.\nFinal slide: save this and come back to it.",
-  ecommerce:  "Title: Why your product page is losing sales silently.\nSlides 2-4: one reason each with a fix.\nFinal slide: follow CTA only.",
-  other:      "Title: The thing nobody tells you about starting out.\nSlides 2-4: one real insight each, keep it grounded.\nFinal slide: follow CTA only.",
+  marketer:   "Title: The reason your content gets views but zero clients.\nSlides 2-4: one specific reason each, keep it direct.\nFinal _compSlide: follow CTA only.",
+  coach:      "Title: The question every client asks me in week one.\nSlides 2-4: break down the answer step by step.\nFinal _compSlide: one soft CTA only.",
+  fitness:    "Title: Why most people quit the gym after 3 weeks.\nSlides 2-4: one real reason each with a fix.\nFinal _compSlide: follow for daily tips.",
+  beauty:     "Title: What nobody tells you about your skincare routine.\nSlides 2-4: one insight per _compSlide, specific.\nFinal _compSlide: follow CTA only.",
+  restaurant: "Title: The one thing that keeps customers coming back.\nSlides 2-4: specific details — food, service, atmosphere.\nFinal _compSlide: follow to see behind the scenes.",
+  realestate: "Title: What nobody tells you before buying your first home.\nSlides 2-4: one honest insight each.\nFinal _compSlide: save this and come back to it.",
+  ecommerce:  "Title: Why your product page is losing sales silently.\nSlides 2-4: one reason each with a fix.\nFinal _compSlide: follow CTA only.",
+  other:      "Title: The thing nobody tells you about starting out.\nSlides 2-4: one real insight each, keep it grounded.\nFinal _compSlide: follow CTA only.",
 };
 
 const PRESET_BG_COLOURS = [
@@ -258,7 +258,7 @@ function PexelsModal({ open, onClose, onSelect, A, GOLD }) {
 
 // ─── SLIDE HTML BUILDER ───────────────────────────────────
 
-function buildSlideHTML(slide, idx, total, opts, isCover = false) {
+function buildSlideHTML(_compSlide, idx, total, opts, isCover = false) {
   const {
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
     coverImageUrl, coverPosition, badgeArea, photoOpacity, customColourDark, slideTextDark,
@@ -279,12 +279,12 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   const coverHasImage = isCover && !!coverImageUrl;
   const isPortrait = ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1350;
-  const layout = slide.layout || "standard";
+  const layout = _compSlide.layout || "standard";
   // Cover: use cover photo if set; else inherit Visual tab (but if Visual tab = "custom" image, fall back to no image on cover)
   const bgImageUrl = isCover
     ? (coverImageUrl || null)  // cover only uses its own photo, never the template image
     : (bgMode === "custom" ? templateBgUrl : null);
-  // Cover slide background: if no cover photo, inherit slideBg from Visual tab setting (but "custom" mode falls to dark)
+  // Cover _compSlide background: if no cover photo, inherit slideBg from Visual tab setting (but "custom" mode falls to dark)
   const coverFallbackBg = (!isCover || coverImageUrl) ? slideBg : (bgMode === "custom" && !opts.templateBgUrl ? "#F5F3EF" : bgMode === "custom" ? "#0A0A0A" : slideBg);
   const effectiveSlideBg = isCover ? coverFallbackBg : slideBg;
   const forceLight = (coverHasImage || (bgMode === "custom" && bgImageUrl)) ? !effectiveColourDark : false;
@@ -318,7 +318,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   function esc(s) { return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
   function accentHL(text) {
-    const aw = (slide.accent_word||"").trim();
+    const aw = (_compSlide.accent_word||"").trim();
     if (!aw) {
       return esc(hs.transform==="uppercase"?(text||"").toUpperCase():(text||""));
     }
@@ -348,7 +348,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     @import url('${gFonts}');
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
     html, body { width:${W}px; height:${H}px; overflow:hidden; background:${bgForOpacity||effectiveSlideBg}; }
-    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${bgForOpacity||effectiveSlideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; box-shadow:inset 0 0 0 3px ${C.dark?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.15)"}; }
+    ._compSlide { width:${W}px; height:${H}px; overflow:hidden; background:${bgForOpacity||effectiveSlideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; box-shadow:inset 0 0 0 3px ${C.dark?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.15)"}; }
     .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; object-position:${isCover?`${coverPos2.x}% ${coverPos2.y}%`:`${templatePos.x}% ${templatePos.y}%`}; opacity:${(photoOpacity||100)/100}; }
     .bg-ov { position:absolute; inset:0; z-index:1; pointer-events:none; }
     .noise { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0.3;
@@ -473,42 +473,42 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
   function layoutHTML() {
     if (isCover) {
-      const hl = accentHL(slide.headline||"");
+      const hl = accentHL(_compSlide.headline||"");
       const isCentre = coverPos === "centre";
       return `
         <div class="cover-content">
           ${coverBadgeHTML}
-          ${slide.tag ? `<div style="margin-bottom:20px"><span class="tag">${esc(slide.tag.toUpperCase())}</span></div>` : ""}
+          ${_compSlide.tag ? `<div style="margin-bottom:20px"><span class="tag">${esc(_compSlide.tag.toUpperCase())}</span></div>` : ""}
           <div style="font-size:${isPortrait?80:66}px;font-weight:800;line-height:1.1;letter-spacing:${hs.letterSpacing};font-family:'${hlFont}',sans-serif;color:${C.text};${isCentre?"text-align:center;":""}width:100%;white-space:pre-wrap;${glowHL}">${hl}</div>
-          ${slide.body ? `<div style="font-size:${isPortrait?32:26}px;line-height:1.6;color:${C.sub};margin-top:24px;font-family:'${bodyFont}',sans-serif;${isCentre?"text-align:center;":""}${glowBody}">${accentHL(slide.body)}</div>` : ""}
+          ${_compSlide.body ? `<div style="font-size:${isPortrait?32:26}px;line-height:1.6;color:${C.sub};margin-top:24px;font-family:'${bodyFont}',sans-serif;${isCentre?"text-align:center;":""}${glowBody}">${accentHL(_compSlide.body)}</div>` : ""}
         </div>`;
     }
 
-    const hl = accentHL(slide.headline||"");
-    const tag = slide.tag ? `<div style="margin-bottom:28px"><span class="tag">${esc(slide.tag.toUpperCase())}</span></div>` : "";
+    const hl = accentHL(_compSlide.headline||"");
+    const tag = _compSlide.tag ? `<div style="margin-bottom:28px"><span class="tag">${esc(_compSlide.tag.toUpperCase())}</span></div>` : "";
     const divider = `<div class="div" style="margin:28px auto"></div>`;
-    const bodyText = (slide.body||"").replace(/\n/g,"<br>");
-    const body = slide.body ? `<div class="body">${accentHL(bodyText)}</div>` : "";
+    const bodyText = (_compSlide.body||"").replace(/\n/g,"<br>");
+    const body = _compSlide.body ? `<div class="body">${accentHL(bodyText)}</div>` : "";
 
-    if (layout==="split" && slide.items?.length >= 2) {
-      const [a,b] = slide.items;
+    if (layout==="split" && _compSlide.items?.length >= 2) {
+      const [a,b] = _compSlide.items;
       return `<div class="c">
         <div class="split-top">
-          ${slide.tag ? `<div style="margin-bottom:16px"><span class="split-tag">${esc(slide.tag.toUpperCase())}</span></div>` : ""}
+          ${_compSlide.tag ? `<div style="margin-bottom:16px"><span class="split-tag">${esc(_compSlide.tag.toUpperCase())}</span></div>` : ""}
           <div class="split-hl">${hl}</div>
         </div>
         <div class="split-panels" style="position:relative">
           <div class="panel"><div class="pl pa">${esc(a.label||"")}</div>${a.sub?`<div class="ps">${esc(a.sub)}</div>`:""}</div>
-          <div class="vs"><div class="vt">${esc(slide.vs_label||"VS")}</div></div>
+          <div class="vs"><div class="vt">${esc(_compSlide.vs_label||"VS")}</div></div>
           <div class="panel"><div class="pl" style="opacity:0.75">${esc(b.label||"")}</div>${b.sub?`<div class="ps">${esc(b.sub)}</div>`:""}</div>
         </div>
       </div>`;
     }
 
-    if (layout==="cards" && slide.items?.length) {
+    if (layout==="cards" && _compSlide.items?.length) {
       return `<div class="c">
         ${tag}<div class="hl">${hl}</div>
-        <div class="cg">${slide.items.map((it,i)=>`
+        <div class="cg">${_compSlide.items.map((it,i)=>`
           <div class="card">
             <div class="cn">${String(i+1).padStart(2,"0")}</div>
             <div><div class="ct">${esc(it.label||it.text||it.title||it.point||it.content||Object.values(it).find(v=>typeof v==="string"&&v.length>2)||"")}</div>${(it.sub||it.description||it.body)?`<div class="cs">${esc(it.sub||it.description||it.body)}</div>`:""}</div>
@@ -518,10 +518,10 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     }
 
     if (layout==="hero") {
-      const ctaText = slide.cta_items?.[0] || slide.cta || "";
+      const ctaText = _compSlide.cta_items?.[0] || _compSlide.cta || "";
       return `<div class="c">
         ${tag}<div class="hl">${hl}</div>
-        ${slide.body?divider+body:""}
+        ${_compSlide.body?divider+body:""}
         ${ctaText?`<div class="cb">${esc(ctaText)}</div>`:""}
       </div>`;
     }
@@ -529,12 +529,12 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
     if (layout==="quote") {
       return `<div class="c">
         ${tag}<div class="hl">${hl}</div>
-        ${slide.body?divider+body:""}
+        ${_compSlide.body?divider+body:""}
       </div>`;
     }
 
-    const cta = slide.cta ? `<div class="cta">${esc(slide.cta)}</div>` : "";
-    return `<div class="c">${tag}<div class="hl">${hl}</div>${slide.body?divider+body:""}${cta}</div>`;
+    const cta = _compSlide.cta ? `<div class="cta">${esc(_compSlide.cta)}</div>` : "";
+    return `<div class="c">${tag}<div class="hl">${hl}</div>${_compSlide.body?divider+body:""}${cta}</div>`;
   }
 
   const hasBg = !!bgImageUrl;
@@ -554,7 +554,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>${base}${isCover ? coverStyle : (layouts[layout]||layouts.standard)}</style>
 </head><body>
-<div class="slide">
+<div class="_compSlide">
   ${bgHtml}
   ${C.dark||hasBg?'<div class="noise"></div>':""}
   <div class="bk tl"></div><div class="bk tr"></div>
@@ -572,7 +572,7 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
   ${isCover?'':`<div class="deco"><div class="deco-line"></div><div class="deco-diamond"></div><div class="deco-line"></div></div>`}
   ${websiteUrl?`<div class="site">${esc(websiteUrl)}</div>`:""}
   ${(()=>{
-    if (idx === total - 1) return ""; // no indicator on last slide
+    if (idx === total - 1) return ""; // no indicator on last _compSlide
     const dots = Array.from({length: total}, (_,di) => 
       di === idx
         ? `<div class="swipe-dot-active"></div>`
@@ -587,14 +587,14 @@ function buildSlideHTML(slide, idx, total, opts, isCover = false) {
 
 // ─── PREVIEW ─────────────────────────────────────────────
 
-function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover, previewSize, showWatermark }) {
+function SlidePreview({ _compSlide, idx, total, opts, onClick, isActive, isCover, previewSize, showWatermark }) {
   const ref = useRef(null);
   const isPortrait = opts.ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1350;
   const previewW = previewSize || (isPortrait ? 180 : 280);
   const scale = previewW / W;
   const previewH = Math.round(H * scale);
-  const html = buildSlideHTML(slide, idx, total, opts, isCover);
+  const html = buildSlideHTML(_compSlide, idx, total, opts, isCover);
 
   useEffect(() => {
     const iframe = ref.current; if (!iframe) return;
@@ -604,22 +604,22 @@ function SlidePreview({ slide, idx, total, opts, onClick, isActive, isCover, pre
   }, [html]);
 
   return (
-    <div onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#0A0A0A":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:previewW, height:previewH, flexShrink:0 }}>
-      <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin allow-scripts" title={`slide-${idx+1}`}/>
+    <div onClick={onClick} title={_compSlide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#0A0A0A":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:previewW, height:previewH, flexShrink:0 }}>
+      <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin allow-scripts" title={`_compSlide-${idx+1}`}/>
     </div>
   );
 }
 
 // ─── DOWNLOAD ────────────────────────────────────────────
-async function downloadSlideAsPNG(slide, idx, total, opts, filename, isCover=false) {
+async function downloadSlideAsPNG(_compSlide, idx, total, opts, filename, isCover=false) {
   const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   const needsServer = mobile;
   let blob;
   if (needsServer) {
     const isPortrait = opts.ratio==="portrait";
     const W=1080, H=isPortrait?1920:1350;
-    const html = buildSlideHTML(slide,idx,total,opts,isCover);
-    const res = await fetch("/api/render-slide", {
+    const html = buildSlideHTML(_compSlide,idx,total,opts,isCover);
+    const res = await fetch("/api/render-_compSlide", {
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ html, width:W, height:H })
@@ -635,7 +635,7 @@ async function downloadSlideAsPNG(slide, idx, total, opts, filename, isCover=fal
     blob = await new Promise((resolve, reject) => {
       const isPortrait = opts.ratio === "portrait";
       const W = 1080, H = isPortrait ? 1920 : 1350;
-      const html = buildSlideHTML(slide, idx, total, opts, isCover);
+      const html = buildSlideHTML(_compSlide, idx, total, opts, isCover);
       const iframe = document.createElement("iframe");
       iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
       document.body.appendChild(iframe);
@@ -646,7 +646,7 @@ async function downloadSlideAsPNG(slide, idx, total, opts, filename, isCover=fal
           const win = iframe.contentWindow;
           await new Promise(r => { const s=doc.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"; s.onload=r; s.onerror=r; doc.head.appendChild(s); setTimeout(r,4000); });
           if (!win.html2canvas) throw new Error("html2canvas not loaded");
-          const canvas = await win.html2canvas(doc.querySelector(".slide")||doc.body, {useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+          const canvas = await win.html2canvas(doc.querySelector("._compSlide")||doc.body, {useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
           canvas.toBlob(b => { document.body.removeChild(iframe); resolve(b); }, "image/png", 1.0);
         } catch(e) { document.body.removeChild(iframe); reject(e); }
       }, 2500);
@@ -1047,15 +1047,15 @@ export default function App() {
     }
   }, [nav, currentUser?.plan, currentUser?.affiliate_active]);
 
-  // Build full-resolution HTML for template slide export
+  // Build full-resolution HTML for template _compSlide export
   // ============================================================
   // UNIVERSAL BADGE RENDERER — locked, never varies per template
   // ============================================================
   // useDebouncedValue removed — hooks must be at top level, not in nested functions
 
-  // ── buildTmplHTML — generates HTML sent to Puppeteer /api/render-slide ──
-  function buildTmplHTML(slide, idx, total, tmpl, opts) {
-    const {effect,font,fontSize,primary,secondary,accentLine,bg,fontStyle,rawBox,rawPos,listicleNum,profUrl,nm,hdl,showTick,isFree,userWebsite,showCounter}=opts;
+  // ── buildTmplHTML — generates HTML sent to Puppeteer /api/render-_compSlide ──
+  function buildTmplHTML(_compSlide, idx, total, tmpl, opts) {
+    const {effect,font,fontSize,primary,secondary,accentLine,bg,fontStyle,rawBox,rawPos,listicleNum,profUrl,nm,hdl,showTick,_compIsFree,userWebsite,showCounter}=opts;
     const AL=accentLine||primary;
     const FS=fontSize||82;
     function effectColor(eff,al){
@@ -1108,9 +1108,9 @@ export default function App() {
     }
     const grad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 28%,rgba(0,0,0,0.08) 44%,rgba(0,0,0,0.35) 54%,rgba(0,0,0,0.65) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.96) 78%,rgba(0,0,0,0.99) 88%,rgba(0,0,0,1) 100%)";
     const chevron="<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+effectColor(effect,AL)+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+effectColor(effect,AL)+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>";
-    const websiteStr=isFree?"studio.buildwithtav.co":(userWebsite||"");const {showWebsite}=opts;
+    const websiteStr=_compIsFree?"studio.buildwithtav.co":(userWebsite||"");const {showWebsite}=opts;
     const website=showWebsite&&websiteStr?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>"+websiteStr+"</div>":"";
-    const wm=isFree?"<div style='position:absolute;top:32px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:32px;font-weight:800;color:#ffffff;text-shadow:0 2px 8px rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.8);letter-spacing:1px;'>studio.buildwithtav.co</div>":"";
+    const wm=_compIsFree?"<div style='position:absolute;top:32px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:32px;font-weight:800;color:#ffffff;text-shadow:0 2px 8px rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.8);letter-spacing:1px;'>studio.buildwithtav.co</div>":"";
     const counter=showCounter?"<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+(idx+1)+"/"+total+"</div>":"";
     function imgTag(s){if(!s||!s.image)return"<div style='position:absolute;inset:0;background:#1a1a1a;z-index:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;'><div style='background:rgba(187,153,0,0.15);border:2px dashed rgba(187,153,0,0.6);border-radius:16px;padding:40px 60px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:42px;margin-bottom:16px;'>📷</div><div style='font-family:-apple-system,sans-serif;font-size:34px;font-weight:700;color:#BB9900;'>Upload your image</div><div style='font-family:-apple-system,sans-serif;font-size:26px;color:rgba(255,255,255,0.5);margin-top:8px;'>in the Photo section</div></div></div>";const px=(s.imagePos&&s.imagePos.x)||50,py=(s.imagePos&&s.imagePos.y)||50;const isPlaceholder=s.image&&!s.image.startsWith("data:");const overlay=isPlaceholder?"<div style='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;pointer-events:none;white-space:nowrap;'><div style='background:rgba(0,0,0,0.75);border:2px solid rgba(187,153,0,0.8);border-radius:12px;padding:16px 32px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:28px;font-weight:700;color:#BB9900;'>📷 Replace with your image</div></div></div>":"";return"<img src='"+esc(s.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+px+"% "+py+"%;z-index:0;'/>"+overlay;}
     function darkFadeCover(s){
@@ -1129,14 +1129,14 @@ export default function App() {
         +"</div>"+website+(isCover?chevron:"")+counter+wm+fitScript+"</div>";
     }
     let body="";
-    if(tmpl==="dark-fade"){body=darkFadeCover(slide);}
+    if(tmpl==="dark-fade"){body=darkFadeCover(_compSlide);}
     else if(tmpl==="listicle"&&isCover){
       const cf="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 38%,rgba(0,0,0,0.12) 52%,rgba(0,0,0,0.55) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.97) 78%,rgba(0,0,0,1) 85%,rgba(0,0,0,1) 100%)";
       const numDigits=String(listicleNum||6).length;
       const numFS=numDigits>2?240:numDigits>1?360:520;
       const numLineW=Math.min(Math.round(numFS*0.55*numDigits)+10,Math.round(numFS*numDigits*0.6));
       const fitScriptLis="<script>(function(){function fit(el,max,twoLine){if(!el)return;var zone=el.parentElement;var maxW=zone?zone.offsetWidth:800;var fs=max;el.style.fontSize=fs+'px';if(twoLine){while(fs>28&&Math.ceil(el.scrollWidth/(maxW*0.95))>2){fs-=2;el.style.fontSize=fs+'px';}}else{while(fs>18&&el.scrollWidth>maxW){fs-=2;el.style.fontSize=fs+'px';}}}document.fonts.ready.then(function(){fit(document.getElementById('lt'),44,false);fit(document.getElementById('ls'),110,true);fit(document.getElementById('lu'),34,false);window.__TEXT_FIT_DONE__=true;}).catch(function(){fit(document.getElementById('lt'),44,false);fit(document.getElementById('ls'),110,true);fit(document.getElementById('lu'),34,false);window.__TEXT_FIT_DONE__=true;});})();<\/script>";
-      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(slide)
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(_compSlide)
         +"<div style='position:absolute;inset:0;background:"+cf+";z-index:1;'></div>"
         +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;bottom:100px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:32px;'>"
@@ -1145,9 +1145,9 @@ export default function App() {
         +"<div style='width:"+numLineW+"px;height:5px;background:"+effectColor(effect,AL)+";'></div>"
         +"</div>"
         +"<div id='ltz' style='flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;padding-bottom:8px;overflow:hidden;'>"
-        +"<div id='lt' style='font-family:"+fontFamily+",sans-serif;font-size:44px;font-weight:600;color:"+secondary+";line-height:1.2;white-space:nowrap;'>"+esc((slide.topicLine||"PLACES YOU NEED TO VISIT BEFORE").toUpperCase())+"</div>"
-        +"<div id='ls' style='font-family:"+fontFamily+",sans-serif;font-size:110px;font-weight:900;line-height:1.0;word-break:break-word;"+effectCSS(effect,AL,secondary)+"'>"+esc((slide.subject||"2027 ENDS").toUpperCase())+"</div>"
-        +(slide.subline?"<div id='lu' style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+(effect==="clean"?primary:secondary)+";line-height:1.3;white-space:nowrap;'>"+esc(slide.subline)+"</div>":"")
+        +"<div id='lt' style='font-family:"+fontFamily+",sans-serif;font-size:44px;font-weight:600;color:"+secondary+";line-height:1.2;white-space:nowrap;'>"+esc((_compSlide.topicLine||"PLACES YOU NEED TO VISIT BEFORE").toUpperCase())+"</div>"
+        +"<div id='ls' style='font-family:"+fontFamily+",sans-serif;font-size:110px;font-weight:900;line-height:1.0;word-break:break-word;"+effectCSS(effect,AL,secondary)+"'>"+esc((_compSlide.subject||"2027 ENDS").toUpperCase())+"</div>"
+        +(_compSlide.subline?"<div id='lu' style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+(effect==="clean"?primary:secondary)+";line-height:1.3;white-space:nowrap;'>"+esc(_compSlide.subline)+"</div>":"")
         +"</div></div>"
         +website
         +chevron+counter+wm+fitScriptLis+"</div>";
@@ -1157,7 +1157,7 @@ export default function App() {
       const numFS2=String(idx).length>1?260:310;
       const numLineW2=Math.round(numFS2*0.62*String(idx).length)+20;
       const fitScriptLisBody="<script>(function(){var h=document.getElementById('lbh"+idx+"');if(!h)return;var zone=document.getElementById('lbz"+idx+"');if(!zone)return;var maxW=zone.offsetWidth;document.fonts.ready.then(function(){var fs=68;h.style.fontSize=fs+'px';while(fs>28&&Math.ceil(h.scrollWidth/(maxW*0.95))>2){fs-=2;h.style.fontSize=fs+'px';}window.__TEXT_FIT_DONE__=true;});})();<\/script>";
-      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#0a0a0a;overflow:hidden;'>"+imgTag(slide)
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#0a0a0a;overflow:hidden;'>"+imgTag(_compSlide)
         +"<div style='position:absolute;inset:0;background:"+lGrad+";z-index:1;'></div>"
         +"<div style='position:absolute;top:100px;left:"+SAFE+"px;z-index:5;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;bottom:80px;left:"+SAFE+"px;right:"+SAFE+"px;z-index:5;display:flex;align-items:flex-end;gap:40px;'>"
@@ -1166,22 +1166,22 @@ export default function App() {
         +"<div style='width:"+numLineW2+"px;height:5px;background:"+effectColor(effect,AL)+";'></div>"
         +"</div>"
         +"<div id='lbz"+idx+"' style='flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;padding-bottom:8px;overflow:hidden;'>"
-        +(slide.headline?"<div id='lbh"+idx+"' style='font-family:"+fontFamily+",sans-serif;font-size:68px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,AL,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
-        +(slide.bodyText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:44px;color:"+secondary+";line-height:1.45;word-break:break-word;'>"+esc(slide.bodyText)+"</div>":"")
+        +(_compSlide.headline?"<div id='lbh"+idx+"' style='font-family:"+fontFamily+",sans-serif;font-size:68px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;"+effectCSS(effect,AL,secondary)+"'>"+esc(_compSlide.headline.toUpperCase())+"</div>":"")
+        +(_compSlide.bodyText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:44px;color:"+secondary+";line-height:1.45;word-break:break-word;'>"+esc(_compSlide.bodyText)+"</div>":"")
         +"</div></div>"
         +website+wm+fitScriptLisBody+"</div>";
     }
-    else if(tmpl==="clean-pro"&&isCover){body=darkFadeCover(slide);}
+    else if(tmpl==="clean-pro"&&isCover){body=darkFadeCover(_compSlide);}
     else if(tmpl==="clean-pro"&&!isCover){
       const isW=bg==="white",bgC=isW?"#ffffff":"#0a0a0a",tM=isW?"#0a0a0a":"#ffffff";
       const tS=isW?"rgba(0,0,0,0.5)":"#E8E5E0";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;'>"
         +"<div style='position:absolute;top:140px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
         +"<div style='position:absolute;top:320px;left:"+(SAFE+20)+"px;right:"+(SAFE+20)+"px;bottom:120px;z-index:5;display:flex;flex-direction:column;justify-content:center;gap:52px;'>"
-        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(slide.headline)+"</div>":"")
-        +(slide.bodyText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:52px;color:"+tS+";line-height:1.65;word-break:break-word;'>"+esc(slide.bodyText).replace(/\n/g,"<br/>")+"</div>":"")
-        +(slide.accentText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:56px;font-weight:700;color:"+AL+";line-height:1.3;word-break:break-word;'>"+esc(slide.accentText)+"</div>":"")
-        +(slide.accentText?"<div style='width:110px;height:5px;background:"+AL+";'></div>":"")
+        +(_compSlide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:"+FS+"px;font-weight:800;color:"+tM+";line-height:1.2;word-break:break-word;'>"+esc(_compSlide.headline)+"</div>":"")
+        +(_compSlide.bodyText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:52px;color:"+tS+";line-height:1.65;word-break:break-word;'>"+esc(_compSlide.bodyText).replace(/\n/g,"<br/>")+"</div>":"")
+        +(_compSlide.accentText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:56px;font-weight:700;color:"+AL+";line-height:1.3;word-break:break-word;'>"+esc(_compSlide.accentText)+"</div>":"")
+        +(_compSlide.accentText?"<div style='width:110px;height:5px;background:"+AL+";'></div>":"")
         +"</div>"+counter+(websiteStr?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:"+tS+";'>" +websiteStr+"</div>":"")+wm+"</div>";
     }
     else if(tmpl==="storytelling"){
@@ -1192,7 +1192,7 @@ export default function App() {
         +"<div style='position:absolute;top:140px;left:"+SAFE+"px;z-index:5;'>"+badge(!isW)+"</div>"
         +"<div style='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:200px 120px;z-index:5;'>"
         +"<div style='font-family:"+stF+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;"+(stI?"font-style:italic;":"")+"font-weight:400;color:"+tC+";line-height:1.7;text-align:center;'>"
-        +esc(slide.storyText||"").replace(/\n\n/g,"</p><p style='margin-top:1.2em;'>").replace(/\n/g,"<br/>")
+        +esc(_compSlide.storyText||"").replace(/\n\n/g,"</p><p style='margin-top:1.2em;'>").replace(/\n/g,"<br/>")
         +"</div></div>"+sw+counter+wm+"</div>";
     }
     else if(tmpl==="raw"){
@@ -1201,13 +1201,13 @@ export default function App() {
       const bBorder=isNone?"border:none;":"";
       const txtShadow=isNone?"text-shadow:2px 2px 0 rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.8),-1px -1px 0 rgba(0,0,0,0.9),1px -1px 0 rgba(0,0,0,0.9),-1px 1px 0 rgba(0,0,0,0.9),1px 1px 0 rgba(0,0,0,0.9);":"";
       const stI=fontStyle==="Playfair Display";
-      const paras=(slide.rawText||"").split(/\n\n+/);
+      const paras=(_compSlide.rawText||"").split(/\n\n+/);
       const parasHTML=paras.map(p=>p.trim()===""
         ?""
         :"<div style='display:inline-block;background:"+bBg+";padding:"+(isNone?"0":"18px 36px")+";margin:10px 0;font-family:"+fontFamily+",-apple-system,Helvetica Neue,Arial,sans-serif;font-size:"+FS+"px;font-weight:800;color:"+tCR+";line-height:1.4;"+(stI?"font-style:italic;":"")+txtShadow+"word-break:break-word;white-space:pre-wrap;"+bBorder+"'>"+esc(p.trim())+"</div>"
       ).join("<br/>");
       const vAlign=rawPos==="bottom"?"justify-content:flex-end;padding-bottom:140px":"justify-content:center";
-      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#1a1a1a;overflow:hidden;'>"+imgTag(slide)
+      body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#1a1a1a;overflow:hidden;'>"+imgTag(_compSlide)
         +"<div style='position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;"+vAlign+";padding:80px 80px;text-align:center;'>"
         +parasHTML
         +"</div>"+wm+"</div>";
@@ -1215,8 +1215,8 @@ export default function App() {
     else if(tmpl==="split"){
       const splitGrad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 38%,rgba(0,0,0,0.08) 52%,rgba(0,0,0,0.42) 62%,rgba(0,0,0,0.82) 72%,rgba(0,0,0,0.97) 82%,rgba(0,0,0,1) 100%)";
       const HW=Math.floor(W/2);
-      const imgL=slide.image?"<img src='"+esc(slide.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+(slide.imagePos?.x||50)+"% "+(slide.imagePos?.y||50)+"%;z-index:0;'/>":"";
-      const imgR=slide.image2?"<img src='"+esc(slide.image2)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+(slide.image2Pos?.x||50)+"% "+(slide.image2Pos?.y||50)+"%;z-index:0;'/>":"";
+      const imgL=_compSlide.image?"<img src='"+esc(_compSlide.image)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+(_compSlide.imagePos?.x||50)+"% "+(_compSlide.imagePos?.y||50)+"%;z-index:0;'/>":"";
+      const imgR=_compSlide.image2?"<img src='"+esc(_compSlide.image2)+"' style='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:"+(_compSlide.image2Pos?.x||50)+"% "+(_compSlide.image2Pos?.y||50)+"%;z-index:0;'/>":"";
       const divider="<div style='position:absolute;left:"+HW+"px;top:0;width:3px;height:100%;background:"+AL+";z-index:1;opacity:0.5;'></div>";
       body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"
         +"<div style='position:absolute;top:0;left:0;width:"+HW+"px;height:"+H+"px;overflow:hidden;'>"+imgL+"</div>"
@@ -1225,13 +1225,13 @@ export default function App() {
         +divider
         +"<div style='position:absolute;bottom:320px;left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;'>"+badge(true)+"</div>"
         +"<div style='position:absolute;bottom:170px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:flex-start;overflow:hidden;height:130px;'>"
-        +(slide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:52px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline.toUpperCase())+"</div>":"")
+        +(_compSlide.headline?"<div style='font-family:"+fontFamily+",sans-serif;font-size:52px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"+effectCSS(effect,primary,secondary)+"'>"+esc(_compSlide.headline.toUpperCase())+"</div>":"")
         +"</div>"
         +"<div style='position:absolute;bottom:170px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:flex-start;overflow:hidden;height:130px;'>"
-        +(slide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:52px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"+effectCSS(effect,primary,secondary)+"'>"+esc(slide.headline2.toUpperCase())+"</div>":"")
+        +(_compSlide.headline2?"<div style='font-family:"+fontFamily+",sans-serif;font-size:52px;font-weight:900;line-height:1.1;text-transform:uppercase;word-break:break-word;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"+effectCSS(effect,primary,secondary)+"'>"+esc(_compSlide.headline2.toUpperCase())+"</div>":"")
         +"</div>"
-        +(slide.subline?"<div style='position:absolute;bottom:90px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;font-family:"+fontFamily+",sans-serif;font-size:36px;color:"+secondary+";line-height:1.3;text-align:center;overflow:hidden;height:90px;display:block;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;'>"+esc(slide.subline)+"</div>":"")
-        +(slide.subline2?"<div style='position:absolute;bottom:90px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;font-family:"+fontFamily+",sans-serif;font-size:36px;color:"+secondary+";line-height:1.3;text-align:center;overflow:hidden;height:90px;display:block;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;'>"+esc(slide.subline2)+"</div>":"")
+        +(_compSlide.subline?"<div style='position:absolute;bottom:90px;left:"+SAFE+"px;width:"+(HW-SAFE-24)+"px;z-index:5;font-family:"+fontFamily+",sans-serif;font-size:36px;color:"+secondary+";line-height:1.3;text-align:center;overflow:hidden;height:90px;display:block;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;'>"+esc(_compSlide.subline)+"</div>":"")
+        +(_compSlide.subline2?"<div style='position:absolute;bottom:90px;left:"+(HW+24)+"px;right:"+SAFE+"px;z-index:5;font-family:"+fontFamily+",sans-serif;font-size:36px;color:"+secondary+";line-height:1.3;text-align:center;overflow:hidden;height:90px;display:block;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;'>"+esc(_compSlide.subline2)+"</div>":"")
         +website
         +(isCover?chevron:"")+counter+wm+"</div>";
     }
@@ -1239,7 +1239,7 @@ export default function App() {
   }
 
 
-  // ── buildCtaHTML — generates CTA final slide ──
+  // ── buildCtaHTML — generates CTA final _compSlide ──
   function buildCtaHTML(opts,ctaType,keyword,line1,line2,line3,bg,nm,hdl,profUrl,showTick,font,total,showCounter){
     const W=1080,H=1350;
     const fontFamily=(font||"Bebas Neue").replace(/'/g,"");
@@ -1265,7 +1265,7 @@ export default function App() {
       +"</div>"
       +"</div>"
       +(showCounter?"<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+total+"/"+total+"</div>":"")
-      +(opts.isFree?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(128,128,128,0.6);'>"+"studio.buildwithtav.co"+"</div>":(opts.userWebsite?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(128,128,128,0.6);'>"+opts.userWebsite+"</div>":""))+"</div>";
+      +(opts._compIsFree?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(128,128,128,0.6);'>"+"studio.buildwithtav.co"+"</div>":(opts.userWebsite?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(128,128,128,0.6);'>"+opts.userWebsite+"</div>":""))+"</div>";
     return"<!DOCTYPE html><html><head><meta charset='UTF-8'><link href='"+gFonts+"' rel='stylesheet'><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}body{width:"+W+"px;height:"+H+"px;overflow:hidden;margin:0;padding:0;}</style></head><body>"+body+"</body></html>";
   }
 
@@ -1275,10 +1275,10 @@ export default function App() {
     try {
       const context=slides.slice(0,slideCount).map((s,i)=>{const t=tmpl==="storytelling"?s.storyText:s.bodyText;return t?`Slide ${i+1}: "${t.substring(0,60)}"`:""}).filter(Boolean).join("; ");
       const prompt=tmpl==="listicle"
-        ?`Write ONE specific punchy point for slide ${idx+1} of a listicle carousel. Topic: "${brief||"general"}". ${context?`Already covered: ${context}.`:""} Max 80 chars. Return ONLY the text.`
+        ?`Write ONE specific punchy point for _compSlide ${idx+1} of a listicle carousel. Topic: "${brief||"general"}". ${context?`Already covered: ${context}.`:""} Max 80 chars. Return ONLY the text.`
         :tmpl==="storytelling"
-        ?`Write ONE paragraph continuing a personal story carousel (slide ${idx+1}). Story brief: "${brief||"personal journey"}". ${context?`Story so far: ${context}.`:""} Max 120 chars. First person, specific details only. Return ONLY the text.`
-        :`Write ONE clear body text point for slide ${idx+1} of an informative carousel about "${brief||"this topic"}". ${context?`Previous: ${context}.`:""} Max 100 chars. Return ONLY the text.`;
+        ?`Write ONE paragraph continuing a personal story carousel (_compSlide ${idx+1}). Story brief: "${brief||"personal journey"}". ${context?`Story so far: ${context}.`:""} Max 120 chars. First person, specific details only. Return ONLY the text.`
+        :`Write ONE clear body text point for _compSlide ${idx+1} of an informative carousel about "${brief||"this topic"}". ${context?`Previous: ${context}.`:""} Max 100 chars. Return ONLY the text.`;
       const r=await fetchWithRetry({model:"claude-sonnet-4-6",max_tokens:80,messages:[{role:"user",content:prompt}]});
       const text=r?.content?.[0]?.text?.trim()||"";
       if(text){
@@ -1361,7 +1361,7 @@ export default function App() {
   const generateStory=()=>{};
   const activeIsCtaSlide=tmplShowCta&&tmplActiveSlide===tmplSlideCount;
   const activeSlide=tmplActiveSlide;
-  const slide=tmplSlides[activeSlide]||{};
+  const _compSlide=tmplSlides[activeSlide]||{};
   const updateTmplSlide=(field,val)=>setTmplSlides(prev=>{const next=[...prev];next[activeSlide]={...next[activeSlide],[field]:val};return next;});
   const ALL_FONTS=[
   {id:"Inter",label:"Inter"},
@@ -1400,9 +1400,9 @@ export default function App() {
               ];
   useEffect(()=>{
     if(!tmplSelected)return;
-    const isFree=currentUser?.plan==="free";
-    const website=isFree?"studio.buildwithtav.co":(currentUser?.website||"");
-    const drawerOpts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
+    const _compIsFree=currentUser?.plan==="free";
+    const website=_compIsFree?"studio.buildwithtav.co":(currentUser?.website||"");
+    const drawerOpts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,_compIsFree,userWebsite:website};
     const totalSl=tmplSlideCount+(tmplShowCta?1:0);
     const isCtaSlide=tmplActiveSlide===tmplSlideCount&&tmplShowCta;
     const html=isCtaSlide
@@ -1661,14 +1661,14 @@ export default function App() {
       "myth-busting: challenge a common belief head-on, use data or logic to flip it",
       "story-driven: open with a relatable scenario, build tension, then resolve with insight",
       "contrarian: take the position most people disagree with and defend it with evidence",
-      "data-driven: lead with a surprising stat or number on every slide, back every claim",
-      "step-by-step: practical, sequential, each slide one concrete action",
+      "data-driven: lead with a surprising stat or number on every _compSlide, back every claim",
+      "step-by-step: practical, sequential, each _compSlide one concrete action",
       "empathetic: speak directly to the frustration, validate it, then reframe it",
     ];
     const style = angle.trim() ? `guided by this specific brief: "${angle.trim()}"` : styles[Math.floor(Math.random()*styles.length)];
     const narrativeStyle = angle.trim() ? "" : `\nNARRATIVE STYLE: ${style}`;
     return `You are creating an Instagram carousel for a ${btLabel}.
-You are the copywriter AND creative director. Every slide must earn its place.
+You are the copywriter AND creative director. Every _compSlide must earn its place.
 
 VOICE: ${voice}
 AUDIENCE: ${audienceDesc}
@@ -1679,22 +1679,22 @@ TEXT DENSITY: ${textDensity === "concise" ? "PUNCHY — body text must be 80 cha
 NARRATIVE ARC: hook → reality → insight → shift → advice → CTA
 
 LAYOUT SYSTEM:
-- "statement" — ALWAYS slide 1. Big bold headline, short punchy body optional. Make it provocative. Stop the scroll.
+- "statement" — ALWAYS _compSlide 1. Big bold headline, short punchy body optional. Make it provocative. Stop the scroll.
 - "standard" — headline + body. Use for ALL middle slides. Body is where the value lives.
-- "hero" — headline + body + CTA. ALWAYS final slide. Add "cta_items":["one CTA only"].
+- "hero" — headline + body + CTA. ALWAYS final _compSlide. Add "cta_items":["one CTA only"].
 
 DO NOT use "split" or "cards" layouts. Write lists and comparisons as body text instead.
 
 RULES:
 - No two consecutive slides same layout
 - Slide 1 always "statement"
-- Final slide always "hero" with exactly one cta_items string
+- Final _compSlide always "hero" with exactly one cta_items string
 - Pick ONE accent word per headline — must be the single most emotionally charged, surprising, or powerful word in that headline. The word that makes someone stop. Exact match to how it appears in the headline. Put in "accent_word".
-- Tags: must be editorially specific to what THAT slide is actually saying — like a magazine would label it. Unique per slide. E.g. "THE UNCOMFORTABLE TRUTH", "WHAT THE DATA SHOWS", "THE SILENT KILLER", "WHY MOST FAIL HERE", "THE TURNING POINT". Never generic: NOT "THE HOOK", "SLIDE 1", "THE PROBLEM", "THE SOLUTION", "THE CTA". Write each tag as if it is the headline of a newspaper column about that specific point.
+- Tags: must be editorially specific to what THAT _compSlide is actually saying — like a magazine would label it. Unique per _compSlide. E.g. "THE UNCOMFORTABLE TRUTH", "WHAT THE DATA SHOWS", "THE SILENT KILLER", "WHY MOST FAIL HERE", "THE TURNING POINT". Never generic: NOT "THE HOOK", "SLIDE 1", "THE PROBLEM", "THE SOLUTION", "THE CTA". Write each tag as if it is the headline of a newspaper column about that specific point.
 - Headlines: max 10 words. Must be immediately clear on first read — no lines that can be misread as the opposite of what you mean. Contrarian is good. Ambiguous is not.. A clear statement, question, or insight. Think subheading not billboard.
 - Body: REQUIRED on standard slides. 1-2 sentences MAX. Every sentence must be self-contained and immediately understandable without context. Use plain everyday language — no metaphors, no abstract concepts, no aphorisms. One specific insight or one actionable point. Ask yourself: would someone reading this on a phone at 9am understand it instantly? If not, rewrite it.
-- Final slide (hero) CTA: MUST have body text (1-2 sentences reinforcing why they should act — make it specific to the topic, not generic). Then cta_items with ONE fresh, specific call to action written for this exact carousel. Never repeat the same CTA twice. Never invent a download, product, or link. Keep it to follow, save, share, or comment — but write the wording fresh every time.
-- Only final slide gets cta. All others cta is null.
+- Final _compSlide (hero) CTA: MUST have body text (1-2 sentences reinforcing why they should act — make it specific to the topic, not generic). Then cta_items with ONE fresh, specific call to action written for this exact carousel. Never repeat the same CTA twice. Never invent a download, product, or link. Keep it to follow, save, share, or comment — but write the wording fresh every time.
+- Only final _compSlide gets cta. All others cta is null.
 - No HTML, no cite tags, plain text only
 - NO invented statistics or fabricated data. Only use facts you are confident are accurate and well-established. If uncertain, frame as a principle, observation, or opinion — never as a stated fact. Every body text must be specific and genuinely useful, not a generic statement dressed as insight.
 
@@ -1796,7 +1796,7 @@ Return ONLY valid JSON array:
             { type: "image", source: { type: "base64", media_type: mediaType, data: imgBase64.split(",")[1] }},
             { type: "text", text: `Analyse this carousel image. Return a JSON object with exactly two fields:
 1. "topic": the main topic or headline in 10 words or less
-2. "brief": a 1-2 line brief describing the structure, tone, and angle of this carousel (e.g. "Title: X. Slides cover A, B, C. Tone is direct and punchy. Final slide has follow CTA.")
+2. "brief": a 1-2 line brief describing the structure, tone, and angle of this carousel (e.g. "Title: X. Slides cover A, B, C. Tone is direct and punchy. Final _compSlide has follow CTA.")
 Return ONLY valid JSON, nothing else.` }
           ]
         }]
@@ -1858,7 +1858,7 @@ Return ONLY valid JSON, nothing else.` }
       const btObj3 = BUSINESS_TYPES.find(b=>b.id===businessType);
       const btLabel3 = businessType==="other"?(otherType||"brand"):btObj3?.label||"Digital Marketer";
       const audDesc3 = audienceType==="peers" ? `other ${btLabel3.toLowerCase()}s` : (btObj3?.audience||"your target audience");
-      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:600, messages:[{ role:"user", content:`Rewrite this carousel slide for a ${btLabel3} whose audience is ${audDesc3}.\n\nInstruction: "${rewritePrompt}"\n\nCurrent slide:\n${JSON.stringify(slides[active],null,2)}\n\nVoice: ${voiceProfile||"Direct, honest, specific. No hype."}\n\nKeep same JSON structure. Improve only what the instruction asks. Return ONLY valid JSON object. No markdown.` }] }, 4, true);
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:600, messages:[{ role:"user", content:`Rewrite this carousel _compSlide for a ${btLabel3} whose audience is ${audDesc3}.\n\nInstruction: "${rewritePrompt}"\n\nCurrent _compSlide:\n${JSON.stringify(slides[active],null,2)}\n\nVoice: ${voiceProfile||"Direct, honest, specific. No hype."}\n\nKeep same JSON structure. Improve only what the instruction asks. Return ONLY valid JSON object. No markdown.` }] }, 4, true);
       const raw = (d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
       const m = raw.match(/\{[\s\S]*\}/);
       if (m) { const next=[...slides]; next[active]=sanitize(JSON.parse(m[0])); setSlides(next); setRewritePrompt("");
@@ -1900,7 +1900,7 @@ Return ONLY valid JSON, nothing else.` }
     if (!confirmLastCredit()) return;
     setDownloading(true);
     try {
-      await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`, i===0);
+      await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `_compSlide-${i+1}.png`, i===0);
       setDownloadDone(true); setTimeout(()=>setDownloadDone(false), 2000);
       if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
         await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"increment-downloads", email: currentUser.email, credits: 5 }) });
@@ -1938,18 +1938,18 @@ Return ONLY valid JSON, nothing else.` }
   const isMobileDevice = () => true;
 
   const slideHasCustomImage = (opts, isCover) => {
-    // Cover photo only applies to slide 1 (isCover)
+    // Cover photo only applies to _compSlide 1 (isCover)
     if (isCover && opts.coverImageUrl) return true;
     // Template image applies to all non-cover slides
     if (!isCover && opts.templateBgUrl && opts.bgMode === "custom") return true;
     return false;
   };
 
-  const renderSlideViaServer = async (slide, idx, total, opts, isCover) => {
+  const renderSlideViaServer = async (_compSlide, idx, total, opts, isCover) => {
     const isPortrait = opts.ratio==="portrait";
     const W=1080, H=isPortrait?1920:1350;
-    const html = buildSlideHTML(slide,idx,total,opts,isCover);
-    const res = await fetch("/api/render-slide", {
+    const html = buildSlideHTML(_compSlide,idx,total,opts,isCover);
+    const res = await fetch("/api/render-_compSlide", {
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ html, width:W, height:H })
@@ -1962,11 +1962,11 @@ Return ONLY valid JSON, nothing else.` }
     return new Blob([byteArr],{type:"image/png"});
   };
 
-  const renderSlideViaCanvas = (slide, idx, total, opts, isCover) => {
+  const renderSlideViaCanvas = (_compSlide, idx, total, opts, isCover) => {
     return new Promise((res,rej) => {
       const isPortrait = opts.ratio==="portrait";
       const W=1080, H=isPortrait?1920:1350;
-      const html = buildSlideHTML(slide,idx,total,opts,isCover);
+      const html = buildSlideHTML(_compSlide,idx,total,opts,isCover);
       const iframe = document.createElement("iframe");
       iframe.style.cssText=`position:fixed;top:-9999px;left:-9999px;width:${W}px;height:${H}px;border:none;`;
       document.body.appendChild(iframe);
@@ -1977,7 +1977,7 @@ Return ONLY valid JSON, nothing else.` }
           const win=iframe.contentWindow;
           await new Promise(r=>{const s=doc.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=r;s.onerror=r;doc.head.appendChild(s);setTimeout(r,4000);});
           if(!win.html2canvas) throw new Error("no h2c");
-          const canvas=await win.html2canvas(doc.querySelector(".slide")||doc.body,{useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+          const canvas=await win.html2canvas(doc.querySelector("._compSlide")||doc.body,{useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
           canvas.toBlob(b=>{document.body.removeChild(iframe);res(b);},"image/png",1.0);
         } catch(e){document.body.removeChild(iframe);rej(e);}
       },2500);
@@ -2011,7 +2011,7 @@ Return ONLY valid JSON, nothing else.` }
             if (attempt===0) await new Promise(r=>setTimeout(r,1000));
           }
         }
-        if (blob) zip.file(`slide-${i+1}.png`,blob);
+        if (blob) zip.file(`_compSlide-${i+1}.png`,blob);
         else console.error("Slide",i+1,"failed after 2 attempts");
         if (mobile) await new Promise(r=>setTimeout(r,300));
       }
@@ -2285,7 +2285,7 @@ Return ONLY a JSON array of ${needed} strings.`;
 @import url('${gFonts}');
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
-.slide{width:${W}px;height:${H}px;background:${cardBg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${contentPadTop}px ${contentPadX}px ${contentPadBottom}px;position:relative;}
+._compSlide{width:${W}px;height:${H}px;background:${cardBg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:${contentPadTop}px ${contentPadX}px ${contentPadBottom}px;position:relative;}
 .bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:${(effectiveQuoteOpacity||100)/100};}
 .bg-ov{position:absolute;inset:0;z-index:1;pointer-events:none;}
 .content{position:relative;z-index:5;width:100%;display:flex;flex-direction:column;align-items:${isLeft?"flex-start":"center"};text-align:${isLeft?"left":"center"};}
@@ -2293,7 +2293,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 .sig{font-size:${sigSz}px;font-weight:600;color:${cardTextColor};opacity:0.75;font-family:'${sigFont}',cursive,serif;${quoteTextShadow}text-align:${isLeft?"left":"center"};width:100%;}
 </style>
 </head><body>
-<div class="slide">
+<div class="_compSlide">
   ${hasBgImg?`<img class="bg-img" src="${quoteBgCustomUrl}" />${(quoteOverlay||0)>0?`<div class="bg-ov" style="background:linear-gradient(to top,rgba(0,0,0,${Math.min((quoteOverlay/100)*0.95,0.92)}) 0%,rgba(0,0,0,${Math.min((quoteOverlay/100)*0.4,0.5)}) 50%,rgba(0,0,0,0) 100%)"></div>`:""}`:""}
   ${tExtras}
   <div class="content">
@@ -2316,7 +2316,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
     const needsServer = mobile && !!quoteBgCustomUrl;
 
     if (needsServer) {
-      const res = await fetch("/api/render-slide", {
+      const res = await fetch("/api/render-_compSlide", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ html, width: W, height: H })
@@ -2340,7 +2340,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           const win = iframe.contentWindow;
           await new Promise(r => { const s=doc.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"; s.onload=r; s.onerror=r; doc.head.appendChild(s); setTimeout(r,4000); });
           if (!win.html2canvas) throw new Error("no h2c");
-          const canvas = await win.html2canvas(doc.querySelector(".slide")||doc.body, {useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+          const canvas = await win.html2canvas(doc.querySelector("._compSlide")||doc.body, {useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
           canvas.toBlob(blob => { document.body.removeChild(iframe); resolve(blob); }, "image/png", 1.0);
         } catch(e) { document.body.removeChild(iframe); reject(e); }
       }, 2000);
@@ -3056,7 +3056,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             </div>
 
             <div style={{marginBottom:16}}>
-              <label style={lbl}>Brief <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional — exact title, slide structure, tone, anything specific)</span></label>
+              <label style={lbl}>Brief <span style={{letterSpacing:0,fontWeight:400,fontSize:9,textTransform:"none"}}>(optional — exact title, _compSlide structure, tone, anything specific)</span></label>
               <div style={{position:"relative"}}>
                 <textarea value={angle} onChange={e=>setAngle(e.target.value.slice(0,280))} placeholder={BRIEF_PLACEHOLDERS[businessType]||BRIEF_PLACEHOLDERS.other} rows={4} style={{...inp,fontSize:14,resize:"none",lineHeight:1.6,paddingBottom:22}}/>
                 <div style={{position:"absolute",bottom:8,right:12,fontSize:10,color:angle.length>240?"#c0392b":"#aaa",fontWeight:600}}>{angle.length}/280</div>
@@ -3229,7 +3229,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             {/* ── TEMPLATE EDITOR ── */}
             {tmplSelected&&(()=>{
               const _iife_isListicle=tmplSelected==="listicle",isCleanPro=tmplSelected==="clean-pro",isStory=tmplSelected==="storytelling",isRaw=tmplSelected==="raw",isDarkFade=tmplSelected==="dark-fade",isSplit=tmplSelected==="split";
-              const hasAI=_iife_isListicle||isCleanPro||isStory,maxSlides=_iife_isListicle?12:8;
+              const hasAI=_iife_isListicle||isCleanPro||isStory,maxSlides=_iife_isListicle?12:8,isFree=currentUser?.plan==="free",slide=tmplSlides[activeSlide]||{};
               const ctaBgFinal=(isCleanPro||isStory)?tmplBg:tmplCtaBg;const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
               const ctaLine2Defaults={comment:"Comment the word",follow:"Follow",save:"Save this",share:"Share this",like:"Like this"};
               const ctaKeywordDefaults={comment:tmplCtaKeyword||"GUIDE",follow:"FOLLOW",save:"SAVE",share:"SHARE",like:"LIKE"};
@@ -3457,7 +3457,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <div>
                             <label style={lbl}>{isSplit?"Left Image":"Photo"}</label>
                             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
-                              {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${slide.image===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{slide.image===p&&<div onClick={()=>updateTmplSlide("image",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(slide.image===p)updateTmplSlide("image",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
+                              {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${_compSlide.image===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{_compSlide.image===p&&<div onClick={()=>updateTmplSlide("image",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(_compSlide.image===p)updateTmplSlide("image",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
                               <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateTmplSlide("image",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
                               {isPexelsUser&&<div onClick={()=>setShowPexelsTmplLib(true)} style={{width:52,height:52,borderRadius:7,border:`1.5px solid ${GOLD}44`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:GOLD,fontSize:9,fontWeight:800,flexShrink:0,textAlign:"center",lineHeight:1.2}}>🔍<br/>Pexels</div>}
                             </div>
@@ -3469,22 +3469,22 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         {isSplit&&<div>
                           <label style={lbl}>Right Image</label>
                           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:4}}>
-                            {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image2",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${slide.image2===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{slide.image2===p&&<div onClick={()=>updateTmplSlide("image2",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(slide.image2===p)updateTmplSlide("image2",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
+                            {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image2",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${_compSlide.image2===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{_compSlide.image2===p&&<div onClick={()=>updateTmplSlide("image2",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(_compSlide.image2===p)updateTmplSlide("image2",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
                             <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateTmplSlide("image2",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
                           </div>
                         </div>}
 
                         {/* Text inputs per template type */}
-                        {(isDarkFade||(isCleanPro&&activeSlide===0))&&<><label style={lbl}>Headline</label><input value={slide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder="Hook headline" style={{...inp}}/><label style={lbl}>Subline</label><input value={slide.subline||""} onChange={e=>updateTmplSlide("subline",e.target.value)} placeholder="Supporting line (optional)" style={{...inp}}/></>}
-                        {isListicle&&activeSlide===0&&<><label style={lbl}>Number</label><input type="number" min={1} value={tmplListicleNum} onChange={e=>setTmplListicleNum(Math.max(1,parseInt(e.target.value)||1))} style={{...inp,width:80}}/><label style={lbl}>Topic Line</label><input value={slide.topicLine||""} onChange={e=>updateTmplSlide("topicLine",e.target.value)} style={{...inp}}/><label style={lbl}>Subject</label><input value={slide.subject||""} onChange={e=>updateTmplSlide("subject",e.target.value)} style={{...inp}}/><label style={lbl}>Subline</label><input value={slide.subline||""} onChange={e=>updateTmplSlide("subline",e.target.value)} style={{...inp}}/></>}
-                        {isListicle&&activeSlide>0&&<><label style={lbl}>Point {activeSlide} — Headline</label><input value={slide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder={`Point ${activeSlide} headline`} style={{...inp}}/><label style={lbl}>Detail</label><div style={{position:"relative"}}><textarea value={slide.bodyText||""} onChange={e=>updateTmplSlide("bodyText",e.target.value)} placeholder="The tip, fact or detail" rows={3} style={{...inp,resize:"vertical",paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div></>}
-                        {isCleanPro&&activeSlide>0&&<><label style={lbl}>Headline</label><input value={slide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder="Headline" style={{...inp}}/><label style={lbl}>Body Text</label><div style={{position:"relative"}}><textarea value={slide.bodyText||""} onChange={e=>updateTmplSlide("bodyText",e.target.value)} placeholder="Body text" rows={4} style={{...inp,resize:"vertical",paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div><label style={lbl}>Accent Sub-text</label><input value={slide.accentText||""} onChange={e=>updateTmplSlide("accentText",e.target.value)} placeholder="Key takeaway in accent colour" style={{...inp}}/></>}
-                        {isStory&&<><label style={lbl}>Story Text — Slide {activeSlide+1}</label><textarea value={slide.storyText||""} onChange={e=>updateTmplSlide("storyText",e.target.value)} placeholder="Your story paragraph." rows={6} style={{...inp,resize:"vertical",lineHeight:1.6}}/></>}
-                        {isSplit&&<><label style={lbl}>Left Headline</label><input value={slide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder="Before" style={{...inp}}/><label style={lbl}>Left Subline</label><input value={slide.subline||""} onChange={e=>updateTmplSlide("subline",e.target.value)} placeholder="Where you are now." style={{...inp}}/><label style={lbl}>Right Headline</label><input value={slide.headline2||""} onChange={e=>updateTmplSlide("headline2",e.target.value)} placeholder="After" style={{...inp}}/><label style={lbl}>Right Subline</label><input value={slide.subline2||""} onChange={e=>updateTmplSlide("subline2",e.target.value)} placeholder="Where you could be." style={{...inp}}/></>}
-                        {isRaw&&!activeIsCtaSlide&&<><label style={lbl}>Your Text</label><p style={{fontSize:11,color:A.muted,margin:"-6px 0 4px"}}>Each paragraph gets its own highlight box.</p><textarea value={slide.rawText||""} onChange={e=>updateTmplSlide("rawText",e.target.value)} placeholder={"The goal isn't to be rich.\n\nIt's to be free."} rows={6} style={{...inp,resize:"vertical",lineHeight:1.6}}/></>}
+                        {(isDarkFade||(isCleanPro&&activeSlide===0))&&<><label style={lbl}>Headline</label><input value={_compSlide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder="Hook headline" style={{...inp}}/><label style={lbl}>Subline</label><input value={_compSlide.subline||""} onChange={e=>updateTmplSlide("subline",e.target.value)} placeholder="Supporting line (optional)" style={{...inp}}/></>}
+                        {isListicle&&activeSlide===0&&<><label style={lbl}>Number</label><input type="number" min={1} value={tmplListicleNum} onChange={e=>setTmplListicleNum(Math.max(1,parseInt(e.target.value)||1))} style={{...inp,width:80}}/><label style={lbl}>Topic Line</label><input value={_compSlide.topicLine||""} onChange={e=>updateTmplSlide("topicLine",e.target.value)} style={{...inp}}/><label style={lbl}>Subject</label><input value={_compSlide.subject||""} onChange={e=>updateTmplSlide("subject",e.target.value)} style={{...inp}}/><label style={lbl}>Subline</label><input value={_compSlide.subline||""} onChange={e=>updateTmplSlide("subline",e.target.value)} style={{...inp}}/></>}
+                        {isListicle&&activeSlide>0&&<><label style={lbl}>Point {activeSlide} — Headline</label><input value={_compSlide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder={`Point ${activeSlide} headline`} style={{...inp}}/><label style={lbl}>Detail</label><div style={{position:"relative"}}><textarea value={_compSlide.bodyText||""} onChange={e=>updateTmplSlide("bodyText",e.target.value)} placeholder="The tip, fact or detail" rows={3} style={{...inp,resize:"vertical",paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div></>}
+                        {isCleanPro&&activeSlide>0&&<><label style={lbl}>Headline</label><input value={_compSlide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder="Headline" style={{...inp}}/><label style={lbl}>Body Text</label><div style={{position:"relative"}}><textarea value={_compSlide.bodyText||""} onChange={e=>updateTmplSlide("bodyText",e.target.value)} placeholder="Body text" rows={4} style={{...inp,resize:"vertical",paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div><label style={lbl}>Accent Sub-text</label><input value={_compSlide.accentText||""} onChange={e=>updateTmplSlide("accentText",e.target.value)} placeholder="Key takeaway in accent colour" style={{...inp}}/></>}
+                        {isStory&&<><label style={lbl}>Story Text — Slide {activeSlide+1}</label><textarea value={_compSlide.storyText||""} onChange={e=>updateTmplSlide("storyText",e.target.value)} placeholder="Your story paragraph." rows={6} style={{...inp,resize:"vertical",lineHeight:1.6}}/></>}
+                        {isSplit&&<><label style={lbl}>Left Headline</label><input value={_compSlide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder="Before" style={{...inp}}/><label style={lbl}>Left Subline</label><input value={_compSlide.subline||""} onChange={e=>updateTmplSlide("subline",e.target.value)} placeholder="Where you are now." style={{...inp}}/><label style={lbl}>Right Headline</label><input value={_compSlide.headline2||""} onChange={e=>updateTmplSlide("headline2",e.target.value)} placeholder="After" style={{...inp}}/><label style={lbl}>Right Subline</label><input value={_compSlide.subline2||""} onChange={e=>updateTmplSlide("subline2",e.target.value)} placeholder="Where you could be." style={{...inp}}/></>}
+                        {isRaw&&!activeIsCtaSlide&&<><label style={lbl}>Your Text</label><p style={{fontSize:11,color:A.muted,margin:"-6px 0 4px"}}>Each paragraph gets its own highlight box.</p><textarea value={_compSlide.rawText||""} onChange={e=>updateTmplSlide("rawText",e.target.value)} placeholder={"The goal isn't to be rich.\n\nIt's to be free."} rows={6} style={{...inp,resize:"vertical",lineHeight:1.6}}/></>}
 
                         {/* AI Brief (inside content panel) */}
-                        {isCleanPro&&<><label style={{...lbl,color:GOLD}}>AI Brief</label><div style={{position:"relative"}}><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={3} placeholder="What's this carousel about?" style={{...inp,fontSize:11,lineHeight:1.5,paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div><div style={{fontSize:10,color:A.muted,marginTop:4}}>Generates content for this slide.</div></>}
+                        {isCleanPro&&<><label style={{...lbl,color:GOLD}}>AI Brief</label><div style={{position:"relative"}}><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={3} placeholder="What's this carousel about?" style={{...inp,fontSize:11,lineHeight:1.5,paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div><div style={{fontSize:10,color:A.muted,marginTop:4}}>Generates content for this _compSlide.</div></>}
                         {isStory&&activeSlide===0&&<><label style={{...lbl,color:GOLD}}>AI — Generate Full Story</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={4} placeholder="Describe what this story is about. Include detail — names, places, emotions, timeline, turning points, outcomes. Can be personal, educational, fictional or factual." style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>AI will write your story across all {tmplSlideCount} slides, each flowing into the next.</div><button onClick={generateStory} disabled={tmplSuggesting==="story"} style={{background:"linear-gradient(135deg,#1a1500,#0a0a0a)",border:"1px solid "+GOLD,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",marginTop:4}}>{tmplSuggesting==="story"?<><Spin/>Generating story...</>:"✨ Generate Story (10 credits)"}</button></>}
                         {isListicle&&activeSlide===0&&<><label style={{...lbl,color:GOLD}}>AI — Generate Full List</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={2} placeholder="What's your list about? e.g. places to visit in Europe, productivity habits, business lessons..." style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>Any filled headlines will be used as anchors. Empty slots will be generated.</div><button onClick={generateList} disabled={tmplSuggesting==="list"} style={{background:"linear-gradient(135deg,#1a1500,#0a0a0a)",border:"1px solid "+GOLD,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",marginTop:4}}>{tmplSuggesting==="list"?<><Spin/>Generating list...</>:"✨ Generate Full List (10 credits)"}</button></>}
                       </div></>
@@ -3494,7 +3494,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px"}}>
                           <div>
                             <div style={{fontSize:12,fontWeight:800,color:A.text}}>Optional CTA Card</div>
-                            <div style={{fontSize:11,color:A.muted}}>Adds a final slide with a call to action</div>
+                            <div style={{fontSize:11,color:A.muted}}>Adds a final _compSlide with a call to action</div>
                           </div>
                           <div onClick={()=>setTmplShowCta(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowCta?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
                             <div style={{position:"absolute",top:2,left:tmplShowCta?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
@@ -3527,7 +3527,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       {!isListicle&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                         <div>
                           <div style={{fontSize:12,fontWeight:700,color:A.text}}>Slide Counter</div>
-                          <div style={{fontSize:11,color:A.muted}}>Show slide number on every slide</div>
+                          <div style={{fontSize:11,color:A.muted}}>Show _compSlide number on every _compSlide</div>
                         </div>
                         <div onClick={()=>setTmplShowCounter(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowCounter?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
                           <div style={{position:"absolute",top:2,left:tmplShowCounter?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
@@ -3537,14 +3537,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       {!isStory&&!isRaw&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                         <div>
                           <div style={{fontSize:12,fontWeight:700,color:A.text}}>Website Footer</div>
-                          <div style={{fontSize:11,color:A.muted}}>Show your website on every slide</div>
+                          <div style={{fontSize:11,color:A.muted}}>Show your website on every _compSlide</div>
                         </div>
                         <div onClick={()=>setTmplShowWebsite(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowWebsite?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
                           <div style={{position:"absolute",top:2,left:tmplShowWebsite?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
                         </div>
                       </div>}
 
-                      {activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,marginBottom:8}}><div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>CTA slide inherits your template font. Accent colour and CTA word follow the Accent colour in the Visuals tab.</div></div>}
+                      {activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,marginBottom:8}}><div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>CTA _compSlide inherits your template font. Accent colour and CTA word follow the Accent colour in the Visuals tab.</div></div>}
                       {/* Effects dropdown */}
                       {!isRaw&&!isStory&&!activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
                         {!isCleanPro&&<>
@@ -3725,7 +3725,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               <div style={{position:"sticky",top:80}}>
                 <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                   <label style={lbl}>Cover photo library</label>
-                  <p style={{color:A.muted,fontSize:12,margin:"0 0 12px",lineHeight:1.6}}>Upload and save up to 10 images. Pick one per generation. Used on cover slide only.</p>
+                  <p style={{color:A.muted,fontSize:12,margin:"0 0 12px",lineHeight:1.6}}>Upload and save up to 10 images. Pick one per generation. Used on cover _compSlide only.</p>
                   <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
                     {coverPhotos.map((p,i)=>(
                       <div key={i} style={{position:"relative",flexShrink:0}}>
@@ -3767,7 +3767,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     return (
                       <div style={{marginBottom:14}}>
                         <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
-                          <SlidePreview slide={coverSlide} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
+                          <SlidePreview _compSlide={coverSlide} idx={0} total={1} opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>
                         </div>
                         <p style={{color:A.muted,fontSize:11,marginTop:8}}>{activeCoverPhoto?"Select a position below to adjust badge and headline placement.":"No cover photo selected — showing your background defaults as set in the Visual tab."}</p>
                       </div>
@@ -3875,17 +3875,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>How visible the background photo is on slides 2 onwards. Lower = more faded.</p>
                 <input type="range" min={10} max={100} value={templateOpacity} onChange={e=>setTemplateOpacity(+e.target.value)} style={{width:"100%",marginBottom:14}}/>
                 <label style={lbl}>Photo overlay — {overlayDark}%</label>
-                <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>Applies to all slides. Can be adjusted per-slide in the edit panel after generation.</p>
+                <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>Applies to all slides. Can be adjusted per-_compSlide in the edit panel after generation.</p>
                 <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
               </div>
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <div><div style={{fontWeight:600,fontSize:13}}>Slide numbers</div><div style={{color:A.muted,fontSize:12}}>Watermark number on each slide</div></div>
+                <div><div style={{fontWeight:600,fontSize:13}}>Slide numbers</div><div style={{color:A.muted,fontSize:12}}>Watermark number on each _compSlide</div></div>
                 {tog(showNums,setShowNums)}
               </div>
 
               </div>
 
-              {/* Right column — slide background (IS the preview) */}
+              {/* Right column — _compSlide background (IS the preview) */}
               <div style={{position:"sticky",top:80}}>
                 <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                   <label style={lbl}>Slide background (slides 2 onwards)</label>
@@ -3985,7 +3985,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     </div>
                   )}
                   <div style={{padding:8,background:A.bg,borderRadius:12,border:`1.5px solid ${A.border}`,marginTop:16}}><div style={{borderRadius:8,overflow:"hidden"}}>
-                    <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
+                    <SlidePreview _compSlide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
                   </div></div>
                   <p style={{color:A.muted,fontSize:11,marginTop:8}}>{bgMode==="custom"&&templateBgUrl?"Image selected — use White/Dark text to match.":bgMode==="custom"?"No image selected — showing background defaults.":`Preview reflects your ${bgMode} background setting.`}</p>
                   <div style={{display:"flex",gap:8,marginTop:10}}>
@@ -4019,15 +4019,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             </div>
             <div style={{display:isMobile?"block":"grid",gridTemplateColumns:"1fr 360px",gap:28,alignItems:"start"}}>
               <div style={{display:isMobile?"contents":"block",paddingBottom:isMobile?0:140}}>
-                {/* Active slide - big preview */}
+                {/* Active _compSlide - big preview */}
                 <div style={{position:isMobile?"sticky":"sticky",top:isMobile?"-40px":76,zIndex:10,background:A.bg,marginBottom:8}}>
-                  {(()=>{const isPortrait=slideOpts(active).ratio==="portrait";const PW=isMobile?(keyboardOpen?Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)/2:Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)):540;const PH=Math.round((isPortrait?1920:1350)*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto",borderRadius:8,border:`1.5px solid ${A.border}`}}><SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={true} isCover={active===0} showWatermark={currentUser?.plan==="free"} previewSize={PW}/></div>);})()}
+                  {(()=>{const isPortrait=slideOpts(active).ratio==="portrait";const PW=isMobile?(keyboardOpen?Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)/2:Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)):540;const PH=Math.round((isPortrait?1920:1350)*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto",borderRadius:8,border:`1.5px solid ${A.border}`}}><SlidePreview _compSlide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={true} isCover={active===0} showWatermark={currentUser?.plan==="free"} previewSize={PW}/></div>);})()}
                 </div>
                 {/* Thumbnails row */}
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:12}}>
-                  {slides.map((slide,i)=>(
-                    <div key={i} data-slide-index={i} onClick={()=>setActive(i)} style={{cursor:"pointer",opacity:active===i?1:0.6,transition:"opacity 0.15s",outline:active===i?`2px solid ${GOLD}`:"none",borderRadius:6,overflow:"hidden"}}>
-                      <SlidePreview slide={slide} idx={i} total={slides.length} opts={slideOpts(i)} onClick={()=>setActive(i)} isActive={active===i} isCover={i===0} showWatermark={currentUser?.plan==="free"} previewSize={86}/>
+                  {slides.map((_compSlide,i)=>(
+                    <div key={i} data-_compSlide-index={i} onClick={()=>setActive(i)} style={{cursor:"pointer",opacity:active===i?1:0.6,transition:"opacity 0.15s",outline:active===i?`2px solid ${GOLD}`:"none",borderRadius:6,overflow:"hidden"}}>
+                      <SlidePreview _compSlide={_compSlide} idx={i} total={slides.length} opts={slideOpts(i)} onClick={()=>setActive(i)} isActive={active===i} isCover={i===0} showWatermark={currentUser?.plan==="free"} previewSize={86}/>
                     </div>
                   ))}
                 </div>
@@ -4493,7 +4493,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <div>
                             <label style={lbl}>{isSplit?"Left Image":"Photo"}</label>
                             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
-                              {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${slide.image===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{slide.image===p&&<div onClick={()=>updateTmplSlide("image",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(slide.image===p)updateTmplSlide("image",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
+                              {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${_compSlide.image===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{_compSlide.image===p&&<div onClick={()=>updateTmplSlide("image",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(_compSlide.image===p)updateTmplSlide("image",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
                               <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateTmplSlide("image",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
                               {isPexelsUser&&<div onClick={()=>setShowPexelsTmplLib(true)} style={{width:52,height:52,borderRadius:7,border:`1.5px solid ${GOLD}44`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:GOLD,fontSize:9,fontWeight:800,flexShrink:0,textAlign:"center",lineHeight:1.2}}>🔍<br/>Pexels</div>}
                             </div>
@@ -4505,22 +4505,22 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         {isSplit&&<div>
                           <label style={lbl}>Right Image</label>
                           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:4}}>
-                            {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image2",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${slide.image2===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{slide.image2===p&&<div onClick={()=>updateTmplSlide("image2",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(slide.image2===p)updateTmplSlide("image2",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
+                            {tmplLibrary.map((p,pi)=>(<div key={pi} style={{position:"relative",flexShrink:0}}><div onClick={()=>updateTmplSlide("image2",p)} style={{width:52,height:52,borderRadius:7,overflow:"hidden",border:`2px solid ${_compSlide.image2===p?GOLD:A.border}`,cursor:"pointer"}}><img src={p} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>{_compSlide.image2===p&&<div onClick={()=>updateTmplSlide("image2",null)} style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,zIndex:2}}>×</div>}<div onClick={()=>{const doRemove=()=>{const next=tmplLibrary.filter((_,j)=>j!==pi);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}if(_compSlide.image2===p)updateTmplSlide("image2",null);};if(suppressLibraryConfirm){doRemove();return;}if(window.confirm("Remove from library?")){doRemove();if(window.confirm("Don't show again?")){setSuppressLibraryConfirm(true);try{localStorage.setItem("bwt_suppress_lib_confirm","1");}catch{}}}}} style={{position:"absolute",bottom:-4,right:-4,width:15,height:15,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,zIndex:2}}>🗑</div></div>))}
                             <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const url=ev.target.result;updateTmplSlide("image2",url);const next=[url,...tmplLibrary.filter(p=>p!==url)].slice(0,15);setTmplLibrary(next);try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(next));}catch{}};r.readAsDataURL(f);};i.click();}} style={{width:52,height:52,borderRadius:7,border:`1.5px dashed ${A.border}`,background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22}}>+</div>
                           </div>
                         </div>}
 
                         {/* Text inputs per template type */}
-                        {(isDarkFade||(isCleanPro&&activeSlide===0))&&<><label style={lbl}>Headline</label><input value={slide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder="Hook headline" style={{...inp}}/><label style={lbl}>Subline</label><input value={slide.subline||""} onChange={e=>updateTmplSlide("subline",e.target.value)} placeholder="Supporting line (optional)" style={{...inp}}/></>}
-                        {isListicle&&activeSlide===0&&<><label style={lbl}>Number</label><input type="number" min={1} value={tmplListicleNum} onChange={e=>setTmplListicleNum(Math.max(1,parseInt(e.target.value)||1))} style={{...inp,width:80}}/><label style={lbl}>Topic Line</label><input value={slide.topicLine||""} onChange={e=>updateTmplSlide("topicLine",e.target.value)} style={{...inp}}/><label style={lbl}>Subject</label><input value={slide.subject||""} onChange={e=>updateTmplSlide("subject",e.target.value)} style={{...inp}}/><label style={lbl}>Subline</label><input value={slide.subline||""} onChange={e=>updateTmplSlide("subline",e.target.value)} style={{...inp}}/></>}
-                        {isListicle&&activeSlide>0&&<><label style={lbl}>Point {activeSlide} — Headline</label><input value={slide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder={`Point ${activeSlide} headline`} style={{...inp}}/><label style={lbl}>Detail</label><div style={{position:"relative"}}><textarea value={slide.bodyText||""} onChange={e=>updateTmplSlide("bodyText",e.target.value)} placeholder="The tip, fact or detail" rows={3} style={{...inp,resize:"vertical",paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div></>}
-                        {isCleanPro&&activeSlide>0&&<><label style={lbl}>Headline</label><input value={slide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder="Headline" style={{...inp}}/><label style={lbl}>Body Text</label><div style={{position:"relative"}}><textarea value={slide.bodyText||""} onChange={e=>updateTmplSlide("bodyText",e.target.value)} placeholder="Body text" rows={4} style={{...inp,resize:"vertical",paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div><label style={lbl}>Accent Sub-text</label><input value={slide.accentText||""} onChange={e=>updateTmplSlide("accentText",e.target.value)} placeholder="Key takeaway in accent colour" style={{...inp}}/></>}
-                        {isStory&&<><label style={lbl}>Story Text — Slide {activeSlide+1}</label><textarea value={slide.storyText||""} onChange={e=>updateTmplSlide("storyText",e.target.value)} placeholder="Your story paragraph." rows={6} style={{...inp,resize:"vertical",lineHeight:1.6}}/></>}
-                        {isSplit&&<><label style={lbl}>Left Headline</label><input value={slide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder="Before" style={{...inp}}/><label style={lbl}>Left Subline</label><input value={slide.subline||""} onChange={e=>updateTmplSlide("subline",e.target.value)} placeholder="Where you are now." style={{...inp}}/><label style={lbl}>Right Headline</label><input value={slide.headline2||""} onChange={e=>updateTmplSlide("headline2",e.target.value)} placeholder="After" style={{...inp}}/><label style={lbl}>Right Subline</label><input value={slide.subline2||""} onChange={e=>updateTmplSlide("subline2",e.target.value)} placeholder="Where you could be." style={{...inp}}/></>}
-                        {isRaw&&!activeIsCtaSlide&&<><label style={lbl}>Your Text</label><p style={{fontSize:11,color:A.muted,margin:"-6px 0 4px"}}>Each paragraph gets its own highlight box.</p><textarea value={slide.rawText||""} onChange={e=>updateTmplSlide("rawText",e.target.value)} placeholder={"The goal isn't to be rich.\n\nIt's to be free."} rows={6} style={{...inp,resize:"vertical",lineHeight:1.6}}/></>}
+                        {(isDarkFade||(isCleanPro&&activeSlide===0))&&<><label style={lbl}>Headline</label><input value={_compSlide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder="Hook headline" style={{...inp}}/><label style={lbl}>Subline</label><input value={_compSlide.subline||""} onChange={e=>updateTmplSlide("subline",e.target.value)} placeholder="Supporting line (optional)" style={{...inp}}/></>}
+                        {isListicle&&activeSlide===0&&<><label style={lbl}>Number</label><input type="number" min={1} value={tmplListicleNum} onChange={e=>setTmplListicleNum(Math.max(1,parseInt(e.target.value)||1))} style={{...inp,width:80}}/><label style={lbl}>Topic Line</label><input value={_compSlide.topicLine||""} onChange={e=>updateTmplSlide("topicLine",e.target.value)} style={{...inp}}/><label style={lbl}>Subject</label><input value={_compSlide.subject||""} onChange={e=>updateTmplSlide("subject",e.target.value)} style={{...inp}}/><label style={lbl}>Subline</label><input value={_compSlide.subline||""} onChange={e=>updateTmplSlide("subline",e.target.value)} style={{...inp}}/></>}
+                        {isListicle&&activeSlide>0&&<><label style={lbl}>Point {activeSlide} — Headline</label><input value={_compSlide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder={`Point ${activeSlide} headline`} style={{...inp}}/><label style={lbl}>Detail</label><div style={{position:"relative"}}><textarea value={_compSlide.bodyText||""} onChange={e=>updateTmplSlide("bodyText",e.target.value)} placeholder="The tip, fact or detail" rows={3} style={{...inp,resize:"vertical",paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div></>}
+                        {isCleanPro&&activeSlide>0&&<><label style={lbl}>Headline</label><input value={_compSlide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder="Headline" style={{...inp}}/><label style={lbl}>Body Text</label><div style={{position:"relative"}}><textarea value={_compSlide.bodyText||""} onChange={e=>updateTmplSlide("bodyText",e.target.value)} placeholder="Body text" rows={4} style={{...inp,resize:"vertical",paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div><label style={lbl}>Accent Sub-text</label><input value={_compSlide.accentText||""} onChange={e=>updateTmplSlide("accentText",e.target.value)} placeholder="Key takeaway in accent colour" style={{...inp}}/></>}
+                        {isStory&&<><label style={lbl}>Story Text — Slide {activeSlide+1}</label><textarea value={_compSlide.storyText||""} onChange={e=>updateTmplSlide("storyText",e.target.value)} placeholder="Your story paragraph." rows={6} style={{...inp,resize:"vertical",lineHeight:1.6}}/></>}
+                        {isSplit&&<><label style={lbl}>Left Headline</label><input value={_compSlide.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} placeholder="Before" style={{...inp}}/><label style={lbl}>Left Subline</label><input value={_compSlide.subline||""} onChange={e=>updateTmplSlide("subline",e.target.value)} placeholder="Where you are now." style={{...inp}}/><label style={lbl}>Right Headline</label><input value={_compSlide.headline2||""} onChange={e=>updateTmplSlide("headline2",e.target.value)} placeholder="After" style={{...inp}}/><label style={lbl}>Right Subline</label><input value={_compSlide.subline2||""} onChange={e=>updateTmplSlide("subline2",e.target.value)} placeholder="Where you could be." style={{...inp}}/></>}
+                        {isRaw&&!activeIsCtaSlide&&<><label style={lbl}>Your Text</label><p style={{fontSize:11,color:A.muted,margin:"-6px 0 4px"}}>Each paragraph gets its own highlight box.</p><textarea value={_compSlide.rawText||""} onChange={e=>updateTmplSlide("rawText",e.target.value)} placeholder={"The goal isn't to be rich.\n\nIt's to be free."} rows={6} style={{...inp,resize:"vertical",lineHeight:1.6}}/></>}
 
                         {/* AI Brief (inside content panel) */}
-                        {isCleanPro&&<><label style={{...lbl,color:GOLD}}>AI Brief</label><div style={{position:"relative"}}><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={3} placeholder="What's this carousel about?" style={{...inp,fontSize:11,lineHeight:1.5,paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div><div style={{fontSize:10,color:A.muted,marginTop:4}}>Generates content for this slide.</div></>}
+                        {isCleanPro&&<><label style={{...lbl,color:GOLD}}>AI Brief</label><div style={{position:"relative"}}><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={3} placeholder="What's this carousel about?" style={{...inp,fontSize:11,lineHeight:1.5,paddingRight:72}}/><button onClick={()=>tmplSuggestSlide(activeSlide,tmplSelected,tmplBrief,tmplSlides,tmplSlideCount)} disabled={tmplSuggesting===activeSlide} style={{position:"absolute",right:6,top:8,background:"none",border:`1px solid ${A.border}`,color:GOLD,fontSize:11,fontWeight:700,padding:"4px 8px",borderRadius:6,cursor:"pointer"}}>{tmplSuggesting===activeSlide?"...":"✨ AI"}</button></div><div style={{fontSize:10,color:A.muted,marginTop:4}}>Generates content for this _compSlide.</div></>}
                         {isStory&&activeSlide===0&&<><label style={{...lbl,color:GOLD}}>AI — Generate Full Story</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={4} placeholder="Describe what this story is about. Include detail — names, places, emotions, timeline, turning points, outcomes. Can be personal, educational, fictional or factual." style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>AI will write your story across all {tmplSlideCount} slides, each flowing into the next.</div><button onClick={generateStory} disabled={tmplSuggesting==="story"} style={{background:"linear-gradient(135deg,#1a1500,#0a0a0a)",border:"1px solid "+GOLD,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",marginTop:4}}>{tmplSuggesting==="story"?<><Spin/>Generating story...</>:"✨ Generate Story (10 credits)"}</button></>}
                         {isListicle&&activeSlide===0&&<><label style={{...lbl,color:GOLD}}>AI — Generate Full List</label><textarea value={tmplBrief} onChange={e=>setTmplBrief(e.target.value)} rows={2} placeholder="What's your list about? e.g. places to visit in Europe, productivity habits, business lessons..." style={{...inp,fontSize:12,lineHeight:1.5}}/><div style={{fontSize:10,color:A.muted,marginTop:-4}}>Any filled headlines will be used as anchors. Empty slots will be generated.</div><button onClick={generateList} disabled={tmplSuggesting==="list"} style={{background:"linear-gradient(135deg,#1a1500,#0a0a0a)",border:"1px solid "+GOLD,color:GOLD,padding:"10px",borderRadius:8,fontSize:13,fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",marginTop:4}}>{tmplSuggesting==="list"?<><Spin/>Generating list...</>:"✨ Generate Full List (10 credits)"}</button></>}
                       </div></>
@@ -4530,7 +4530,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px"}}>
                           <div>
                             <div style={{fontSize:12,fontWeight:800,color:A.text}}>Optional CTA Card</div>
-                            <div style={{fontSize:11,color:A.muted}}>Adds a final slide with a call to action</div>
+                            <div style={{fontSize:11,color:A.muted}}>Adds a final _compSlide with a call to action</div>
                           </div>
                           <div onClick={()=>setTmplShowCta(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowCta?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
                             <div style={{position:"absolute",top:2,left:tmplShowCta?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
@@ -4563,7 +4563,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       {!isListicle&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                         <div>
                           <div style={{fontSize:12,fontWeight:700,color:A.text}}>Slide Counter</div>
-                          <div style={{fontSize:11,color:A.muted}}>Show slide number on every slide</div>
+                          <div style={{fontSize:11,color:A.muted}}>Show _compSlide number on every _compSlide</div>
                         </div>
                         <div onClick={()=>setTmplShowCounter(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowCounter?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
                           <div style={{position:"absolute",top:2,left:tmplShowCounter?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
@@ -4573,14 +4573,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       {!isStory&&!isRaw&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                         <div>
                           <div style={{fontSize:12,fontWeight:700,color:A.text}}>Website Footer</div>
-                          <div style={{fontSize:11,color:A.muted}}>Show your website on every slide</div>
+                          <div style={{fontSize:11,color:A.muted}}>Show your website on every _compSlide</div>
                         </div>
                         <div onClick={()=>setTmplShowWebsite(s=>!s)} style={{width:36,height:20,borderRadius:10,background:tmplShowWebsite?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
                           <div style={{position:"absolute",top:2,left:tmplShowWebsite?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
                         </div>
                       </div>}
 
-                      {activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,marginBottom:8}}><div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>CTA slide inherits your template font. Accent colour and CTA word follow the Accent colour in the Visuals tab.</div></div>}
+                      {activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,marginBottom:8}}><div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>CTA _compSlide inherits your template font. Accent colour and CTA word follow the Accent colour in the Visuals tab.</div></div>}
                       {/* Effects dropdown */}
                       {!isRaw&&!isStory&&!activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
                         {!isCleanPro&&<>
@@ -4682,12 +4682,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             {/* Slide number buttons */}
             <div style={{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap"}}>
             {slides.map((_,i)=>(
-              <button key={i} onClick={()=>{setActive(i);setTimeout(()=>{const el=document.querySelector(`[data-slide-index='${i}']`);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},100);}} style={{width:36,height:36,borderRadius:8,background:active===i?A.text:A.surface,border:`1.5px solid ${active===i?GOLD:A.border}`,color:active===i?A.accentText:A.muted,fontSize:13,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
+              <button key={i} onClick={()=>{setActive(i);setTimeout(()=>{const el=document.querySelector(`[data-_compSlide-index='${i}']`);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},100);}} style={{width:36,height:36,borderRadius:8,background:active===i?A.text:A.surface,border:`1.5px solid ${active===i?GOLD:A.border}`,color:active===i?A.accentText:A.muted,fontSize:13,fontWeight:700,cursor:"pointer"}}>{i+1}</button>
             ))}
             </div>
-            {/* Pinned slide preview - fixed thumbnail, full slide scaled to fit */}
+            {/* Pinned _compSlide preview - fixed thumbnail, full _compSlide scaled to fit */}
             <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
-              <SlidePreview slide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={false} isCover={active===0} previewSize={200} showWatermark={currentUser?.plan==="free"}/>
+              <SlidePreview _compSlide={slides[active]} idx={active} total={slides.length} opts={slideOpts(active)} onClick={()=>{}} isActive={false} isCover={active===0} previewSize={200} showWatermark={currentUser?.plan==="free"}/>
             </div>
           </div>
           {/* Scrollable edit fields */}
