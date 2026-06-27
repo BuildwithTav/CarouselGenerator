@@ -72,7 +72,7 @@ function emailNewReferral(firstName, referralEmail) {
 function emailCommissionEarned(firstName, amount, planName, commissionRate) {
   return {
     subject: "💰 You just earned a commission",
-    html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f5f3ef;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;"><div style="max-width:600px;margin:0 auto;padding:40px 24px;"><div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div><div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;"><p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hey ${firstName},</p><p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">A referral just upgraded to <strong>${planName}</strong> via your Carousel Studio link.</p><div style="background:#0a0a0a;border-radius:12px;padding:28px;margin-bottom:24px;text-align:center;"><p style="font-size:48px;font-weight:900;color:#BB9900;margin:0 0 4px;font-family:Georgia,serif;">$${amount}</p><p style="font-size:14px;color:rgba(255,255,255,0.6);margin:0;">commission earned</p></div><p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">As long as they stay subscribed, that commission <strong style="color:#BB9900;">repeats every month</strong>. You've just earned a lifetime monthly commission based on their continued subscription.</p><p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">On top of that, you also earn commission on <strong>everyone they refer</strong> too — so every person you bring in could bring in more.</p><div style="background:#f5f3ef;border-radius:10px;padding:20px;margin-bottom:24px;"><p style="font-size:14px;color:#7a7875;margin:0;line-height:1.6;">This commission is pending for 30 days, then moves to available for withdrawal. Results may vary based on referral retention.</p></div><div style="text-align:center;margin:32px 0;"><a href="https://studio.buildwithtav.co" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">View Your Dashboard →</a></div><p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">— Tav</p></div><p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p></div></body></html>`
+    html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f5f3ef;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;"><div style="max-width:600px;margin:0 auto;padding:40px 24px;"><div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div><div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;"><p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hey ${firstName},</p><p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">A referral just upgraded to <strong>${planName}</strong> via your Carousel Studio link.</p><div style="background:#0a0a0a;border-radius:12px;padding:28px;margin-bottom:24px;text-align:center;"><p style="font-size:48px;font-weight:900;color:#BB9900;margin:0 0 4px;font-family:Georgia,serif;">$${amount}</p><p style="font-size:14px;color:rgba(255,255,255,0.6);margin:0;">commission earned</p></div><p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">As long as they stay subscribed, that commission <strong style="color:#BB9900;">repeats every month</strong>.</p><p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">You also earn commission on <strong>everyone they refer</strong> too.</p><div style="background:#f5f3ef;border-radius:10px;padding:20px;margin-bottom:24px;"><p style="font-size:14px;color:#7a7875;margin:0;line-height:1.6;">This commission is pending for 30 days, then moves to available for withdrawal.</p></div><div style="text-align:center;margin:32px 0;"><a href="https://studio.buildwithtav.co" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">View Your Dashboard →</a></div><p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">— Tav</p></div><p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p></div></body></html>`
   };
 }
 
@@ -181,7 +181,6 @@ export async function POST(req) {
       const { data: existing } = await supabase.from("users").select("*").eq("email", user.email).single();
 
       if (!existing) {
-        // New user — generate unique affiliate ID
         let affiliateId = generateAffiliateId();
         let { data: idCheck } = await supabase.from("users").select("affiliate_id").eq("affiliate_id", affiliateId).single();
         while (idCheck) {
@@ -190,7 +189,6 @@ export async function POST(req) {
           idCheck = check.data;
         }
 
-        // Check pending refs (for users who paid before signing up)
         const { data: pendingRef } = await supabase
           .from("pending_affiliate_refs")
           .select("affiliate_ref")
@@ -215,11 +213,9 @@ export async function POST(req) {
           affiliate_active: false
         });
 
-        // Send free welcome email
         const { subject, html } = emailFreeWelcome(resolvedFirstName);
         await sendEmail(user.email, subject, html);
 
-        // Notify affiliate of new referral signup
         if (resolvedRef) {
           try {
             const { data: affiliateUser } = await supabase.from("users").select("email, first_name").eq("affiliate_id", resolvedRef).single();
@@ -230,11 +226,9 @@ export async function POST(req) {
           } catch {}
         }
 
-        // Add to Systeme
         await addToSysteme(user.email, "carousel-studio-free");
 
       } else if (existing.plan !== "free" && existing.affiliate_id && existing.affiliate_active && !existing.affiliate_welcome_email_sent) {
-        // Returning paid user who hasn't had welcome email yet
         const commissionRate = getCommissionRate(existing.plan);
         const planLabel = getPlanLabel(existing.plan);
         const nameToUse = existing.first_name || resolvedFirstName;
@@ -286,14 +280,15 @@ export async function POST(req) {
       const t = authHeader.replace("Bearer ", "");
       const { data: { user }, error } = await supabase.auth.getUser(t);
       if (error || !user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-      const { data: profile } = await supabase.from("users").select("credits_used, credits_limit, email, plan").eq("email", user.email).single();
+      const { data: profile } = await supabase.from("users").select("credits_used, credits_limit, email, plan, first_name, credits_exhausted_email_sent").eq("email", user.email).single();
       const creditAmount = body.credits || 1;
       const newCreditsUsed = (profile?.credits_used || 0) + creditAmount;
       await supabase.from("users").update({ credits_used: newCreditsUsed }).eq("email", user.email);
-      if (profile?.plan === "free" && newCreditsUsed >= (profile?.credits_limit || 60)) {
-        const firstName = user.email.split("@")[0];
+      if (profile?.plan === "free" && newCreditsUsed >= (profile?.credits_limit || 60) && !profile?.credits_exhausted_email_sent) {
+        const firstName = profile?.first_name || user.email.split("@")[0];
         const exhaustedEmail = emailCreditsExhausted(firstName);
         await sendEmail(user.email, exhaustedEmail.subject, exhaustedEmail.html);
+        await supabase.from("users").update({ credits_exhausted_email_sent: true }).eq("email", user.email);
       }
       return NextResponse.json({ success: true });
     }
