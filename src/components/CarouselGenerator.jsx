@@ -985,6 +985,7 @@ export default function App() {
   const [tmplDownloading, setTmplDownloading] = useState(false);
   const [tmplDownloadingIdx, setTmplDownloadingIdx] = useState(null);
   const [tmplActiveSlide, setTmplActiveSlide] = useState(0);
+  const [imgDrag, setImgDrag] = useState(null); // {startX,startY,startPx,startPy,field}
   const [pendingTmplImage, setPendingTmplImage] = useState(null);
   const [tmplLibrary, setTmplLibrary] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_library")||"[]");}catch{return[];}});
   const [suppressLibraryConfirm, setSuppressLibraryConfirm] = useState(()=>{try{return localStorage.getItem("bwt_suppress_lib_confirm")==="1";}catch{return false;}});
@@ -3513,7 +3514,54 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   <div style={{display:isMobile?"contents":"block",position:isMobile?"static":"relative",alignSelf:"start"}}>
                     <div style={{background:A.surface,borderRadius:12,border:`1.5px solid ${A.border}`,overflow:"hidden",marginBottom:12,position:isMobile?"sticky":"relative",top:isMobile?"calc(56px + env(safe-area-inset-top, 0px))":0,zIndex:isMobile?10:0}}>
                       <div style={{position:"relative",overflow:"hidden",borderRadius:8,background:A.bg}}>
-                        {(()=>{const PW=isMobile?(keyboardOpen?Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)/2:Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)):540,PH=Math.round(1350*PW/1080);return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}><iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/></div>);})()}
+                        {(()=>{const PW=isMobile?(keyboardOpen?Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)/2:Math.min((typeof window!=="undefined"?window.innerWidth:540)-32,540)):540,PH=Math.round(1350*PW/1080);const scale=PW/1080;
+              const hasImg=slide.image&&slide.image.startsWith("_c_data:");
+              const hasImg2=isSplit&&slide.image2&&slide.image2.startsWith("_c_data:");
+              const showDrag=hasImg||hasImg2;
+              const handleDragStart=(e,field)=>{
+                e.preventDefault();
+                const rect=e.currentTarget.getBoundingClientRect();
+                const clientX=e.touches?e.touches[0].clientX:e.clientX;
+                const clientY=e.touches?e.touches[0].clientY:e.clientY;
+                const cur=field==="image2Pos"?(slide.image2Pos||{x:50,y:50}):(slide.imagePos||{x:50,y:50});
+                setImgDrag({startX:clientX,startY:clientY,startPx:cur.x,startPy:cur.y,field,rect});
+              };
+              const handleDragMove=(e)=>{
+                if(!imgDrag)return;
+                e.preventDefault();
+                const clientX=e.touches?e.touches[0].clientX:e.clientX;
+                const clientY=e.touches?e.touches[0].clientY:e.clientY;
+                const dx=(clientX-imgDrag.startX)/imgDrag.rect.width*100;
+                const dy=(clientY-imgDrag.startY)/imgDrag.rect.height*100;
+                const nx=Math.round(Math.min(100,Math.max(0,imgDrag.startPx-dx)));
+                const ny=Math.round(Math.min(100,Math.max(0,imgDrag.startPy-dy)));
+                updateTmplSlide(imgDrag.field,{x:nx,y:ny});
+              };
+              const handleDragEnd=()=>setImgDrag(null);
+              return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}
+                onMouseMove={handleDragMove} onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}
+                onTouchMove={handleDragMove} onTouchEnd={handleDragEnd}>
+                <iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${scale})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/>
+                {showDrag&&!slide.isSplitClosing&&(<>
+                  {hasImg&&(<div
+                    onMouseDown={e=>handleDragStart(e,"imagePos")}
+                    onTouchStart={e=>handleDragStart(e,"imagePos")}
+                    style={{position:"absolute",inset:0,left:0,right:hasImg2?"50%":0,cursor:imgDrag?.field==="imagePos"?"grabbing":"grab",zIndex:5,userSelect:"none",touchAction:"none"}}
+                  >
+                    {!imgDrag&&<div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.65)",border:"1px solid rgba(187,153,0,0.7)",borderRadius:8,padding:"4px 10px",color:GOLD,fontSize:11,fontWeight:700,whiteSpace:"nowrap",pointerEvents:"none"}}>✥ {hasImg2?"Left":"Drag to reposition"}</div>}
+                  </div>)}
+                  {hasImg2&&(<div
+                    onMouseDown={e=>handleDragStart(e,"image2Pos")}
+                    onTouchStart={e=>handleDragStart(e,"image2Pos")}
+                    style={{position:"absolute",inset:0,left:"50%",right:0,cursor:imgDrag?.field==="image2Pos"?"grabbing":"grab",zIndex:5,userSelect:"none",touchAction:"none"}}
+                  >
+                    {!imgDrag&&<div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.65)",border:"1px solid rgba(187,153,0,0.7)",borderRadius:8,padding:"4px 10px",color:GOLD,fontSize:11,fontWeight:700,whiteSpace:"nowrap",pointerEvents:"none"}}>✥ Right</div>}
+                  </div>)}
+                  {imgDrag&&<div style={{position:"absolute",top:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.8)",border:"1px solid "+GOLD,borderRadius:8,padding:"4px 12px",color:GOLD,fontSize:11,fontWeight:700,whiteSpace:"nowrap",zIndex:10,pointerEvents:"none"}}>
+                    {(imgDrag.field==="imagePos"?slide.imagePos:slide.image2Pos)||{x:50,y:50}} {(()=>{const p=imgDrag.field==="imagePos"?(slide.imagePos||{x:50,y:50}):(slide.image2Pos||{x:50,y:50});return `${p.x}% ${p.y}%`;})()}
+                  </div>}
+                </>)}
+              </div>);})()}
                       </div>
                     </div>
                     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
