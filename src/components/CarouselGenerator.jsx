@@ -3558,7 +3558,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     {!imgDrag&&<div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.65)",border:"1px solid rgba(187,153,0,0.7)",borderRadius:8,padding:"4px 10px",color:GOLD,fontSize:11,fontWeight:700,whiteSpace:"nowrap",pointerEvents:"none"}}>✥ Right</div>}
                   </div>)}
                   {imgDrag&&<div style={{position:"absolute",top:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.8)",border:"1px solid "+GOLD,borderRadius:8,padding:"4px 12px",color:GOLD,fontSize:11,fontWeight:700,whiteSpace:"nowrap",zIndex:10,pointerEvents:"none"}}>
-                    {(imgDrag.field==="imagePos"?slide.imagePos:slide.image2Pos)||{x:50,y:50}} {(()=>{const p=imgDrag.field==="imagePos"?(slide.imagePos||{x:50,y:50}):(slide.image2Pos||{x:50,y:50});return `${p.x}% ${p.y}%`;})()}
+                    {(()=>{const p=imgDrag.field==="imagePos"?(slide.imagePos||{x:50,y:50}):(slide.image2Pos||{x:50,y:50});return `${p.x}% · ${p.y}%`;})()}
                   </div>}
                 </>)}
               </div>);})()}
