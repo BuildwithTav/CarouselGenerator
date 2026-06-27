@@ -1004,7 +1004,7 @@ export default function App() {
   const [imgDrag, setImgDrag] = useState(null); // {startX,startY,startPx,startPy,field}
   const [pendingTmplImage, setPendingTmplImage] = useState(null);
   const [tmplLibrary, setTmplLibrary] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_library")||"[]");}catch{return[];}});
-  const tmplLibraryFull = React.useRef([]); // full-res images, parallel to tmplLibrary, in-memory only
+  const tmplLibraryFull = useRef([]); // full-res images, parallel to tmplLibrary, in-memory only
   const [suppressLibraryConfirm, setSuppressLibraryConfirm] = useState(()=>{try{return localStorage.getItem("bwt_suppress_lib_confirm")==="1";}catch{return false;}});
   const [payoutDetails, setPayoutDetails] = useState({});
   const [payoutSubmitting, setPayoutSubmitting] = useState(false);
