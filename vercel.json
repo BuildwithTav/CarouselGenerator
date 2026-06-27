@@ -10,6 +10,10 @@
     {
       "path": "/api/cron/snapshot",
       "schedule": "0 23 28-31 * *"
+    },
+    {
+      "path": "/api/cron/email-sequence",
+      "schedule": "0 9 * * *"
     }
   ]
 }
