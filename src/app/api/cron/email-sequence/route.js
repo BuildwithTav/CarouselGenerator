@@ -82,13 +82,13 @@ function emailDay4(firstName) {
 
 function emailDay5(firstName) {
   return {
-    subject: "Meet Frank — $440 a month, forever, from one link",
+    subject: "Meet Frank — $440 a month. Then he made one phone call.",
     html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f5f3ef;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
 <div style="max-width:600px;margin:0 auto;padding:40px 24px;">
 <div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div>
 <div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;">
 <p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hi ${firstName},</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Let me show you exactly how this works in real numbers. No estimates. No "up to". Just a straightforward example.</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Let me show you exactly how this works. Real numbers. No fluff.</p>
 <p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Meet Frank.</p>
 <div style="background:#0a0a0a;border:2px solid #BB9900;border-radius:12px;padding:28px;margin-bottom:24px;">
 <p style="font-size:13px;color:#BB9900;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px;">Frank's situation</p>
@@ -96,20 +96,19 @@ function emailDay5(firstName) {
 <p style="font-size:15px;color:rgba(255,255,255,0.9);margin:0;line-height:1.7;">He shared his link on social media. Built a small network of 10 people. That's it. That's all he did.</p>
 </div>
 <p style="font-size:15px;font-weight:700;color:#0a0a0a;margin:0 0 12px;">Here's what Frank earns every month:</p>
-<div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:16px;">
-<p style="font-size:13px;color:#7a7875;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:0 0 12px;">Tier 1 — his 10 direct referrals</p>
-<p style="font-size:15px;color:#0a0a0a;margin:0 0 8px;line-height:1.7;">10 people × $40/mo average plan × 35% = <strong style="color:#BB9900;">$140/month</strong></p>
-<p style="font-size:13px;color:#7a7875;margin:0;line-height:1.6;">He earns 35% on every payment his referrals make. Every month. As long as they stay subscribed.</p>
+<div style="background:#f5f3ef;border-radius:10px;padding:20px 24px;margin-bottom:12px;">
+<p style="font-size:13px;color:#7a7875;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:0 0 10px;">Tier 1 — his 10 direct referrals</p>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 6px;line-height:1.7;">10 people × $40/mo × 35% = <strong style="color:#BB9900;">$140/month</strong></p>
+<p style="font-size:13px;color:#7a7875;margin:0;line-height:1.6;">Every payment they make, every month, as long as they stay subscribed.</p>
 </div>
-<div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;">
-<p style="font-size:13px;color:#7a7875;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:0 0 12px;">Tier 2 — people Frank has never met</p>
-<p style="font-size:15px;color:#0a0a0a;margin:0 0 8px;line-height:1.7;">Each of Frank's 10 referrals refers 5 more people. That's 50 people.</p>
-<p style="font-size:15px;color:#0a0a0a;margin:0 0 8px;line-height:1.7;">50 people × $40/mo × 15% = <strong style="color:#BB9900;">$300/month</strong></p>
-<p style="font-size:13px;color:#7a7875;margin:0;line-height:1.6;">Frank has never spoken to any of them. He doesn't know their names. They just pay every month and Frank gets 15% of it — automatically.</p>
+<div style="background:#f5f3ef;border-radius:10px;padding:20px 24px;margin-bottom:20px;">
+<p style="font-size:13px;color:#7a7875;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:0 0 10px;">Tier 2 — people Frank has never met</p>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 6px;line-height:1.7;">Each of his 10 refers 5 more. That's 50 people. 50 × $40/mo × 15% = <strong style="color:#BB9900;">$300/month</strong></p>
+<p style="font-size:13px;color:#7a7875;margin:0;line-height:1.6;">Frank has never spoken to them. They just pay every month and Frank gets 15% automatically.</p>
 </div>
-<div style="background:#0a0a0a;border-radius:12px;padding:24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+<div style="background:#0a0a0a;border-radius:12px;padding:24px;margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
 <div>
-<p style="font-size:13px;color:rgba(255,255,255,0.5);margin:0 0 4px;">Frank's total — every month</p>
+<p style="font-size:13px;color:rgba(255,255,255,0.5);margin:0 0 4px;">Frank's baseline — every month</p>
 <p style="font-size:13px;color:rgba(255,255,255,0.5);margin:0;">$140 Tier 1 + $300 Tier 2</p>
 </div>
 <div style="text-align:right;">
@@ -117,17 +116,35 @@ function emailDay5(firstName) {
 <p style="font-size:12px;color:rgba(255,255,255,0.4);margin:4px 0 0;">every month — forever</p>
 </div>
 </div>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 16px;line-height:1.7;">Frank paid $297 once. He recoups that in his first month. After that it's pure passive income — every month, indefinitely. No referral cap. No earnings limit.</p>
-<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">And here's the part that changes everything — Frank doesn't need 10 referrals to start. He just needs one. One person who shares their link with the right audience.</p>
-<div style="background:#f5f3ef;border-left:4px solid #BB9900;border-radius:0 10px 10px 0;padding:20px 24px;margin-bottom:24px;">
-<p style="font-size:15px;color:#0a0a0a;margin:0;line-height:1.7;"><strong>If one of Frank's referrals has 100k followers and just 1% sign up</strong> — that's 1,000 people Frank has never met, paying $40/mo each, and Frank earning 15% Tier 2 on all of them. Every month. That single referral alone adds $6,000/mo to Frank's income.</p>
+<p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 12px;">Then Frank made one phone call.</p>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 20px;line-height:1.7;">He knew a content creator with 100k Instagram followers. Mentioned Carousel Studio. They tried it, loved it, posted about it once to their audience.</p>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 20px;line-height:1.7;">Just 1% of their audience signed up. That's 1,000 people.</p>
+<div style="background:#0a0a0a;border-radius:12px;padding:24px;margin-bottom:20px;">
+<p style="font-size:13px;color:#BB9900;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:0 0 16px;">What that one referral added to Frank's monthly income</p>
+<p style="font-size:15px;color:rgba(255,255,255,0.9);margin:0 0 10px;line-height:1.7;">1,000 people × $40/mo × 15% Tier 2 = <strong style="color:#BB9900;">$6,000/month extra</strong></p>
+<p style="font-size:13px;color:rgba(255,255,255,0.5);margin:0;line-height:1.6;">From one conversation. From 1% of one person's audience. People Frank has never spoken to, in a country he may have never visited, paying every single month.</p>
 </div>
-<p style="font-size:15px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Frank shares a link once. We handle everything else — the product, the payments, the support. Frank just collects the commission.</p>
-<p style="font-size:15px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">You can be Frank. Every paid plan includes your affiliate link. You can see the full breakdown of how this works at the link below.</p>
+<div style="background:#0a0a0a;border:2px solid #BB9900;border-radius:12px;padding:24px;margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+<div>
+<p style="font-size:13px;color:rgba(255,255,255,0.5);margin:0 0 4px;">Frank's new total — every month</p>
+<p style="font-size:13px;color:rgba(255,255,255,0.5);margin:0;">$440 baseline + $6,000 influencer Tier 2</p>
+</div>
+<div style="text-align:right;">
+<p style="font-family:Georgia,serif;font-size:42px;font-weight:900;color:#BB9900;margin:0;line-height:1;">$6,440</p>
+<p style="font-size:12px;color:rgba(255,255,255,0.4);margin:4px 0 0;">every month — from one phone call</p>
+</div>
+</div>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 20px;line-height:1.7;">And it's not just influencers. What if one of Frank's referrals runs a marketing agency? They buy the White Label Licence, brand Carousel Studio as their own tool, sign up 500 clients. Frank referred one person. Here's what that adds:</p>
+<div style="background:#f5f3ef;border-radius:10px;padding:20px 24px;margin-bottom:28px;">
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 6px;line-height:1.7;">500 clients × $40/mo × 15% Tier 2 = <strong style="color:#BB9900;">$3,000/month</strong></p>
+<p style="font-size:13px;color:#7a7875;margin:0;line-height:1.6;">From one referral. One agency. People using a tool they think belongs to the agency — and Frank earning 15% on every single one of them every month.</p>
+</div>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 20px;line-height:1.7;">Frank paid $297 once. He recoups that in month one. After that — pure passive income. No cap. No limit. The more his network grows, the more he earns. And he doesn't need to find an influencer or an agency. His baseline 10 referrals alone pay him $440 every month without lifting a finger.</p>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">You can be Frank. Every paid plan includes your affiliate link — the Affiliate Licence just gives you the highest commission rate with zero ongoing cost. See the full breakdown below.</p>
 <div style="text-align:center;margin:32px 0;">
-<a href="https://studio.buildwithtav.co/affiliate" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">See the Full Affiliate Breakdown →</a>
+<a href="https://studio.buildwithtav.co/affiliate" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">See Frank's Full Breakdown →</a>
 </div>
-<p style="font-size:15px;color:#0a0a0a;margin:0 0 8px;line-height:1.7;">Or upgrade from inside the app and your link is waiting for you the moment you log in.</p>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 8px;line-height:1.7;">Or upgrade from inside the app and your link is ready the moment you log in.</p>
 <p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">— Tav</p>
 </div>
 <p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p>
