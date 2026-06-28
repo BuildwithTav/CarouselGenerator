@@ -1113,7 +1113,7 @@ export default function App() {
     function autoFS(text,base){if(!text)return base;const len=text.length;const scaled=base-Math.max(0,(len-12)*2);return Math.max(28,Math.min(base,scaled));}
     const W=1080,H=1350,SAFE=60,isCover=idx===0;
         const FONT_CSS_MAP={montserrat:"Montserrat",playfair:"Playfair Display",poppins:"Poppins",inter:"Inter",oswald:"Oswald",dancing:"Dancing Script",raleway:"Raleway",lato:"Lato",roboto:"Roboto",ubuntu:"Ubuntu",nunito:"Nunito",sourcesans:"Source Sans 3",crimson:"Crimson Text",merriweather:"Merriweather",bebasneue:"Bebas Neue",abril:"Abril Fatface",pacifico:"Pacifico",josefin:"Josefin Sans",quicksand:"Quicksand",dmserif:"DM Serif Display",cormorant:"Cormorant Garamond",righteous:"Righteous"};
-    const activeFont=tmpl==="storytelling"?(fontStyle||font):font;const fontFamily=(FONT_CSS_MAP[activeFont]||activeFont||"Bebas Neue").replace(/'/g,"");
+    const fontFamily=(FONT_CSS_MAP[font]||font||"Bebas Neue").replace(/'/g,"");
     function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
     const gFonts="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Barlow+Condensed:wght@800;900&family=Archivo+Black&family=Playfair+Display:ital,wght@0,900;1,900&family=Alfa+Slab+One&family=Cormorant+Garamond:ital,wght@0,700;1,700&family=Josefin+Sans:wght@700&family=Raleway:wght@800;900&family=Quicksand:wght@700&family=Dancing+Script:wght@700&family=Inter:wght@400;600;700;800&family=Poppins:wght@400;600;700;800&family=Montserrat:wght@400;600;700;800&display=swap";
     function effectCSS(eff,pri,sec){
