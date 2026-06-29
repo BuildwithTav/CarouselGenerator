@@ -368,7 +368,7 @@ function buildSlideHTML(slide, idx, total, _c_opts, isCover = false) {
       display:flex; align-items:center; justify-content:center; position:relative; }
     .av img { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:100%; height:100%; object-fit:cover; }
     .av-i { font-size:44px; font-weight:900; color:${C.accent}; font-family:'${hlFont}',sans-serif; }
-    .bn { font-size:22px; font-weight:800; color:${badgeTextColor}; line-height:1.2; font-family:'${bodyFont}',sans-serif; ${badgeTextShadow} display:flex; align-items:center; flex-wrap:wrap; gap:4px; }
+    .bn { font-size:22px; font-weight:800; color:${badgeTextColor}; line-height:1.3; font-family:'${bodyFont}',sans-serif; ${badgeTextShadow} display:inline-flex; align-items:center; width:fit-content; gap:4px; }
     .bh { font-size:15px; color:${badgeSubColor}; font-family:'${bodyFont}',sans-serif; ${badgeTextShadow} }
     .tick { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; background:#1D9BF0; border-radius:50%; margin-left:5px; vertical-align:middle; position:relative; }
     .tick-mark { position:absolute; width:7px; height:4px; border-left:2px solid #fff; border-bottom:2px solid #fff; transform:rotate(-45deg); top:6px; left:5px; }
@@ -563,7 +563,7 @@ function buildSlideHTML(slide, idx, total, _c_opts, isCover = false) {
   ${isCover ? "" : profileUrl ? `<div class="badge">
     <div class="av">${avHtml}</div>
     <div>
-      <div class="bn">${esc(name||"Your Brand")}${blueTick?` <span class="tick"><span class="tick-mark"></span></span>`:""}</div>
+      <div class="bn">${esc(name||"Your Brand")}${blueTick?`<span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;background:#1D9BF0;border-radius:50%;margin-left:4px;vertical-align:middle;position:relative;top:-1px;flex-shrink:0;"><span style="position:absolute;width:6px;height:3px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);top:5px;left:4px;"></span></span>`:""}</div>
       <div class="bh">${esc(handle||"@yourhandle")}</div>
     </div>
   </div>` : ""}
@@ -3820,6 +3820,16 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                     {/* ── STYLE TAB ── */}
                     {tmplContentStyleTab==="style"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+                      {/* Badge text colour toggle */}
+                      <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div>
+                          <div style={{fontSize:12,fontWeight:700,color:A.text}}>Badge Text Colour</div>
+                          <div style={{fontSize:11,color:A.muted}}>Switch name/handle text dark or light</div>
+                        </div>
+                        <div onClick={()=>setBadgeTextDark(b=>!b)} style={{width:36,height:20,borderRadius:10,background:badgeTextDark?GOLD:A.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
+                          <div style={{position:"absolute",top:2,left:badgeTextDark?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
+                        </div>
+                      </div>
                       {/* Slide counter toggle */}
                       {!isListicle&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                         <div>
@@ -3992,10 +4002,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                     <div><div style={{fontWeight:600,fontSize:13}}>Blue tick</div><div style={{color:A.muted,fontSize:12}}>Verified badge on slides</div></div>
                     {tog(blueTick,setBlueTick)}
-                    {blueTick&&<div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
-                      <span style={{fontSize:12,color:A.muted}}>Badge text:</span>
-                      <button onClick={()=>setBadgeTextDark(b=>!b)} style={{background:badgeTextDark?"#0a0a0a":"#fff",border:"1.5px solid #E8E5E0",borderRadius:6,padding:"4px 12px",fontSize:12,fontWeight:700,color:badgeTextDark?"#fff":"#0a0a0a",cursor:"pointer"}}>{badgeTextDark?"Dark":"Light"}</button>
-                    </div>}
+                    
                   </div>
                   <div style={{borderTop:`1px solid ${A.border}`,paddingTop:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                     <div><div style={{fontWeight:600,fontSize:13}}>Website on slides</div><div style={{color:A.muted,fontSize:12}}>Show URL at bottom</div></div>
