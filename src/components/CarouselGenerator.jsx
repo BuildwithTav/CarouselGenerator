@@ -1412,6 +1412,7 @@ export default function App() {
     setAdminPresetName("");
   };
 
+  const [badgeTextDark, setBadgeTextDark] = useState(S?.badgeTextDark??false);
   const loadAdminPreset = (id) => {
     const p = adminPresets.find(x=>x.id===id);
     if (!p) return;
@@ -1449,7 +1450,6 @@ export default function App() {
   const [name, setName] = useState(S?.name||"");
   const [handle, setHandle] = useState(S?.handle||"");
   const [blueTick, setBlueTick] = useState(S?.blueTick??false);
-  const [badgeTextDark, setBadgeTextDark] = useState(S?.badgeTextDark??false);
   // Component-level vars for drawer
   const generateList=async()=>{
     if(!tmplBrief&&!tmplSlides.some(s=>s.headline))return;
