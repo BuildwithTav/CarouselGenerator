@@ -306,8 +306,8 @@ function buildSlideHTML(slide, idx, total, _c_opts, isCover = false) {
     : C.dark ? "rgba(0,0,0,0.62)" : "rgba(255,255,255,0.88)";
   const pillText = bgImageUrl || C.dark ? "#fff" : "#111";
   const pillSub = bgImageUrl || C.dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)";
-  const badgeTextColor = opts.badgeTextDark ? "#0A0A0A" : (forceLight ? "#0A0A0A" : (C.dark || bgImageUrl ? "#FFFFFF" : "#0A0A0A"));
-  const badgeSubColor = opts.badgeTextDark ? "rgba(0,0,0,0.55)" : (forceLight ? "rgba(0,0,0,0.55)" : (C.dark || bgImageUrl ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)"));
+  const badgeTextColor = badgeTextDark ? "#0A0A0A" : (forceLight ? "#0A0A0A" : (C.dark || bgImageUrl ? "#FFFFFF" : "#0A0A0A"));
+  const badgeSubColor = badgeTextDark ? "rgba(0,0,0,0.55)" : (forceLight ? "rgba(0,0,0,0.55)" : (C.dark || bgImageUrl ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)"));
   const badgeTextShadow = bgImageUrl ? (forceLight ? "text-shadow:0 0 12px rgba(255,255,255,0.9);" : "text-shadow:0 1px 6px rgba(0,0,0,0.8);") : "";
 
   // Pre-compute glow for use inside base CSS — based on bgImageUrl and bgMode
