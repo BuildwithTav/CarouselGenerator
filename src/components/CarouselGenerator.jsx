@@ -262,7 +262,7 @@ function buildSlideHTML(slide, idx, total, _c_opts, isCover = false) {
   const {
     fontId, headlineStyle, bgMode, templateBgUrl, overlayDark,
     coverImageUrl, coverPosition, badgeArea, photoOpacity, customColourDark, slideTextDark,
-    profileUrl, name, handle, blueTick, websiteUrl, showNums,
+    profileUrl, name, handle, blueTick, badgeTextDark, websiteUrl, showNums,
     accentColor, ratio, coverImgPos, templateImgPos, bgColour, gradientMode,
   } = _c_opts;
   const coverPos2 = coverImgPos || {x:50,y:50};
@@ -306,8 +306,8 @@ function buildSlideHTML(slide, idx, total, _c_opts, isCover = false) {
     : C.dark ? "rgba(0,0,0,0.62)" : "rgba(255,255,255,0.88)";
   const pillText = bgImageUrl || C.dark ? "#fff" : "#111";
   const pillSub = bgImageUrl || C.dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)";
-  const badgeTextColor = forceLight ? "#0A0A0A" : (C.dark || bgImageUrl ? "#FFFFFF" : "#0A0A0A");
-  const badgeSubColor = forceLight ? "rgba(0,0,0,0.55)" : (C.dark || bgImageUrl ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)");
+  const badgeTextColor = opts.badgeTextDark ? "#0A0A0A" : (forceLight ? "#0A0A0A" : (C.dark || bgImageUrl ? "#FFFFFF" : "#0A0A0A"));
+  const badgeSubColor = opts.badgeTextDark ? "rgba(0,0,0,0.55)" : (forceLight ? "rgba(0,0,0,0.55)" : (C.dark || bgImageUrl ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)"));
   const badgeTextShadow = bgImageUrl ? (forceLight ? "text-shadow:0 0 12px rgba(255,255,255,0.9);" : "text-shadow:0 1px 6px rgba(0,0,0,0.8);") : "";
 
   // Pre-compute glow for use inside base CSS — based on bgImageUrl and bgMode
@@ -368,7 +368,7 @@ function buildSlideHTML(slide, idx, total, _c_opts, isCover = false) {
       display:flex; align-items:center; justify-content:center; position:relative; }
     .av img { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:100%; height:100%; object-fit:cover; }
     .av-i { font-size:44px; font-weight:900; color:${C.accent}; font-family:'${hlFont}',sans-serif; }
-    .bn { font-size:22px; font-weight:800; color:${badgeTextColor}; line-height:1.2; font-family:'${bodyFont}',sans-serif; ${badgeTextShadow} }
+    .bn { font-size:22px; font-weight:800; color:${badgeTextColor}; line-height:1.2; font-family:'${bodyFont}',sans-serif; ${badgeTextShadow} display:flex; align-items:center; flex-wrap:wrap; gap:4px; }
     .bh { font-size:15px; color:${badgeSubColor}; font-family:'${bodyFont}',sans-serif; ${badgeTextShadow} }
     .tick { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; background:#1D9BF0; border-radius:50%; margin-left:5px; vertical-align:middle; position:relative; }
     .tick-mark { position:absolute; width:7px; height:4px; border-left:2px solid #fff; border-bottom:2px solid #fff; transform:rotate(-45deg); top:6px; left:5px; }
@@ -1390,7 +1390,7 @@ export default function App() {
   },[]);
   useEffect(()=>{
     if(!pendingTmplImage)return;
-    setTmplSlides(prev=>{const _c_next=[...prev];const idx=tmplActiveSlide||0;_c_next[idx]={..._c_next[idx],image:pendingTmplImage};return _c_next;});
+    setTmplSlides(prev=>{const _c_next=[...prev];const idx=tmplActiveSlide||0;_c_next[idx]={..._c_next[idx],image:pendingTmplImage,imagePos:{x:0,y:0},imageZoom:100};return _c_next;});
     setPendingTmplImage(null);
   },[pendingTmplImage,tmplActiveSlide]);
 
@@ -1416,7 +1416,7 @@ export default function App() {
     const p = adminPresets.find(x=>x.id===id);
     if (!p) return;
     setProfileUrl(p.profileUrl||""); setName(p.name||""); setHandle(p.handle||"");
-    setBlueTick(p.blueTick??false); setWebsite(p.website||""); setShowWebsite(p.showWebsite??false);
+    setBlueTick(p.blueTick??false); setBadgeTextDark(p.badgeTextDark??false); setWebsite(p.website||""); setShowWebsite(p.showWebsite??false);
     setVoiceProfile(p.voiceProfile||""); setBusinessType(p.businessType||"marketer");
     setHeadlineStyle(p.headlineStyle); setBgMode(p.bgMode); setBgColour(p.bgColour);
     setCustomColourDark(p.customColourDark); setSlideTextDark(p.slideTextDark);
@@ -1449,6 +1449,7 @@ export default function App() {
   const [name, setName] = useState(S?.name||"");
   const [handle, setHandle] = useState(S?.handle||"");
   const [blueTick, setBlueTick] = useState(S?.blueTick??false);
+  const [badgeTextDark, setBadgeTextDark] = useState(S?.badgeTextDark??false);
   // Component-level vars for drawer
   const generateList=async()=>{
     if(!tmplBrief&&!tmplSlides.some(s=>s.headline))return;
@@ -1742,7 +1743,7 @@ export default function App() {
     const safeTemplateBg = templateBgUrl?.startsWith('_c_data:') ? null : templateBgUrl;
     const safeCoverPhotos = coverPhotos.filter(p => !p?.startsWith('_c_data:'));
     const safeActiveCover = activeCoverPhoto?.startsWith('_c_data:') ? '' : activeCoverPhoto;
-    saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
+    saveS({profileUrl:safeProfileUrl,name,handle,blueTick,badgeTextDark,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,quotePhotos,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
            bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("_c_data:")),overlayDark,photoOpacity,templateOpacity,ratio,bgColour,customColourDark,slideTextDark,audienceType,customActiveSlot,textDensity});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
@@ -2063,11 +2064,11 @@ Return ONLY valid JSON, nothing else.` }
     overlayDark: slideOverlays[slideIdx]??overlayDark,
     coverImageUrl: activeCoverPhoto, coverPosition, badgeArea,
     photoOpacity: slideIdx === 0 ? photoOpacity : templateOpacity,
-    profileUrl, name, handle, blueTick,
+    profileUrl, name, handle, blueTick, badgeTextDark,
     websiteUrl: currentUser?.plan==="free" ? "studio.buildwithtav.co" : (showWebsite?website:""),
     showNums, ratio, accentColor, bgColour, customColourDark, slideTextDark,
     coverImgPos, templateImgPos, gradientMode,
-  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,photoOpacity,templateOpacity,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,customColourDark,slideTextDark,slideOverlays,gradientMode,currentUser]);
+  }), [fontId,headlineStyle,bgMode,templateBgUrl,overlayDark,photoOpacity,templateOpacity,activeCoverPhoto,coverPosition,badgeArea,profileUrl,name,handle,blueTick,badgeTextDark,website,showWebsite,showNums,ratio,accentColor,coverImgPos,templateImgPos,bgColour,customColourDark,slideTextDark,slideOverlays,gradientMode,currentUser]);
 
   const downloadOne = async (i) => {
     if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
@@ -3991,6 +3992,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                     <div><div style={{fontWeight:600,fontSize:13}}>Blue tick</div><div style={{color:A.muted,fontSize:12}}>Verified badge on slides</div></div>
                     {tog(blueTick,setBlueTick)}
+                    {blueTick&&<div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
+                      <span style={{fontSize:12,color:A.muted}}>Badge text:</span>
+                      <button onClick={()=>setBadgeTextDark(b=>!b)} style={{background:badgeTextDark?"#0a0a0a":"#fff",border:"1.5px solid #E8E5E0",borderRadius:6,padding:"4px 12px",fontSize:12,fontWeight:700,color:badgeTextDark?"#fff":"#0a0a0a",cursor:"pointer"}}>{badgeTextDark?"Dark":"Light"}</button>
+                    </div>}
                   </div>
                   <div style={{borderTop:`1px solid ${A.border}`,paddingTop:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                     <div><div style={{fontWeight:600,fontSize:13}}>Website on slides</div><div style={{color:A.muted,fontSize:12}}>Show URL at bottom</div></div>
