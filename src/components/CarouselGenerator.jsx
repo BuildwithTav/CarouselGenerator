@@ -1464,7 +1464,7 @@ export default function App() {
       const result=JSON.parse(clean);
       if(result.coverTopicLine||result.coverSubject){setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],topicLine:result.coverTopicLine||next[0].topicLine,subject:result.coverSubject||next[0].subject,subline:"Swipe to see all "+numItems+"."};return next;});}
       if(Array.isArray(result.items)){setTmplSlides(prev=>{const next=[...prev];result.items.forEach((item,i)=>{const si=i+1;if(si<next.length){if(item.headline)next[si]={...next[si],headline:item.headline};if(item.bodyText)next[si]={...next[si],bodyText:item.bodyText};}});return next;});}
-      if(currentUser?.email){await authFetch("/api/auth", {action:"increment-downloads",email:currentUser.email,credits:5});setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));}
+      if(currentUser?.email){await authFetch("/api/auth", {action:"increment-downloads",email:currentUser.email,credits:10});setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+10}));}
     }catch(e){console.error(e);alert("Generation failed — try again");}
     setTmplSuggesting(null);
   };
@@ -2010,9 +2010,9 @@ Return ONLY valid JSON, nothing else.` }
           saveHistory(updated);
           return updated;
         });
-        // Charge 5 credits for caption
+        // Charge 3 credits for caption
         if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
-          await authFetch("/api/auth", { action:"increment-downloads", email: currentUser.email, credits: 5 });
+          await authFetch("/api/auth", { action:"increment-downloads", email: currentUser.email, credits: 3 });
           refreshUser();
         }
       }
@@ -2033,9 +2033,9 @@ Return ONLY valid JSON, nothing else.` }
       const raw = (d.content?.find(b=>b.type==="text")?.text||"").replace(/<[^>]+>/g,"");
       const m = raw.match(/\{[\s\S]*\}/);
       if (m) { const _c_next=[...slides]; _c_next[active]=sanitize(JSON.parse(m[0])); setSlides(_c_next); setRewritePrompt("");
-        // Charge 5 credits for rewrite
+        // Charge 3 credits for rewrite
         if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
-          await authFetch("/api/auth", { action:"increment-downloads", email: currentUser.email, credits: 5 });
+          await authFetch("/api/auth", { action:"increment-downloads", email: currentUser.email, credits: 3 });
           refreshUser();
         }
       }
@@ -2074,7 +2074,7 @@ Return ONLY valid JSON, nothing else.` }
       await downloadSlideAsPNG(slides[i], i, slides.length, slideOpts(i), `slide-${i+1}.png`, i===0);
       setDownloadDone(true); setTimeout(()=>setDownloadDone(false), 2000);
       if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
-        await authFetch("/api/auth", { action:"increment-downloads", email: currentUser.email, credits: 5 });
+        await authFetch("/api/auth", { action:"increment-downloads", email: currentUser.email, credits: 3 });
         refreshUser();
       }
     } catch(e) { console.error(e); alert("Download failed — try again."); }
@@ -2774,7 +2774,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             </h2>
             <p style={{fontSize:13,color:A.muted,margin:"0 0 24px",lineHeight:1.6}}>
               {creditsRemaining()===0
-                ? currentUser?.plan==="free" ? "Free accounts get 6 credits per month. Upgrade for more." : "You've hit your monthly limit. Upgrade to Pro for 800 credits/month."
+                ? currentUser?.plan==="free" ? "Free accounts get 60 credits per month. Upgrade for more." : "You've hit your monthly limit. Upgrade to Pro for 800 credits/month."
                 : "More credits, more features. Cancel anytime."}
             </p>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -3466,7 +3466,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   if(!data.image)throw new Error(data.error||"Render failed");
                   const a=document.createElement("a");a.href="data:image/png;base64,"+data.image;a.download=tmplSelected+"-slide-"+(idx+1)+".png";document.body.appendChild(a);a.click();document.body.removeChild(a);
                   await authFetch("/api/auth", {action:"increment-downloads",email:currentUser.email,credits:3});
-                  setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));
+                  setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+3}));
                   const _hEntrySingle={id:Date.now(),topic:tmplSelected+" template",slides:tmplSlides.slice(0,tmplSlideCount).map(s=>({...s,image:null,image2:null})),date:new Date().toLocaleDateString(),isTemplate:true,templateType:tmplSelected};
                   setHistory(prev=>{const _h=[_hEntrySingle,...prev].slice(0,10);saveHistory(_h);return _h;});
                 }catch(e){console.error(e);alert("Download failed — try again");}
@@ -3500,8 +3500,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   const url=URL.createObjectURL(zipBlob);
                   const a=document.createElement("a");a.href=url;a.download=tmplSelected+"-slides.zip";document.body.appendChild(a);a.click();document.body.removeChild(a);
                   setTimeout(()=>URL.revokeObjectURL(url),2000);
-                  await authFetch("/api/auth", {action:"increment-downloads",email:currentUser.email,credits:10});
-                  setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+10}));
+                  await authFetch("/api/auth", {action:"increment-downloads",email:currentUser.email,credits:5});
+                  setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));
                   // Save to history
                   const _hEntry={id:Date.now(),topic:tmplSelected+" template",slides:tmplSlides.slice(0,tmplSlideCount).map(s=>({...s,image:null,image2:null})),date:new Date().toLocaleDateString(),isTemplate:true,templateType:tmplSelected};
                   setHistory(prev=>{const _h=[_hEntry,...prev].slice(0,10);saveHistory(_h);return _h;});
@@ -3509,43 +3509,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 setTmplDownloading(false);
               };
 
-              const _iife_generateList=async()=>{
-                if(!tmplBrief&&!tmplSlides.some(s=>s.headline))return;
-                setTmplSuggesting("list");
-                try{
-                  const briefNumMatch=tmplBrief.match(/^(\d+)\s/);
-                  const briefNum=briefNumMatch?parseInt(briefNumMatch[1]):null;
-                  let targetCount=tmplSlideCount;
-                  if(briefNum&&briefNum>=2&&briefNum<=12){targetCount=briefNum+1;setTmplSlideCount(targetCount);setTmplListicleNum(briefNum);}
-                  const numItems=targetCount-1;
-                  const existingItems=tmplSlides.slice(1,targetCount).map((s,i)=>s.headline?(i+1)+". "+s.headline+" (keep, generate detail)":(i+1)+". (generate)").join("\n");
-                  const prompt="Create a listicle carousel about: \""+tmplBrief+"\". Generate "+numItems+" items. Existing: "+existingItems+". Return ONLY valid JSON with keys: coverTopicLine (max 6 words, describes the topic e.g. PLACES YOU NEED TO VISIT), coverSubject (max 3 words, the punchy hook WITHOUT the number e.g. BEFORE YOU DIE or ENDS 2027 — never start with the number), items (array of "+numItems+" objects with headline max 4 words and bodyText max 15 words). No markdown.";
-                  const r=await fetchWithRetry({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:prompt}]});
-                  const text=r?.content?.[0]?.text?.trim()||"{}";
-                  const bt=String.fromCharCode(96);const clean=text.replace(new RegExp(bt+bt+bt+"json","g"),"").replace(new RegExp(bt+bt+bt,"g"),"").trim();
-                  const _iife_result=JSON.parse(clean);
-                  if(_iife_result.coverTopicLine||_iife_result.coverSubject){setTmplSlides(prev=>{const next=[...prev];next[0]={...next[0],topicLine:_iife_result.coverTopicLine||next[0].topicLine,subject:_iife_result.coverSubject||next[0].subject};return next;});}
-                  if(Array.isArray(_iife_result.items)){setTmplSlides(prev=>{const next=[...prev];_iife_result.items.forEach((item,i)=>{const si=i+1;if(si<next.length){if(item.headline)next[si]={...next[si],headline:item.headline};if(item.bodyText)next[si]={...next[si],bodyText:item.bodyText};}});return next;});}
-                  if(currentUser?.email){await authFetch("/api/auth", {action:"increment-downloads",email:currentUser.email,credits:5});setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));}
-                }catch(e){console.error(e);alert("Generation failed — try again");}
-                setTmplSuggesting(null);
-              };
-              const _iife_generateStory=async()=>{
-                if(!tmplBrief)return;
-                setTmplSuggesting("story");
-                try{
-                  const prompt="Write a personal story carousel with exactly "+tmplSlideCount+" slides. Brief: "+tmplBrief+". Each slide should be 2-4 short sentences that flow naturally into the next. The story should have a beginning (who you were), a struggle or turning point, and a resolution or lesson. Make it honest, direct, and human. Return ONLY valid JSON array of "+tmplSlideCount+" objects with key: storyText (string). No markdown.";
-                  const r=await fetchWithRetry({model:"claude-sonnet-4-6",max_tokens:1200,messages:[{role:"user",content:prompt}]});
-                  const text=r?.content?.[0]?.text?.trim()||"[]";
-                  const bt=String.fromCharCode(96);const clean=text.replace(new RegExp(bt+bt+bt+"json","g"),"").replace(new RegExp(bt+bt+bt,"g"),"").trim();
-                  const slides=JSON.parse(clean);
-                  if(Array.isArray(slides)){
-                    setTmplSlides(prev=>{const next=[...prev];slides.forEach((s,i)=>{if(i<next.length&&s.storyText)next[i]={...next[i],storyText:s.storyText};});return next;});
-                    if(currentUser?.email){await authFetch("/api/auth", {action:"increment-downloads",email:currentUser.email,credits:10});setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+10}));}
-                  }
-                }catch(e){console.error(e);alert("Generation failed — try again");}
-                setTmplSuggesting(null);
-              };
               const generateCta=async()=>{
                 setTmplCtaGenerating(true);
                 try{
@@ -3700,7 +3663,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         {tmplDownloadingIdx===activeSlide?<><Spin c={A.text}/>Downloading...</>:`↓ Slide ${activeSlide+1}`}
                       </button>
                       <button onClick={()=>{if(window.confirm("Please check all slides look correct. This cannot be undone.")){downloadAllTmpl();}}} disabled={tmplDownloading} style={{flex:2,background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,padding:"10px",borderRadius:9,fontSize:13,fontWeight:800,border:`1px solid ${GOLD}33`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                        {tmplDownloading?<><Spin/>Downloading...</>:"↓ Download All (10 credits)"}
+                        {tmplDownloading?<><Spin/>Downloading...</>:"↓ Download All (5 credits)"}
                       </button>
                     </div>
                   </div>
@@ -4532,12 +4495,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     {[
                       ["Carousel generation","10 credits"],
                       ["Template AI — full story or list","10 credits"],
-                      ["Template download all","10 credits"],
                       ["Quote card batch","10 credits"],
-                      ["AI caption","5 credits"],
-                      ["AI rewrite","5 credits"],
-                      ["Single slide download","5 credits"],
+                      ["Template download all","5 credits"],
                       ["Quote card download","5 credits"],
+                      ["AI caption","3 credits"],
+                      ["AI rewrite","3 credits"],
+                      ["Single slide download","3 credits"],
                       ["Template AI — per slide","3 credits"],
                       ["Template single slide download","3 credits"],
                       ["Photo upload","Free"],
@@ -5083,7 +5046,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     <div style={{fontSize:10,color:"rgba(255,255,255,0.5)",marginBottom:6}}>800 credits/month</div>
                     <div style={{fontSize:24,fontWeight:900,color:GOLD,marginBottom:14}}>$50<span style={{fontSize:11,fontWeight:500,color:"rgba(255,255,255,0.4)"}}>/mo</span></div>
                     <div style={{flex:1,marginBottom:14}}>
-                      {["Everything in Starter","80 carousels/month/month","30% affiliate commission","15% Tier 2 on your network","Refer 4 — Pro pays itself","Priority support","Early feature access"].map(f=>(
+                      {["Everything in Starter","80 carousel generations/month","30% affiliate commission","15% Tier 2 on your network","Refer 4 — Pro pays itself","Priority support","Early feature access"].map(f=>(
                         <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:"#fff",marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
@@ -5101,7 +5064,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     <div style={{fontSize:10,color:A.muted,marginBottom:6}}>3,000 credits/month</div>
                     <div style={{fontSize:24,fontWeight:900,color:A.text,marginBottom:14}}>$100<span style={{fontSize:11,fontWeight:500,color:A.muted}}>/mo</span></div>
                     <div style={{flex:1,marginBottom:14}}>
-                      {["Everything in Pro","300 carousels/month/month","40% affiliate commission","15% Tier 2 on your network","Enough credits for multiple brands","High volume creators & agencies","Priority support"].map(f=>(
+                      {["Everything in Pro","300 carousel generations/month","40% affiliate commission","15% Tier 2 on your network","Enough credits for multiple brands","High volume creators & agencies","Priority support"].map(f=>(
                         <div key={f} style={{display:"flex",alignItems:"flex-start",gap:5,fontSize:11,color:A.text,marginBottom:6,lineHeight:1.4}}><span style={{color:GOLD,fontWeight:800,flexShrink:0}}>✓</span>{f}</div>
                       ))}
                     </div>
