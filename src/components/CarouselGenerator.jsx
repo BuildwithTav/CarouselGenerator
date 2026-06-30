@@ -2020,6 +2020,34 @@ Return ONLY valid JSON, nothing else.` }
     setGeneratingCaption(false);
   };
 
+  const generateTmplCaption = async (tmpl, slides, slideCount, brief) => {
+    if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
+    if (!confirmLastCredit()) return;
+    setGeneratingCaption(true);
+    setShowCaption(false);
+    try {
+      const btObj = BUSINESS_TYPES.find(b=>b.id===businessType);
+      const btLabel = businessType==="other"?(otherType||"brand"):btObj?.label||"Digital Marketer";
+      const audienceDesc = audienceType==="peers" ? `other ${btLabel.toLowerCase()}s` : (btObj?.audience||"your target audience");
+      const slidesSummary = slides.slice(0,slideCount).map((s,i)=>{
+        const t = tmpl==="storytelling"?s.storyText:(s.headline||s.bodyText||s.subject||"");
+        return t?`Slide ${i+1}: ${t}`:"";
+      }).filter(Boolean).join("\n");
+      const topicHint = brief || slidesSummary.split("\n")[0] || "this carousel";
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:400, messages:[{ role:"user", content:`Write an Instagram/LinkedIn caption for a carousel post about "${topicHint}" for a ${btLabel} targeting ${audienceDesc}.\n\nThe carousel covers:\n${slidesSummary}\n\nVoice: ${voiceProfile||"Direct, honest, no hype. Short punchy sentences."}\n\nRules:\n- Hook in first line — make them stop scrolling\n- 3-5 sentences max\n- Tell them to swipe\n- Soft CTA at end (save, follow, comment — pick the most relevant)\n- Max 5 relevant hashtags at the end\n- No emojis unless they feel natural\n- Sign off as — ${name||"Tav"}\n\nReturn ONLY the caption text, nothing else.` }] }, 4, true);
+      const text = d.content?.find(b=>b.type==="text")?.text?.trim()||"";
+      if (text) {
+        setCaption(text);
+        setShowCaption(true);
+        if (currentUser && !currentUser.is_admin && !isUnlimitedPlan(currentUser.plan)) {
+          await authFetch("/api/auth", { action:"increment-downloads", email: currentUser.email, credits: 3 });
+          refreshUser();
+        }
+      }
+    } catch(e) { console.error("Template caption failed:", e); alert("Caption generation failed — try again."); }
+    setGeneratingCaption(false);
+  };
+
   const rewrite = async () => {
     if (!rewritePrompt.trim()) return;
     if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
@@ -3800,6 +3828,24 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         </div>
                       </div>}
 
+                      {/* Caption Generator */}
+                      <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
+                        <label style={lbl}>Caption Generator</label>
+                        <p style={{color:A.muted,fontSize:11,margin:"0 0 10px",lineHeight:1.5}}>Ready-to-post caption based on this template.</p>
+                        <button onClick={()=>generateTmplCaption(tmplSelected,tmplSlides,tmplSlideCount,tmplBrief)} disabled={generatingCaption} style={{width:"100%",background:generatingCaption?A.border:A.bg,border:`1.5px solid ${A.border}`,color:A.text,padding:"9px",borderRadius:8,fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:showCaption&&caption?10:0,cursor:"pointer"}}>
+                          {generatingCaption?"Writing...":"Generate Caption"}
+                        </button>
+                        {showCaption&&caption&&(
+                          <div style={{background:A.bg,borderRadius:8,padding:12}}>
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                              <label style={{...lbl,marginBottom:0}}>Caption</label>
+                              <button onClick={()=>{navigator.clipboard.writeText(caption);setCaptionCopied(true);setTimeout(()=>setCaptionCopied(false),2000);}} style={{background:captionCopied?"#27ae60":A.text,color:A.accentText,border:"none",borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer",transition:"background 0.2s"}}>{captionCopied?"✓ Copied":"Copy"}</button>
+                            </div>
+                            <p style={{fontSize:12,lineHeight:1.7,color:A.text,whiteSpace:"pre-wrap",margin:0}}>{caption}</p>
+                          </div>
+                        )}
+                      </div>
+
                       {activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,marginBottom:8}}><div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>CTA slide inherits your template font. Accent colour and CTA word follow the Accent colour in the Visuals tab.</div></div>}
                       {/* Effects dropdown */}
                       {!isRaw&&!isStory&&!activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,display:"flex",flexDirection:"column",gap:10}}>
@@ -4851,6 +4897,24 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <div style={{position:"absolute",top:2,left:tmplShowWebsite?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}}/>
                         </div>
                       </div>}
+
+                      {/* Caption Generator */}
+                      <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14}}>
+                        <label style={lbl}>Caption Generator</label>
+                        <p style={{color:A.muted,fontSize:11,margin:"0 0 10px",lineHeight:1.5}}>Ready-to-post caption based on this template.</p>
+                        <button onClick={()=>generateTmplCaption(tmplSelected,tmplSlides,tmplSlideCount,tmplBrief)} disabled={generatingCaption} style={{width:"100%",background:generatingCaption?A.border:A.bg,border:`1.5px solid ${A.border}`,color:A.text,padding:"9px",borderRadius:8,fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:showCaption&&caption?10:0,cursor:"pointer"}}>
+                          {generatingCaption?"Writing...":"Generate Caption"}
+                        </button>
+                        {showCaption&&caption&&(
+                          <div style={{background:A.bg,borderRadius:8,padding:12}}>
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                              <label style={{...lbl,marginBottom:0}}>Caption</label>
+                              <button onClick={()=>{navigator.clipboard.writeText(caption);setCaptionCopied(true);setTimeout(()=>setCaptionCopied(false),2000);}} style={{background:captionCopied?"#27ae60":A.text,color:A.accentText,border:"none",borderRadius:6,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer",transition:"background 0.2s"}}>{captionCopied?"✓ Copied":"Copy"}</button>
+                            </div>
+                            <p style={{fontSize:12,lineHeight:1.7,color:A.text,whiteSpace:"pre-wrap",margin:0}}>{caption}</p>
+                          </div>
+                        )}
+                      </div>
 
                       {activeIsCtaSlide&&<div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:10,padding:14,marginBottom:8}}><div style={{fontSize:12,color:A.muted,lineHeight:1.6}}>CTA slide inherits your template font. Accent colour and CTA word follow the Accent colour in the Visuals tab.</div></div>}
                       {/* Effects dropdown */}
