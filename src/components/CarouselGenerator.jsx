@@ -106,7 +106,7 @@ const COVER_POSITIONS = [
 function loadS() { try { if (typeof window === "undefined") return null; return JSON.parse(localStorage.getItem(STORAGE_KEY)||"null"); } catch { return null; } }
 function saveS(d) { try { if (typeof window === "undefined") return; localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} }
 function loadHistory() { try { if (typeof window === "undefined") return []; return JSON.parse(localStorage.getItem("bwt_history")||"[]"); } catch { return []; } }
-function saveHistory(h) { try { if (typeof window === "undefined") return; localStorage.setItem("bwt_history", JSON.stringify(h.slice(0,10))); } catch {} }
+function saveHistory(h) { try { if (typeof window === "undefined") return; localStorage.setItem("bwt_history", JSON.stringify(h.slice(0,10))); } catch(e) { console.error("History save failed:", e); } }
 function Spin({c="#fff"}) { return <div style={{width:14,height:14,borderRadius:"50%",border:`2px solid rgba(255,255,255,0.15)`,borderTop:`2px solid ${c}`,animation:"spin 0.7s linear infinite",flexShrink:0}}/>; }
 
 async function sampleImageBrightness(imageUrl) {
@@ -1904,7 +1904,7 @@ Return ONLY valid JSON array:
       }));
       setSlides(newSlides); setActive(0); setView("preview"); setCaption(""); setShowCaption(false);
 
-      const entry = { id: Date.now(), topic: t, slides: newSlides, date: new Date().toLocaleDateString() };
+      const entry = { id: Date.now(), topic: t, slides: newSlides.map(s=>({...s,coverImageUrl:null,templateBgUrl:null})), date: new Date().toLocaleDateString() };
       const newHistory = [entry, ...history].slice(0, 10);
       setHistory(newHistory); saveHistory(newHistory);
 
@@ -3359,17 +3359,29 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 <div style={{fontSize:14,fontWeight:700}}>Carousels</div>
                 {history.length>0&&<button onClick={()=>{if(window.confirm("Clear carousel history?")){{setHistory([]);saveHistory([]);}}}} style={{background:"none",border:`1.5px solid ${A.border}`,borderRadius:7,padding:"4px 10px",fontSize:11,color:"#c0392b",fontWeight:600,cursor:"pointer"}}>Clear</button>}
               </div>
-              {history.length===0
+              {history.filter(e=>!e.isTemplate).length===0
                 ? <div style={{textAlign:"center",padding:"30px 0",color:A.muted,fontSize:13}}>No carousels yet.</div>
                 : <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                    {history.map(entry=>(
+                    {history.filter(e=>!e.isTemplate).map(entry=>(
                       <div key={entry.id} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:"16px 18px"}}>
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,marginBottom:entry.caption?10:0}}>
                           <div>
                             <div style={{fontWeight:700,fontSize:14,marginBottom:3}}>{entry.topic}</div>
                             <div style={{color:A.muted,fontSize:12}}>{entry.slides.length} slides · {entry.date}{entry.caption?" · Caption saved":""}</div>
                           </div>
-                          <button onClick={()=>{setSlides(entry.slides);setActive(0);setView("preview");setLastTopic(entry.topic);setNav("generate");if(entry.caption){setCaption(entry.caption);setShowCaption(true);}}} style={{background:A.text,color:A.accentText,padding:"7px 16px",borderRadius:8,fontSize:13,fontWeight:700,flexShrink:0}}>
+                          <button onClick={()=>{
+                            if(entry.isTemplate&&entry.templateType){
+                              setTmplSelected(entry.templateType);
+                              try{localStorage.setItem("bwt_tmpl_selected",entry.templateType);}catch{}
+                              setTmplSlides(entry.slides);
+                              setTmplSlideCount(entry.slides.length);
+                              setTmplActiveSlide(0);
+                              setNav("templates");
+                            } else {
+                              setSlides(entry.slides);setActive(0);setView("preview");setLastTopic(entry.topic);setNav("generate");
+                              if(entry.caption){setCaption(entry.caption);setShowCaption(true);}
+                            }
+                          }} style={{background:A.text,color:A.accentText,padding:"7px 16px",borderRadius:8,fontSize:13,fontWeight:700,flexShrink:0}}>
                             Load →
                           </button>
                         </div>
@@ -3378,6 +3390,37 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                             {entry.caption.length>150?entry.caption.slice(0,150)+"...":entry.caption}
                           </div>
                         )}
+                      </div>
+                    ))}
+                  </div>
+              }
+            </div>
+
+            <div style={{marginBottom:24}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                <div style={{fontSize:14,fontWeight:700}}>Templates</div>
+              </div>
+              {history.filter(e=>e.isTemplate).length===0
+                ? <div style={{textAlign:"center",padding:"30px 0",color:A.muted,fontSize:13}}>No templates downloaded yet.</div>
+                : <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                    {history.filter(e=>e.isTemplate).map(entry=>(
+                      <div key={entry.id} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:"16px 18px"}}>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:16}}>
+                          <div>
+                            <div style={{fontWeight:700,fontSize:14,marginBottom:3}}>{entry.topic}</div>
+                            <div style={{color:A.muted,fontSize:12}}>{entry.slides.length} slides · {entry.date}</div>
+                          </div>
+                          <button onClick={()=>{
+                            setTmplSelected(entry.templateType);
+                            try{localStorage.setItem("bwt_tmpl_selected",entry.templateType);}catch{}
+                            setTmplSlides(entry.slides);
+                            setTmplSlideCount(entry.slides.length);
+                            setTmplActiveSlide(0);
+                            setNav("templates");
+                          }} style={{background:A.text,color:A.accentText,padding:"7px 16px",borderRadius:8,fontSize:13,fontWeight:700,flexShrink:0}}>
+                            Load →
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
