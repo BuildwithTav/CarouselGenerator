@@ -1322,6 +1322,7 @@ export default function App() {
       +"<div style='display:flex;flex-direction:column;align-items:center;text-align:center;gap:32px;padding:0 80px;margin-top:60px;'>"
       +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:"+textC+";font-weight:600;line-height:1.3;margin:0;'>"+esc(line1)+"</p>"
       +"<div style='width:80px;height:4px;background:"+accent+";'></div>"
+      +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:38px;color:"+mutedC+";line-height:1.3;margin:0;'>"+esc(line2)+"</p>"
 
       +"<p style='font-family:"+fontFamily+",sans-serif;font-size:160px;font-weight:900;color:"+accent+";line-height:0.9;margin:0;letter-spacing:4px;'>"+esc((keyword||"").toUpperCase())+"</p>"
       +"<div style='width:80px;height:4px;background:"+accent+";'></div>"
