@@ -2191,12 +2191,12 @@ Return ONLY valid JSON, nothing else.` }
       setTimeout(async()=>{
         try {
           const win=iframe.contentWindow;
-          await new Promise(r=>{const s=doc.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=r;s.onerror=r;doc.head.appendChild(s);setTimeout(r,4000);});
+          await new Promise(r=>{const s=doc.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=r;s.onerror=r;doc.head.appendChild(s);setTimeout(r,5000);});
           if(!win.html2canvas) throw new Error("no h2c");
           const canvas=await win.html2canvas(doc.querySelector(".slide")||doc.body,{useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
           canvas.toBlob(b=>{document.body.removeChild(iframe);res(b);},"image/png",1.0);
         } catch(e){document.body.removeChild(iframe);rej(e);}
-      },2500);
+      },4000);
     });
   };
 
@@ -2238,9 +2238,7 @@ Return ONLY valid JSON, nothing else.` }
         for (let attempt=0; attempt<2; attempt++) {
           try {
             const _c_opts = slideOpts(i);
-            blob = mobile
-            ? await renderSlideViaServer(slides[i],i,slides.length,_c_opts,i===0)
-            : await renderSlideViaCanvas(slides[i],i,slides.length,_c_opts,i===0);
+            blob = await renderSlideViaServer(slides[i],i,slides.length,_c_opts,i===0);
             if (blob) break;
           } catch(e) {
             console.error("Slide",i+1,"attempt",attempt+1,"failed:",e);
@@ -2251,6 +2249,8 @@ Return ONLY valid JSON, nothing else.` }
         else console.error("Slide",i+1,"failed after 2 attempts");
         if (mobile) await new Promise(r=>setTimeout(r,300));
       }
+      const fileCount = Object.keys(zip.files).length;
+      if (fileCount === 0) { alert("Download failed — no slides could be rendered. Please try again or download slides individually."); setDownloadingAll(false); return; }
       const zipBlob = await zip.generateAsync({type:"blob"});
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement("a");
