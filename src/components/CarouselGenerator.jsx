@@ -2134,7 +2134,7 @@ Return ONLY valid JSON, nothing else.` }
     if (tab) { setNav(tab); window.history.replaceState({}, "", "/"); }
   }, []);
 
-  const isMobileDevice = () => true;
+  const isMobileDevice = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   // Compress image to thumbnail for library storage — prevents localStorage overflow
   const compressForLibrary = (dataUrl) => new Promise((res) => {
@@ -2224,7 +2224,6 @@ Return ONLY valid JSON, nothing else.` }
     if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (!confirmLastCredit()) return;
     setDownloadingAll(true);
-    const mobile = isMobileDevice();
     try {
       await new Promise((res,rej) => {
         if (window.JSZip) return res();
