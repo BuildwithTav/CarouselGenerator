@@ -624,7 +624,7 @@ async function downloadSlideAsPNG(slide, idx, total, _c_opts, filename, isCover=
     const res = await fetch("/api/render-slide", {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ _c_html, width:W, height:H })
+      body: JSON.stringify({ html:_c_html, width:W, height:H })
     });
     const _c_data = await res.json();
     console.log("Slide render response:", res.status, _c_data.error||"ok", "hasImage:", !!_c_data.image);
@@ -2168,7 +2168,7 @@ Return ONLY valid JSON, nothing else.` }
     const res = await fetch("/api/render-slide", {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ _c_html, width:W, height:H })
+      body: JSON.stringify({ html:_c_html, width:W, height:H })
     });
     const _c_data = await res.json();
     if (!_c_data.image) throw new Error(_c_data.error||"Render failed");
@@ -2555,7 +2555,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
       const res = await fetch("/api/render-slide", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ _c_html, width: W, height: H })
+        body: JSON.stringify({ html: _c_html, width: W, height: H })
       });
       const _c_data = await res.json();
       if (!_c_data.image) throw new Error(_c_data.error || "Render failed");
