@@ -604,8 +604,10 @@ function SlidePreview({ slide, idx, total, _c_opts, onClick, isActive, isCover, 
   }, [_c_html]);
 
   return (
-    <div onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#0A0A0A":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:previewW, height:previewH, flexShrink:0 }}>
-      <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin allow-scripts" title={`slide-${idx+1}`}/>
+    <div onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#BB9900":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:previewW, height:previewH, flexShrink:0, background:"#0A0A0A" }}>
+      <div style={{position:"absolute",top:0,left:0,width:previewW,height:previewH,overflow:"hidden",borderRadius:6}}>
+        <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin allow-scripts" title={`slide-${idx+1}`}/>
+      </div>
     </div>
   );
 }
@@ -4424,18 +4426,18 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     <label style={{...lbl,marginBottom:8}}>Photo overlay — {overlayDark}%</label>
                     <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
                   </div>
-                  <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateTmplSlide("tag",e.target.value)} style={{...inp,fontSize:16}}/></div>
-                  <div><label style={lbl}>Headline</label><textarea value={slides[active]?.headline||""} onChange={e=>updateTmplSlide("headline",e.target.value)} rows={2} style={{...inp,resize:"vertical",lineHeight:1.5}}/></div>
-                  <div><label style={lbl}>Accent word <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(renders in colour)</span></label><input value={slides[active]?.accent_word||""} onChange={e=>updateTmplSlide("accent_word",e.target.value)} placeholder="exact word from headline" style={inp}/></div>
-                  <div><label style={lbl}>Body</label><textarea value={slides[active]?.body||""} onChange={e=>updateTmplSlide("body",e.target.value)} rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}/></div>
+                  <div><label style={lbl}>Slide Title</label><input value={slides[active]?.tag||""} onChange={e=>updateSlide("tag",e.target.value)} style={{...inp,fontSize:16}}/></div>
+                  <div><label style={lbl}>Headline</label><textarea value={slides[active]?.headline||""} onChange={e=>updateSlide("headline",e.target.value)} rows={2} style={{...inp,resize:"vertical",lineHeight:1.5}}/></div>
+                  <div><label style={lbl}>Accent word <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(renders in colour)</span></label><input value={slides[active]?.accent_word||""} onChange={e=>updateSlide("accent_word",e.target.value)} placeholder="exact word from headline" style={inp}/></div>
+                  <div><label style={lbl}>Body</label><textarea value={slides[active]?.body||""} onChange={e=>updateSlide("body",e.target.value)} rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}/></div>
                   <div>
                     <label style={lbl}>CTA <span style={{letterSpacing:0,fontWeight:400,fontSize:9}}>(leave blank to hide)</span></label>
                     <input
                       value={slides[active]?.layout==="hero"?(slides[active]?.cta_items?.[0]||""):(slides[active]?.cta||"")}
                       onChange={e=>{
                         const v=e.target.value||null;
-                        if(slides[active]?.layout==="hero") updateTmplSlide("cta_items",v?[v]:[]);
-                        else updateTmplSlide("cta",v);
+                        if(slides[active]?.layout==="hero") updateSlide("cta_items",v?[v]:[]);
+                        else updateSlide("cta",v);
                       }}
                       placeholder="e.g. Free preview → bio"
                       style={inp}
