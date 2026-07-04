@@ -752,14 +752,14 @@ function ContactForm({ A, inp, GOLD, userEmail }) {
 }
 
 function HslColorPicker({value, onChange, onClose}) {
-  const [h,setH] = React.useState(0);
-  const [s,setS] = React.useState(100);
-  const [l,setL] = React.useState(50);
-  const [hex,setHex] = React.useState(value||"#BB9900");
-  const svRef = React.useRef(null);
-  const dragging = React.useRef(false);
+  const [h,setH] = useState(0);
+  const [s,setS] = useState(100);
+  const [l,setL] = useState(50);
+  const [hex,setHex] = useState(value||"#BB9900");
+  const svRef = useRef(null);
+  const dragging = useRef(false);
 
-  React.useEffect(()=>{
+  useEffect(()=>{
     if(value&&/^#[0-9a-fA-F]{6}$/.test(value)){
       let r=parseInt(value.slice(1,3),16)/255,g=parseInt(value.slice(3,5),16)/255,b=parseInt(value.slice(5,7),16)/255;
       const max=Math.max(r,g,b),min=Math.min(r,g,b);
