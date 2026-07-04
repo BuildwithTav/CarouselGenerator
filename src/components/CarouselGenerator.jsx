@@ -606,7 +606,7 @@ function SlidePreview({ slide, idx, total, _c_opts, onClick, isActive, isCover, 
   return (
     <div onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#BB9900":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:previewW, height:previewH, flexShrink:0, background:"#0A0A0A" }}>
       <div style={{position:"absolute",top:0,left:0,width:previewW,height:previewH,overflow:"hidden",borderRadius:6}}>
-        <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin allow-scripts" title={`slide-${idx+1}`}/>
+        <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} title={`slide-${idx+1}`}/>
       </div>
     </div>
   );
@@ -671,7 +671,7 @@ function QuotePreview({ _c_html, W, H, scale }) {
     if (!doc) return;
     doc.open(); doc.write(_c_html); doc.close();
   }, [_c_html]);
-  return <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} sandbox="allow-same-origin allow-scripts"/>;
+  return <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} />;
 }
 
 function PaymentBadges({ dark }) {
