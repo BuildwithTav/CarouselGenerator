@@ -598,9 +598,10 @@ function SlidePreview({ slide, idx, total, _c_opts, onClick, isActive, isCover, 
 
   useEffect(() => {
     const iframe = ref.current; if (!iframe) return;
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!doc) return;
-    doc.open(); doc.write(_c_html); doc.close();
+    const blob = new Blob([_c_html], {type:"text/html"});
+    const url = URL.createObjectURL(blob);
+    iframe.src = url;
+    return () => URL.revokeObjectURL(url);
   }, [_c_html]);
 
   return (
@@ -667,9 +668,10 @@ function QuotePreview({ _c_html, W, H, scale }) {
   const ref = useRef(null);
   useEffect(() => {
     const iframe = ref.current; if (!iframe) return;
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!doc) return;
-    doc.open(); doc.write(_c_html); doc.close();
+    const blob = new Blob([_c_html], {type:"text/html"});
+    const url = URL.createObjectURL(blob);
+    iframe.src = url;
+    return () => URL.revokeObjectURL(url);
   }, [_c_html]);
   return <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} />;
 }
@@ -1362,6 +1364,26 @@ export default function App() {
   // Top-level debounced slides state — hooks must never be inside IIFE or nested fns
   const [dTmplSlides, setDTmplSlides] = useState(tmplSlides);
   useEffect(()=>{ setDTmplSlides([...tmplSlides]); },[JSON.stringify(tmplSlides),tmplFont,tmplEffect,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplShowCounter,tmplFontSize]);
+
+  // Auto-save template session on every edit (strips images to avoid quota issues)
+  useEffect(()=>{
+    if(!tmplSelected) return;
+    const timer = setTimeout(()=>{
+      try {
+        const slidesForSave = tmplSlides.map(s=>({...s, image:null, image2:null}));
+        localStorage.setItem("bwt_tmpl_session_"+tmplSelected, JSON.stringify({
+          slides:slidesForSave, slideCount:tmplSlideCount, brief:tmplBrief,
+          effect:tmplEffect, font:tmplFont, fontSize:tmplFontSize,
+          accentLine:tmplAccentLineColor, primary:tmplPrimary, secondary:tmplSecondary,
+          bg:tmplBg, fontStyle:tmplFontStyle, rawBox:tmplRawBox, rawPos:tmplRawPos,
+          listicleNum:tmplListicleNum
+        }));
+      } catch(e) { console.warn("Auto-save failed:", e); }
+    }, 1000);
+    return ()=>clearTimeout(timer);
+  }, [tmplSlides, tmplSlideCount, tmplBrief, tmplEffect, tmplFont, tmplFontSize,
+      tmplAccentLineColor, tmplPrimary, tmplSecondary, tmplBg, tmplFontStyle,
+      tmplRawBox, tmplRawPos, tmplListicleNum, tmplSelected]);
 
   // On mount — restore last session for persisted template
   useEffect(()=>{
