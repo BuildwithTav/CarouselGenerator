@@ -1606,7 +1606,7 @@ export default function App() {
       ?buildCtaHTML(drawerOpts,tmplCtaType,tmplCtaKeyword||_ctaKwDef[tmplCtaType]||"",tmplCtaTopLine||_ctaTopDef,tmplCtaLine2||_ctaL2Def[tmplCtaType]||"",tmplCtaRewardLine||_ctaL3Def[tmplCtaType]||"",(isCleanPro||isStory)?tmplBg:tmplCtaBg,name,handle,profileUrl,blueTick,tmplSelected==="storytelling"?tmplFontStyle:tmplFont,totalSl,tmplShowCounter)
       :buildTmplHTML(dTmplSlides[tmplActiveSlide]||{},tmplActiveSlide,totalSl,tmplSelected,drawerOpts);
     setTmplPreviewHTML(_c_html);
-  },[tmplActiveSlide,tmplSelected,tmplSlideCount,tmplShowCta,tmplEffect,tmplFont,tmplFontSize,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplFontStyle,dTmplSlides,currentUser?.plan,tmplShowWebsite,tmplCtaBg,tmplCtaType,tmplShowCounter,name,handle,profileUrl,blueTick,tmplDrawerOpen,website]);
+  },[tmplActiveSlide,tmplSelected,tmplSlideCount,tmplShowCta,tmplEffect,tmplFont,tmplFontSize,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplFontStyle,tmplRawBox,tmplRawPos,tmplListicleNum,dTmplSlides,currentUser?.plan,tmplShowWebsite,tmplCtaBg,tmplCtaType,tmplShowCounter,tmplCtaKeyword,tmplCtaTopLine,tmplCtaLine2,tmplCtaRewardLine,name,handle,profileUrl,blueTick,tmplDrawerOpen,website]);
   const [showWebsite, setShowWebsite] = useState(S?.showWebsite??false);
   const [voiceProfile, setVoiceProfile] = useState(S?.voiceProfile||"");
   const [businessType, setBusinessType] = useState(S?.businessType||"marketer");
@@ -3742,7 +3742,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               return(<div style={{width:"100%",maxWidth:PW,height:PH,position:"relative",overflow:"hidden",margin:"0 auto"}}
                 onMouseMove={handleDragMove} onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}
                 onTouchMove={handleDragMove} onTouchEnd={handleDragEnd}>
-                <iframe key={`prev-${activeSlide}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${scale})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/>
+                <iframe key={`prev-${activeSlide}-${tmplRawBox}-${tmplRawPos}-${tmplPrimary}-${tmplSecondary}-${tmplBg}-${tmplEffect}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${scale})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/>
                 {showDrag&&!slide.isSplitClosing&&(<>
                   {hasImg&&(<div
                     onMouseDown={e=>handleDragStart(e,"imagePos")}
@@ -3766,7 +3766,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       </div>
                     </div>
                     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-                      {thumbHTMLs.map((_c_html,idx)=>(<div key={idx} onClick={()=>setTmplActiveSlide(idx)} style={{cursor:"pointer",position:"relative",flexShrink:0,width:86,height:108,borderRadius:6,overflow:"hidden",border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}><iframe srcDoc={_c_html} style={{width:1080,height:1350,border:"none",transform:"scale(0.0796)",transformOrigin:"top left",pointerEvents:"none"}} scrolling="no"/><div style={{position:"absolute",bottom:3,right:4,background:idx===tmplSlideCount?"rgba(187,153,0,0.9)":"rgba(0,0,0,0.7)",borderRadius:3,padding:"1px 5px",fontSize:9,color:"#fff",fontWeight:700,zIndex:2}}>{idx===tmplSlideCount?"CTA":idx+1}</div></div>))}
+                      {thumbHTMLs.map((_c_html,idx)=>(<div key={idx} onClick={()=>setTmplActiveSlide(idx)} style={{cursor:"pointer",position:"relative",flexShrink:0,width:86,height:108,borderRadius:6,overflow:"hidden",border:`2px solid ${activeSlide===idx?GOLD:A.border}`,transition:"border-color 0.15s"}}><iframe key={`thumb-${idx}-${tmplRawBox}-${tmplRawPos}-${tmplPrimary}-${tmplSecondary}-${tmplBg}-${tmplEffect}`} srcDoc={_c_html} style={{width:1080,height:1350,border:"none",transform:"scale(0.0796)",transformOrigin:"top left",pointerEvents:"none"}} scrolling="no"/><div style={{position:"absolute",bottom:3,right:4,background:idx===tmplSlideCount?"rgba(187,153,0,0.9)":"rgba(0,0,0,0.7)",borderRadius:3,padding:"1px 5px",fontSize:9,color:"#fff",fontWeight:700,zIndex:2}}>{idx===tmplSlideCount?"CTA":idx+1}</div></div>))}
                     </div>
                     {isMobile&&<button onClick={()=>setTmplDrawerOpen(true)} style={{display:"block",width:"100%",padding:"14px",background:GOLD,border:"none",borderRadius:10,fontWeight:700,fontSize:15,color:"#000",cursor:"pointer",marginBottom:8}}>✏️ Edit Slide {activeSlide+1}</button>}
                     <div style={{display:"flex",gap:8}}>
@@ -4839,7 +4839,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             </div>
             {/* Mini preview */}
             <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
-              {(()=>{const PW=200;const PH=Math.round(1350*PW/1080);return(<div style={{width:PW,height:PH,position:"relative",overflow:"hidden",borderRadius:6,border:`1.5px solid ${A.border}`}}><iframe key={`tmpl-drawer-${tmplActiveSlide}`} srcDoc={tmplPreviewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none"}} scrolling="no"/></div>);})()}
+              {(()=>{const PW=200;const PH=Math.round(1350*PW/1080);return(<div style={{width:PW,height:PH,position:"relative",overflow:"hidden",borderRadius:6,border:`1.5px solid ${A.border}`}}><iframe key={`tmpl-drawer-${tmplActiveSlide}-${tmplRawBox}-${tmplRawPos}-${tmplPrimary}-${tmplSecondary}-${tmplBg}-${tmplEffect}`} srcDoc={tmplPreviewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${PW/1080})`,transformOrigin:"top left",pointerEvents:"none"}} scrolling="no"/></div>);})()}
             </div>
           </div>
           {/* Scrollable content/style panel */}
