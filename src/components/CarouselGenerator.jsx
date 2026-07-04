@@ -751,6 +751,73 @@ function ContactForm({ A, inp, GOLD, userEmail }) {
   );
 }
 
+function HslColorPicker({value, onChange, onClose}) {
+  const [h,setH] = React.useState(0);
+  const [s,setS] = React.useState(100);
+  const [l,setL] = React.useState(50);
+  const [hex,setHex] = React.useState(value||"#BB9900");
+  const svRef = React.useRef(null);
+  const dragging = React.useRef(false);
+
+  React.useEffect(()=>{
+    if(value&&/^#[0-9a-fA-F]{6}$/.test(value)){
+      let r=parseInt(value.slice(1,3),16)/255,g=parseInt(value.slice(3,5),16)/255,b=parseInt(value.slice(5,7),16)/255;
+      const max=Math.max(r,g,b),min=Math.min(r,g,b);
+      let hh=0,ss=0,ll=(max+min)/2;
+      if(max!==min){const d=max-min;ss=ll>0.5?d/(2-max-min):d/(max+min);switch(max){case r:hh=((g-b)/d+(g<b?6:0))/6;break;case g:hh=((b-r)/d+2)/6;break;case b:hh=((r-g)/d+4)/6;break;}}
+      setH(Math.round(hh*360));setS(Math.round(ss*100));setL(Math.round(ll*100));setHex(value);
+    }
+  },[value]);
+
+  const hslToHex=(hh,ss,ll)=>{ss/=100;ll/=100;const a=ss*Math.min(ll,1-ll);const f=n=>{const k=(n+hh/30)%12;const color=ll-a*Math.max(Math.min(k-3,9-k,1),-1);return Math.round(255*color).toString(16).padStart(2,"0");};return "#"+f(0)+f(8)+f(4);};
+
+  const updateFromXY=(clientX,clientY)=>{
+    if(!svRef.current)return;
+    const rect=svRef.current.getBoundingClientRect();
+    const x=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));
+    const y=Math.max(0,Math.min(1,(clientY-rect.top)/rect.height));
+    const newS=Math.round(x*100);
+    const newL=Math.round((1-y)*(100-newS/2));
+    setS(newS);setL(newL);
+    const newHex=hslToHex(h,newS,newL);
+    setHex(newHex);onChange(newHex);
+  };
+
+  const presets=["#BB9900","#ffffff","#000000","#e74c3c","#3498db","#2ecc71","#f39c12","#9b59b6","#1abc9c","#e67e22","#ecf0f1","#2c3e50"];
+
+  return(
+    <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.75)"}} onMouseDown={onClose}>
+      <div onMouseDown={e=>e.stopPropagation()} style={{background:"#1a1a1a",borderRadius:16,padding:20,width:280,border:"1.5px solid #333",boxShadow:"0 20px 60px rgba(0,0,0,0.8)"}}>
+        <div ref={svRef}
+          onMouseDown={e=>{dragging.current=true;updateFromXY(e.clientX,e.clientY);}}
+          onMouseMove={e=>{if(dragging.current)updateFromXY(e.clientX,e.clientY);}}
+          onMouseUp={()=>{dragging.current=false;}}
+          onTouchStart={e=>{dragging.current=true;updateFromXY(e.touches[0].clientX,e.touches[0].clientY);e.preventDefault();}}
+          onTouchMove={e=>{if(dragging.current)updateFromXY(e.touches[0].clientX,e.touches[0].clientY);e.preventDefault();}}
+          onTouchEnd={()=>{dragging.current=false;}}
+          style={{width:"100%",height:160,borderRadius:8,marginBottom:12,position:"relative",cursor:"crosshair",
+            background:`hsl(${h},100%,50%)`,
+            backgroundImage:"linear-gradient(to right,rgba(255,255,255,1),rgba(255,255,255,0)),linear-gradient(to top,rgba(0,0,0,1),rgba(0,0,0,0))"}}>
+          <div style={{position:"absolute",width:14,height:14,borderRadius:"50%",border:"2px solid #fff",transform:"translate(-50%,-50%)",left:`${s}%`,top:`${100-l}%`,pointerEvents:"none",boxShadow:"0 0 4px rgba(0,0,0,0.9)"}}/>
+        </div>
+        <div style={{marginBottom:12}}>
+          <input type="range" min={0} max={360} value={h} onChange={e=>{const nh=parseInt(e.target.value);setH(nh);const newHex=hslToHex(nh,s,l);setHex(newHex);onChange(newHex);}}
+            style={{width:"100%",height:12,borderRadius:6,outline:"none",cursor:"pointer",
+              background:"linear-gradient(to right,hsl(0,100%,50%),hsl(30,100%,50%),hsl(60,100%,50%),hsl(90,100%,50%),hsl(120,100%,50%),hsl(150,100%,50%),hsl(180,100%,50%),hsl(210,100%,50%),hsl(240,100%,50%),hsl(270,100%,50%),hsl(300,100%,50%),hsl(330,100%,50%),hsl(360,100%,50%))"}}/>
+        </div>
+        <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12}}>
+          <div style={{width:36,height:36,borderRadius:8,background:hex,border:"1.5px solid #444",flexShrink:0}}/>
+          <input value={hex} onChange={e=>{const v=e.target.value;setHex(v);if(/^#[0-9a-fA-F]{6}$/.test(v)){onChange(v);}}} style={{flex:1,background:"#111",border:"1.5px solid #444",borderRadius:8,padding:"6px 10px",color:"#fff",fontSize:14,fontFamily:"monospace"}}/>
+        </div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:14}}>
+          {presets.map(p=>(<div key={p} onClick={()=>{setHex(p);onChange(p);}} style={{width:26,height:26,borderRadius:5,background:p,border:`2px solid ${p===hex?"#BB9900":"#444"}`,cursor:"pointer"}}/>))}
+        </div>
+        <button onClick={onClose} style={{width:"100%",padding:"10px",background:"#BB9900",border:"none",borderRadius:8,color:"#000",fontWeight:700,fontSize:14,cursor:"pointer"}}>Done</button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const S = loadS();
 
@@ -966,6 +1033,9 @@ export default function App() {
   const [tmplFontSize, setTmplFontSize] = useState(46);
   const [tmplAccentLineColor, setTmplAccentLineColor] = useState("#BB9900");
   const [tmplFavColors, setTmplFavColors] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_fav_colors")||"[null,null,null]");}catch{return[null,null,null];}});
+  const [tmplFavColorsPrimary, setTmplFavColorsPrimary] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_fav_colors_primary")||"[null,null,null]");}catch{return[null,null,null];}});
+  const [tmplFavColorsSecondary, setTmplFavColorsSecondary] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_fav_colors_secondary")||"[null,null,null]");}catch{return[null,null,null];}});
+  const [colorPickerOpen, setColorPickerOpen] = useState(null); // {type:'accent'|'primary'|'secondary', slot:0|1|2}
   const [tmplShowCounter, setTmplShowCounter] = useState(false);
   const [tmplShowWebsite, setTmplShowWebsite] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -2049,6 +2119,29 @@ Return ONLY valid JSON, nothing else.` }
     setGeneratingCaption(false);
   };
 
+
+  const triggerTmplImageUpload = (field="image") => {
+    const i=document.createElement("input");i.type="file";i.accept="image/*";
+    i.onchange=e=>{
+      const f=e.target.files[0];if(!f)return;
+      const r=new FileReader();
+      r.onload=ev=>{
+        const raw="_c_data:"+ev.target.result.replace(/^data:/,"");
+        resizeImageTo1080(raw).then(resized=>{
+          const url=resized.startsWith("data:")?("_c_data:"+resized.replace(/^data:/,"")):resized;
+          setTmplSlides(prev=>{const n=[...prev];n[activeSlide]={...n[activeSlide],[field]:url,[field==="image"?"imagePos":"image2Pos"]:{x:0,y:0},[field==="image"?"imageZoom":"image2Zoom"]:100};return n;});
+          compressForLibrary(url).then(thumb=>{
+            const _c_next=[thumb,...tmplLibrary.filter(p=>p!==url&&p!==thumb)].slice(0,20);
+            setTmplLibrary(_c_next);
+            tmplLibraryFull.current=[url,...(tmplLibraryFull.current.filter((_,i)=>i<19))];
+            try{localStorage.setItem("bwt_tmpl_library",JSON.stringify(_c_next));}catch(e){console.warn("Library save failed:",e);}
+          });
+        });
+      };
+      r.readAsDataURL(f);
+    };
+    i.click();
+  };
   const generateTmplCaption = async (tmpl, slides, slideCount, brief) => {
     if (!canGenerate()) { setNav("upgrade"); if (currentUser?.plan === "free") { fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"credits-exhausted-email" }) }).catch(()=>{}); } return; }
     if (!confirmLastCredit()) return;
@@ -2058,11 +2151,17 @@ Return ONLY valid JSON, nothing else.` }
       const btObj = BUSINESS_TYPES.find(b=>b.id===businessType);
       const btLabel = businessType==="other"?(otherType||"brand"):btObj?.label||"Digital Marketer";
       const audienceDesc = audienceType==="peers" ? `other ${btLabel.toLowerCase()}s` : (btObj?.audience||"your target audience");
+      const PLACEHOLDER_SUBJECTS = ["SHRED BELLY FAT","EXERCISES TO","2026 ENDS","PLACES YOU MUST VISIT BEFORE",""];
+      const isRawTmpl = tmpl==="raw";
       const slidesSummary = slides.slice(0,slideCount).map((s,i)=>{
-        const t = tmpl==="storytelling"?s.storyText:(s.headline||s.bodyText||s.subject||"");
-        return t?`Slide ${i+1}: ${t}`:"";
+        let t = "";
+        if(tmpl==="storytelling") t = s.storyText||"";
+        else if(isRawTmpl) t = s.rawText||"";
+        else if(tmpl==="split") t = [s.headline,s.headline2,s.subline,s.accentText].filter(Boolean).join(" — ")||"";
+        else t = s.headline||s.bodyText||(PLACEHOLDER_SUBJECTS.includes(s.subject?.toUpperCase())?"":s.subject)||"";
+        return t&&t.trim()?`Slide ${i+1}: ${t}`:"";
       }).filter(Boolean).join("\n");
-      const topicHint = brief || slidesSummary.split("\n")[0] || "this carousel";
+      const topicHint = brief || slidesSummary || "this carousel";
       const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:400, messages:[{ role:"user", content:`Write an Instagram/LinkedIn caption for a carousel post about "${topicHint}" for a ${btLabel} targeting ${audienceDesc}.\n\nThe carousel covers:\n${slidesSummary}\n\nVoice: ${voiceProfile||"Direct, honest, no hype. Short punchy sentences."}\n\nRules:\n- Hook in first line — make them stop scrolling\n- 3-5 sentences max\n- Tell them to swipe\n- Soft CTA at end (save, follow, comment — pick the most relevant)\n- Max 5 relevant hashtags at the end\n- No emojis unless they feel natural\n- Sign off as — ${name||"Tav"}\n\nReturn ONLY the caption text, nothing else.` }] }, 4, true);
       const text = d.content?.find(b=>b.type==="text")?.text?.trim()||"";
       if (text) {
@@ -2677,6 +2776,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
   const MAIN_NAV = [["generate","Generate"],["templates","Templates"]];
 
   return (
+    <>
     <div style={{minHeight:"100vh",background:A.bg,color:A.text,fontFamily:"Plus Jakarta Sans,system-ui,sans-serif"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap');
@@ -3575,11 +3675,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html,width:1080,height:1350})});
                   const data=await res.json();
                   if(!data.image)throw new Error(data.error||"Render failed");
-                  const a=document.createElement("a");a.href="data:image/png;base64,"+data.image;a.download=tmplSelected+"-slide-"+(idx+1)+".png";document.body.appendChild(a);a.click();document.body.removeChild(a);
-                  await authFetch("/api/auth", {action:"increment-downloads",email:currentUser.email,credits:3});
-                  setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+3}));
+                  // Save history before download (iOS Safari may not trigger download)
                   const _hEntrySingle={id:Date.now(),topic:tmplSelected+" template",slides:tmplSlides.slice(0,tmplSlideCount).map(s=>({...s,image:null,image2:null})),date:new Date().toLocaleDateString(),isTemplate:true,templateType:tmplSelected};
                   setHistory(prev=>{const _h=[_hEntrySingle,...prev].slice(0,10);saveHistory(_h);return _h;});
+                  await authFetch("/api/auth", {action:"increment-downloads",email:currentUser.email,credits:3});
+                  setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+3}));
+                  const a=document.createElement("a");a.href="data:image/png;base64,"+data.image;a.download=tmplSelected+"-slide-"+(idx+1)+".png";document.body.appendChild(a);a.click();document.body.removeChild(a);
                 }catch(e){console.error(e);alert("Download failed — try again");}
                 setTmplDownloadingIdx(null);
               };
@@ -3613,7 +3714,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   setTimeout(()=>URL.revokeObjectURL(url),2000);
                   await authFetch("/api/auth", {action:"increment-downloads",email:currentUser.email,credits:5});
                   setCurrentUser(u=>({...u,credits_used:(u.credits_used||0)+5}));
-                  // Save to history
+                  // Save history before zip download (iOS Safari may not trigger download)
                   const _hEntry={id:Date.now(),topic:tmplSelected+" template",slides:tmplSlides.slice(0,tmplSlideCount).map(s=>({...s,image:null,image2:null})),date:new Date().toLocaleDateString(),isTemplate:true,templateType:tmplSelected};
                   setHistory(prev=>{const _h=[_hEntry,...prev].slice(0,10);saveHistory(_h);return _h;});
                 }catch(e){console.error(e);alert("Download failed — try again");}
@@ -3743,6 +3844,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 onMouseMove={handleDragMove} onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}
                 onTouchMove={handleDragMove} onTouchEnd={handleDragEnd}>
                 <iframe key={`prev-${activeSlide}-${tmplRawBox}-${tmplRawPos}-${tmplPrimary}-${tmplSecondary}-${tmplBg}-${tmplEffect}`} srcDoc={previewHTML} style={{width:1080,height:1350,border:"none",transform:`scale(${scale})`,transformOrigin:"top left",pointerEvents:"none",display:"block"}} scrolling="no"/>
+                {!dTmplSlides[activeSlide]?.image&&!_iife_activeIsCtaSlide&&(
+                  <div onClick={()=>triggerTmplImageUpload("image")} style={{position:"absolute",inset:0,zIndex:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",background:"transparent"}} title="Click to upload image"/>
+                )}
                 {showDrag&&!slide.isSplitClosing&&(<>
                   {hasImg&&(<div
                     onMouseDown={e=>handleDragStart(e,"imagePos")}
@@ -3825,6 +3929,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                             {(slide.image&&slide.image.startsWith("_c_data:"))&&<div style={{marginTop:6}}>
                               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:2}}><label style={{...lbl,margin:0}}>{isSplit&&activeSlide>0&&!slide.isSplitClosing?"Left Image — Zoom":"Zoom"}</label><span style={{fontSize:11,color:A.muted}}>{slide.imageZoom||100}%</span></div>
                               <input type="range" min={50} max={200} value={slide.imageZoom||100} onChange={e=>updateTmplSlide("imageZoom",parseInt(e.target.value))} style={{width:"100%",accentColor:GOLD}}/>
+                              <button onClick={()=>{updateTmplSlide("imagePos",{x:0,y:0});updateTmplSlide("imageZoom",100);}} style={{marginTop:6,background:"none",border:`1.5px solid ${A.border}`,borderRadius:6,padding:"4px 12px",fontSize:11,color:A.muted,cursor:"pointer",width:"100%"}}>↺ Reset position &amp; zoom</button>
                             </div>}
                           </div>
                         )}
@@ -3946,7 +4051,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       {/* Accent line colour */}
 <label style={lbl}>{isListicle?"Accent / Headline Colour":"Accent / Effect"}</label>
                         <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-                          {(tmplFavColors||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0,overflow:"hidden"}}>{c?<div onClick={e=>{e.stopPropagation();setTmplAccentLineColor(c);}} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplAccentLineColor===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative"}}/>:<div onClick={e=>e.currentTarget.querySelector('input[type="color"]').click()} style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden",cursor:"pointer"}}><input type="color" defaultValue="#BB9900" onChange={e=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=e.target.value;setTmplFavColors(n);setTmplAccentLineColor(e.target.value);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",inset:-4,opacity:0,cursor:"pointer",width:"calc(100% + 8px)",height:"calc(100% + 8px)"}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16,pointerEvents:"none"}}>+</div></div>}{c&&<div onClick={()=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=null;setTmplFavColors(n);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:10,pointerEvents:"auto"}}>×</div>}</div>))}
+                          {(tmplFavColors||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0,overflow:"hidden"}}>{c?<div onClick={e=>{e.stopPropagation();setTmplAccentLineColor(c);}} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplAccentLineColor===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative"}}/>:<div onClick={()=>setColorPickerOpen({type:"accent",slot:i})} style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16}}>+</div>}{c&&<div onClick={()=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=null;setTmplFavColors(n);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:10,pointerEvents:"auto"}}>×</div>}</div>))}
                           <input type="text" value={tmplAccentLineColor} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplAccentLineColor(e.target.value);}} maxLength={7} placeholder="#BB9900" style={{...inp,flex:1,minWidth:70,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
                           <div style={{position:"relative",width:34,height:34,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplAccentLineColor}}/><input type="color" value={tmplAccentLineColor} onChange={e=>setTmplAccentLineColor(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div>
                         </div>
@@ -3954,7 +4059,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                         {(isDarkFade||isCleanPro||isSplit)&&<><label style={lbl}>{isSplit?"Headline Colour":"Headline Colour"}</label>
                         <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4}}>
-                          {(tmplFavColors||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0,overflow:"hidden"}}>{c?<div onClick={()=>setTmplPrimary(c)} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplPrimary===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative",pointerEvents:"auto"}}/>:<div onClick={e=>e.currentTarget.querySelector('input[type="color"]').click()} style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden",cursor:"pointer"}}><input type="color" defaultValue="#BB9900" onChange={e=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=e.target.value;setTmplFavColors(n);setTmplPrimary(e.target.value);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",inset:-4,opacity:0,cursor:"pointer",width:"calc(100% + 8px)",height:"calc(100% + 8px)"}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16}}>+</div></div>}{c&&<div onClick={()=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=null;setTmplFavColors(n);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:10,pointerEvents:"auto"}}>×</div>}</div>))}
+                          {(tmplFavColorsPrimary||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0,overflow:"hidden"}}>{c?<div onClick={()=>setTmplPrimary(c)} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplPrimary===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative",pointerEvents:"auto"}}/>:<div onClick={()=>setColorPickerOpen({type:"primary",slot:i})} style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16}}>+</div>}{c&&<div onClick={()=>{const n=[...(tmplFavColorsPrimary||[null,null,null])];n[i]=null;setTmplFavColorsPrimary(n);try{localStorage.setItem("bwt_tmpl_fav_colors_primary",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:10,pointerEvents:"auto"}}>×</div>}</div>))}
                           <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,flex:1,minWidth:70,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
                           <div style={{position:"relative",width:34,height:34,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplPrimary}}/><input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div>
                         </div>
@@ -3962,7 +4067,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                         {!isCleanPro&&<><label style={lbl}>{isListicle?"Topic / Subline Text":"Subline / Body Colour"}</label>
                         <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                          {(tmplFavColors||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0,overflow:"hidden"}}>{c?<div onClick={()=>setTmplSecondary(c)} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplSecondary===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative",pointerEvents:"auto"}}/>:<div onClick={e=>e.currentTarget.querySelector('input[type="color"]').click()} style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden",cursor:"pointer"}}><input type="color" defaultValue="#ffffff" onChange={e=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=e.target.value;setTmplFavColors(n);setTmplSecondary(e.target.value);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",inset:-4,opacity:0,cursor:"pointer",width:"calc(100% + 8px)",height:"calc(100% + 8px)"}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16}}>+</div></div>}{c&&<div onClick={()=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=null;setTmplFavColors(n);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:10,pointerEvents:"auto"}}>×</div>}</div>))}
+                          {(tmplFavColorsSecondary||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0,overflow:"hidden"}}>{c?<div onClick={()=>setTmplSecondary(c)} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplSecondary===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative",pointerEvents:"auto"}}/>:<div onClick={()=>setColorPickerOpen({type:"secondary",slot:i})} style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16}}>+</div>}{c&&<div onClick={()=>{const n=[...(tmplFavColorsSecondary||[null,null,null])];n[i]=null;setTmplFavColorsSecondary(n);try{localStorage.setItem("bwt_tmpl_fav_colors_secondary",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:10,pointerEvents:"auto"}}>×</div>}</div>))}
                           <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} style={{...inp,flex:1,minWidth:70,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
                           <div style={{position:"relative",width:34,height:34,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplSecondary}}/><input type="color" value={tmplSecondary} onChange={e=>setTmplSecondary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div>
                         </div>
@@ -4895,6 +5000,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                             {(slide.image&&slide.image.startsWith("_c_data:"))&&<div style={{marginTop:6}}>
                               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:2}}><label style={{...lbl,margin:0}}>{isSplit&&activeSlide>0&&!slide.isSplitClosing?"Left Image — Zoom":"Zoom"}</label><span style={{fontSize:11,color:A.muted}}>{slide.imageZoom||100}%</span></div>
                               <input type="range" min={50} max={200} value={slide.imageZoom||100} onChange={e=>updateTmplSlide("imageZoom",parseInt(e.target.value))} style={{width:"100%",accentColor:GOLD}}/>
+                              <button onClick={()=>{updateTmplSlide("imagePos",{x:0,y:0});updateTmplSlide("imageZoom",100);}} style={{marginTop:6,background:"none",border:`1.5px solid ${A.border}`,borderRadius:6,padding:"4px 12px",fontSize:11,color:A.muted,cursor:"pointer",width:"100%"}}>↺ Reset position &amp; zoom</button>
                             </div>}
                           </div>
                         )}
@@ -5016,7 +5122,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       {/* Accent line colour */}
 <label style={lbl}>{isListicle?"Accent / Headline Colour":"Accent / Effect"}</label>
                         <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-                          {(tmplFavColors||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0,overflow:"hidden"}}>{c?<div onClick={e=>{e.stopPropagation();setTmplAccentLineColor(c);}} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplAccentLineColor===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative"}}/>:<div onClick={e=>e.currentTarget.querySelector('input[type="color"]').click()} style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden",cursor:"pointer"}}><input type="color" defaultValue="#BB9900" onChange={e=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=e.target.value;setTmplFavColors(n);setTmplAccentLineColor(e.target.value);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",inset:-4,opacity:0,cursor:"pointer",width:"calc(100% + 8px)",height:"calc(100% + 8px)"}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16,pointerEvents:"none"}}>+</div></div>}{c&&<div onClick={()=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=null;setTmplFavColors(n);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:10,pointerEvents:"auto"}}>×</div>}</div>))}
+                          {(tmplFavColors||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0,overflow:"hidden"}}>{c?<div onClick={e=>{e.stopPropagation();setTmplAccentLineColor(c);}} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplAccentLineColor===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative"}}/>:<div onClick={()=>setColorPickerOpen({type:"accent",slot:i})} style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16}}>+</div>}{c&&<div onClick={()=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=null;setTmplFavColors(n);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:10,pointerEvents:"auto"}}>×</div>}</div>))}
                           <input type="text" value={tmplAccentLineColor} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplAccentLineColor(e.target.value);}} maxLength={7} placeholder="#BB9900" style={{...inp,flex:1,minWidth:70,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
                           <div style={{position:"relative",width:34,height:34,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplAccentLineColor}}/><input type="color" value={tmplAccentLineColor} onChange={e=>setTmplAccentLineColor(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div>
                         </div>
@@ -5024,7 +5130,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                         {(isDarkFade||isCleanPro||isSplit)&&<><label style={lbl}>{isSplit?"Headline Colour":"Headline Colour"}</label>
                         <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4}}>
-                          {(tmplFavColors||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0,overflow:"hidden"}}>{c?<div onClick={()=>setTmplPrimary(c)} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplPrimary===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative",pointerEvents:"auto"}}/>:<div onClick={e=>e.currentTarget.querySelector('input[type="color"]').click()} style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden",cursor:"pointer"}}><input type="color" defaultValue="#BB9900" onChange={e=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=e.target.value;setTmplFavColors(n);setTmplPrimary(e.target.value);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",inset:-4,opacity:0,cursor:"pointer",width:"calc(100% + 8px)",height:"calc(100% + 8px)"}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16}}>+</div></div>}{c&&<div onClick={()=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=null;setTmplFavColors(n);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:10,pointerEvents:"auto"}}>×</div>}</div>))}
+                          {(tmplFavColorsPrimary||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0,overflow:"hidden"}}>{c?<div onClick={()=>setTmplPrimary(c)} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplPrimary===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative",pointerEvents:"auto"}}/>:<div onClick={()=>setColorPickerOpen({type:"primary",slot:i})} style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16}}>+</div>}{c&&<div onClick={()=>{const n=[...(tmplFavColorsPrimary||[null,null,null])];n[i]=null;setTmplFavColorsPrimary(n);try{localStorage.setItem("bwt_tmpl_fav_colors_primary",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:10,pointerEvents:"auto"}}>×</div>}</div>))}
                           <input type="text" value={tmplPrimary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplPrimary(e.target.value);}} maxLength={7} style={{...inp,flex:1,minWidth:70,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
                           <div style={{position:"relative",width:34,height:34,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplPrimary}}/><input type="color" value={tmplPrimary} onChange={e=>setTmplPrimary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div>
                         </div>
@@ -5032,7 +5138,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                         {!isCleanPro&&<><label style={lbl}>{isListicle?"Topic / Subline Text":"Subline / Body Colour"}</label>
                         <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                          {(tmplFavColors||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0,overflow:"hidden"}}>{c?<div onClick={()=>setTmplSecondary(c)} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplSecondary===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative",pointerEvents:"auto"}}/>:<div onClick={e=>e.currentTarget.querySelector('input[type="color"]').click()} style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden",cursor:"pointer"}}><input type="color" defaultValue="#ffffff" onChange={e=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=e.target.value;setTmplFavColors(n);setTmplSecondary(e.target.value);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",inset:-4,opacity:0,cursor:"pointer",width:"calc(100% + 8px)",height:"calc(100% + 8px)"}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16}}>+</div></div>}{c&&<div onClick={()=>{const n=[...(tmplFavColors||[null,null,null])];n[i]=null;setTmplFavColors(n);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:10,pointerEvents:"auto"}}>×</div>}</div>))}
+                          {(tmplFavColorsSecondary||[null,null,null]).map((c,i)=>(<div key={i} style={{position:"relative",flexShrink:0,overflow:"hidden"}}>{c?<div onClick={()=>setTmplSecondary(c)} style={{width:28,height:28,borderRadius:6,background:c,border:`2px solid ${tmplSecondary===c?GOLD:A.border}`,cursor:"pointer",zIndex:5,position:"relative",pointerEvents:"auto"}}/>:<div onClick={()=>setColorPickerOpen({type:"secondary",slot:i})} style={{width:28,height:28,borderRadius:6,border:`1.5px dashed ${A.border}`,position:"relative",overflow:"hidden",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:A.muted,fontSize:16}}>+</div>}{c&&<div onClick={()=>{const n=[...(tmplFavColorsSecondary||[null,null,null])];n[i]=null;setTmplFavColorsSecondary(n);try{localStorage.setItem("bwt_tmpl_fav_colors_secondary",JSON.stringify(n));}catch{}}} style={{position:"absolute",top:-4,right:-4,width:12,height:12,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",zIndex:10,pointerEvents:"auto"}}>×</div>}</div>))}
                           <input type="text" value={tmplSecondary} onChange={e=>{if(/^#[0-9A-Fa-f]{0,6}$/.test(e.target.value))setTmplSecondary(e.target.value);}} maxLength={7} style={{...inp,flex:1,minWidth:70,fontFamily:"monospace",fontWeight:700,textTransform:"uppercase"}}/>
                           <div style={{position:"relative",width:34,height:34,flexShrink:0,borderRadius:8,overflow:"hidden",border:`1.5px solid ${A.border}`,cursor:"pointer"}}><div style={{width:"100%",height:"100%",background:tmplSecondary}}/><input type="color" value={tmplSecondary} onChange={e=>setTmplSecondary(e.target.value)} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",width:"100%",height:"100%"}}/></div>
                         </div>
@@ -5352,5 +5458,21 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:A.muted,fontSize:12,textDecoration:"none"}}>buildwithtav.co</a>
       </footer>
     </div>
+    {colorPickerOpen&&(
+      <HslColorPicker
+        value={colorPickerOpen.type==="accent"?(tmplFavColors||[null,null,null])[colorPickerOpen.slot]||"#BB9900":colorPickerOpen.type==="primary"?(tmplFavColorsPrimary||[null,null,null])[colorPickerOpen.slot]||"#BB9900":(tmplFavColorsSecondary||[null,null,null])[colorPickerOpen.slot]||"#ffffff"}
+        onChange={color=>{
+          if(colorPickerOpen.type==="accent"){
+            const n=[...(tmplFavColors||[null,null,null])];n[colorPickerOpen.slot]=color;setTmplFavColors(n);setTmplAccentLineColor(color);try{localStorage.setItem("bwt_tmpl_fav_colors",JSON.stringify(n));}catch{}
+          } else if(colorPickerOpen.type==="primary"){
+            const n=[...(tmplFavColorsPrimary||[null,null,null])];n[colorPickerOpen.slot]=color;setTmplFavColorsPrimary(n);setTmplPrimary(color);try{localStorage.setItem("bwt_tmpl_fav_colors_primary",JSON.stringify(n));}catch{}
+          } else {
+            const n=[...(tmplFavColorsSecondary||[null,null,null])];n[colorPickerOpen.slot]=color;setTmplFavColorsSecondary(n);setTmplSecondary(color);try{localStorage.setItem("bwt_tmpl_fav_colors_secondary",JSON.stringify(n));}catch{}
+          }
+        }}
+        onClose={()=>setColorPickerOpen(null)}
+      />
+    )}
+    </>
   );
 }
