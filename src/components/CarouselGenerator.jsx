@@ -1036,6 +1036,7 @@ export default function App() {
   const [tmplFavColorsPrimary, setTmplFavColorsPrimary] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_fav_colors_primary")||"[null,null,null]");}catch{return[null,null,null];}});
   const [tmplFavColorsSecondary, setTmplFavColorsSecondary] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_tmpl_fav_colors_secondary")||"[null,null,null]");}catch{return[null,null,null];}});
   const [colorPickerOpen, setColorPickerOpen] = useState(null); // {type:'accent'|'primary'|'secondary', slot:0|1|2}
+  const [mounted, setMounted] = useState(false);
   const [tmplShowCounter, setTmplShowCounter] = useState(false);
   const [tmplShowWebsite, setTmplShowWebsite] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -1434,6 +1435,8 @@ export default function App() {
   // Top-level debounced slides state — hooks must never be inside IIFE or nested fns
   const [dTmplSlides, setDTmplSlides] = useState(tmplSlides);
   useEffect(()=>{ setDTmplSlides([...tmplSlides]); },[JSON.stringify(tmplSlides),tmplFont,tmplEffect,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplShowCounter,tmplFontSize]);
+
+  useEffect(()=>{ setMounted(true); }, []);
 
   // Auto-save template session on every edit (strips images to avoid quota issues)
   useEffect(()=>{
@@ -5458,7 +5461,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         <a href="https://www.buildwithtav.co" target="_blank" rel="noopener noreferrer" style={{color:A.muted,fontSize:12,textDecoration:"none"}}>buildwithtav.co</a>
       </footer>
     </div>
-    {colorPickerOpen&&(
+    {mounted&&colorPickerOpen&&(
       <HslColorPicker
         value={colorPickerOpen.type==="accent"?(tmplFavColors||[null,null,null])[colorPickerOpen.slot]||"#BB9900":colorPickerOpen.type==="primary"?(tmplFavColorsPrimary||[null,null,null])[colorPickerOpen.slot]||"#BB9900":(tmplFavColorsSecondary||[null,null,null])[colorPickerOpen.slot]||"#ffffff"}
         onChange={color=>{
