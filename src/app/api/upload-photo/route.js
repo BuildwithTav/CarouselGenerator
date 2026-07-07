@@ -3,21 +3,14 @@ import { put } from '@vercel/blob';
 export const maxDuration = 30;
 export const dynamic = 'force-dynamic';
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
-};
-
 export async function GET() {
   return Response.json({ error: "Method not allowed" }, { status: 405 });
 }
 
 export async function POST(req) {
   try {
-    const { imageData, filename } = await req.json();
+    const body = await req.text();
+    const { imageData, filename } = JSON.parse(body);
 
     if (!imageData) {
       return Response.json({ error: "No image data provided" }, { status: 400 });
