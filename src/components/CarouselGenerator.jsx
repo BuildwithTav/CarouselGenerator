@@ -2308,7 +2308,7 @@ Return ONLY valid JSON, nothing else.` }
 
   const _uploadedImgCache = {};
   const uploadBase64Images = async (html) => {
-    const matches = [...new Set(html.match(/data:image\/[^;]+;base64,[^"')\s]+/g)||[])];
+    const matches = [...new Set(html.match(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g)||[])];
     if (!matches.length) return html;
     for (const dataUrl of matches) {
       if (_uploadedImgCache[dataUrl]) {
@@ -2316,11 +2316,19 @@ Return ONLY valid JSON, nothing else.` }
         continue;
       }
       try {
-        const res = await fetch("/api/upload-photo", {
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({ imageData: dataUrl, filename: `slide-img-${Date.now()}.jpg` })
-        });
+        // Convert base64 to Blob and send as FormData — bypasses Vercel 4.5MB body limit
+        const mimeMatch = dataUrl.match(/^data:(image\/[^;]+);base64,/);
+        const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+        const ext = mime.split('/')[1] || 'jpg';
+        const b64 = dataUrl.replace(/^data:image\/[^;]+;base64,/, '');
+        const byteChars = atob(b64);
+        const byteArr = new Uint8Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+        const blob = new Blob([byteArr], { type: mime });
+        const formData = new FormData();
+        formData.append('file', blob, `slide-img-${Date.now()}.${ext}`);
+        formData.append('filename', `slide-img-${Date.now()}.${ext}`);
+        const res = await fetch("/api/upload-photo", { method:"POST", body: formData });
         const data = await res.json();
         if (data.url) {
           _uploadedImgCache[dataUrl] = data.url;
