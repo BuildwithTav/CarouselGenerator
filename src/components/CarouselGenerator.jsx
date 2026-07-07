@@ -622,10 +622,11 @@ async function downloadSlideAsPNG(slide, idx, total, _c_opts, filename, isCover=
     const isPortrait = _c_opts.ratio==="portrait";
     const W=1080, H=isPortrait?1920:1350;
     const _c_html = buildSlideHTML(slide,idx,total,_c_opts,isCover);
+    const _c_html_clean = await uploadBase64Images(_c_html);
     const res = await fetch("/api/render-slide", {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ html:_c_html, width:W, height:H })
+      body: JSON.stringify({ html:_c_html_clean, width:W, height:H })
     });
     const _c_data = await res.json();
     console.log("Slide render response:", res.status, _c_data.error||"ok", "hasImage:", !!_c_data.image);
@@ -2305,10 +2306,36 @@ Return ONLY valid JSON, nothing else.` }
     return false;
   };
 
+  const _uploadedImgCache = {};
+  const uploadBase64Images = async (html) => {
+    const matches = [...new Set(html.match(/data:image\/[^;]+;base64,[^"')\s]+/g)||[])];
+    if (!matches.length) return html;
+    for (const dataUrl of matches) {
+      if (_uploadedImgCache[dataUrl]) {
+        html = html.split(dataUrl).join(_uploadedImgCache[dataUrl]);
+        continue;
+      }
+      try {
+        const res = await fetch("/api/upload-photo", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ imageData: dataUrl, filename: `slide-img-${Date.now()}.jpg` })
+        });
+        const data = await res.json();
+        if (data.url) {
+          _uploadedImgCache[dataUrl] = data.url;
+          html = html.split(dataUrl).join(data.url);
+        }
+      } catch(e) { console.warn("Image upload failed, keeping base64:", e); }
+    }
+    return html;
+  };
+
   const renderSlideViaServer = async (slide, idx, total, _c_opts, isCover) => {
     const isPortrait = _c_opts.ratio==="portrait";
     const W=1080, H=isPortrait?1920:1350;
-    const _c_html = buildSlideHTML(slide,idx,total,_c_opts,isCover);
+    let _c_html = buildSlideHTML(slide,idx,total,_c_opts,isCover);
+    _c_html = await uploadBase64Images(_c_html);
     const res = await fetch("/api/render-slide", {
       method:"POST",
       headers:{"Content-Type":"application/json"},
@@ -2390,7 +2417,7 @@ Return ONLY valid JSON, nothing else.` }
         }
         if (blob) zip.file(`slide-${i+1}.png`,blob);
         else console.error("Slide",i+1,"failed after 2 attempts");
-        if (mobile) await new Promise(r=>setTimeout(r,300));
+        if (isMobileDevice()) await new Promise(r=>setTimeout(r,300));
       }
       const fileCount = Object.keys(zip.files).length;
       if (fileCount === 0) { alert("Download failed — no slides could be rendered. Please try again or download slides individually."); setDownloadingAll(false); return; }
@@ -2695,10 +2722,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
     const needsServer = mobile && !!quoteBgCustomUrl;
 
     if (needsServer) {
+      const _c_html_clean = await uploadBase64Images(_c_html);
       const res = await fetch("/api/render-slide", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ html: _c_html, width: W, height: H })
+        body: JSON.stringify({ html: _c_html_clean, width: W, height: H })
       });
       const _c_data = await res.json();
       if (!_c_data.image) throw new Error(_c_data.error || "Render failed");
@@ -3675,7 +3703,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 setTmplDownloadingIdx(idx);
                 try{
                   const html=buildTmplHTML(tmplSlides[idx],idx,totalSlides,tmplSelected,opts);
-                  const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html,width:1080,height:1350})});
+                  const _htmlClean=await uploadBase64Images(html);const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html:_htmlClean,width:1080,height:1350})});
                   const data=await res.json();
                   if(!data.image)throw new Error(data.error||"Render failed");
                   // Save history before download (iOS Safari may not trigger download)
@@ -3702,7 +3730,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   for(let i=0;i<slidesToDownload.length;i++){
                     const label=ctaHTML&&i===slidesToDownload.length-1?"cta":"slide-"+(i+1);
                     try{
-                      const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html:slidesToDownload[i],width:1080,height:1350})});
+                      const _slideHtmlClean=await uploadBase64Images(slidesToDownload[i]);const res=await fetch("/api/render-slide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html:_slideHtmlClean,width:1080,height:1350})});
                       const data=await res.json();
                       if(data.image){
                         const bytes=atob(data.image),arr=new Uint8Array(bytes.length);
