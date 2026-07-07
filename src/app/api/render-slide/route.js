@@ -16,7 +16,6 @@ async function inlineFonts(html) {
     const cssRes = await fetch(cssUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' } });
     if (!cssRes.ok) return html;
     let css = await cssRes.text();
-    // Find all font URLs and replace with base64
     const urlMatches = [...css.matchAll(/url\((https:\/\/fonts\.gstatic\.com[^)]+)\)/g)];
     for (const match of urlMatches) {
       try {
@@ -28,7 +27,6 @@ async function inlineFonts(html) {
         css = css.replace(match[1], `data:font/${ext};base64,${b64}`);
       } catch {}
     }
-    // Replace the link tag with inline style
     html = html.replace(linkMatch[0], `<style>${css}</style>`);
     return html;
   } catch {
@@ -38,10 +36,13 @@ async function inlineFonts(html) {
 
 export async function POST(req) {
   try {
-    const { html, width, height } = await req.json();
+    const body = await req.text();
+    const { html, width, height } = JSON.parse(body);
+
     if (!html) {
       return Response.json({ error: "No HTML provided" }, { status: 400 });
     }
+
     const htmlWithFonts = await inlineFonts(html);
     let browser;
     try {
@@ -71,7 +72,6 @@ export async function POST(req) {
       const page = await browser.newPage();
       await page.setViewport({ width: width || 1080, height: height || 1350 });
       await page.setContent(htmlWithFonts, { waitUntil: 'domcontentloaded', timeout: 25000 });
-      // Wait for fonts and effects to render
       await new Promise(r => setTimeout(r, 1500));
       const screenshot = await page.screenshot({
         type: 'png',
