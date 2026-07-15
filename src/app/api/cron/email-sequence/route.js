@@ -26,6 +26,47 @@ async function sendEmail(to, subject, html) {
   } catch(e) { console.error("Resend error:", e); }
 }
 
+function emailCreditsReset(firstName) {
+  return {
+    subject: "Your Carousel Studio credits have reset — 60 credits ready to use",
+    html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f5f3ef;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:40px 24px;">
+<div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div>
+<div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;">
+<p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hi ${firstName},</p>
+<p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Your free credits have reset. You have <strong style="color:#BB9900;">60 fresh credits</strong> ready to use right now.</p>
+
+<div style="background:#0a0a0a;border-radius:12px;padding:28px;margin-bottom:24px;text-align:center;">
+  <p style="font-size:48px;font-weight:900;color:#BB9900;margin:0 0 4px;font-family:Georgia,serif;">60</p>
+  <p style="font-size:14px;color:rgba(255,255,255,0.6);margin:0;">credits ready to use</p>
+</div>
+
+<p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 16px;">What's new in Carousel Studio this month:</p>
+<div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;">
+  <p style="font-size:16px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;"><strong style="color:#BB9900;">Templates tab</strong> — Listicle, Storytelling, Clean Pro, Dark Fade, Raw and Split. Build carousels in a completely different style with one click.</p>
+  <p style="font-size:16px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;"><strong style="color:#BB9900;">AI Caption Generator</strong> — generate a ready-to-post Instagram caption based on your carousel content. Works on both the Generate and Templates tab.</p>
+  <p style="font-size:16px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;"><strong style="color:#BB9900;">CTA Cards</strong> — add a Comment, Follow, Save, Share or Like slide at the end of any template carousel, with fully editable text.</p>
+  <p style="font-size:16px;color:#0a0a0a;margin:0;line-height:1.7;"><strong style="color:#BB9900;">Background images</strong> — upload your own photos directly into template slides with zoom and reposition controls.</p>
+</div>
+
+<div style="background:#0a0a0a;border-radius:12px;padding:28px;margin-bottom:24px;text-align:center;">
+  <p style="font-size:17px;color:rgba(255,255,255,0.9);margin:0 0 16px;line-height:1.7;">You're on the free plan — <strong style="color:#BB9900;">60 credits/month</strong> with watermarked downloads.</p>
+  <p style="font-size:15px;color:rgba(255,255,255,0.7);margin:0 0 20px;line-height:1.7;">Starter gives you <strong style="color:#BB9900;">200 credits/month</strong>, no watermark, your own affiliate link and recurring commission just for sharing it. Refer 5 people and it pays for itself.</p>
+  <a href="https://studio.buildwithtav.co" style="background:#BB9900;color:#000;padding:14px 32px;border-radius:10px;font-size:16px;font-weight:800;text-decoration:none;display:inline-block;">Upgrade to Starter →</a>
+</div>
+
+<div style="text-align:center;margin:24px 0;">
+  <a href="https://studio.buildwithtav.co" style="background:#0a0a0a;color:#BB9900;padding:14px 32px;border-radius:10px;font-size:16px;font-weight:800;text-decoration:none;display:inline-block;border:2px solid #BB9900;">Start Creating →</a>
+</div>
+
+<p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">— Tav</p>
+</div>
+<p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p>
+</div>
+</body></html>`
+  };
+}
+
 function emailDay2(firstName) {
   return {
     subject: "Instagram just confirmed what the data already showed",
@@ -122,7 +163,7 @@ function emailDay5(firstName) {
 <div style="background:#0a0a0a;border-radius:12px;padding:24px;margin-bottom:20px;">
 <p style="font-size:13px;color:#BB9900;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:0 0 16px;">What that one referral added to Frank's monthly income</p>
 <p style="font-size:15px;color:rgba(255,255,255,0.9);margin:0 0 10px;line-height:1.7;">1,000 people × $40/mo × 15% Tier 2 = <strong style="color:#BB9900;">$6,000/month extra</strong></p>
-<p style="font-size:13px;color:rgba(255,255,255,0.5);margin:0;line-height:1.6;">From one conversation. From 1% of one person's audience. People Frank has never spoken to, in a country he may have never visited, paying every single month.</p>
+<p style="font-size:13px;color:rgba(255,255,255,0.5);margin:0;line-height:1.6;">From one conversation. From 1% of one person's audience. People Frank has never spoken to, paying every single month.</p>
 </div>
 <div style="background:#0a0a0a;border:2px solid #BB9900;border-radius:12px;padding:24px;margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
 <div>
@@ -139,12 +180,10 @@ function emailDay5(firstName) {
 <p style="font-size:15px;color:#0a0a0a;margin:0 0 6px;line-height:1.7;">500 clients × $40/mo × 15% Tier 2 = <strong style="color:#BB9900;">$3,000/month</strong></p>
 <p style="font-size:13px;color:#7a7875;margin:0;line-height:1.6;">From one referral. One agency. People using a tool they think belongs to the agency — and Frank earning 15% on every single one of them every month.</p>
 </div>
-<p style="font-size:15px;color:#0a0a0a;margin:0 0 20px;line-height:1.7;">Frank paid $297 once. He recoups that in month one. After that — pure passive income. No cap. No limit. The more his network grows, the more he earns. And he doesn't need to find an influencer or an agency. His baseline 10 referrals alone pay him $440 every month without lifting a finger.</p>
-<p style="font-size:15px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">You can be Frank. Every paid plan includes your affiliate link — the Affiliate Licence just gives you the highest commission rate with zero ongoing cost. See the full breakdown below.</p>
+<p style="font-size:15px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Frank paid $297 once. He recoups that in month one. After that — pure passive income. No cap. No limit.</p>
 <div style="text-align:center;margin:32px 0;">
 <a href="https://studio.buildwithtav.co/affiliate" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">See Frank's Full Breakdown →</a>
 </div>
-<p style="font-size:15px;color:#0a0a0a;margin:0 0 8px;line-height:1.7;">Or upgrade from inside the app and your link is ready the moment you log in.</p>
 <p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">— Tav</p>
 </div>
 <p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p>
@@ -191,18 +230,35 @@ export async function GET(req) {
 
     const { data: users, error } = await supabase
       .from("users")
-      .select("email, first_name, created_at, email_day2_sent, email_day4_sent, email_day5_sent, email_day7_sent, marketing_consent, plan")
+      .select("email, first_name, created_at, email_day2_sent, email_day4_sent, email_day5_sent, email_day7_sent, marketing_consent, plan, period_start, credits_used")
       .eq("plan", "free")
       .neq("marketing_consent", false);
 
     if (error) throw error;
 
-    let day2Sent = 0, day4Sent = 0, day5Sent = 0, day7Sent = 0;
+    let day2Sent = 0, day4Sent = 0, day5Sent = 0, day7Sent = 0, creditsReset = 0;
 
     for (const user of users || []) {
       const daysSinceSignup = (now - new Date(user.created_at)) / (1000 * 60 * 60 * 24);
       const firstName = user.first_name || user.email.split("@")[0];
 
+      // ── Monthly credit reset for free users ──────────────────────────────
+      // Check if period_start is 30+ days ago (or never set)
+      const periodStart = user.period_start ? new Date(user.period_start) : new Date(user.created_at);
+      const daysSincePeriodStart = (now - periodStart) / (1000 * 60 * 60 * 24);
+
+      if (daysSincePeriodStart >= 30) {
+        await supabase.from("users").update({
+          credits_used: 0,
+          period_start: now.toISOString()
+        }).eq("email", user.email);
+
+        const { subject, html } = emailCreditsReset(firstName);
+        await sendEmail(user.email, subject, html);
+        creditsReset++;
+      }
+
+      // ── Nurture email sequence ────────────────────────────────────────────
       if (daysSinceSignup >= 2 && !user.email_day2_sent) {
         const { subject, html } = emailDay2(firstName);
         await sendEmail(user.email, subject, html);
@@ -232,7 +288,7 @@ export async function GET(req) {
       }
     }
 
-    return NextResponse.json({ success: true, day2Sent, day4Sent, day5Sent, day7Sent });
+    return NextResponse.json({ success: true, creditsReset, day2Sent, day4Sent, day5Sent, day7Sent });
   } catch(e) {
     console.error("Email sequence cron error:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });
