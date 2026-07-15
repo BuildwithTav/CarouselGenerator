@@ -94,6 +94,23 @@ async function getOrCreateTag(tagName) {
   } catch(e) { console.error("Systeme tag error:", e); return null; }
 }
 
+async function addToResendAudience(email, firstName, unsubscribed = false) {
+  try {
+    await fetch("https://api.resend.com/audiences/contacts", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        first_name: firstName || "",
+        unsubscribed
+      })
+    });
+  } catch(e) { console.error("Resend audience sync error:", e); }
+}
+
 async function addToSysteme(email, tagName) {
   try {
     const tagId = await getOrCreateTag(tagName);
@@ -227,6 +244,7 @@ export async function POST(req) {
         }
 
         await addToSysteme(user.email, "carousel-studio-free");
+        await addToResendAudience(user.email, resolvedFirstName, !marketingConsent);
 
       } else if (existing.plan !== "free" && existing.affiliate_id && existing.affiliate_active && !existing.affiliate_welcome_email_sent) {
         const commissionRate = getCommissionRate(existing.plan);
