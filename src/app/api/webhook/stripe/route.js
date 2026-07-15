@@ -60,10 +60,64 @@ function getPlanLabel(plan) {
   }
 }
 
+function getPlanCredits(plan) {
+  switch(plan) {
+    case "agency": return 3000;
+    case "pro": return 800;
+    case "starter": return 200;
+    default: return 60;
+  }
+}
+
 function emailUpgradeConfirmed(firstName, planName, planPrice, commissionRate) {
   return {
     subject: `You're now on ${planName} — here's what changed`,
     html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f5f3ef;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;"><div style="max-width:600px;margin:0 auto;padding:40px 24px;"><div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div><div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;"><p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hi ${firstName},</p><p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">You're now on <strong style="color:#BB9900;">Carousel Studio ${planName}</strong> — $${planPrice}/month.</p><div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;"><p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;font-weight:700;">What's changed:</p><p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;">— Your credits have been updated to reflect your new plan</p><p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;">— Your affiliate commission rate is now <strong style="color:#BB9900;">${commissionRate}%</strong></p><p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">— Your affiliate link stays the same</p></div><div style="text-align:center;margin:32px 0;"><a href="https://studio.buildwithtav.co" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">Go to Carousel Studio →</a></div><p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">— Tav</p></div><p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p></div></body></html>`
+  };
+}
+
+function emailCreditsReset(firstName, plan, credits) {
+  const planLabel = getPlanLabel(plan);
+  const isFree = plan === "free";
+  const upgradeSection = isFree ? `
+    <div style="background:#0a0a0a;border-radius:12px;padding:28px;margin-bottom:24px;text-align:center;">
+      <p style="font-size:15px;color:rgba(255,255,255,0.7);margin:0 0 12px;line-height:1.6;">Ready for more? Starter gives you <strong style="color:#BB9900;">200 credits/month</strong> plus no watermark.</p>
+      <a href="https://studio.buildwithtav.co" style="background:#BB9900;color:#000;padding:14px 32px;border-radius:10px;font-size:15px;font-weight:800;text-decoration:none;display:inline-block;">Upgrade Now →</a>
+    </div>` : `
+    <div style="background:#f5f3ef;border-radius:10px;padding:20px;margin-bottom:24px;">
+      <p style="font-size:15px;color:#0a0a0a;margin:0;line-height:1.6;">Want even more credits? <a href="https://studio.buildwithtav.co" style="color:#BB9900;font-weight:700;text-decoration:none;">Upgrade your plan →</a></p>
+    </div>`;
+
+  return {
+    subject: `Your Carousel Studio credits have reset — ${credits} credits ready to use`,
+    html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f5f3ef;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;"><div style="max-width:600px;margin:0 auto;padding:40px 24px;">
+      <div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div>
+      <div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;">
+        <p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hi ${firstName},</p>
+        <p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Your <strong style="color:#BB9900;">${planLabel}</strong> credits have reset. You have <strong style="color:#BB9900;">${credits} fresh credits</strong> ready to use right now.</p>
+
+        <div style="background:#0a0a0a;border-radius:12px;padding:28px;margin-bottom:24px;text-align:center;">
+          <p style="font-size:48px;font-weight:900;color:#BB9900;margin:0 0 4px;font-family:Georgia,serif;">${credits}</p>
+          <p style="font-size:14px;color:rgba(255,255,255,0.6);margin:0;">credits ready to use</p>
+        </div>
+
+        <p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 16px;">What's new this month in Carousel Studio:</p>
+        <div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;">
+          <p style="font-size:16px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;"><strong style="color:#BB9900;">Templates tab</strong> — Listicle, Storytelling, Clean Pro, Dark Fade, Raw and Split. Build carousels in a completely different style with one click.</p>
+          <p style="font-size:16px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;"><strong style="color:#BB9900;">AI Caption Generator</strong> — generate a ready-to-post Instagram caption based on your carousel content. Works on both the Generate and Templates tab.</p>
+          <p style="font-size:16px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;"><strong style="color:#BB9900;">CTA Cards</strong> — add a Comment, Follow, Save, Share or Like slide at the end of any template carousel, with fully editable text.</p>
+          <p style="font-size:16px;color:#0a0a0a;margin:0;line-height:1.7;"><strong style="color:#BB9900;">Background images</strong> — upload your own photos directly into template slides with zoom and reposition controls.</p>
+        </div>
+
+        ${upgradeSection}
+
+        <div style="text-align:center;margin:32px 0;">
+          <a href="https://studio.buildwithtav.co" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">Start Creating →</a>
+        </div>
+        <p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">— Tav</p>
+      </div>
+      <p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p>
+    </div></body></html>`
   };
 }
 
@@ -175,7 +229,6 @@ async function logCommissions(subscriberEmail, stripePaymentId, plan, saleAmount
         earned_at: new Date().toISOString(),
         payable_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       });
-      // Notify tier 1 affiliate
       try {
         const { data: affUser } = await supabase.from("users").select("email, first_name").eq("affiliate_id", tier1Affiliate.affiliate_id).single();
         if (affUser?.email) {
@@ -207,7 +260,6 @@ async function logCommissions(subscriberEmail, stripePaymentId, plan, saleAmount
             earned_at: new Date().toISOString(),
             payable_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
           });
-          // Notify tier 2 affiliate
           try {
             const { data: aff2User } = await supabase.from("users").select("email, first_name").eq("affiliate_id", tier2Affiliate.affiliate_id).single();
             if (aff2User?.email) {
@@ -265,7 +317,6 @@ export async function POST(req) {
 
     if (isAffiliateLicence || isWhiteLabel) {
       const licenceType = isAffiliateLicence ? "affiliate_licence" : "white_label";
-      // ✅ FIXED: was 15/80, now 150/800
       const credits_limit = isAffiliateLicence ? 150 : 800;
       const saleAmount = isAffiliateLicence ? 297 : 497;
       const planLabel = getPlanLabel(licenceType);
@@ -287,7 +338,6 @@ export async function POST(req) {
     }
 
     const plan = isAgency ? "agency" : isPro ? "pro" : isStarter ? "starter" : "free";
-    // ✅ FIXED: was 300/80/20/6, now 3000/800/200/60
     const credits_limit = isAgency ? 3000 : isPro ? 800 : isStarter ? 200 : 60;
     const saleAmount = isAgency ? 100 : isPro ? 50 : isStarter ? 20 : 0;
     const planLabel = getPlanLabel(plan);
@@ -323,13 +373,19 @@ export async function POST(req) {
 
   if (event.type === "invoice.payment_succeeded") {
     const invoice = event.data.object;
+    // Skip the first payment — that's handled by checkout.session.completed
     if (invoice.billing_reason === "subscription_create") return NextResponse.json({ received: true });
     const customerId = invoice.customer;
-    const { data: user } = await supabase.from("users").select("email, plan").eq("stripe_customer_id", customerId).single();
+    const { data: user } = await supabase.from("users").select("email, plan, first_name").eq("stripe_customer_id", customerId).single();
     if (user) {
       const saleAmount = user.plan === "agency" ? 100 : user.plan === "pro" ? 50 : user.plan === "starter" ? 20 : 0;
       if (saleAmount > 0) await logCommissions(user.email, invoice.id, user.plan, saleAmount);
       await supabase.from("users").update({ credits_used: 0, period_start: new Date().toISOString() }).eq("stripe_customer_id", customerId);
+      // Send credits reset email
+      const credits = getPlanCredits(user.plan);
+      const firstName = user.first_name || user.email.split("@")[0];
+      const { subject, html } = emailCreditsReset(firstName, user.plan, credits);
+      await sendEmail(user.email, subject, html);
     }
   }
 
