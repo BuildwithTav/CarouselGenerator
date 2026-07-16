@@ -4855,9 +4855,16 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     </div>
                   </div>
                   {!showPayoutForm&&!payoutSuccess&&(
-                    <button onClick={()=>setShowPayoutForm(true)} disabled={parseFloat(affiliateStats.available)<30} style={{width:"100%",padding:"12px",background:parseFloat(affiliateStats.available)>=30?GOLD:"#333",color:parseFloat(affiliateStats.available)>=30?"#000":A.muted,borderRadius:10,fontWeight:700,fontSize:14,border:"none",cursor:parseFloat(affiliateStats.available)>=30?"pointer":"default"}}>
-                      {parseFloat(affiliateStats.available)<30?"Minimum $30 to withdraw":"Withdraw Available Funds"}
-                    </button>
+                    affiliateStats.has_pending_payout ? (
+                      <div style={{background:"#1a1a0a",border:"1px solid "+GOLD,borderRadius:10,padding:14,textAlign:"center"}}>
+                        <div style={{color:GOLD,fontWeight:700,fontSize:14,marginBottom:4}}>Withdrawal request pending</div>
+                        <div style={{color:A.muted,fontSize:12,lineHeight:1.5}}>Your request for ${Number(affiliateStats.pending_payout_amount).toFixed(2)} is being processed. You'll receive an email when it's been sent.</div>
+                      </div>
+                    ) : (
+                      <button onClick={()=>setShowPayoutForm(true)} disabled={parseFloat(affiliateStats.available)<30} style={{width:"100%",padding:"12px",background:parseFloat(affiliateStats.available)>=30?GOLD:"#333",color:parseFloat(affiliateStats.available)>=30?"#000":A.muted,borderRadius:10,fontWeight:700,fontSize:14,border:"none",cursor:parseFloat(affiliateStats.available)>=30?"pointer":"default"}}>
+                        {parseFloat(affiliateStats.available)<30?"Minimum $30 to withdraw":"Withdraw Available Funds"}
+                      </button>
+                    )
                   )}
                   {payoutSuccess&&(
                     <div style={{background:"#1a3a1a",border:"1px solid #4caf50",borderRadius:10,padding:14,textAlign:"center"}}>
