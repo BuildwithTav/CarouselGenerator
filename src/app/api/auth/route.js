@@ -94,23 +94,6 @@ async function getOrCreateTag(tagName) {
   } catch(e) { console.error("Systeme tag error:", e); return null; }
 }
 
-async function addToResendAudience(email, firstName, unsubscribed = false) {
-  try {
-    await fetch("https://api.resend.com/audiences/contacts", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        email,
-        first_name: firstName || "",
-        unsubscribed
-      })
-    });
-  } catch(e) { console.error("Resend audience sync error:", e); }
-}
-
 async function addToSysteme(email, tagName) {
   try {
     const tagId = await getOrCreateTag(tagName);
@@ -244,7 +227,6 @@ export async function POST(req) {
         }
 
         await addToSysteme(user.email, "carousel-studio-free");
-        await addToResendAudience(user.email, resolvedFirstName, !marketingConsent);
 
       } else if (existing.plan !== "free" && existing.affiliate_id && existing.affiliate_active && !existing.affiliate_welcome_email_sent) {
         const commissionRate = getCommissionRate(existing.plan);
@@ -349,10 +331,73 @@ export async function POST(req) {
       const { data: { user }, error } = await supabase.auth.getUser(t);
       if (error || !user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
       const { payoutMethod, payoutDetails, amount } = body;
-      const { data: profile } = await supabase.from("users").select("affiliate_id").eq("email", user.email).single();
+      const { data: profile } = await supabase.from("users").select("affiliate_id, first_name").eq("email", user.email).single();
       if (!profile?.affiliate_id) return NextResponse.json({ error: "Not an affiliate" }, { status: 400 });
       if (Number(amount) < 30) return NextResponse.json({ error: "Minimum withdrawal is $30" }, { status: 400 });
-      await supabase.from("payout_requests").insert({ affiliate_id: profile.affiliate_id, amount, payout_method: payoutMethod, payout_details: payoutDetails, status: "pending" });
+      await supabase.from("payout_requests").insert({
+        affiliate_id: profile.affiliate_id,
+        email: user.email,
+        amount,
+        payout_method: payoutMethod,
+        payout_details: payoutDetails,
+        status: "pending",
+        requested_at: new Date().toISOString()
+      });
+
+      const firstName = profile.first_name || user.email.split("@")[0];
+      const paymentDetailsText = typeof payoutDetails === "object"
+        ? Object.entries(payoutDetails).map(([k,v]) => `${k}: ${v}`).join("\n")
+        : String(payoutDetails || "");
+
+      // Calculate next 10th
+      const now = new Date();
+      const nextTenth = now.getDate() < 10
+        ? new Date(now.getFullYear(), now.getMonth(), 10)
+        : new Date(now.getFullYear(), now.getMonth() + 1, 10);
+      const payDateStr = nextTenth.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+
+      // Email to affiliate — confirmation
+      await sendEmail(user.email, "Payout request received — here's what happens next",
+        `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f5f3ef;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        <div style="max-width:600px;margin:0 auto;padding:40px 24px;">
+          <div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div>
+          <div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;">
+            <p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hi ${firstName},</p>
+            <p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Your payout request has been received. Here's a summary:</p>
+            <div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;">
+              <p style="font-size:16px;color:#0a0a0a;margin:0 0 8px;"><strong>Amount:</strong> $${Number(amount).toFixed(2)}</p>
+              <p style="font-size:16px;color:#0a0a0a;margin:0 0 8px;"><strong>Method:</strong> ${payoutMethod}</p>
+              <p style="font-size:16px;color:#0a0a0a;margin:0;white-space:pre-line;"><strong>Payment details:</strong><br>${paymentDetailsText}</p>
+            </div>
+            <p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Payment will be processed on or after <strong style="color:#BB9900;">${payDateStr}</strong> — within 7 days of that date.</p>
+            <p style="font-size:16px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">If any of the payment details above are incorrect, please contact us immediately at <a href="mailto:tav@buildwithtav.co" style="color:#BB9900;">tav@buildwithtav.co</a> before the payment date.</p>
+            <p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">— Tav</p>
+          </div>
+        </div></body></html>`
+      );
+
+      // Email to Tav — payout notification
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: "Carousel Studio <tav@mail.buildwithtav.co>",
+          to: "tav@buildwithtav.co",
+          subject: `Payout request — $${Number(amount).toFixed(2)} from ${user.email}`,
+          html: `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:24px;background:#f5f3ef;">
+            <h2 style="color:#0a0a0a;">New Payout Request</h2>
+            <p><strong>From:</strong> ${user.email}</p>
+            <p><strong>Affiliate ID:</strong> ${profile.affiliate_id}</p>
+            <p><strong>Amount:</strong> $${Number(amount).toFixed(2)}</p>
+            <p><strong>Method:</strong> ${payoutMethod}</p>
+            <p><strong>Payment Details:</strong><br><pre style="background:#fff;padding:12px;border-radius:8px;">${paymentDetailsText}</pre></p>
+            <p><strong>Pay on or after:</strong> ${payDateStr}</p>
+            <p><strong>Requested:</strong> ${new Date().toLocaleDateString("en-GB")}</p>
+            <p style="margin-top:24px;"><a href="https://studio.buildwithtav.co/admin" style="background:#BB9900;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;">View in Admin Panel →</a></p>
+          </body></html>`
+        })
+      });
+
       return NextResponse.json({ success: true });
     }
 
