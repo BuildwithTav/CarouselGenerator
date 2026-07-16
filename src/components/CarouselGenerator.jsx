@@ -1024,7 +1024,7 @@ export default function App() {
   const [affiliateStats, setAffiliateStats] = useState(null);
   const [affiliateLoading, setAffiliateLoading] = useState(false);
   const [showPayoutForm, setShowPayoutForm] = useState(false);
-  const [payoutMethod, setPayoutMethod] = useState("bank");
+  const [payoutMethod, setPayoutMethod] = useState("uk_bank");
   // Templates tab state
   const [tmplSelected, setTmplSelected] = useState(()=>{try{return localStorage.getItem('bwt_tmpl_selected')||null;}catch{return null;}});
   const [tmplSlideCount, setTmplSlideCount] = useState(6);
@@ -1537,7 +1537,7 @@ export default function App() {
       if (amount < 30) { alert("Minimum withdrawal is $30."); setPayoutSubmitting(false); return; }
       const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"request-payout", amount, payoutMethod, payoutDetails }) });
       const d = await r.json();
-      if (d.success) { setPayoutSuccess(true); setShowPayoutForm(false); setPayoutConfirming(false); }
+      if (d.success) { setPayoutSuccess(true); setShowPayoutForm(false); setPayoutConfirming(false); setPayoutDetails({}); }
       else alert("Something went wrong — try again.");
     } catch { alert("Something went wrong — try again."); }
     setPayoutSubmitting(false);
@@ -4868,32 +4868,26 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   {showPayoutForm&&!payoutConfirming&&(
                     <div style={{background:A.bg,border:`1px solid ${A.border}`,borderRadius:10,padding:16}}>
                       <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Withdrawal — ${affiliateStats.available}</div>
-                      <div style={{display:"flex",gap:8,marginBottom:12}}>
-                        {["bank","paypal"].map(m=>(
-                          <button key={m} onClick={()=>setPayoutMethod(m)} style={{flex:1,padding:"8px",background:payoutMethod===m?GOLD:"transparent",color:payoutMethod===m?"#000":A.muted,borderRadius:8,fontWeight:700,fontSize:12,border:`1px solid ${payoutMethod===m?GOLD:A.border}`}}>
-                            {m==="bank"?"Bank Transfer":"PayPal"}
+                      <div style={{display:"flex",gap:8,marginBottom:14}}>
+                        {[["uk_bank","UK Bank"],["intl_bank","International Bank"]].map(([m,l])=>(
+                          <button key={m} onClick={()=>{setPayoutMethod(m);setPayoutDetails({});}} style={{flex:1,padding:"8px",background:payoutMethod===m?GOLD:"transparent",color:payoutMethod===m?"#000":A.muted,borderRadius:8,fontWeight:700,fontSize:12,border:`1px solid ${payoutMethod===m?GOLD:A.border}`}}>
+                            {l}
                           </button>
                         ))}
                       </div>
-                      {payoutMethod==="bank"&&(
-                        <>
-                          {[["accountName","Account name"],["accountNumber","Account number"],["sortCode","Sort code (UK) / IBAN (International)"],["bankName","Bank name"]].map(([key,label])=>(
-                            <div key={key} style={{marginBottom:10}}>
-                              <div style={{fontSize:11,color:A.muted,marginBottom:4}}>{label}</div>
-                              <input value={payoutDetails[key]||""} onChange={e=>setPayoutDetails(p=>({...p,[key]:e.target.value}))} style={{width:"100%",padding:"9px 12px",background:A.surface,border:`1px solid ${A.border}`,borderRadius:8,color:A.text,fontSize:13,boxSizing:"border-box"}} placeholder={label}/>
-                            </div>
-                          ))}
-                        </>
-                      )}
-                      {payoutMethod==="paypal"&&(
-                        <div style={{marginBottom:10}}>
-                          <div style={{fontSize:11,color:A.muted,marginBottom:4}}>PayPal email</div>
-                          <input value={payoutDetails.paypalEmail||""} onChange={e=>setPayoutDetails(p=>({...p,paypalEmail:e.target.value}))} style={{width:"100%",padding:"9px 12px",background:A.surface,border:`1px solid ${A.border}`,borderRadius:8,color:A.text,fontSize:13,boxSizing:"border-box"}} placeholder="PayPal email address"/>
+                      {(payoutMethod==="uk_bank"?[["accountName","Account Name"],["accountNumber","Account Number"],["sortCode","Sort Code"],["bankName","Bank Name"]]:
+                        [["accountName","Account Name"],["iban","IBAN"],["bicSwift","BIC / SWIFT"],["bankName","Bank Name"],["country","Country"]]).map(([key,label])=>(
+                        <div key={key} style={{marginBottom:10}}>
+                          <div style={{fontSize:11,color:A.muted,marginBottom:4}}>{label} <span style={{color:"#e65100"}}>*</span></div>
+                          <input value={payoutDetails[key]||""} onChange={e=>setPayoutDetails(p=>({...p,[key]:e.target.value}))} style={{width:"100%",padding:"9px 12px",background:A.surface,border:`1px solid ${payoutDetails[key]?A.border:"#e65100"}`,borderRadius:8,color:A.text,fontSize:13,boxSizing:"border-box"}} placeholder={label}/>
                         </div>
+                      ))}
+                      {!(payoutMethod==="uk_bank"?["accountName","accountNumber","sortCode","bankName"]:["accountName","iban","bicSwift","bankName","country"]).every(k=>payoutDetails[k]&&payoutDetails[k].trim())&&(
+                        <p style={{fontSize:11,color:"#e65100",margin:"4px 0 8px",lineHeight:1.5}}>All fields are required before you can proceed.</p>
                       )}
-                      <div style={{display:"flex",gap:8}}>
-                        <button onClick={()=>setShowPayoutForm(false)} style={{flex:1,padding:"10px",background:"none",border:`1px solid ${A.border}`,color:A.muted,borderRadius:8,fontWeight:600,fontSize:13}}>Cancel</button>
-                        <button onClick={()=>setPayoutConfirming(true)} style={{flex:2,padding:"10px",background:GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:13,border:"none"}}>
+                      <div style={{display:"flex",gap:8,marginTop:8}}>
+                        <button onClick={()=>{setShowPayoutForm(false);setPayoutDetails({});}} style={{flex:1,padding:"10px",background:"none",border:`1px solid ${A.border}`,color:A.muted,borderRadius:8,fontWeight:600,fontSize:13}}>Cancel</button>
+                        <button onClick={()=>{const req=payoutMethod==="uk_bank"?["accountName","accountNumber","sortCode","bankName"]:["accountName","iban","bicSwift","bankName","country"];if(req.every(k=>payoutDetails[k]&&payoutDetails[k].trim()))setPayoutConfirming(true);}} style={{flex:2,padding:"10px",background:GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:13,border:"none"}}>
                           Review & Confirm →
                         </button>
                       </div>
@@ -4907,15 +4901,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         <div style={{fontSize:12,color:A.muted,marginBottom:8}}>Amount</div>
                         <div style={{fontSize:18,fontWeight:800,color:GOLD,marginBottom:12}}>${affiliateStats.available}</div>
                         <div style={{fontSize:12,color:A.muted,marginBottom:4}}>Method</div>
-                        <div style={{fontSize:13,fontWeight:700,marginBottom:12,textTransform:"capitalize"}}>{payoutMethod}</div>
+                        <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>{payoutMethod==="uk_bank"?"UK Bank Transfer":"International Bank Transfer"}</div>
                         <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Payment details</div>
-                        {payoutMethod==="bank"?(
-                          [["accountName","Account name"],["accountNumber","Account number"],["sortCode","Sort code / IBAN"],["bankName","Bank name"]].map(([key,label])=>(
-                            payoutDetails[key]&&<div key={key} style={{fontSize:13,marginBottom:4}}><span style={{color:A.muted}}>{label}: </span>{payoutDetails[key]}</div>
-                          ))
-                        ):(
-                          <div style={{fontSize:13}}><span style={{color:A.muted}}>PayPal: </span>{payoutDetails.paypalEmail}</div>
-                        )}
+                        {Object.entries(payoutDetails).filter(([,v])=>v).map(([k,v])=>{
+                          const lm={accountName:"Account Name",accountNumber:"Account Number",sortCode:"Sort Code",bankName:"Bank Name",iban:"IBAN",bicSwift:"BIC / SWIFT",country:"Country"};
+                          return <div key={k} style={{fontSize:13,marginBottom:4}}><span style={{color:A.muted}}>{lm[k]||k}: </span><strong>{v}</strong></div>;
+                        })}
                       </div>
                       <p style={{fontSize:11,color:"#e65100",margin:"0 0 14px",lineHeight:1.5,fontWeight:600}}>These details look correct and I want to proceed with this withdrawal request.</p>
                       <div style={{display:"flex",gap:8}}>
