@@ -268,7 +268,7 @@ export default function AdminPage() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: A.bg }}>
-                    {["Affiliate ID", "Amount", "Status", "Requested", "Actions"].map(h => (
+                    {["Affiliate ID", "Email", "Amount", "Method", "Payment Details", "Status", "Requested", "Actions"].map(h => (
                       <th key={h} style={{ padding: "10px 14px", textAlign: "left", color: A.muted, fontWeight: 600, fontSize: 11, borderBottom: `1.5px solid ${A.border}` }}>{h}</th>
                     ))}
                   </tr>
@@ -277,7 +277,20 @@ export default function AdminPage() {
                   {payouts.map((p, i) => (
                     <tr key={p.id || i} style={{ borderBottom: `1px solid ${A.border}`, background: i % 2 === 0 ? A.surface : A.bg }}>
                       <td style={{ padding: "9px 14px", fontSize: 11 }}>{p.affiliate_id}</td>
+                      <td style={{ padding: "9px 14px", fontSize: 11 }}>{p.email || "—"}</td>
                       <td style={{ padding: "9px 14px", fontWeight: 700, color: "#2e7d32" }}>${(p.amount || 0).toFixed(2)}</td>
+                      <td style={{ padding: "9px 14px", fontSize: 11, textTransform: "capitalize" }}>{p.payout_method || "—"}</td>
+                      <td style={{ padding: "9px 14px", fontSize: 11, maxWidth: 220 }}>
+                        {p.payout_details ? (
+                          typeof p.payout_details === "object" ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                              {Object.entries(p.payout_details).map(([k, v]) => (
+                                <div key={k} style={{ color: A.text }}><span style={{ color: A.muted, fontSize: 10 }}>{k}: </span>{v}</div>
+                              ))}
+                            </div>
+                          ) : String(p.payout_details)
+                        ) : "—"}
+                      </td>
                       <td style={{ padding: "9px 14px" }}><span style={pill(p.status)}>{p.status}</span></td>
                       <td style={{ padding: "9px 14px", fontSize: 11, color: A.muted }}>{p.requested_at ? new Date(p.requested_at).toLocaleDateString("en-GB") : "—"}</td>
                       <td style={{ padding: "9px 14px" }}>
