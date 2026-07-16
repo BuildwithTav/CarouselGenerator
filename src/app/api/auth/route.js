@@ -453,6 +453,36 @@ export async function POST(req) {
     if (action === "admin_mark_payout_paid") {
       const { payout_id } = body;
       await supabase.from("payout_requests").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", payout_id);
+
+      // Fetch payout details to send confirmation email to affiliate
+      try {
+        const { data: payout } = await supabase.from("payout_requests").select("email, amount, payout_method").eq("id", payout_id).single();
+        if (payout?.email) {
+          const { data: user } = await supabase.from("users").select("first_name").eq("email", payout.email).single();
+          const firstName = user?.first_name || payout.email.split("@")[0];
+          const methodLabel = payout.payout_method === "uk_bank" ? "UK Bank Transfer" : "International Bank Transfer";
+          await sendEmail(payout.email, "Your Carousel Studio payout has been sent",
+            `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+            <style>@media only screen and (max-width:620px){.outer{padding:0 !important;}.inner{padding:24px !important;border-radius:0 !important;}}</style>
+            </head><body style="margin:0;padding:0;background:#f5f3ef;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+            <div class="outer" style="max-width:600px;margin:0 auto;padding:40px 16px;">
+              <div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div>
+              <div class="inner" style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;">
+                <p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hi ${firstName},</p>
+                <p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Your payout has been sent. Here are the details:</p>
+                <div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;">
+                  <div style="margin-bottom:12px;"><span style="font-size:14px;color:#7a7875;">Amount</span><br><span style="font-size:24px;font-weight:900;color:#BB9900;">$${Number(payout.amount).toFixed(2)}</span></div>
+                  <div><span style="font-size:14px;color:#7a7875;">Method</span><br><span style="font-size:15px;font-weight:700;color:#0a0a0a;">${methodLabel}</span></div>
+                </div>
+                <p style="font-size:16px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Please allow 1–3 business days for the funds to arrive in your account. If you have any questions contact <a href="mailto:tav@buildwithtav.co" style="color:#BB9900;">tav@buildwithtav.co</a></p>
+                <p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">— Tav</p>
+              </div>
+              <p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p>
+            </div></body></html>`
+          );
+        }
+      } catch(e) { console.error("Mark paid email error:", e); }
+
       return NextResponse.json({ ok: true });
     }
 
