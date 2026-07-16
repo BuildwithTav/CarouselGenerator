@@ -1063,8 +1063,6 @@ export default function App() {
   const [tmplCtaTopLine, setTmplCtaTopLine] = useState("");
   const [tmplCtaRewardLine, setTmplCtaRewardLine] = useState("");
   const [tmplCtaLine2, setTmplCtaLine2] = useState("");
-  const [tmplCtaHeadline, setTmplCtaHeadline] = useState("");
-  const ctaEditsRef = useRef({});
   const [tmplCtaGenerating, setTmplCtaGenerating] = useState(false);
   const [tmplCtaBg, setTmplCtaBg] = useState("dark");
   const [tmplPrimary, setTmplPrimary] = useState("#BB9900");
@@ -1087,6 +1085,7 @@ export default function App() {
   const [payoutDetails, setPayoutDetails] = useState({});
   const [payoutSubmitting, setPayoutSubmitting] = useState(false);
   const [payoutSuccess, setPayoutSuccess] = useState(false);
+  const [payoutConfirming, setPayoutConfirming] = useState(false);
 
   // Capture affiliate ref from URL on load
   const getAffiliateRef = () => { try { return localStorage.getItem("cs_affiliate_ref")||null; } catch { return null; } };
@@ -1381,7 +1380,7 @@ export default function App() {
 
 
   // ── buildCtaHTML — generates CTA final slide ──
-  function buildCtaHTML(_c_opts,ctaType,keyword,headline,line1,line3,bg,nm,hdl,profUrl,showTick,font,total,showCounter){
+  function buildCtaHTML(_c_opts,ctaType,keyword,line1,line2,line3,bg,nm,hdl,profUrl,showTick,font,total,showCounter){
     const W=1080,H=1350;
         const FONT_CSS_MAP={montserrat:"Montserrat",playfair:"Playfair Display",poppins:"Poppins",inter:"Inter",oswald:"Oswald",dancing:"Dancing Script",raleway:"Raleway",lato:"Lato",roboto:"Roboto",ubuntu:"Ubuntu",nunito:"Nunito",sourcesans:"Source Sans 3",crimson:"Crimson Text",merriweather:"Merriweather",bebasneue:"Bebas Neue",abril:"Abril Fatface",pacifico:"Pacifico",josefin:"Josefin Sans",quicksand:"Quicksand",dmserif:"DM Serif Display",cormorant:"Cormorant Garamond",righteous:"Righteous"};
     const fontFamily=(FONT_CSS_MAP[font]||font||"Bebas Neue").replace(/'/g,"");
@@ -1398,10 +1397,11 @@ export default function App() {
     const body="<div style='position:relative;width:"+W+"px;height:"+H+"px;background:"+bgC+";overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;'>"
       +"<div style='position:absolute;top:80px;left:60px;z-index:5;'>"+badge+"</div>"
       +"<div style='display:flex;flex-direction:column;align-items:center;text-align:center;gap:32px;padding:0 80px;margin-top:60px;'>"
-      +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:"+textC+";font-weight:700;line-height:1.3;margin:0;'>"+esc(headline)+"</p>"
+      +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:"+textC+";font-weight:600;line-height:1.3;margin:0;'>"+esc(line1)+"</p>"
       +"<div style='width:80px;height:4px;background:"+accent+";'></div>"
-      +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:44px;color:"+mutedC+";font-weight:400;line-height:1.3;margin:0;'>"+esc(line1)+"</p>"
-      +"<p style='font-family:"+fontFamily+",sans-serif;font-size:160px;font-weight:900;color:"+accent+";line-height:0.85;margin:0;letter-spacing:4px;'>"+esc((keyword||"").toUpperCase())+"</p>"
+      +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:38px;color:"+mutedC+";line-height:1.3;margin:0;'>"+esc(line2)+"</p>"
+
+      +"<p style='font-family:"+fontFamily+",sans-serif;font-size:160px;font-weight:900;color:"+accent+";line-height:0.9;margin:0;letter-spacing:4px;'>"+esc((keyword||"").toUpperCase())+"</p>"
       +"<div style='width:80px;height:4px;background:"+accent+";'></div>"
       +"<p style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:40px;color:"+mutedC+";line-height:1.4;margin:0;'>"+esc(line3)+"</p>"
       +"</div>"
@@ -1537,7 +1537,7 @@ export default function App() {
       if (amount < 30) { alert("Minimum withdrawal is $30."); setPayoutSubmitting(false); return; }
       const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":"Bearer "+getToken()}, body: JSON.stringify({ action:"request-payout", amount, payoutMethod, payoutDetails }) });
       const d = await r.json();
-      if (d.success) { setPayoutSuccess(true); setShowPayoutForm(false); }
+      if (d.success) { setPayoutSuccess(true); setShowPayoutForm(false); setPayoutConfirming(false); }
       else alert("Something went wrong — try again.");
     } catch { alert("Something went wrong — try again."); }
     setPayoutSubmitting(false);
@@ -1675,13 +1675,13 @@ export default function App() {
     const isCtaSlide=tmplActiveSlide===tmplSlideCount&&tmplShowCta;
     const _ctaKwDef={comment:tmplCtaKeyword||"GUIDE",follow:"FOLLOW",save:"SAVE",share:"SHARE",like:"LIKE"};
     const _ctaL2Def={comment:"Comment the word",follow:"Follow for more",save:"Save this now",share:"Share this",like:"Like this"};
-    const _ctaL3Def={comment:"in the comments and I'll send it straight over",follow:"for more content like this every day",save:"this post before you scroll past",share:"it with them today",like:"— it helps me reach more people"};
+    const _ctaL3Def={comment:"in the comments and I'll send it straight over",follow:"for more content like this every day",save:"this post before you scroll past",share:"this with someone who needs to hear it",like:"— it helps me reach more people"};
     const _ctaTopDef=tmplCtaType==="comment"?"Drop a comment with the word below":tmplCtaType==="follow"?"If you enjoy content like this":tmplCtaType==="save"?"Make sure you":tmplCtaType==="share"?"Send this to someone who needs to see it":"If this helped you in any way";
     const _c_html=isCtaSlide
-      ?buildCtaHTML(drawerOpts,tmplCtaType,tmplCtaKeyword||({comment:{headline:"If you want the free roadmap",kw:"GUIDE",top:"Comment",r:"below and I'll send it straight to your DMs"},follow:{headline:"Enjoyed this?",kw:"FOLLOW",top:"Make sure you",r:"for more content like this every day"},save:{headline:"You'll want to come back to this",kw:"SAVE",top:"Make sure you",r:"this before you scroll past"},share:{headline:"Know someone who needs to see this?",kw:"SHARE",top:"Please",r:"it with them today"},like:{headline:"Did this help you?",kw:"LIKE",top:"Tap",r:"if this resonated with you"}})[tmplCtaType]?.kw||"",tmplCtaHeadline||({comment:{headline:"If you want the free roadmap",kw:"GUIDE",top:"Comment",r:"below and I'll send it straight to your DMs"},follow:{headline:"Enjoyed this?",kw:"FOLLOW",top:"Make sure you",r:"for more content like this every day"},save:{headline:"You'll want to come back to this",kw:"SAVE",top:"Make sure you",r:"this before you scroll past"},share:{headline:"Know someone who needs to see this?",kw:"SHARE",top:"Please",r:"it with them today"},like:{headline:"Did this help you?",kw:"LIKE",top:"Tap",r:"if this resonated with you"}})[tmplCtaType]?.headline||"",tmplCtaTopLine||({comment:{headline:"If you want the free roadmap",kw:"GUIDE",top:"Comment",r:"below and I'll send it straight to your DMs"},follow:{headline:"Enjoyed this?",kw:"FOLLOW",top:"Make sure you",r:"for more content like this every day"},save:{headline:"You'll want to come back to this",kw:"SAVE",top:"Make sure you",r:"this before you scroll past"},share:{headline:"Know someone who needs to see this?",kw:"SHARE",top:"Please",r:"it with them today"},like:{headline:"Did this help you?",kw:"LIKE",top:"Tap",r:"if this resonated with you"}})[tmplCtaType]?.top||"",tmplCtaRewardLine||({comment:{headline:"If you want the free roadmap",kw:"GUIDE",top:"Comment",r:"below and I'll send it straight to your DMs"},follow:{headline:"Enjoyed this?",kw:"FOLLOW",top:"Make sure you",r:"for more content like this every day"},save:{headline:"You'll want to come back to this",kw:"SAVE",top:"Make sure you",r:"this before you scroll past"},share:{headline:"Know someone who needs to see this?",kw:"SHARE",top:"Please",r:"it with them today"},like:{headline:"Did this help you?",kw:"LIKE",top:"Tap",r:"if this resonated with you"}})[tmplCtaType]?.r||"",(isCleanPro||isStory)?tmplBg:tmplCtaBg,name,handle,profileUrl,blueTick,tmplSelected==="storytelling"?tmplFontStyle:tmplFont,totalSl,tmplShowCounter)
+      ?buildCtaHTML(drawerOpts,tmplCtaType,tmplCtaKeyword||_ctaKwDef[tmplCtaType]||"",tmplCtaTopLine||_ctaTopDef,tmplCtaLine2||_ctaL2Def[tmplCtaType]||"",tmplCtaRewardLine||_ctaL3Def[tmplCtaType]||"",(isCleanPro||isStory)?tmplBg:tmplCtaBg,name,handle,profileUrl,blueTick,tmplSelected==="storytelling"?tmplFontStyle:tmplFont,totalSl,tmplShowCounter)
       :buildTmplHTML(dTmplSlides[tmplActiveSlide]||{},tmplActiveSlide,totalSl,tmplSelected,drawerOpts);
     setTmplPreviewHTML(_c_html);
-  },[tmplActiveSlide,tmplSelected,tmplSlideCount,tmplShowCta,tmplEffect,tmplFont,tmplFontSize,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplFontStyle,tmplRawBox,tmplRawPos,tmplListicleNum,dTmplSlides,currentUser?.plan,tmplShowWebsite,tmplCtaBg,tmplCtaType,tmplShowCounter,tmplCtaHeadline,tmplCtaKeyword,tmplCtaTopLine,tmplCtaLine2,tmplCtaRewardLine,name,handle,profileUrl,blueTick,tmplDrawerOpen,website]);
+  },[tmplActiveSlide,tmplSelected,tmplSlideCount,tmplShowCta,tmplEffect,tmplFont,tmplFontSize,tmplPrimary,tmplSecondary,tmplAccentLineColor,tmplBg,tmplFontStyle,tmplRawBox,tmplRawPos,tmplListicleNum,dTmplSlides,currentUser?.plan,tmplShowWebsite,tmplCtaBg,tmplCtaType,tmplShowCounter,tmplCtaKeyword,tmplCtaTopLine,tmplCtaLine2,tmplCtaRewardLine,name,handle,profileUrl,blueTick,tmplDrawerOpen,website]);
   const [showWebsite, setShowWebsite] = useState(S?.showWebsite??false);
   const [voiceProfile, setVoiceProfile] = useState(S?.voiceProfile||"");
   const [businessType, setBusinessType] = useState(S?.businessType||"marketer");
@@ -3669,12 +3669,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         });
                         setTmplSlides(defaults);setTmplSlideCount(t.id==="listicle"?9:t.id==="raw"?8:t.id==="split"?6:6);setTmplBrief(t.id==="listicle"?"8 exercises to shred belly fat":"");
                         // Per-template visual defaults
-                        if(t.id==="listicle"){setTmplEffect("fire");setTmplFont("bebasneue");setTmplBg("dark");setTmplPrimary("#FF6600");setTmplSecondary("#ffffff");setTmplAccentLineColor("#FF6600");setTmplFontSize(72);setTmplListicleNum(8);setTmplCtaType("follow");setTmplCtaHeadline("");setTmplCtaTopLine("");setTmplCtaLine2("");setTmplCtaKeyword("FOLLOW");setTmplCtaRewardLine("");}
-                        else if(t.id==="dark-fade"){setTmplEffect("gold");setTmplFont("bebasneue");setTmplBg("dark");setTmplPrimary("#C9A84C");setTmplSecondary("#ffffff");setTmplAccentLineColor("#C9A84C");setTmplFontSize(72);setTmplCtaType("save");setTmplCtaHeadline("");setTmplCtaTopLine("");setTmplCtaLine2("");setTmplCtaKeyword("SAVE");setTmplCtaRewardLine("");}
-                        else if(t.id==="clean-pro"){setTmplEffect("none");setTmplFont("inter");setTmplBg("white");setTmplPrimary("#ffffff");setTmplSecondary("#ffffff");setTmplAccentLineColor("#BB9900");setTmplFontSize(72);setTmplFontStyle("Inter");setTmplCtaType("comment");setTmplCtaHeadline("If you want the free roadmap");setTmplCtaTopLine("Comment");setTmplCtaLine2("");setTmplCtaKeyword("GUIDE");setTmplCtaRewardLine("below and I'll send it straight to your DMs");}
-                        else if(t.id==="storytelling"){setTmplEffect("none");setTmplFont("playfair");setTmplBg("white");setTmplPrimary("#1a1a1a");setTmplSecondary("#444444");setTmplAccentLineColor("#BB9900");setTmplFontSize(72);setTmplFontStyle("Times New Roman");setTmplCtaType("follow");setTmplCtaHeadline("");setTmplCtaTopLine("");setTmplCtaLine2("");setTmplCtaKeyword("FOLLOW");setTmplCtaRewardLine("");}
-                        else if(t.id==="raw"){setTmplEffect("none");setTmplFont("bebasneue");setTmplBg("dark");setTmplPrimary("#ffffff");setTmplSecondary("#ffffff");setTmplAccentLineColor("#BB9900");setTmplFontSize(46);setTmplRawBox("white");setTmplRawPos("bottom");setTmplCtaType("follow");setTmplCtaHeadline("");setTmplCtaTopLine("");setTmplCtaLine2("");setTmplCtaKeyword("FOLLOW");setTmplCtaRewardLine("");}
-                        else if(t.id==="split"){setTmplEffect("ice");setTmplFont("bebasneue");setTmplBg("dark");setTmplPrimary("#ffffff");setTmplSecondary("#ffffff");setTmplAccentLineColor("#C9A84C");setTmplFontSize(72);setTmplCtaType("save");setTmplCtaHeadline("");setTmplCtaTopLine("");setTmplCtaLine2("");setTmplCtaKeyword("SAVE");setTmplCtaRewardLine("");}
+                        if(t.id==="listicle"){setTmplEffect("fire");setTmplFont("bebasneue");setTmplBg("dark");setTmplPrimary("#FF6600");setTmplSecondary("#ffffff");setTmplAccentLineColor("#FF6600");setTmplFontSize(72);setTmplListicleNum(8);setTmplCtaType("follow");setTmplCtaTopLine("");setTmplCtaLine2("");setTmplCtaKeyword("FOLLOW");setTmplCtaRewardLine("");}
+                        else if(t.id==="dark-fade"){setTmplEffect("gold");setTmplFont("bebasneue");setTmplBg("dark");setTmplPrimary("#C9A84C");setTmplSecondary("#ffffff");setTmplAccentLineColor("#C9A84C");setTmplFontSize(72);setTmplCtaType("save");setTmplCtaTopLine("");setTmplCtaLine2("");setTmplCtaKeyword("SAVE");setTmplCtaRewardLine("");}
+                        else if(t.id==="clean-pro"){setTmplEffect("none");setTmplFont("inter");setTmplBg("white");setTmplPrimary("#ffffff");setTmplSecondary("#ffffff");setTmplAccentLineColor("#BB9900");setTmplFontSize(72);setTmplFontStyle("Inter");setTmplCtaType("comment");setTmplCtaTopLine("If you want the free guide I used to build my online business");setTmplCtaLine2("");setTmplCtaKeyword("GUIDE");setTmplCtaRewardLine("and I'll send it straight to your DMs");}
+                        else if(t.id==="storytelling"){setTmplEffect("none");setTmplFont("playfair");setTmplBg("white");setTmplPrimary("#1a1a1a");setTmplSecondary("#444444");setTmplAccentLineColor("#BB9900");setTmplFontSize(72);setTmplFontStyle("Times New Roman");setTmplCtaType("follow");setTmplCtaTopLine("");setTmplCtaLine2("");setTmplCtaKeyword("FOLLOW");setTmplCtaRewardLine("");}
+                        else if(t.id==="raw"){setTmplEffect("none");setTmplFont("bebasneue");setTmplBg("dark");setTmplPrimary("#ffffff");setTmplSecondary("#ffffff");setTmplAccentLineColor("#BB9900");setTmplFontSize(46);setTmplRawBox("white");setTmplRawPos("bottom");setTmplCtaType("follow");setTmplCtaTopLine("");setTmplCtaLine2("");setTmplCtaKeyword("FOLLOW");setTmplCtaRewardLine("");}
+                        else if(t.id==="split"){setTmplEffect("ice");setTmplFont("bebasneue");setTmplBg("dark");setTmplPrimary("#ffffff");setTmplSecondary("#ffffff");setTmplAccentLineColor("#C9A84C");setTmplFontSize(72);setTmplCtaType("save");setTmplCtaTopLine("");setTmplCtaLine2("");setTmplCtaKeyword("SAVE");setTmplCtaRewardLine("");}
                       }
                     }} style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:20,cursor:"pointer",transition:"border-color 0.2s,transform 0.15s"}}
                     onMouseEnter={e=>{e.currentTarget.style.borderColor=GOLD;e.currentTarget.style.transform="translateY(-2px)";}}
@@ -3696,8 +3696,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               const isFree=currentUser?.plan==="free";const ctaBgFinal=(isCleanPro||isStory)?tmplBg:tmplCtaBg;const opts={effect:tmplEffect,font:tmplFont,fontSize:tmplFontSize,primary:tmplPrimary,secondary:tmplSecondary,accentLine:tmplAccentLineColor,showCounter:tmplShowCounter,showWebsite:tmplShowWebsite,bg:tmplBg,fontStyle:tmplFontStyle,rawBox:tmplRawBox,rawPos:tmplRawPos,listicleNum:tmplListicleNum,profUrl:profileUrl,nm:name,hdl:handle,showTick:blueTick,isFree,userWebsite:website};
               const ctaLine2Defaults={comment:"Comment the word",follow:"Follow for more",save:"Save this now",share:"Share this",like:"Like this"};
               const ctaKeywordDefaults={comment:tmplCtaKeyword||"GUIDE",follow:"FOLLOW",save:"SAVE",share:"SHARE",like:"LIKE"};
-              const ctaLine3Defaults={comment:"in the comments and I'll send it straight over",follow:"for more content like this every day",save:"this post before you scroll past",share:"it with them today",like:"— it helps me reach more people"};
-              const _ctaDef={comment:{headline:"If you want the free roadmap",kw:"GUIDE",top:"Comment",r:"below and I'll send it straight to your DMs"},follow:{headline:"Enjoyed this?",kw:"FOLLOW",top:"Make sure you",r:"for more content like this every day"},save:{headline:"You'll want to come back to this",kw:"SAVE",top:"Make sure you",r:"this before you scroll past"},share:{headline:"Know someone who needs to see this?",kw:"SHARE",top:"Please",r:"it with them today"},like:{headline:"Did this help you?",kw:"LIKE",top:"Tap",r:"if this resonated with you"}};const ctaHTML=tmplShowCta?buildCtaHTML(opts,tmplCtaType,tmplCtaKeyword||_ctaDef[tmplCtaType]?.kw||"",tmplCtaHeadline||_ctaDef[tmplCtaType]?.headline||"",tmplCtaTopLine||_ctaDef[tmplCtaType]?.top||"",tmplCtaRewardLine||_ctaDef[tmplCtaType]?.r||"",ctaBgFinal,name,handle,profileUrl,blueTick,isStory?tmplFontStyle:tmplFont,tmplSlideCount+(tmplShowCta?1:0),tmplShowCounter):null;
+              const ctaLine3Defaults={comment:"in the comments and I'll send it straight over",follow:"for more content like this every day",save:"this post before you scroll past",share:"this with someone who needs to hear it",like:"— it helps me reach more people"};
+              const ctaHTML=tmplShowCta?buildCtaHTML(opts,tmplCtaType,ctaKeywordDefaults[tmplCtaType],tmplCtaTopLine||(tmplCtaType==="comment"?"Drop the word":tmplCtaType==="follow"?"If this helped you":tmplCtaType==="save"?"You'll want to come back to this":tmplCtaType==="share"?"Tag someone below or":"Show some love and hit"),tmplCtaLine2||ctaLine2Defaults[tmplCtaType],tmplCtaRewardLine||ctaLine3Defaults[tmplCtaType],ctaBgFinal,name,handle,profileUrl,blueTick,isStory?tmplFontStyle:tmplFont,tmplSlideCount+(tmplShowCta?1:0),tmplShowCounter):null;
               const totalSlides=tmplSlideCount+(ctaHTML?1:0);
               const _iife_activeIsCtaSlide=ctaHTML&&activeSlide===tmplSlideCount;
               const previewHTML=_iife_activeIsCtaSlide?ctaHTML:buildTmplHTML(dTmplSlides[activeSlide]||{},activeSlide,totalSlides,tmplSelected,opts);
@@ -4017,29 +4017,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         {tmplShowCta&&<div style={{padding:"0 14px 14px",display:"flex",flexDirection:"column",gap:10}}>
                           <label style={lbl}>CTA Type</label>
                           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                            {[["comment","Comment"],["follow","Follow"],["save","Save"],["share","Share"],["like","Like"]].map(([t,l])=>(<button key={t} onClick={()=>{
-  const _CTA_DEF={comment:{headline:"If you want the free roadmap",kw:"GUIDE",top:"Comment",r:"below and I'll send it straight to your DMs"},follow:{headline:"Enjoyed this?",kw:"FOLLOW",top:"Make sure you",r:"for more content like this every day"},save:{headline:"You'll want to come back to this",kw:"SAVE",top:"Make sure you",r:"this before you scroll past"},share:{headline:"Know someone who needs to see this?",kw:"SHARE",top:"Please",r:"it with them today"},like:{headline:"Did this help you?",kw:"LIKE",top:"Tap",r:"if this resonated with you"}};
-  ctaEditsRef.current[tmplCtaType]={headline:tmplCtaHeadline,kw:tmplCtaKeyword,top:tmplCtaTopLine,r:tmplCtaRewardLine};
-  const saved=ctaEditsRef.current[t];
-  const def=_CTA_DEF[t]||{headline:"",kw:"",top:"",r:""};
-  setTmplCtaType(t);
-  setTmplCtaHeadline(saved?.headline!==undefined?saved.headline:def.headline);
-  setTmplCtaKeyword(saved?.kw!==undefined?saved.kw:def.kw);
-  setTmplCtaTopLine(saved?.top!==undefined?saved.top:def.top);
-  setTmplCtaRewardLine(saved?.r!==undefined?saved.r:def.r);
-  setTmplCtaLine2("");
-}} style={{flex:1,padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplCtaType===t?GOLD:A.border}`,background:tmplCtaType===t?"#1a1500":A.bg,color:tmplCtaType===t?GOLD:A.muted,fontSize:11,fontWeight:700,cursor:"pointer",minWidth:56}}>{l}</button>))}
+                            {[["comment","Comment"],["follow","Follow"],["save","Save"],["share","Share"],["like","Like"]].map(([t,l])=>(<button key={t} onClick={()=>{const _dd={follow:{kw:"FOLLOW",top:"If this helped you",r:"for more content like this every day"},save:{kw:"SAVE",top:"You'll want to come back to this",r:"this post before you scroll past"},comment:{kw:"GUIDE",top:"If you want the free guide I used to build my online business",r:"and I'll send it straight to your DMs"},share:{kw:"SHARE",top:"Tag someone below or",r:"this with someone who needs to hear it"},like:{kw:"LIKE",top:"Show some love and hit",r:"— it helps me reach more people"}};const _dv=_dd[t]||{kw:"",top:"",r:""};setTmplCtaType(t);setTmplCtaLine2("");setTmplCtaKeyword(_dv.kw);setTmplCtaTopLine(_dv.top);setTmplCtaRewardLine(_dv.r);}} style={{flex:1,padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplCtaType===t?GOLD:A.border}`,background:tmplCtaType===t?"#1a1500":A.bg,color:tmplCtaType===t?GOLD:A.muted,fontSize:11,fontWeight:700,cursor:"pointer",minWidth:56}}>{l}</button>))}
                           </div>
-                          <button onClick={()=>{const _CTA_DEF={comment:{headline:"If you want the free roadmap",kw:"GUIDE",top:"Comment",r:"below and I'll send it straight to your DMs"},follow:{headline:"Enjoyed this?",kw:"FOLLOW",top:"Make sure you",r:"for more content like this every day"},save:{headline:"You'll want to come back to this",kw:"SAVE",top:"Make sure you",r:"this before you scroll past"},share:{headline:"Know someone who needs to see this?",kw:"SHARE",top:"Please",r:"it with them today"},like:{headline:"Did this help you?",kw:"LIKE",top:"Tap",r:"if this resonated with you"}};const d=_CTA_DEF[tmplCtaType]||{};setTmplCtaHeadline(d.headline||"");setTmplCtaTopLine(d.top||"");setTmplCtaKeyword(d.kw||"");setTmplCtaRewardLine(d.r||"");ctaEditsRef.current[tmplCtaType]=undefined;}} style={{background:"none",border:`1px solid ${A.border}`,borderRadius:6,padding:"4px 10px",fontSize:11,color:A.muted,cursor:"pointer",alignSelf:"flex-end"}}>↺ Reset to default</button>
-                          <label style={lbl}>Headline</label>
-                          <input value={tmplCtaHeadline} onChange={e=>setTmplCtaHeadline(e.target.value)} placeholder={tmplCtaType==="comment"?"If you want the free roadmap":tmplCtaType==="follow"?"Enjoyed this?":tmplCtaType==="save"?"You'll want to come back to this":tmplCtaType==="share"?"Know someone who needs to see this?":"Did this help you?"} style={{...inp}}/>
-                          <label style={lbl}>Text before highlight</label>
-                          <input value={tmplCtaTopLine} onChange={e=>setTmplCtaTopLine(e.target.value)} placeholder={tmplCtaType==="comment"?"Comment":tmplCtaType==="follow"?"Make sure you":tmplCtaType==="save"?"Make sure you":tmplCtaType==="share"?"Please":"Tap"} style={{...inp}}/>
-                          <label style={lbl}>Highlighted word</label>
-                          <input value={tmplCtaKeyword} onChange={e=>setTmplCtaKeyword(e.target.value.toUpperCase())} placeholder={tmplCtaType==="comment"?"GUIDE":"e.g. FOLLOW"} style={{...inp,textTransform:"uppercase",fontWeight:800,fontSize:18,letterSpacing:3}}/>
-                          <label style={lbl}>Text after highlight</label>
-                          <input value={tmplCtaRewardLine} onChange={e=>setTmplCtaRewardLine(e.target.value)} placeholder={tmplCtaType==="comment"?"below and I'll send it straight to your DMs":tmplCtaType==="follow"?"for more content like this every day":tmplCtaType==="save"?"this before you scroll past":tmplCtaType==="share"?"it with them today":"if this resonated with you"} style={{...inp}}/>
-                          <div style={{fontSize:10,color:A.muted,background:A.bg,borderRadius:6,padding:"6px 8px",lineHeight:1.5}}>Preview: <em>{(tmplCtaTopLine||"…")} <strong style={{color:GOLD}}>{tmplCtaKeyword||"WORD"}</strong> {tmplCtaRewardLine||"…"}</em></div>
+                          <label style={lbl}>Line 1 — Hook</label>
+                          <input value={tmplCtaTopLine} onChange={e=>setTmplCtaTopLine(e.target.value)} placeholder={tmplCtaType==="comment"?"If you want the free guide I used to build my online business":tmplCtaType==="follow"?"If this helped you":tmplCtaType==="save"?"You'll want to come back to this":tmplCtaType==="share"?"Tag someone below or":"Show some love and hit"} style={{...inp}}/>
+                          <label style={lbl}>{tmplCtaType==="comment"?"Your keyword (e.g. GUIDE)":"Big word"}</label>
+                          <input value={tmplCtaKeyword} onChange={e=>setTmplCtaKeyword(e.target.value.toUpperCase())} placeholder={tmplCtaType==="comment"?"e.g. GUIDE or ROADMAP or FREE":""}  readOnly={tmplCtaType!=="comment"} style={{...inp,textTransform:"uppercase",fontWeight:800,fontSize:18,letterSpacing:3}}/>
+                          <label style={lbl}>Line 3 — Reward / Reason</label>
+                          <input value={tmplCtaRewardLine} onChange={e=>setTmplCtaRewardLine(e.target.value)} placeholder={tmplCtaType==="comment"?"and I'll send it straight to your DMs":tmplCtaType==="follow"?"for more content like this every day":tmplCtaType==="save"?"this post before you scroll past":tmplCtaType==="share"?"this with someone who needs to hear it":"— it helps me reach more people"} style={{...inp}}/>
                           {!isCleanPro&&!isStory&&<><label style={lbl}>Background</label>
                           <div style={{display:"flex",gap:6}}>{["dark","light"].map(m=>(<button key={m} onClick={()=>setTmplCtaBg(m)} style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${tmplCtaBg===m?GOLD:A.border}`,background:tmplCtaBg===m?"#1a1500":A.bg,color:tmplCtaBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>))}</div></>}
                           
@@ -4877,10 +4862,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   {payoutSuccess&&(
                     <div style={{background:"#1a3a1a",border:"1px solid #4caf50",borderRadius:10,padding:14,textAlign:"center"}}>
                       <div style={{color:"#4caf50",fontWeight:700,fontSize:14}}>Withdrawal requested ✓</div>
-                      <div style={{color:A.muted,fontSize:12,marginTop:4}}>We'll process your payment within 5 business days.</div>
+                      <div style={{color:A.muted,fontSize:12,marginTop:4}}>Payment will be processed on or after the 10th of next month, within 7 days. You'll receive a confirmation email shortly.</div>
                     </div>
                   )}
-                  {showPayoutForm&&(
+                  {showPayoutForm&&!payoutConfirming&&(
                     <div style={{background:A.bg,border:`1px solid ${A.border}`,borderRadius:10,padding:16}}>
                       <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Withdrawal — ${affiliateStats.available}</div>
                       <div style={{display:"flex",gap:8,marginBottom:12}}>
@@ -4906,11 +4891,37 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <input value={payoutDetails.paypalEmail||""} onChange={e=>setPayoutDetails(p=>({...p,paypalEmail:e.target.value}))} style={{width:"100%",padding:"9px 12px",background:A.surface,border:`1px solid ${A.border}`,borderRadius:8,color:A.text,fontSize:13,boxSizing:"border-box"}} placeholder="PayPal email address"/>
                         </div>
                       )}
-                      <p style={{fontSize:11,color:A.muted,margin:"8px 0 12px",lineHeight:1.5}}>I confirm these details are correct. Incorrect details are my responsibility.</p>
                       <div style={{display:"flex",gap:8}}>
                         <button onClick={()=>setShowPayoutForm(false)} style={{flex:1,padding:"10px",background:"none",border:`1px solid ${A.border}`,color:A.muted,borderRadius:8,fontWeight:600,fontSize:13}}>Cancel</button>
+                        <button onClick={()=>setPayoutConfirming(true)} style={{flex:2,padding:"10px",background:GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:13,border:"none"}}>
+                          Review & Confirm →
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {showPayoutForm&&payoutConfirming&&(
+                    <div style={{background:A.bg,border:`1.5px solid ${GOLD}`,borderRadius:10,padding:16}}>
+                      <div style={{fontSize:14,fontWeight:700,marginBottom:4,color:GOLD}}>⚠ Please check your details carefully</div>
+                      <p style={{fontSize:12,color:A.muted,margin:"0 0 14px",lineHeight:1.5}}>Once submitted, payment will be sent to these details. Incorrect details are your responsibility and cannot be reversed.</p>
+                      <div style={{background:A.surface,borderRadius:8,padding:14,marginBottom:14}}>
+                        <div style={{fontSize:12,color:A.muted,marginBottom:8}}>Amount</div>
+                        <div style={{fontSize:18,fontWeight:800,color:GOLD,marginBottom:12}}>${affiliateStats.available}</div>
+                        <div style={{fontSize:12,color:A.muted,marginBottom:4}}>Method</div>
+                        <div style={{fontSize:13,fontWeight:700,marginBottom:12,textTransform:"capitalize"}}>{payoutMethod}</div>
+                        <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Payment details</div>
+                        {payoutMethod==="bank"?(
+                          [["accountName","Account name"],["accountNumber","Account number"],["sortCode","Sort code / IBAN"],["bankName","Bank name"]].map(([key,label])=>(
+                            payoutDetails[key]&&<div key={key} style={{fontSize:13,marginBottom:4}}><span style={{color:A.muted}}>{label}: </span>{payoutDetails[key]}</div>
+                          ))
+                        ):(
+                          <div style={{fontSize:13}}><span style={{color:A.muted}}>PayPal: </span>{payoutDetails.paypalEmail}</div>
+                        )}
+                      </div>
+                      <p style={{fontSize:11,color:"#e65100",margin:"0 0 14px",lineHeight:1.5,fontWeight:600}}>These details look correct and I want to proceed with this withdrawal request.</p>
+                      <div style={{display:"flex",gap:8}}>
+                        <button onClick={()=>setPayoutConfirming(false)} style={{flex:1,padding:"10px",background:"none",border:`1px solid ${A.border}`,color:A.muted,borderRadius:8,fontWeight:600,fontSize:13}}>Go Back</button>
                         <button onClick={submitPayoutRequest} disabled={payoutSubmitting} style={{flex:2,padding:"10px",background:GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:13,border:"none"}}>
-                          {payoutSubmitting?"Submitting...":"Confirm Withdrawal"}
+                          {payoutSubmitting?"Submitting...":"Yes, Submit Request"}
                         </button>
                       </div>
                     </div>
@@ -5103,29 +5114,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         {tmplShowCta&&<div style={{padding:"0 14px 14px",display:"flex",flexDirection:"column",gap:10}}>
                           <label style={lbl}>CTA Type</label>
                           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                            {[["comment","Comment"],["follow","Follow"],["save","Save"],["share","Share"],["like","Like"]].map(([t,l])=>(<button key={t} onClick={()=>{
-  const _CTA_DEF={comment:{headline:"If you want the free roadmap",kw:"GUIDE",top:"Comment",r:"below and I'll send it straight to your DMs"},follow:{headline:"Enjoyed this?",kw:"FOLLOW",top:"Make sure you",r:"for more content like this every day"},save:{headline:"You'll want to come back to this",kw:"SAVE",top:"Make sure you",r:"this before you scroll past"},share:{headline:"Know someone who needs to see this?",kw:"SHARE",top:"Please",r:"it with them today"},like:{headline:"Did this help you?",kw:"LIKE",top:"Tap",r:"if this resonated with you"}};
-  ctaEditsRef.current[tmplCtaType]={headline:tmplCtaHeadline,kw:tmplCtaKeyword,top:tmplCtaTopLine,r:tmplCtaRewardLine};
-  const saved=ctaEditsRef.current[t];
-  const def=_CTA_DEF[t]||{headline:"",kw:"",top:"",r:""};
-  setTmplCtaType(t);
-  setTmplCtaHeadline(saved?.headline!==undefined?saved.headline:def.headline);
-  setTmplCtaKeyword(saved?.kw!==undefined?saved.kw:def.kw);
-  setTmplCtaTopLine(saved?.top!==undefined?saved.top:def.top);
-  setTmplCtaRewardLine(saved?.r!==undefined?saved.r:def.r);
-  setTmplCtaLine2("");
-}} style={{flex:1,padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplCtaType===t?GOLD:A.border}`,background:tmplCtaType===t?"#1a1500":A.bg,color:tmplCtaType===t?GOLD:A.muted,fontSize:11,fontWeight:700,cursor:"pointer",minWidth:56}}>{l}</button>))}
+                            {[["comment","Comment"],["follow","Follow"],["save","Save"],["share","Share"],["like","Like"]].map(([t,l])=>(<button key={t} onClick={()=>{const _dd={follow:{kw:"FOLLOW",top:"If this helped you",r:"for more content like this every day"},save:{kw:"SAVE",top:"You'll want to come back to this",r:"this post before you scroll past"},comment:{kw:"GUIDE",top:"If you want the free guide I used to build my online business",r:"and I'll send it straight to your DMs"},share:{kw:"SHARE",top:"Tag someone below or",r:"this with someone who needs to hear it"},like:{kw:"LIKE",top:"Show some love and hit",r:"— it helps me reach more people"}};const _dv=_dd[t]||{kw:"",top:"",r:""};setTmplCtaType(t);setTmplCtaLine2("");setTmplCtaKeyword(_dv.kw);setTmplCtaTopLine(_dv.top);setTmplCtaRewardLine(_dv.r);}} style={{flex:1,padding:"7px 4px",borderRadius:7,border:`1.5px solid ${tmplCtaType===t?GOLD:A.border}`,background:tmplCtaType===t?"#1a1500":A.bg,color:tmplCtaType===t?GOLD:A.muted,fontSize:11,fontWeight:700,cursor:"pointer",minWidth:56}}>{l}</button>))}
                           </div>
-                          <button onClick={()=>{const _CTA_DEF={comment:{headline:"If you want the free roadmap",kw:"GUIDE",top:"Comment",r:"below and I'll send it straight to your DMs"},follow:{headline:"Enjoyed this?",kw:"FOLLOW",top:"Make sure you",r:"for more content like this every day"},save:{headline:"You'll want to come back to this",kw:"SAVE",top:"Make sure you",r:"this before you scroll past"},share:{headline:"Know someone who needs to see this?",kw:"SHARE",top:"Please",r:"it with them today"},like:{headline:"Did this help you?",kw:"LIKE",top:"Tap",r:"if this resonated with you"}};const d=_CTA_DEF[tmplCtaType]||{};setTmplCtaHeadline(d.headline||"");setTmplCtaTopLine(d.top||"");setTmplCtaKeyword(d.kw||"");setTmplCtaRewardLine(d.r||"");ctaEditsRef.current[tmplCtaType]=undefined;}} style={{background:"none",border:`1px solid ${A.border}`,borderRadius:6,padding:"4px 10px",fontSize:11,color:A.muted,cursor:"pointer",alignSelf:"flex-end"}}>↺ Reset to default</button>
-                          <label style={lbl}>Headline</label>
-                          <input value={tmplCtaHeadline} onChange={e=>setTmplCtaHeadline(e.target.value)} placeholder={tmplCtaType==="comment"?"If you want the free roadmap":tmplCtaType==="follow"?"Enjoyed this?":tmplCtaType==="save"?"You'll want to come back to this":tmplCtaType==="share"?"Know someone who needs to see this?":"Did this help you?"} style={{...inp}}/>
-                          <label style={lbl}>Text before highlight</label>
-                          <input value={tmplCtaTopLine} onChange={e=>setTmplCtaTopLine(e.target.value)} placeholder={tmplCtaType==="comment"?"Comment":tmplCtaType==="follow"?"Make sure you":tmplCtaType==="save"?"Make sure you":tmplCtaType==="share"?"Please":"Tap"} style={{...inp}}/>
-                          <label style={lbl}>Highlighted word</label>
-                          <input value={tmplCtaKeyword} onChange={e=>setTmplCtaKeyword(e.target.value.toUpperCase())} placeholder={tmplCtaType==="comment"?"GUIDE":"e.g. FOLLOW"} style={{...inp,textTransform:"uppercase",fontWeight:800,fontSize:18,letterSpacing:3}}/>
-                          <label style={lbl}>Text after highlight</label>
-                          <input value={tmplCtaRewardLine} onChange={e=>setTmplCtaRewardLine(e.target.value)} placeholder={tmplCtaType==="comment"?"below and I'll send it straight to your DMs":tmplCtaType==="follow"?"for more content like this every day":tmplCtaType==="save"?"this before you scroll past":tmplCtaType==="share"?"it with them today":"if this resonated with you"} style={{...inp}}/>
-                          <div style={{fontSize:10,color:A.muted,background:A.bg,borderRadius:6,padding:"6px 8px",lineHeight:1.5}}>Preview: <em>{(tmplCtaTopLine||"…")} <strong style={{color:GOLD}}>{tmplCtaKeyword||"WORD"}</strong> {tmplCtaRewardLine||"…"}</em></div>
+                          <label style={lbl}>Line 1 — Hook</label>
+                          <input value={tmplCtaTopLine} onChange={e=>setTmplCtaTopLine(e.target.value)} placeholder={tmplCtaType==="comment"?"If you want the free guide I used to build my online business":tmplCtaType==="follow"?"If this helped you":tmplCtaType==="save"?"You'll want to come back to this":tmplCtaType==="share"?"Tag someone below or":"Show some love and hit"} style={{...inp}}/>
+                          <label style={lbl}>{tmplCtaType==="comment"?"Your keyword (e.g. GUIDE)":"Big word"}</label>
+                          <input value={tmplCtaKeyword} onChange={e=>setTmplCtaKeyword(e.target.value.toUpperCase())} placeholder={tmplCtaType==="comment"?"e.g. GUIDE or ROADMAP or FREE":""}  readOnly={tmplCtaType!=="comment"} style={{...inp,textTransform:"uppercase",fontWeight:800,fontSize:18,letterSpacing:3}}/>
+                          <label style={lbl}>Line 3 — Reward / Reason</label>
+                          <input value={tmplCtaRewardLine} onChange={e=>setTmplCtaRewardLine(e.target.value)} placeholder={tmplCtaType==="comment"?"and I'll send it straight to your DMs":tmplCtaType==="follow"?"for more content like this every day":tmplCtaType==="save"?"this post before you scroll past":tmplCtaType==="share"?"this with someone who needs to hear it":"— it helps me reach more people"} style={{...inp}}/>
                           {!isCleanPro&&!isStory&&<><label style={lbl}>Background</label>
                           <div style={{display:"flex",gap:6}}>{["dark","light"].map(m=>(<button key={m} onClick={()=>setTmplCtaBg(m)} style={{flex:1,padding:"7px",borderRadius:7,border:`1.5px solid ${tmplCtaBg===m?GOLD:A.border}`,background:tmplCtaBg===m?"#1a1500":A.bg,color:tmplCtaBg===m?GOLD:A.muted,fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>))}</div></>}
                           
