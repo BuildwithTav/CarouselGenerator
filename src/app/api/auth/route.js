@@ -352,8 +352,7 @@ export async function POST(req) {
         ? Object.entries(payoutDetails).map(([k,v]) => `<tr><td style="padding:6px 0;color:#7a7875;font-size:14px;width:140px;">${labelMap[k]||k}</td><td style="padding:6px 0;font-size:14px;font-weight:700;color:#0a0a0a;">${v}</td></tr>`).join("")
         : `<tr><td colspan="2" style="padding:6px 0;font-size:14px;">${payoutDetails}</td></tr>`;
       const paymentDetailsTextPlain = typeof payoutDetails === "object"
-        ? Object.entries(payoutDetails).map(([k,v]) => `${labelMap[k]||k}: ${v}`).join("
-")
+        ? Object.entries(payoutDetails).map(([k,v]) => `${labelMap[k]||k}: ${v}`).join("\n")
         : String(payoutDetails || "");
 
       // Calculate next 10th
