@@ -2928,8 +2928,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             </div>
             {!otpSent ? (
               <>
-                <h2 style={{fontSize:20,fontWeight:800,margin:"0 0 6px"}}>Sign in to continue</h2>
-                <p style={{fontSize:13,color:A.muted,margin:"0 0 20px",lineHeight:1.6}}>Enter your details and we'll send you a 6 digit code. No password needed.</p>
+                <h2 style={{fontSize:20,fontWeight:800,margin:"0 0 6px"}}>Sign up or sign in</h2>
+                <p style={{fontSize:13,color:A.muted,margin:"0 0 20px",lineHeight:1.6}}>Carousel Studio is free to use, no catch. Just enter your email — we'll send you a 6 digit code to verify. Use the same process every time you sign in.</p>
                 <label style={lbl}>First name</label>
                 <input value={authFirstName} onChange={e=>setAuthFirstName(e.target.value)} placeholder="Your first name" type="text" style={{...inp,marginBottom:12,fontSize:15}}/>
                 <label style={lbl}>Email address</label>
