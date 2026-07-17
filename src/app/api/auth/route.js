@@ -457,6 +457,18 @@ export async function POST(req) {
       const { payout_id } = body;
       await supabase.from("payout_requests").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", payout_id);
 
+      // Also mark the affiliate's pending commissions as paid
+      try {
+        const { data: pr } = await supabase.from("payout_requests").select("affiliate_id, amount").eq("id", payout_id).single();
+        if (pr?.affiliate_id) {
+          await supabase.from("commissions")
+            .update({ status: "paid", payout_request_id: payout_id })
+            .eq("affiliate_id", pr.affiliate_id)
+            .eq("status", "pending")
+            .lte("payable_at", new Date().toISOString());
+        }
+      } catch(e) { console.error("Commission update error:", e); }
+
       // Fetch payout details to send confirmation email to affiliate
       try {
         const { data: payout } = await supabase.from("payout_requests").select("email, amount, payout_method").eq("id", payout_id).single();
