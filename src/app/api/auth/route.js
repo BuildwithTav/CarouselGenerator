@@ -310,6 +310,7 @@ export async function POST(req) {
       const { data: referrals } = await supabase.from("referrals").select("id").eq("affiliate_id", profile.affiliate_id);
       const { data: tier1Commissions } = await supabase.from("commissions").select("id").eq("affiliate_id", profile.affiliate_id).eq("tier", 1);
       const { data: tier2Commissions } = await supabase.from("commissions").select("id").eq("affiliate_id", profile.affiliate_id).eq("tier", 2);
+      const { data: openPayoutRequest } = await supabase.from("payout_requests").select("id, amount, requested_at").eq("affiliate_id", profile.affiliate_id).eq("status", "pending").order("requested_at", { ascending: false }).limit(1);
       return NextResponse.json({
         active: true,
         affiliate_id: profile.affiliate_id,
@@ -320,7 +321,9 @@ export async function POST(req) {
         paid: paid.toFixed(2),
         referral_count: referrals?.length || 0,
         tier1_count: tier1Commissions?.length || 0,
-        tier2_count: tier2Commissions?.length || 0
+        tier2_count: tier2Commissions?.length || 0,
+        has_pending_payout: !!(openPayoutRequest?.length),
+        pending_payout_amount: openPayoutRequest?.[0]?.amount || null
       });
     }
 
