@@ -937,7 +937,16 @@ export default function App() {
 
         setToken(d.access_token);
         if (d.refresh_token) setRefreshToken(d.refresh_token);
-        setCurrentUser(d.user||{ email: d.email, plan:"free", credits_used:0, credits_limit:60 }); setShowAuthModal(false); 
+        setCurrentUser(d.user||{ email: d.email, plan:"free", credits_used:0, credits_limit:60 }); setShowAuthModal(false);
+        // Fire Meta Pixel CompleteRegistration for new signups
+        try {
+          const createdAt = d.user?.created_at;
+          if (createdAt && (Date.now() - new Date(createdAt).getTime()) < 60000) {
+            if (typeof window !== "undefined" && window.fbq) {
+              window.fbq("track", "CompleteRegistration");
+            }
+          }
+        } catch(e) {} 
       }
     } catch { setAuthError("Something went wrong — try again."); }
     setAuthSubmitting(false);
