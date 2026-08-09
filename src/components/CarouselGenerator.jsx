@@ -1724,7 +1724,7 @@ export default function App() {
       return _c_next;
     });
   };
-  const [headlineStyle, setHeadlineStyle] = useState(S?.headlineStyle||"bold");
+  const [headlineStyle, setHeadlineStyle] = useState("upper");
   const [showNums, setShowNums] = useState(S?.showNums??false);
   const [showAllUpdates, setShowAllUpdates] = useState(false);
   const [bgMode, setBgMode] = useState(S?.bgMode||"light");
@@ -2820,8 +2820,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
   const planLabel = currentUser?.plan === "agency" ? "agency" : currentUser?.plan === "pro" ? "pro" : currentUser?.plan === "starter" ? "starter" : currentUser?.plan === "affiliate_licence" ? "affiliate_licence" : currentUser?.plan === "white_label" ? "white_label" : "free";
   const isPexelsUser = ["pro","agency","affiliate_licence","white_label"].includes(planLabel);
-  const NAV_ITEMS = [["generate","Generate"],["templates","Templates"],["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
-  const BURGER_ITEMS = [["quotes","Quotes"],["brand","Brand"],["visual","Visual"],["history","History"],["help","Help"],["account","Account"]];
+  const NAV_ITEMS = [["generate","Generate"],["templates","Templates"],["quotes","Quotes"],["brand","Brand"],["history","History"],["help","Help"],["account","Account"]];
+  const BURGER_ITEMS = [["quotes","Quotes"],["brand","Brand"],["history","History"],["help","Help"],["account","Account"]];
   const MAIN_NAV = [["generate","Generate"],["templates","Templates"]];
 
   return (
@@ -3530,6 +3530,39 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Cover Photo */}
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,marginBottom:16}}>
+              <label style={lbl}>Cover photo <span style={{fontWeight:400,color:A.muted,fontSize:11}}>(optional — used on slide 1 only)</span></label>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10,marginTop:8}}>
+                {coverPhotos.map((p,i)=>(
+                  <div key={i} style={{position:"relative",flexShrink:0}}>
+                    <div onClick={()=>{if(activeCoverPhoto===p){setActiveCoverPhoto(null);if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);}else{setActiveCoverPhoto(p);sampleImageBrightness(p).then(result=>{setBadgeArea(result);if(result==="light")setCustomColourDark(false);else setCustomColourDark(true);});}}} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:activeCoverPhoto===p?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
+                      <img src={p.startsWith("_c_data:")?p.replace(/^_c_data:/,"data:"):p} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    </div>
+                    {activeCoverPhoto===p&&<div onClick={()=>{setActiveCoverPhoto(null);if(bgMode==="light")setCustomColourDark(false);else setCustomColourDark(true);}} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
+                    <div onClick={()=>{if(window.confirm("Remove this photo?")){const n=coverPhotos.filter((_,j)=>j!==i);setCoverPhotos(n);setTemplatePhotos(n);if(activeCoverPhoto===p){setActiveCoverPhoto(n[0]||null);}}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete">🗑</div>
+                  </div>
+                ))}
+                {coverPhotos.length<10&&<div onClick={()=>coverPhotoRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:28}}>+</div>}
+              </div>
+              <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
+              {activeCoverPhoto&&(
+                <div>
+                  <div style={{display:"flex",gap:8,marginBottom:10}}>
+                    <button onClick={()=>setCustomColourDark(true)} style={{flex:1,padding:"6px",borderRadius:8,border:`1.5px solid ${customColourDark?GOLD:A.border}`,background:customColourDark?A.text:A.bg,color:customColourDark?A.accentText:A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>White text</button>
+                    <button onClick={()=>setCustomColourDark(false)} style={{flex:1,padding:"6px",borderRadius:8,border:`1.5px solid ${!customColourDark?GOLD:A.border}`,background:!customColourDark?"#fff":A.bg,color:!customColourDark?"#000":A.muted,fontWeight:700,fontSize:11,cursor:"pointer"}}>Dark text</button>
+                  </div>
+                  <label style={{...lbl,fontSize:11,marginBottom:4,display:"block"}}>Opacity — {photoOpacity}%</label>
+                  <input type="range" min={10} max={100} value={photoOpacity} onChange={e=>setPhotoOpacity(+e.target.value)} style={{width:"100%",marginBottom:8}}/>
+                  <label style={{...lbl,fontSize:11,marginBottom:4,display:"block"}}>Overlay — {overlayDark}%</label>
+                  <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%",marginBottom:12}}/>
+                  <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${A.border}`}}>
+                    {(()=>{const s={headline:"Your hook headline goes here",accent_word:"hook",tag:"THE HOOK",body:"",layout:"statement",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null};return <SlidePreview slide={s} idx={0} total={1} _c_opts={{...slideOpts(0),ratio:"instagram"}} onClick={()=>{}} isActive={false} isCover={true}/>;})()}
+                  </div>
+                </div>
+              )}
             </div>
 
 <button onClick={()=>generate()} style={{width:"100%",padding:"15px",background:`linear-gradient(135deg,#1a1a1a,#0a0a0a)`,color:A.accentText,borderRadius:10,fontSize:15,fontWeight:800,border:`1px solid ${GOLD}33`,boxShadow:`0 0 0 1px ${GOLD}22`}}>
@@ -4325,30 +4358,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 </div>
               </div>
 
-            </div>
-          </div>
-        )}
-
-        {nav==="visual"&&(
-          <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
-            <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 20px"}}>Visual</h2>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 380px",gap:24,alignItems:"start"}} className="visual-grid">
-              <div style={{display:"flex",flexDirection:"column",gap:20}}>
-
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
-                <label style={lbl}>Headline style</label>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                  {HEADLINE_STYLES.map(hs=>(
-                    <button key={hs.id} onClick={()=>setHeadlineStyle(hs.id)} style={{background:headlineStyle===hs.id?A.text:A.bg,border:`1.5px solid ${headlineStyle===hs.id?GOLD:A.border}`,borderRadius:10,padding:"14px 12px",textAlign:"left"}}>
-                      <div style={{fontSize:18,fontWeight:900,letterSpacing:hs.letterSpacing,textTransform:hs.transform,fontFamily:hs.forceFont?`'${hs.forceFont}',serif`:"inherit",color:headlineStyle===hs.id?A.accentText:A.text,marginBottom:4}}>
-                        Headline
-                      </div>
-                      <div style={{fontSize:11,fontWeight:700,color:headlineStyle===hs.id?A.accentText:A.text,marginBottom:2}}>{hs.label}</div>
-                      <div style={{fontSize:10,color:headlineStyle===hs.id?"rgba(255,255,255,0.6)":A.muted}}>{hs.desc}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {/* Visual settings — moved from Visual tab */}
+            <div style={{marginTop:24,display:"flex",flexDirection:"column",gap:16}}>
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Brand accent colour</label>
@@ -4389,6 +4400,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 )}
               </div>
 
+
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Body font</label>
                 {recentFonts.length>0&&(
@@ -4410,6 +4422,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 </div>
               </div>
 
+
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Photo opacity — {templateOpacity}%</label>
                 <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>How visible the background photo is on slides 2 onwards. Lower = more faded.</p>
@@ -4421,13 +4434,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div><div style={{fontWeight:600,fontSize:13}}>Slide numbers</div><div style={{color:A.muted,fontSize:12}}>Watermark number on each slide</div></div>
                 {tog(showNums,setShowNums)}
-              </div>
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
 
-              </div>
-
-              {/* Right column — slide background (IS the preview) */}
-              <div style={{position:"sticky",top:80}}>
-                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                   <label style={lbl}>Slide background (slides 2 onwards)</label>
                   <div style={{display:"flex",gap:8,marginBottom:bgMode==="custom"?14:8}}>
                     {BG_MODES.map(m=>(
@@ -4532,6 +4540,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     <button onClick={()=>setSlideTextDark(true)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${slideTextDark?GOLD:A.border}`,background:slideTextDark?A.text:A.bg,color:slideTextDark?A.accentText:A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>White text</button>
                     <button onClick={()=>setSlideTextDark(false)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${!slideTextDark?GOLD:A.border}`,background:!slideTextDark?"#fff":A.bg,color:!slideTextDark?"#000":A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>Dark text</button>
                   </div>
+              </div>
                 </div>
               </div>
 
