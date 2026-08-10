@@ -2820,7 +2820,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
   const planLabel = currentUser?.plan === "agency" ? "agency" : currentUser?.plan === "pro" ? "pro" : currentUser?.plan === "starter" ? "starter" : currentUser?.plan === "affiliate_licence" ? "affiliate_licence" : currentUser?.plan === "white_label" ? "white_label" : "free";
   const isPexelsUser = ["pro","agency","affiliate_licence","white_label"].includes(planLabel);
-  const NAV_ITEMS = [["generate","Generate"],["templates","Templates"],["quotes","Quotes"],["brand","Brand"],["history","History"],["help","Help"],["account","Account"]];
+  const NAV_ITEMS = [["generate","Generate"],["brand","Brand"],["templates","Templates"],["quotes","Quotes"],["history","History"],["help","Help"],["account","Account"]];
   const BURGER_ITEMS = [["quotes","Quotes"],["brand","Brand"],["history","History"],["help","Help"],["account","Account"]];
   const MAIN_NAV = [["generate","Generate"],["templates","Templates"]];
 
