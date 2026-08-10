@@ -3534,7 +3534,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
             {/* Cover Photo */}
             <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,marginBottom:16}}>
-              <label style={lbl}>Cover photo <span style={{fontWeight:400,color:A.muted,fontSize:11}}>(optional — used on slide 1 only)</span></label>
+              <label style={lbl}>Carousel image <span style={{fontWeight:400,color:A.muted,fontSize:11}}>(optional)</span></label>
               <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10,marginTop:8}}>
                 {coverPhotos.map((p,i)=>(
                   <div key={i} style={{position:"relative",flexShrink:0}}>
@@ -3548,6 +3548,15 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 {coverPhotos.length<10&&<div onClick={()=>coverPhotoRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`1.5px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:28}}>+</div>}
               </div>
               <input ref={coverPhotoRef} type="file" accept="image/*" onChange={e=>readFile(e,addCoverPhoto)} style={{display:"none"}}/>
+              {isPexelsUser ? (
+                <button onClick={()=>setShowPexelsCover(true)} style={{width:"100%",padding:"8px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:8}}>
+                  🔍 Search 1000s of free images
+                </button>
+              ) : (
+                <div style={{width:"100%",padding:"8px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:600,fontSize:11,textAlign:"center",marginBottom:8,opacity:0.6}}>
+                  🔍 Search free images — Pro+
+                </div>
+              )}
               {activeCoverPhoto&&(
                 <div>
                   <div style={{display:"flex",gap:8,marginBottom:10}}>
@@ -4365,128 +4374,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               </div>
 
 
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
-                <label style={lbl}>Photo opacity — {templateOpacity}%</label>
-                <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>How visible the background photo is on slides 2 onwards. Lower = more faded.</p>
-                <input type="range" min={10} max={100} value={templateOpacity} onChange={e=>setTemplateOpacity(+e.target.value)} style={{width:"100%",marginBottom:14}}/>
-                <label style={lbl}>Photo overlay — {overlayDark}%</label>
-                <p style={{color:A.muted,fontSize:12,margin:"0 0 10px",lineHeight:1.5}}>Applies to all slides. Can be adjusted per-slide in the edit panel after generation.</p>
-                <input type="range" min={0} max={100} value={overlayDark} onChange={e=>setOverlayDark(+e.target.value)} style={{width:"100%"}}/>
-              </div>
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div><div style={{fontWeight:600,fontSize:13}}>Slide numbers</div><div style={{color:A.muted,fontSize:12}}>Watermark number on each slide</div></div>
                 {tog(showNums,setShowNums)}
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
-
-                  <label style={lbl}>Slide background (slides 2 onwards)</label>
-                  <div style={{display:"flex",gap:8,marginBottom:bgMode==="custom"?14:8}}>
-                    {BG_MODES.map(m=>(
-                      <button key={m.id} onClick={()=>{setBgMode(m.id);if(m.id==="dark")setCustomColourDark(true);if(m.id==="light")setCustomColourDark(false);}} style={{flex:1,background:bgMode===m.id?A.text:A.bg,border:`1.5px solid ${bgMode===m.id?A.text:A.border}`,borderRadius:8,padding:"10px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                        <span style={{fontSize:12,fontWeight:700,color:bgMode===m.id?A.accentText:A.text}}>{m.label}</span>
-                        <span style={{fontSize:10,color:bgMode===m.id?"rgba(255,255,255,0.6)":A.muted}}>{m.desc}</span>
-                      </button>
-                    ))}
-                  </div>
-                  {bgMode==="colour"&&(
-                    <div style={{marginTop:12}}>
-                      <label style={lbl}>Pick a colour</label>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:10}}>
-                        {BG_COLOUR_PRESETS.map(p=>(
-                          <button key={p.id} onClick={()=>{setBgColour(p.hex);setBgMode("colour");}} title={p.label} style={{width:32,height:32,borderRadius:"50%",background:p.hex,border:bgColour===p.hex?`3px solid ${A.text}`:`2px solid ${A.border}`,cursor:"pointer",flexShrink:0,boxShadow:["#F5F3EF","#FAF7F2","#FFFFFF"].includes(p.hex)?`inset 0 0 0 1px ${A.border}`:"none"}}/>
-                        ))}
-                        {bgCustomSlots.map((c,i)=>(
-                          <div key={i} style={{position:"relative"}}>
-                            {c ? (
-                              <>
-                                <div onClick={()=>{setBgColour(c);setBgMode("colour");}} style={{width:32,height:32,borderRadius:"50%",background:c,border:bgColour===c?`3px solid ${A.text}`:`2px solid ${A.border}`,cursor:"pointer",boxShadow:["#FFFFFF","#F5F3EF","#FAF7F2"].includes(c)?`inset 0 0 0 1px ${A.border}`:"none"}}/>
-                                <div onClick={()=>{const s=[...bgCustomSlots];s[i]="";setBgCustomSlots(s);if(bgColour===c)setBgColour("#0A0A0A");}} style={{position:"absolute",top:-4,right:-4,width:14,height:14,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:900,lineHeight:1}}>×</div>
-                              </>
-                            ) : (
-                              <>
-                                <div style={{width:32,height:32,borderRadius:"50%",background:A.surface,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:A.muted,cursor:"pointer"}}>+</div>
-                                <input type="color" defaultValue={bgColour} onChange={e=>{const s=[...bgCustomSlots];s[i]=e.target.value;setBgCustomSlots(s);setBgColour(e.target.value);}} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
-                              </>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                      <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                        <input type="color" value={bgColour} onChange={e=>setBgColour(e.target.value)} style={{width:40,height:40,borderRadius:8,border:`1px solid ${A.border}`,cursor:"pointer",padding:2}}/>
-                        <input value={bgColour} onChange={e=>setBgColour(e.target.value)} placeholder="#1a1a2e" style={{...inp,flex:1,fontSize:13}}/>
-                      </div>
-
-                    </div>
-                  )}
-                  {bgMode==="custom"&&(
-                    <div>
-                      {templatePhotos.length > 0 ? (
-                        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
-                          {templatePhotos.map((photo,i)=>(
-                            <div key={i} style={{position:"relative",flexShrink:0}}>
-                              <div onClick={()=>{if(templateBgUrl===photo){setTemplateBgUrl(null);setSlideTextDark(false);}else setTemplateBgUrl(photo);}} style={{width:56,height:56,borderRadius:8,overflow:"hidden",border:templateBgUrl===photo?`2.5px solid ${GOLD}`:`2px solid ${A.border}`,cursor:"pointer"}}>
-                                <img src={photo} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                              </div>
-                              {templateBgUrl===photo&&<div onClick={()=>{setTemplateBgUrl(null);setSlideTextDark(false);}} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#e74c3c",color:"#fff",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,border:"none"}}>×</div>}
-                              <div onClick={()=>{if(window.confirm("Remove this image from your library? This cannot be undone.")){removeFromSharedLibrary(photo);}}} style={{position:"absolute",bottom:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#333",color:"#fff",fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontWeight:700,lineHeight:1}} title="Delete from library">🗑</div>
-                            </div>
-                          ))}
-                          {templatePhotos.length < 10 && (
-                            <div onClick={()=>templateBgRef.current?.click()} style={{width:56,height:56,borderRadius:8,border:`2px dashed ${A.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:A.muted,fontSize:22,flexShrink:0}}>+</div>
-                          )}
-                        </div>
-                      ) : (
-                        <div onClick={()=>templateBgRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:"12px",cursor:"pointer",textAlign:"center",marginBottom:8}}>
-                          <span style={{fontSize:12,fontWeight:600,color:A.muted}}>Upload and save up to 10 custom images</span>
-                        </div>
-                      )}
-                      <p style={{color:A.muted,fontSize:11,margin:"0 0 8px",lineHeight:1.6}}>Safe zone: keep important elements within 80px from each edge. Recommended size: 1080×1350px.</p>
-                      {isPexelsUser ? (
-                        <button onClick={()=>setShowPexelsTemplate(true)} style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:8,color:A.text,fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                          🔍 Search 1000s of free backgrounds
-                        </button>
-                      ) : (
-                        <div title="Upgrade to Pro to search Pexels" style={{width:"100%",padding:"9px",background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:8,color:A.muted,fontWeight:700,fontSize:12,textAlign:"center",marginBottom:10,cursor:"not-allowed",opacity:0.6}}>
-                          🔍 Search 1000s of free backgrounds — Pro+
-                        </div>
-                      )}
-                      <input ref={templateBgRef} type="file" accept="image/*" onChange={async e=>{
-                      const file = e.target.files[0]; if(!file) return;
-                      const reader = new FileReader();
-                      reader.onload = async ev => {
-                        const base64 = ev.target.result;
-                        setTemplateBgUrl(base64);
-                        try {
-                          const res = await fetch('/api/upload-photo', {
-                            method:'POST',
-                            headers:{'Content-Type':'application/json'},
-                            body: JSON.stringify({ imageData: base64, filename: `template-${Date.now()}.jpg` })
-                          });
-                          const _c_data = await res.json();
-                          if (_c_data.url) {
-                            setTemplateBgUrl(_c_data.url);
-                            const _c_next = [_c_data.url, ...coverPhotos.filter(p=>p!==_c_data.url)].slice(0,10);
-                            setCoverPhotos(_c_next);
-                            setTemplatePhotos(_c_next);
-                          }
-                        } catch(err) { console.error('Template upload failed:', err); }
-                      };
-                      reader.readAsDataURL(file);
-                    }} style={{display:"none"}}/>
-                    </div>
-                  )}
-                  <div style={{padding:8,background:A.bg,borderRadius:12,border:`1.5px solid ${A.border}`,marginTop:16}}><div style={{borderRadius:8,overflow:"hidden"}}>
-                    <SlidePreview slide={{headline:"Your headline goes here",accent_word:"headline",tag:"SLIDE TITLE",body:"Supporting text appears here.",layout:"standard",items:[],vs_label:"VS",icon_symbol:"◆",cta_items:[],cta:null}} idx={1} total={6} _c_opts={slideOpts(1)} onClick={()=>{}} isActive={false} isCover={false}/>
-                  </div></div>
-                  <p style={{color:A.muted,fontSize:11,marginTop:8}}>{bgMode==="custom"&&templateBgUrl?"Image selected — use White/Dark text to match.":bgMode==="custom"?"No image selected — showing background defaults.":`Preview reflects your ${bgMode} background setting.`}</p>
-                  <div style={{display:"flex",gap:8,marginTop:10}}>
-                    <button onClick={()=>setSlideTextDark(true)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${slideTextDark?GOLD:A.border}`,background:slideTextDark?A.text:A.bg,color:slideTextDark?A.accentText:A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>White text</button>
-                    <button onClick={()=>setSlideTextDark(false)} style={{flex:1,padding:"8px",borderRadius:8,border:`1.5px solid ${!slideTextDark?GOLD:A.border}`,background:!slideTextDark?"#fff":A.bg,color:!slideTextDark?"#000":A.muted,fontWeight:700,fontSize:12,cursor:"pointer"}}>Dark text</button>
-                  </div>
-              </div>
-                </div>
               </div>
 
             </div>
+          </div>
           </div>
         )}
 
