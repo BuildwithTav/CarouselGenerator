@@ -376,11 +376,20 @@ export async function POST(req) {
     // Skip the first payment — that's handled by checkout.session.completed
     if (invoice.billing_reason === "subscription_create") return NextResponse.json({ received: true });
     const customerId = invoice.customer;
-    const { data: user } = await supabase.from("users").select("email, plan, first_name").eq("stripe_customer_id", customerId).single();
+    let { data: user } = await supabase.from("users").select("email, plan, first_name").eq("stripe_customer_id", customerId).single();
+
+    if (!user && invoice.customer_email) {
+      const { data: userByEmail } = await supabase.from("users").select("email, plan, first_name").eq("email", invoice.customer_email).single();
+      if (userByEmail) {
+        user = userByEmail;
+        await supabase.from("users").update({ stripe_customer_id: customerId }).eq("email", invoice.customer_email);
+      }
+    }
+
     if (user) {
       const saleAmount = user.plan === "agency" ? 100 : user.plan === "pro" ? 50 : user.plan === "starter" ? 20 : 0;
       if (saleAmount > 0) await logCommissions(user.email, invoice.id, user.plan, saleAmount);
-      await supabase.from("users").update({ credits_used: 0, period_start: new Date().toISOString() }).eq("stripe_customer_id", customerId);
+      await supabase.from("users").update({ credits_used: 0, period_start: new Date().toISOString() }).eq("email", user.email);
       // Send credits reset email
       const credits = getPlanCredits(user.plan);
       const firstName = user.first_name || user.email.split("@")[0];
