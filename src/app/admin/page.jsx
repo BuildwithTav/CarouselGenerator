@@ -59,8 +59,21 @@ export default function AdminPage() {
   const [editPlan, setEditPlan] = useState("");
   const [addCredits, setAddCredits] = useState("");
   const [msg, setMsg] = useState({ text: "", ok: true });
+  const [sendingUpdate, setSendingUpdate] = useState(false);
+  const [updateSent, setUpdateSent] = useState(false);
 
-  const flash = (text, ok = true) => { setMsg({ text, ok }); setTimeout(() => setMsg({ text: "", ok: true }), 3000); };
+  const flash = (text, ok = true) => { setMsg({ text, ok }); setTimeout(() => setMsg({ text: "", ok: true }), 5000); };
+
+  const sendUpdateEmail = async () => {
+    if (!window.confirm("Send the app update email to ALL users who haven't opted out of emails? This cannot be undone.")) return;
+    setSendingUpdate(true);
+    try {
+      const d = await adminCall("admin_send_update_email", { confirm: true });
+      flash(`✓ Update email sent to ${d.sent} of ${d.total} users`);
+      setUpdateSent(true);
+    } catch (e) { flash(e.message, false); }
+    setSendingUpdate(false);
+  };
 
   const checkPassword = () => {
     if (password === "tav_admin_2026") setAuthed(true);
@@ -151,7 +164,12 @@ export default function AdminPage() {
           <span style={{ fontSize: 11, color: A.muted, background: A.bg, padding: "3px 10px", borderRadius: 20, border: `1px solid ${A.border}` }}>Admin</span>
         </div>
         {msg.text && <div style={{ fontSize: 13, fontWeight: 600, color: msg.ok ? "#2e7d32" : "#c62828" }}>{msg.text}</div>}
-        <a href="/" style={{ fontSize: 12, color: A.muted, textDecoration: "none" }}>← Back to app</a>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <button onClick={sendUpdateEmail} disabled={sendingUpdate || updateSent} style={btn(updateSent ? A.border : GOLD, updateSent ? A.muted : "#000", { opacity: sendingUpdate ? 0.6 : 1, cursor: sendingUpdate || updateSent ? "default" : "pointer" })}>
+            {sendingUpdate ? "Sending..." : updateSent ? "✓ Update email sent" : "Send Update Email to All Users"}
+          </button>
+          <a href="/" style={{ fontSize: 12, color: A.muted, textDecoration: "none" }}>← Back to app</a>
+        </div>
       </div>
 
       {/* Stats */}
