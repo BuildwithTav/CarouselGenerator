@@ -4526,6 +4526,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:12}}>
                 {[
+                  { date:"11 Aug 2026", tag:"Update", msg:"The app has been made more user friendly — refreshed navigation, simplified photo and brand settings, and general polish throughout. If anything looks out of place, refresh the app to make sure you're on the latest version." },
                   { date:"26 Jun 2026", tag:"New", msg:"Add Carousel Studio to your home screen as a standalone app. On iPhone: tap the Share button in Safari, then 'Add to Home Screen'. On Android: tap the menu in Chrome, then 'Add to Home Screen'. It opens full screen with no browser bar — feels like a native app." },
                   { date:"26 Jun 2026", tag:"New", msg:"Templates tab now available — six pre-built formats including Listicle, Dark Fade, Clean Pro, Storytelling, Raw, and Split. Each template loads with example content, default styles, and a CTA card. Fully editable and AI-powered." },
                   { date:"26 Jun 2026", tag:"Update", msg:"Mobile experience significantly improved across both Generate and Templates tabs. Edit drawer now closes automatically when switching tabs. Session no longer expires on refresh. If you experience any login issues, refresh the app once and you should stay signed in." },
