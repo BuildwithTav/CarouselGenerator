@@ -103,10 +103,7 @@ function emailCreditsReset(firstName, plan, credits) {
 
         <p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 16px;">What's new this month in Carousel Studio:</p>
         <div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;">
-          <p style="font-size:16px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;"><strong style="color:#BB9900;">Templates tab</strong> — Listicle, Storytelling, Clean Pro, Dark Fade, Raw and Split. Build carousels in a completely different style with one click.</p>
-          <p style="font-size:16px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;"><strong style="color:#BB9900;">AI Caption Generator</strong> — generate a ready-to-post Instagram caption based on your carousel content. Works on both the Generate and Templates tab.</p>
-          <p style="font-size:16px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;"><strong style="color:#BB9900;">CTA Cards</strong> — add a Comment, Follow, Save, Share or Like slide at the end of any template carousel, with fully editable text.</p>
-          <p style="font-size:16px;color:#0a0a0a;margin:0;line-height:1.7;"><strong style="color:#BB9900;">Background images</strong> — upload your own photos directly into template slides with zoom and reposition controls.</p>
+          <p style="font-size:16px;color:#0a0a0a;margin:0;line-height:1.7;">The app has been made more user friendly — refreshed navigation, simplified photo and brand settings, and general polish throughout.</p>
         </div>
 
         ${upgradeSection}
