@@ -55,6 +55,13 @@ function emailPaidWelcome(firstName, planName, affiliateId, commissionRate) {
   };
 }
 
+function emailAppUpdate(firstName) {
+  return {
+    subject: "A quick update to Carousel Studio",
+    html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f5f3ef;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;"><div style="max-width:600px;margin:0 auto;padding:40px 24px;"><div style="margin-bottom:32px;"><span style="font-size:20px;font-weight:900;color:#0a0a0a;font-family:Georgia,serif;">Carousel Studio</span><span style="font-size:13px;color:#BB9900;font-weight:700;margin-left:8px;">by BuildWithTav</span></div><div style="background:#ffffff;border-radius:14px;padding:40px;border:1px solid #e0ddd8;"><p style="font-size:17px;font-weight:700;color:#0a0a0a;margin:0 0 8px;">Hi ${firstName},</p><p style="font-size:17px;color:#0a0a0a;margin:0 0 24px;line-height:1.7;">Just a heads up — we've made the app a bit more user friendly. A few things have moved around (navigation is cleaner, photo and brand settings are simpler), so if anything looks a little different next time you log in, that's why.</p><div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;"><p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;"><strong style="color:#BB9900;">One thing to do:</strong> refresh the app (or fully close and reopen it) to make sure you're on the latest version.</p></div><div style="background:#f5f3ef;border-radius:10px;padding:24px;margin-bottom:24px;"><p style="font-size:17px;color:#0a0a0a;margin:0 0 12px;line-height:1.7;font-weight:700;">Reminder — add Carousel Studio to your home screen</p><p style="font-size:15px;color:#0a0a0a;margin:0 0 8px;line-height:1.6;">So it opens like a native app, full screen, no browser bar:</p><p style="font-size:15px;color:#0a0a0a;margin:0 0 6px;line-height:1.6;"><strong>iPhone:</strong> tap the Share button in Safari, then "Add to Home Screen"</p><p style="font-size:15px;color:#0a0a0a;margin:0;line-height:1.6;"><strong>Android:</strong> tap the menu in Chrome, then "Add to Home Screen"</p></div><div style="text-align:center;margin:32px 0;"><a href="https://studio.buildwithtav.co" style="background:#BB9900;color:#000;padding:16px 36px;border-radius:10px;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;">Open Carousel Studio →</a></div><p style="font-size:17px;color:#0a0a0a;margin:0;line-height:1.7;">Thanks for using Carousel Studio.<br><br>— Tav</p></div><p style="font-size:13px;color:#7a7875;text-align:center;margin-top:24px;">Carousel Studio · <a href="https://studio.buildwithtav.co" style="color:#BB9900;text-decoration:none;">studio.buildwithtav.co</a></p></div></body></html>`
+  };
+}
+
 function emailCreditsExhausted(firstName) {
   return {
     subject: "You've used your free credits — here's what's next",
@@ -155,6 +162,8 @@ function getPlanLabel(plan) {
     default: return "Free";
   }
 }
+
+export const maxDuration = 60;
 
 export async function POST(req) {
   try {
@@ -499,6 +508,22 @@ export async function POST(req) {
       } catch(e) { console.error("Mark paid email error:", e); }
 
       return NextResponse.json({ ok: true });
+    }
+
+    if (action === "admin_send_update_email") {
+      if (body.confirm !== true) return NextResponse.json({ error: "Confirmation required" }, { status: 400 });
+      const { data: users } = await supabase.from("users").select("email, first_name").neq("marketing_consent", false);
+      const targets = users || [];
+      let sent = 0;
+      for (const u of targets) {
+        try {
+          const firstName = u.first_name || u.email.split("@")[0];
+          const { subject, html } = emailAppUpdate(firstName);
+          await sendEmail(u.email, subject, html);
+          sent++;
+        } catch(e) { console.error("Update email error for", u.email, e); }
+      }
+      return NextResponse.json({ ok: true, sent, total: targets.length });
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
