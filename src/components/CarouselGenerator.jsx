@@ -434,7 +434,7 @@ function buildSlideHTML(slide, idx, total, _c_opts, isCover = false) {
     hero: `
       .c { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:${topPad}px 90px ${botPad}px; gap:24px; text-align:center; overflow:hidden; }
 
-      .hl { font-size:${isPortrait?68:56}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-family:'${hlFont}',sans-serif; }
+      .hl { font-size:${isPortrait?68:56}px; font-weight:800; line-height:1.15; letter-spacing:${hs.letterSpacing};  font-family:'${hlFont}',sans-serif; ${glowHL} }
       .body { font-size:${isPortrait?38:32}px; line-height:1.6; color:${C.sub}; max-width:820px; font-family:'${bodyFont}',sans-serif; ${glowBody} }
       .cb { width:100%; max-width:860px; padding:${isPortrait?30:24}px 50px; border-radius:12px; font-size:${isPortrait?34:28}px; font-weight:800; font-family:'${bodyFont}',sans-serif; text-align:center; background:${C.accent}; color:${C.dark?"#000":"#fff"}; }
     `,
@@ -2223,7 +2223,7 @@ Return ONLY valid JSON, nothing else.` }
     fontId, headlineStyle, bgMode, templateBgUrl,
     overlayDark: slideOverlays[slideIdx]??overlayDark,
     coverImageUrl: activeCoverPhoto, coverPosition, badgeArea,
-    photoOpacity: slideIdx === 0 ? photoOpacity : templateOpacity,
+    photoOpacity,
     profileUrl, name, handle, blueTick,
     websiteUrl: currentUser?.plan==="free" ? "studio.buildwithtav.co" : (showWebsite?website:""),
     showNums, ratio, accentColor, bgColour, customColourDark, slideTextDark,
@@ -2814,8 +2814,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
   const planLabel = currentUser?.plan === "agency" ? "agency" : currentUser?.plan === "pro" ? "pro" : currentUser?.plan === "starter" ? "starter" : currentUser?.plan === "affiliate_licence" ? "affiliate_licence" : currentUser?.plan === "white_label" ? "white_label" : "free";
   const isPexelsUser = ["pro","agency","affiliate_licence","white_label"].includes(planLabel);
   const NAV_ITEMS = [["generate","Generate"],["brand","Brand"],["templates","Templates"],["quotes","Quotes"],["history","History"],["help","Help"],["account","Account"]];
-  const BURGER_ITEMS = [["brand","Brand"],["quotes","Quotes"],["history","History"],["help","Help"],["account","Account"]];
-  const MAIN_NAV = [["generate","Generate"],["templates","Templates"]];
+  const BURGER_ITEMS = [["templates","Templates"],["quotes","Quotes"],["history","History"],["help","Help"],["account","Account"]];
+  const MAIN_NAV = [["generate","Generate"],["brand","Brand"]];
 
   return (
     <>
