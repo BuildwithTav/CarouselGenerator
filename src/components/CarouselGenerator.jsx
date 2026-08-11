@@ -269,25 +269,19 @@ function buildSlideHTML(slide, idx, total, _c_opts, isCover = false) {
   const templatePos = templateImgPos || {x:50,y:50};
 
   const accent = accentColor || GOLD;
-  const noImage = bgMode === "custom" && !_c_opts.templateBgUrl && !(isCover ? !!coverImageUrl : false);
-  const effectiveColourDark = isCover ? (customColourDark??true) : (slideTextDark??true);
-  const isDark = bgMode === "dark" ? true : bgMode === "light" ? false : noImage ? false : (bgMode === "colour" || bgMode === "custom" || !!coverImageUrl) ? effectiveColourDark : true;
+  // One uploaded "carousel image" applies to every slide now, not just the cover
+  const bgImageUrl = coverImageUrl || (bgMode === "custom" ? templateBgUrl : null);
+  const noImage = !bgImageUrl;
+  const effectiveColourDark = customColourDark ?? true;
+  const isDark = bgImageUrl ? effectiveColourDark : bgMode === "dark" ? true : bgMode === "colour" ? effectiveColourDark : false;
   const colourTextDark = !isDark;
-  const slideBg = bgMode === "light" ? "#F5F3EF" : bgMode === "colour" ? (_c_opts.bgColour||"#1a1a2e") : (bgMode === "custom" && !_c_opts.templateBgUrl && !(isCover && _c_opts.coverImageUrl)) ? "#F5F3EF" : "#0A0A0A";
-  // For image/cover photo modes: if opacity < 100, white shows behind faded photo
-  const bgForOpacity = (bgMode === "custom" || (isCover && !!coverImageUrl)) && (photoOpacity||100) < 100 ? "#FFFFFF" : null;
-  const coverHasImage = isCover && !!coverImageUrl;
+  const slideBg = bgMode === "colour" ? (_c_opts.bgColour||"#1a1a2e") : bgMode === "dark" ? "#0A0A0A" : "#F5F3EF";
+  // If opacity < 100, white shows behind the faded photo
+  const bgForOpacity = !!bgImageUrl && (photoOpacity||100) < 100 ? "#FFFFFF" : null;
   const isPortrait = ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1350;
   const layout = slide.layout || "standard";
-  // Cover: use cover photo if set; else inherit Visual tab (but if Visual tab = "custom" image, fall back to no image on cover)
-  const bgImageUrl = isCover
-    ? (coverImageUrl || null)  // cover only uses its own photo, never the template image
-    : (bgMode === "custom" ? templateBgUrl : null);
-  // Cover slide background: if no cover photo, inherit slideBg from Visual tab setting (but "custom" mode falls to dark)
-  const coverFallbackBg = (!isCover || coverImageUrl) ? slideBg : (bgMode === "custom" && !_c_opts.templateBgUrl ? "#F5F3EF" : bgMode === "custom" ? "#0A0A0A" : slideBg);
-  const effectiveSlideBg = isCover ? coverFallbackBg : slideBg;
-  const forceLight = (coverHasImage || (bgMode === "custom" && bgImageUrl)) ? !effectiveColourDark : false;
+  const forceLight = bgImageUrl ? !effectiveColourDark : false;
   const C = {
     bg: slideBg,
     accent,
@@ -347,9 +341,9 @@ function buildSlideHTML(slide, idx, total, _c_opts, isCover = false) {
   const base = `
     @import url('${gFonts}');
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-    html, body { width:${W}px; height:${H}px; overflow:hidden; background:${bgForOpacity||effectiveSlideBg}; }
-    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${bgForOpacity||effectiveSlideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; box-shadow:inset 0 0 0 3px ${C.dark?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.15)"}; }
-    .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; object-position:${isCover?`${coverPos2.x}% ${coverPos2.y}%`:`${templatePos.x}% ${templatePos.y}%`}; opacity:${(photoOpacity||100)/100}; }
+    html, body { width:${W}px; height:${H}px; overflow:hidden; background:${bgForOpacity||slideBg}; }
+    .slide { width:${W}px; height:${H}px; overflow:hidden; background:${bgForOpacity||slideBg}; font-family:'${bodyFont}',sans-serif; position:relative; color:${C.text}; box-shadow:inset 0 0 0 3px ${C.dark?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.15)"}; }
+    .bg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; object-position:${coverImageUrl?`${coverPos2.x}% ${coverPos2.y}%`:`${templatePos.x}% ${templatePos.y}%`}; opacity:${(photoOpacity||100)/100}; }
     .bg-ov { position:absolute; inset:0; z-index:1; pointer-events:none; }
     .noise { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0.3;
       background-image:url("_c_data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
@@ -2309,9 +2303,8 @@ Return ONLY valid JSON, nothing else.` }
   const isIosSafari = () => { try { const ua=navigator.userAgent; return /iP(ad|hone|od)/.test(ua)&&/WebKit/.test(ua)&&!/CriOS|FxiOS|EdgiOS/.test(ua); } catch { return false; } };
 
   const slideHasCustomImage = (_c_opts, isCover) => {
-    // Cover photo only applies to slide 1 (isCover)
-    if (isCover && _c_opts.coverImageUrl) return true;
-    // Template image applies to all non-cover slides
+    // The carousel image applies to every slide, not just the cover
+    if (_c_opts.coverImageUrl) return true;
     if (!isCover && _c_opts.templateBgUrl && _c_opts.bgMode === "custom") return true;
     return false;
   };
