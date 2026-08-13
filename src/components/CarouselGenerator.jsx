@@ -586,11 +586,25 @@ function buildSlideHTML(slide, idx, total, _c_opts, isCover = false) {
 
 // ─── PREVIEW ─────────────────────────────────────────────
 
-function SlidePreview({ slide, idx, total, _c_opts, onClick, isActive, isCover, previewSize, showWatermark, builder }) {
+function SlidePreview({ slide, idx, total, _c_opts, onClick, isActive, isCover, previewSize, showWatermark, builder, fill }) {
   const ref = useRef(null);
+  const wrapRef = useRef(null);
+  const [measuredW, setMeasuredW] = useState(0);
   const isPortrait = _c_opts.ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1350;
-  const previewW = previewSize || (isPortrait ? 180 : 280);
+
+  useEffect(() => {
+    if (!fill) return;
+    const el = wrapRef.current; if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      const w = entries[0]?.contentRect?.width;
+      if (w) setMeasuredW(w);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [fill]);
+
+  const previewW = fill ? (measuredW || previewSize || (isPortrait ? 180 : 280)) : (previewSize || (isPortrait ? 180 : 280));
   const scale = previewW / W;
   const previewH = Math.round(H * scale);
   const _c_html = (builder||buildSlideHTML)(slide, idx, total, _c_opts, isCover);
@@ -604,7 +618,7 @@ function SlidePreview({ slide, idx, total, _c_opts, onClick, isActive, isCover, 
   }, [_c_html]);
 
   return (
-    <div onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#BB9900":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:previewW, height:previewH, flexShrink:0, background:"#0A0A0A" }}>
+    <div ref={wrapRef} onClick={onClick} title={slide.tag||`Slide ${idx+1}`} style={{ cursor:"pointer", borderRadius:8, overflow:"hidden", border:`2px solid ${isActive?"#BB9900":"transparent"}`, transition:"border-color 0.15s", position:"relative", width:fill?"100%":previewW, height:fill?"100%":previewH, flexShrink:0, background:"#0A0A0A" }}>
       <div style={{position:"absolute",top:0,left:0,width:previewW,height:previewH,overflow:"hidden",borderRadius:6}}>
         <iframe ref={ref} style={{ width:W, height:H, border:"none", transform:`scale(${scale})`, transformOrigin:"top left", pointerEvents:"none", display:"block" }} title={`slide-${idx+1}`}/>
       </div>
@@ -1831,6 +1845,7 @@ export default function App() {
   const [tpSelected, setTpSelected] = useState(()=>new Set());
   const [tpAdvancedOpen, setTpAdvancedOpen] = useState(false);
   const [tpColorPickerOpen, setTpColorPickerOpen] = useState(false);
+  const [tpPreviewIdx, setTpPreviewIdx] = useState({}); // {[postId]: slideIndex} — which slide shows in the big review preview
   const [tpBusy, setTpBusy] = useState(false);
   const [tpMetricsOpenId, setTpMetricsOpenId] = useState(null);
   const [tpExpandedId, setTpExpandedId] = useState(null);
@@ -4280,10 +4295,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 {pagePosts.length===0 ? (
                   <div style={{textAlign:"center",padding:"60px 0",color:A.muted}}>No posts yet for {pageConf.label} — go back and generate a batch.</div>
                 ) : (
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(250px,1fr))",gap:16}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:16}}>
                     {pagePosts.map(post=>{
                       const isSelected = tpSelected.has(post.id);
                       const isExpanded = tpExpandedId===post.id;
+                      const previewIdx = Math.min(tpPreviewIdx[post.id]||0, (post.slides?.length||1)-1);
                       return (
                         <div key={post.id} style={{background:A.surface,border:`2px solid ${isSelected?GOLD:A.border}`,borderRadius:14,overflow:"hidden",display:"flex",flexDirection:"column"}}>
                           <div style={{position:"relative",width:"100%",aspectRatio:"1080/1350",background:"#0A0A0A",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -4291,7 +4307,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                               <input type="checkbox" checked={isSelected} onChange={()=>setTpSelected(prev=>{const n=new Set(prev);n.has(post.id)?n.delete(post.id):n.add(post.id);return n;})} style={{width:18,height:18,cursor:"pointer"}}/>
                             </label>
                             <span style={{position:"absolute",top:10,right:10,zIndex:5,fontSize:10,fontWeight:800,padding:"4px 9px",borderRadius:20,background:statusColors[post.status]||"#8A8780",color:"#fff",textTransform:"uppercase",letterSpacing:0.5}}>{post.status.replace("_"," ")}</span>
-                            {post.slides?.[0] && <SlidePreview slide={post.slides[0]} idx={0} total={post.slides.length} _c_opts={themeTmplOpts(post)} builder={themePostBuilder} onClick={()=>setTpExpandedId(isExpanded?null:post.id)} isActive={false} isCover={true} previewSize={320}/>}
+                            {post.slides?.[previewIdx] && <SlidePreview slide={post.slides[previewIdx]} idx={previewIdx} total={post.slides.length} _c_opts={themeTmplOpts(post)} builder={themePostBuilder} onClick={()=>setTpExpandedId(isExpanded?null:post.id)} isActive={false} isCover={previewIdx===0} fill/>}
                             {tpCardBusy[post.id] && (
                               <div style={{position:"absolute",inset:0,zIndex:6,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:13,fontWeight:700}}>
                                 {tpCardBusy[post.id]==="regen"?"Regenerating…":"Finding a new image…"}
@@ -4315,7 +4331,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                               <div style={{marginTop:6,paddingTop:10,borderTop:`1px solid ${A.border}`,display:"flex",flexDirection:"column",gap:10}}>
                                 <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
                                   {post.slides.map((s,i)=>(
-                                    <SlidePreview key={i} slide={s} idx={i} total={post.slides.length} _c_opts={themeTmplOpts(post)} builder={themePostBuilder} onClick={()=>{}} isActive={false} isCover={i===0} previewSize={100}/>
+                                    <SlidePreview key={i} slide={s} idx={i} total={post.slides.length} _c_opts={themeTmplOpts(post)} builder={themePostBuilder} onClick={()=>setTpPreviewIdx(prev=>({...prev,[post.id]:i}))} isActive={i===previewIdx} isCover={i===0} previewSize={100}/>
                                   ))}
                                 </div>
                                 <div>
