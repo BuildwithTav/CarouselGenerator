@@ -1271,17 +1271,18 @@ export default function App() {
       const bodyText=s.body?esc(s.body):"";
       const isCta=!!s.isCta;
       const effectStyle=effect==="none"?("color:"+primary+";-webkit-text-fill-color:"+primary+";text-shadow:-2px -2px 0 rgba(0,0,0,0.8),2px -2px 0 rgba(0,0,0,0.8),-2px 2px 0 rgba(0,0,0,0.8),2px 2px 0 rgba(0,0,0,0.8),0 2px 4px rgba(0,0,0,0.6),0 10px 26px rgba(0,0,0,0.5);"):effectCSS(effect,AL,secondary);
-      const zoneTop=Math.round(H*0.50);
+      const shiftDown=40; // nudges badge+text down to eat into the empty black lower zone
+      const zoneTop=Math.round(H*0.50)+shiftDown;
       const zoneH=Math.round(H*0.46);
       const fitScript="<script>(function(){var h=document.getElementById('hl');var b=document.getElementById('bd');var zone=document.getElementById('tz');if(!h||!zone)return;var maxH=zone.offsetHeight;var hfs=76,bfs=40;h.style.fontSize=hfs+'px';if(b)b.style.fontSize=bfs+'px';document.fonts.ready.then(function(){while(zone.scrollHeight>maxH&&(hfs>40||bfs>24)){if(hfs>40){hfs-=2;h.style.fontSize=hfs+'px';}else if(bfs>24){bfs-=1;b.style.fontSize=bfs+'px';}}window.__TEXT_FIT_DONE__=true;});})();<\/script>";
       const ctaBox=isCta?("border:2px solid "+AL+";border-radius:18px;padding:36px 40px;background:rgba(0,0,0,0.4);"):"";
-      const glowTop=Math.round(H*0.34);
+      const glowTop=Math.round(H*0.34)+shiftDown;
       const glowH=H-glowTop+60;
       const glow="<div style='position:absolute;left:50%;top:"+glowTop+"px;transform:translateX(-50%);width:"+Math.round(W*0.95)+"px;height:"+glowH+"px;background:radial-gradient(ellipse at center,"+hexToRgba(AL,0.55)+" 0%,"+hexToRgba(AL,0.22)+" 40%,transparent 72%);filter:blur(70px);z-index:2;pointer-events:none;'></div>";
       return"<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(s)
         +"<div style='position:absolute;inset:0;background:"+grad+";z-index:1;'></div>"
         +glow
-        +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.395)+"px;white-space:nowrap;'>"+badge(true,true)+"</div>"
+        +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+(Math.round(H*0.395)+shiftDown)+"px;white-space:nowrap;'>"+badge(true,true)+"</div>"
         +"<div id='tz' style='position:absolute;z-index:5;left:70px;right:70px;top:"+zoneTop+"px;height:"+zoneH+"px;display:flex;flex-direction:column;align-items:center;justify-content:"+(isCta?"center":"flex-start")+";gap:24px;overflow:hidden;"+ctaBox+"'>"
         +"<div id='hl' style='font-family:"+fontFamily+",sans-serif;font-size:76px;font-weight:900;line-height:1.12;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectStyle+"'>"+headlineText+"</div>"
         +(bodyText?"<div id='bd' style='font-family:"+fontFamily+",sans-serif;font-size:40px;color:"+secondary+";text-align:center;font-weight:500;line-height:1.42;max-width:100%;text-shadow:-1px -1px 0 rgba(0,0,0,0.8),1px -1px 0 rgba(0,0,0,0.8),-1px 1px 0 rgba(0,0,0,0.8),1px 1px 0 rgba(0,0,0,0.8),0 2px 5px rgba(0,0,0,0.65),0 1px 2px rgba(0,0,0,0.8);'>"+bodyText+"</div>":"")
