@@ -37,7 +37,7 @@ export const THEME_PAGE_DEFAULTS = {
     visualStyle: "cinematic lifestyle photography, couples or people in emotional situations, realistic, intimate, modern, natural light, editorial, subtle mood, not cheesy stock photography, no text or writing anywhere in the image, no obvious AI look",
     contentRules: "Avoid absolute interpretations of someone else's behaviour. Never state 'if they do X they're cheating' — prefer 'this can sometimes indicate...', 'one possible reason...', 'it may be a sign...'.",
     fontId: "raleway",
-    accentColor: "#D6483F",
+    accentColor: "#d5a5a5",
     profileUrl: "",
     name: "",
     handle: "",
