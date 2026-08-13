@@ -1248,8 +1248,26 @@ export default function App() {
         +(sublineText?"<div style='font-family:"+fontFamily+",sans-serif;font-size:34px;color:"+sublineColor+";text-align:center;font-weight:600;max-width:100%;flex-shrink:0;'>"+sublineText+"</div>":"")
         +"</div>"+website+(isCover?chevron:"")+counter+wm+fitScript+"</div>";
     }
+    function themePostSlide(s){
+      const headlineText=esc((s.headline||"").toUpperCase());
+      const bodyText=s.body?esc(s.body):"";
+      const isCta=!!s.isCta;
+      const effectStyle=effect==="none"?("color:"+primary+";-webkit-text-fill-color:"+primary+";"):effectCSS(effect,AL,secondary);
+      const zoneTop=Math.round(H*0.50);
+      const zoneH=Math.round(H*0.46);
+      const fitScript="<script>(function(){var h=document.getElementById('hl');var b=document.getElementById('bd');var zone=document.getElementById('tz');if(!h||!zone)return;var maxH=zone.offsetHeight;var hfs=76,bfs=40;h.style.fontSize=hfs+'px';if(b)b.style.fontSize=bfs+'px';document.fonts.ready.then(function(){while(zone.scrollHeight>maxH&&(hfs>40||bfs>24)){if(hfs>40){hfs-=2;h.style.fontSize=hfs+'px';}else if(bfs>24){bfs-=1;b.style.fontSize=bfs+'px';}}window.__TEXT_FIT_DONE__=true;});})();<\/script>";
+      const ctaBox=isCta?("border:2px solid "+AL+";border-radius:18px;padding:36px 40px;background:rgba(0,0,0,0.4);"):"";
+      return"<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(s)
+        +"<div style='position:absolute;inset:0;background:"+grad+";z-index:1;'></div>"
+        +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.395)+"px;white-space:nowrap;'>"+badge(true)+"</div>"
+        +"<div id='tz' style='position:absolute;z-index:5;left:70px;right:70px;top:"+zoneTop+"px;height:"+zoneH+"px;display:flex;flex-direction:column;align-items:center;justify-content:"+(isCta?"center":"flex-start")+";gap:24px;overflow:hidden;"+ctaBox+"'>"
+        +"<div id='hl' style='font-family:"+fontFamily+",sans-serif;font-size:76px;font-weight:900;line-height:1.12;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectStyle+"'>"+headlineText+"</div>"
+        +(bodyText?"<div id='bd' style='font-family:"+fontFamily+",sans-serif;font-size:40px;color:"+secondary+";text-align:center;font-weight:500;line-height:1.42;max-width:100%;'>"+bodyText+"</div>":"")
+        +"</div>"+website+(isCover?chevron:"")+counter+wm+fitScript+"</div>";
+    }
     let body="";
-    if(tmpl==="dark-fade"){body=darkFadeCover(slide);}
+    if(tmpl==="theme-post"){body=themePostSlide(slide);}
+    else if(tmpl==="dark-fade"){body=darkFadeCover(slide);}
     else if(tmpl==="listicle"&&isCover){
       const cf="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 38%,rgba(0,0,0,0.12) 52%,rgba(0,0,0,0.55) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.97) 78%,rgba(0,0,0,1) 85%,rgba(0,0,0,1) 100%)";
       const numDigits=String(listicleNum||6).length;
@@ -1806,7 +1824,7 @@ export default function App() {
   // ─── THEME PAGES (production mode) ──────────────────────
   const [tp, setTp] = useState(()=>loadThemeState());
   const [tpView, setTpView] = useState("setup"); // setup | generating | review
-  const [tpActivePage, setTpActivePage] = useState("psychology");
+  const [tpActivePage, setTpActivePage] = useState("relationships");
   const [tpQuantity, setTpQuantity] = useState(10);
   const [tpVisualSource, setTpVisualSource] = useState("mixed"); // ai | stock | mixed
   const [tpProgress, setTpProgress] = useState([]);
@@ -2387,7 +2405,7 @@ Return ONLY valid JSON, nothing else.` }
   // zoom/pan on a single image. Reuses brand identity (profileUrl/name/
   // handle/font/etc.) from the rest of the app. See src/lib/themePages.js
   // for the pillar/format/image-treatment constants and dedupe helpers.
-  const themeDarkFadeBuilder = (slide, idx, total, _c_opts) => buildTmplHTML(slide, idx, total, "dark-fade", _c_opts);
+  const themePostBuilder = (slide, idx, total, _c_opts) => buildTmplHTML(slide, idx, total, "theme-post", _c_opts);
 
   const themeTmplOpts = (post) => ({
     effect: "none",
@@ -2407,54 +2425,73 @@ Return ONLY valid JSON, nothing else.` }
 
   const buildThemeBatchPlanPrompt = (pageConf, quantity, recentTopics) => {
     const maxPerPillar = Math.max(1, Math.ceil(quantity / 4));
+    const isRelationships = pageConf.id === "relationships";
+    const her = isRelationships ? Math.round(quantity*0.3) : 0;
+    const him = isRelationships ? Math.round(quantity*0.3) : 0;
+    const general = quantity - her - him;
+    const audienceSection = isRelationships ? `
+
+AUDIENCE ANGLE — hit this mix across the batch as a whole:
+- ${her} posts written specifically from a woman's perspective/experience in relationships (what she notices, feels, needs) — mark these "audience":"her"
+- ${him} posts written specifically from a man's perspective/experience in relationships — mark these "audience":"him"
+- ${general} posts kept general, for anyone in a relationship regardless of gender — mark these "audience":"general"
+Don't force an artificial gendered lean onto a topic that's naturally universal — but hit the counts above overall.` : "";
     return `Plan ${quantity} Instagram carousel posts for a "${pageConf.label}" theme page built purely to go viral — every post needs a "wait, WHAT?" reaction. Favour surprising, counterintuitive, "I never knew that" content over generic advice — strange, shocking, wow-factor angles outperform safe, predictable ones. Lean into that hard.
+
+QUALITY BAR: reject generic advice a dating coach or self-help account already says constantly ("communicate more", "set boundaries", "trust yourself", "overthinking is bad"). Ground every topic in a specific, real mechanism — attachment theory, evolutionary psychology, established relationship/psychology research, a named cognitive or social effect, a specific behavioural pattern — something a genuinely knowledgeable person would find interesting, not a caption you've read a hundred times. Ask yourself of every topic: would someone who already knows basic relationship/psychology advice still be surprised by this specific angle? If not, replace it.
 
 PILLARS to draw from — no single pillar may appear more than ${maxPerPillar} time(s) in this batch of ${quantity}:
 ${pageConf.pillars.join(", ")}
 
 FORMATS to rotate between (do not use the same format more than 2 times in a row):
 ${THEME_FORMATS.map(f=>`${f.id} — ${f.label}: ${f.hint}`).join("\n")}
+${audienceSection}
 
 AVOID repeating these topics/angles already covered recently — do not generate the same fact, effect, or advice again even reworded:
 ${recentTopics.length ? recentTopics.join(" | ") : "(none yet — this is the first batch)"}
 
 CRITICAL — EACH TOPIC MUST BE A DIFFERENT UNDERLYING FACT: it's not enough for the headlines to sound different. Two posts about the same underlying fact, study, myth, or mechanism — even worded completely differently — are duplicates. For example "21 days to a habit? Nope" and "A surgeon started this myth" are THE SAME topic (the 21-day habit myth) even though they share no words. Before returning your answer, re-read your own list of ${quantity} topics and check every pair against each other: if any two rely on the same core fact/study/mechanism, replace one of them with a genuinely different one. This check matters more than variety in phrasing.
 
-Return ONLY a valid JSON array of exactly ${quantity} objects, each: {"pillar":"<one pillar from the list above>","format":"<one format id from the list above>","topic":"<a specific, surprising, concrete angle for this post, including the specific fact/mechanism/example it's built on — not just the pillar name>"}`;
+Return ONLY a valid JSON array of exactly ${quantity} objects, each: {"pillar":"<one pillar from the list above>","format":"<one format id from the list above>","topic":"<a specific, surprising, concrete angle for this post, including the specific fact/mechanism/example it's built on — not just the pillar name>"${isRelationships?`,"audience":"her"|"him"|"general"`:""}}`;
   };
 
   const buildThemePostPrompt = (pageConf, planItem) => {
     const format = THEME_FORMATS.find(f=>f.id===planItem.format) || THEME_FORMATS[0];
+    const audienceLine = planItem.audience === "her" ? "\nAUDIENCE ANGLE: write this specifically from a woman's perspective/experience in relationships — frame it as speaking directly to her."
+      : planItem.audience === "him" ? "\nAUDIENCE ANGLE: write this specifically from a man's perspective/experience in relationships — frame it as speaking directly to him."
+      : "";
     return `You are creating a viral Instagram carousel for a "${pageConf.label}" theme page. The single goal is pure shock and amazement — "I never knew that", "wait, WHAT?" reactions. Strange, surprising, and a little unbelievable (but true) beats safe and predictable every time. Saves and shares happen naturally when content is genuinely surprising — never ask for them.
 
 PILLAR: ${planItem.pillar}
 FORMAT: ${format.label} — ${format.hint}
-TOPIC / ANGLE: "${planItem.topic}"
+TOPIC / ANGLE: "${planItem.topic}"${audienceLine}
 
 CONTENT RULES: ${pageConf.contentRules}
 
-Decide the right number of slides yourself — normally 3 to 5, whatever the idea needs. Do not pad.
+QUALITY BAR: this must NOT read as generic advice ("communicate more", "set boundaries", "trust yourself"). Ground it in a specific, real mechanism — attachment theory, evolutionary psychology, established research, a named cognitive/social effect, a specific behavioural pattern. A knowledgeable reader who already follows relationship/psychology content should still learn something specific from this, not recognise it as something they've read a hundred times.
 
-Every slide sits over a photo, in a FIXED-HEIGHT text box that does NOT expand and does NOT auto-shrink the subline — going over the limit gets the text cut off mid-word, so treat these as hard ceilings, not targets:
-- "headline": the main line. Max 6 words AND max 42 characters — it must fit on screen at large size with zero margin for error. Punchy, plain language, no jargon.
-- "subline": a second line that must always carry real meaning — never decorative, never left thin — but must be SHORT: max 9 words AND max 60 characters, ideally one line. This is where the actual explanation/payoff of the slide lives, in as few words as possible — a headline alone should never leave the reader confused about what point is being made, but a long subline gets truncated, so make every word earn its place.
+Decide the right number of slides yourself — normally 3 to 5, whatever the idea needs. Do not pad. Do NOT write a final "follow" slide — that's added automatically afterward, your job is only the hook and the substance.
 
-SLIDE 1 — HOOK: the headline must make the SPECIFIC topic instantly clear on its own — a stranger scrolling past should immediately know what this carousel is about, not just that something intriguing exists. Specific beats clever: name the actual thing (the myth, the effect, the behaviour) rather than teasing it vaguely. The subline may add a short tease but must still read as a complete thought, not a fragment — do not leave slide 1's subline empty.
-MIDDLE SLIDES: headline states the surprising fact in short form, subline delivers the actual "I never knew that" payoff — the mechanism, reasoning, or specific detail. Together they must make complete sense with no other context.
-FINAL SLIDE: headline "FOLLOW FOR MORE" (or a very close variant), subline a short, plain line naming what they'll get. NOT a save/share/comment ask — just a low-key, consistent formality, not a sales pitch.
+Every slide sits over a photo. Both fields matter:
+- "headline": the punchy hook/claim for that slide. Max 7 words AND max 48 characters — big bold text, zero room for a long sentence.
+- "body": the real explanation — this is where the actual value lives, so use the room: 1-3 full sentences, up to roughly 200 characters. Specific and complete on its own, not a vague teaser. Never leave it thin just to keep things short — thin is the thing we're fixing.
+
+SLIDE 1 — HOOK: the headline must make the SPECIFIC topic instantly clear on its own — a stranger scrolling past should immediately know what this carousel is about, not just that something intriguing exists. Specific beats clever: name the actual thing (the myth, the effect, the behaviour) rather than teasing it vaguely. Body on slide 1 can be a short 1-sentence teaser rather than the full payoff.
+MIDDLE SLIDES: headline states the surprising fact in short form, body delivers the actual "I never knew that" payoff in full — the mechanism, the reasoning, the specific research or pattern behind it. Together they must make complete sense with no other context, and genuinely teach the reader something.
 
 RULES:
 - No invented statistics or fabricated data. If uncertain, frame as a principle or common pattern, never as a stated fact — but keep it feeling surprising and specific, not vague or wishy-washy.
 - No HTML, no markdown, plain text only.
 
 ALSO WRITE:
+- "cta_body": one short, plain line (max 90 characters) naming what someone gets by following this page for more ${pageConf.label.toLowerCase()} content — NOT a save/share/comment ask, just a low-key, specific line (e.g. what kind of content they'll see more of). This goes on an automatically-added final slide, not one you write yourself.
 - "visual_concept": ONE highly specific, concrete photographable scene tightly tied to THIS exact topic. The scene must show the actual behavior, tell, or mechanism the post is about — someone DOING the specific thing, not a mood shot that merely implies it. An empty hallway, an empty doorway, a person's back in a vague dark space, or any "atmospheric but nobody's actually doing anything" shot is a FAILURE — reject it and picture the real moment instead. Ask yourself: if someone saw only this image, would they guess the topic? If not, it's too abstract. GOOD examples: for decision-making — "a hand frozen mid-reach between two identical light switches"; for lying/dishonesty — "a person mid-sentence with a hand unconsciously touching their own neck, avoiding eye contact across a table"; for memory — "a hand holding an old photograph that's slightly out of focus, next to a sharp, in-focus modern phone screen". BAD examples: "a dark hallway", "someone standing still in a moody room", "a person looking pensive". Never the post's actual headline text, never a real named/identifiable individual (public figure or otherwise) — describe an anonymous person, body part, object, or scene instead. If (and only if) a short diagram-style label or callout would make an abstract mechanism concretely clear — the kind of thing an infographic would annotate — include it, but write the EXACT words in quotes directly in this description (2-3 words max per label, e.g. "...with a small callout reading \\"BODY STAYS STILL\\" pointing at his posture"). Do not leave label wording to be invented downstream — you have the context to write it correctly, an image renderer doesn't. Most scenes don't need a label at all; only add one when it genuinely clarifies something the photo alone can't show. Style direction to bake into the scene: ${pageConf.visualStyle}.
 - "image_query": a short, literal stock-photo search phrase for the SAME concept — 3-5 concrete nouns only (e.g. "hand light switch dark hallway"), no adjectives, no full sentences, no abstract words.
 - "caption": 2-4 sentences for the Instagram caption. Add context, a small example, or a follow-up thought — do NOT just repeat the slide text.
 - "hashtags": an array of 3-5 relevant hashtags, each starting with #.
 
 Return ONLY valid JSON, nothing else:
-{"slides":[{"headline":"text","subline":"text"}],"visual_concept":"...","image_query":"...","caption":"...","hashtags":["#..."]}`;
+{"slides":[{"headline":"text","body":"text"}],"cta_body":"...","visual_concept":"...","image_query":"...","caption":"...","hashtags":["#..."]}`;
   };
 
   // Pexels/AI image sourcing with dedupe against usedUrls (a Set threaded
@@ -2501,9 +2538,10 @@ Return ONLY valid JSON, nothing else:
 
   // One image per post, reused on every slide with a rotating zoom/pan
   // "treatment" sequence (real transform:scale + offset — not just a
-  // subtle crop shift, so it actually reads as different framing) — plus
-  // the final slide always renders in grayscale as a deliberate "that's a
-  // wrap" beat.
+  // subtle crop shift, so it actually reads as different framing). The
+  // follow-up slide is always appended here in code — never left for the
+  // model to remember to write — so every post has exactly one, always
+  // last, always in grayscale as a "that's a wrap" beat.
   const generateSingleThemePost = async (pageId, pageConf, planItem, treatmentSeqIdx, usedImageUrls) => {
     const prompt = buildThemePostPrompt(pageConf, planItem);
     const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:1600, messages:[{ role:"user", content:prompt }] }, 3, true);
@@ -2521,25 +2559,36 @@ Return ONLY valid JSON, nothing else:
     const treatment = IMAGE_TREATMENTS[treatmentSeqIdx % IMAGE_TREATMENTS.length];
 
     // Hard character caps as a safety net regardless of the template's own
-    // runtime text-fit script — keeps headlines readable even if that
-    // script is slow/unavailable, rather than relying on it entirely.
-    const slides = rawSlides.map((s,i)=>{
+    // runtime text-fit script — keeps text readable even if that script is
+    // slow/unavailable, rather than relying on it entirely.
+    const contentSlides = rawSlides.map((s,i)=>{
       const t = treatment[i % treatment.length];
       return {
         headline: (s.headline||"").replace(/<[^>]+>/g,"").trim().slice(0,48),
-        subline: (s.subline||"").replace(/<[^>]+>/g,"").trim().slice(0,65),
+        body: (s.body||"").replace(/<[^>]+>/g,"").trim().slice(0,220),
         image: image?.url || null,
         imagePos: { x: t.x, y: t.y },
         imageZoom: t.zoom,
-        imageFilter: i === rawSlides.length-1 ? "grayscale" : "none",
+        imageFilter: "none",
       };
     });
+    const ctaT = treatment[rawSlides.length % treatment.length];
+    const ctaSlide = {
+      headline: "FOLLOW FOR MORE",
+      body: (parsed.cta_body||"").replace(/<[^>]+>/g,"").trim().slice(0,90) || `More ${pageConf.label.toLowerCase()} insights like this.`,
+      image: image?.url || null,
+      imagePos: { x: ctaT.x, y: ctaT.y },
+      imageZoom: ctaT.zoom,
+      imageFilter: "grayscale",
+      isCta: true,
+    };
+    const slides = [...contentSlides, ctaSlide];
 
     return {
       id: "tp_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8),
       page: pageId,
       status: "needs_review",
-      pillar: planItem.pillar, format: planItem.format, topic: planItem.topic,
+      pillar: planItem.pillar, format: planItem.format, topic: planItem.topic, audience: planItem.audience || null,
       slides,
       caption: (parsed.caption||"").trim(),
       hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags : [],
@@ -2702,7 +2751,7 @@ Return ONLY valid JSON, nothing else:
         const opts = themeTmplOpts(post);
         for (let i=0;i<post.slides.length;i++) {
           try {
-            const blob = await renderSlideViaServer(post.slides[i], i, post.slides.length, opts, i===0, themeDarkFadeBuilder);
+            const blob = await renderSlideViaServer(post.slides[i], i, post.slides.length, opts, i===0, themePostBuilder);
             zip.file(`${base}/${base}_slide-${String(i+1).padStart(2,"0")}.png`, blob);
           } catch(e) { console.error("Export render failed for", base, i, e); }
         }
@@ -4232,7 +4281,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                               <input type="checkbox" checked={isSelected} onChange={()=>setTpSelected(prev=>{const n=new Set(prev);n.has(post.id)?n.delete(post.id):n.add(post.id);return n;})} style={{width:18,height:18,cursor:"pointer"}}/>
                             </label>
                             <span style={{position:"absolute",top:10,right:10,zIndex:5,fontSize:10,fontWeight:800,padding:"4px 9px",borderRadius:20,background:statusColors[post.status]||"#8A8780",color:"#fff",textTransform:"uppercase",letterSpacing:0.5}}>{post.status.replace("_"," ")}</span>
-                            {post.slides?.[0] && <SlidePreview slide={post.slides[0]} idx={0} total={post.slides.length} _c_opts={themeTmplOpts(post)} builder={themeDarkFadeBuilder} onClick={()=>setTpExpandedId(isExpanded?null:post.id)} isActive={false} isCover={true} previewSize={320}/>}
+                            {post.slides?.[0] && <SlidePreview slide={post.slides[0]} idx={0} total={post.slides.length} _c_opts={themeTmplOpts(post)} builder={themePostBuilder} onClick={()=>setTpExpandedId(isExpanded?null:post.id)} isActive={false} isCover={true} previewSize={320}/>}
                             {tpCardBusy[post.id] && (
                               <div style={{position:"absolute",inset:0,zIndex:6,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:13,fontWeight:700}}>
                                 {tpCardBusy[post.id]==="regen"?"Regenerating…":"Finding a new image…"}
@@ -4256,7 +4305,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                               <div style={{marginTop:6,paddingTop:10,borderTop:`1px solid ${A.border}`,display:"flex",flexDirection:"column",gap:10}}>
                                 <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
                                   {post.slides.map((s,i)=>(
-                                    <SlidePreview key={i} slide={s} idx={i} total={post.slides.length} _c_opts={themeTmplOpts(post)} builder={themeDarkFadeBuilder} onClick={()=>{}} isActive={false} isCover={i===0} previewSize={100}/>
+                                    <SlidePreview key={i} slide={s} idx={i} total={post.slides.length} _c_opts={themeTmplOpts(post)} builder={themePostBuilder} onClick={()=>{}} isActive={false} isCover={i===0} previewSize={100}/>
                                   ))}
                                 </div>
                                 <div>
