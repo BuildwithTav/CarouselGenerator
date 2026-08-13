@@ -1,9 +1,9 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
-  THEME_FORMATS, THEME_PAGE_DEFAULTS, CROP_SEQUENCES,
-  extractKeywords, isTooSimilar, mostSimilar, slugify,
-  defaultThemeState, loadThemeState, saveThemeState,
+  THEME_FORMATS, IMAGE_TREATMENTS,
+  extractKeywords, isTooSimilar, slugify,
+  loadThemeState, saveThemeState,
 } from "../lib/themePages";
 
 const GOLD = "#C9A84C";
@@ -586,14 +586,14 @@ function buildSlideHTML(slide, idx, total, _c_opts, isCover = false) {
 
 // ─── PREVIEW ─────────────────────────────────────────────
 
-function SlidePreview({ slide, idx, total, _c_opts, onClick, isActive, isCover, previewSize, showWatermark }) {
+function SlidePreview({ slide, idx, total, _c_opts, onClick, isActive, isCover, previewSize, showWatermark, builder }) {
   const ref = useRef(null);
   const isPortrait = _c_opts.ratio === "portrait";
   const W = 1080, H = isPortrait ? 1920 : 1350;
   const previewW = previewSize || (isPortrait ? 180 : 280);
   const scale = previewW / W;
   const previewH = Math.round(H * scale);
-  const _c_html = buildSlideHTML(slide, idx, total, _c_opts, isCover);
+  const _c_html = (builder||buildSlideHTML)(slide, idx, total, _c_opts, isCover);
 
   useEffect(() => {
     const iframe = ref.current; if (!iframe) return;
@@ -2362,10 +2362,10 @@ Return ONLY valid JSON, nothing else.` }
     return html;
   };
 
-  const renderSlideViaServer = async (slide, idx, total, _c_opts, isCover) => {
+  const renderSlideViaServer = async (slide, idx, total, _c_opts, isCover, builder) => {
     const isPortrait = _c_opts.ratio==="portrait";
     const W=1080, H=isPortrait?1920:1350;
-    let _c_html = buildSlideHTML(slide,idx,total,_c_opts,isCover);
+    let _c_html = (builder||buildSlideHTML)(slide,idx,total,_c_opts,isCover);
     _c_html = await uploadBase64Images(_c_html);
     const res = await fetch("/api/render-slide", {
       method:"POST",
@@ -2381,33 +2381,31 @@ Return ONLY valid JSON, nothing else.` }
   };
 
   // ─── THEME PAGES: production-mode content + image pipeline ──────────
-  // Reuses the same brand identity (profileUrl/name/handle/font/etc.) as
-  // the rest of the app — only the accent colour, background, and the
-  // per-post hero image/crop vary. See src/lib/themePages.js for the
-  // pillar/format/crop-sequence constants and dedupe helpers.
+  // Renders through the same "Classic Theme Page" (dark-fade) template
+  // used in the Templates tab — buildTmplHTML — because it's already a
+  // 4:5, photo-first, headline+subline layout with native per-slide
+  // zoom/pan on a single image. Reuses brand identity (profileUrl/name/
+  // handle/font/etc.) from the rest of the app. See src/lib/themePages.js
+  // for the pillar/format/image-treatment constants and dedupe helpers.
+  const themeDarkFadeBuilder = (slide, idx, total, _c_opts) => buildTmplHTML(slide, idx, total, "dark-fade", _c_opts);
 
-  const themeCropPos = (post, slideIdx) => {
-    const seq = CROP_SEQUENCES[(post.cropSeqIdx||0) % CROP_SEQUENCES.length];
-    return seq[slideIdx % seq.length];
-  };
+  const themeTmplOpts = (post) => ({
+    effect: "none",
+    font: post.fontId || fontId,
+    fontSize: 82,
+    primary: "#FFFFFF",
+    secondary: post.accentColor || accentColor,
+    accentLine: post.accentColor || accentColor,
+    bg: "dark",
+    fontStyle: "Inter",
+    profUrl: profileUrl, nm: name, hdl: handle, showTick: blueTick,
+    isFree: currentUser?.plan==="free",
+    userWebsite: website,
+    showWebsite,
+    showCounter: showNums,
+  });
 
-  const themeSlideOpts = (post, slideIdx) => {
-    const pos = themeCropPos(post, slideIdx);
-    return {
-      fontId: post.fontId || fontId, headlineStyle, bgMode:"colour", templateBgUrl:null,
-      overlayDark, coverImageUrl: post.heroImageUrl, coverPosition,
-      badgeArea, photoOpacity,
-      profileUrl, name, handle, blueTick,
-      websiteUrl: currentUser?.plan==="free" ? "studio.buildwithtav.co" : (showWebsite?website:""),
-      showNums, ratio:"portrait",
-      accentColor: post.accentColor || accentColor,
-      bgColour: post.bgColour || "#12141c",
-      customColourDark:true, slideTextDark:true,
-      coverImgPos: pos, templateImgPos: pos, gradientMode,
-    };
-  };
-
-  const buildThemeBatchPlanPrompt = (pageConf, quantity, recentTopics) => `Plan ${quantity} Instagram carousel posts for a "${pageConf.label}" theme page.
+  const buildThemeBatchPlanPrompt = (pageConf, quantity, recentTopics) => `Plan ${quantity} Instagram carousel posts for a "${pageConf.label}" theme page built purely to go viral — every post needs a "wait, WHAT?" reaction. Favour surprising, counterintuitive, "I never knew that" content over generic advice — strange, shocking, wow-factor angles outperform safe, predictable ones. Lean into that hard.
 
 PILLARS to draw from (mix across them — no single pillar should cover more than roughly a quarter of the batch):
 ${pageConf.pillars.join(", ")}
@@ -2418,11 +2416,11 @@ ${THEME_FORMATS.map(f=>`${f.id} — ${f.label}: ${f.hint}`).join("\n")}
 AVOID repeating these topics/angles already covered recently — do not generate the same fact, effect, or advice again even reworded:
 ${recentTopics.length ? recentTopics.join(" | ") : "(none yet — this is the first batch)"}
 
-Return ONLY a valid JSON array of exactly ${quantity} objects, each: {"pillar":"<one pillar from the list above>","format":"<one format id from the list above>","topic":"<a specific, concrete angle for this post — not just the pillar name, phrased as a real content idea>"}`;
+Return ONLY a valid JSON array of exactly ${quantity} objects, each: {"pillar":"<one pillar from the list above>","format":"<one format id from the list above>","topic":"<a specific, surprising, concrete angle for this post — the kind of thing that makes someone stop scrolling and think 'I never knew that' — not just the pillar name>"}`;
 
   const buildThemePostPrompt = (pageConf, planItem) => {
     const format = THEME_FORMATS.find(f=>f.id===planItem.format) || THEME_FORMATS[0];
-    return `You are creating an Instagram carousel for a "${pageConf.label}" theme page. You are the copywriter, subject-matter writer, and creative director in one.
+    return `You are creating a viral Instagram carousel for a "${pageConf.label}" theme page. The single goal is pure shock and amazement — "I never knew that", "wait, WHAT?" reactions. Strange, surprising, and a little unbelievable (but true) beats safe and predictable every time. Saves and shares happen naturally when content is genuinely surprising — never ask for them.
 
 PILLAR: ${planItem.pillar}
 FORMAT: ${format.label} — ${format.hint}
@@ -2430,20 +2428,18 @@ TOPIC / ANGLE: "${planItem.topic}"
 
 CONTENT RULES: ${pageConf.contentRules}
 
-Decide the right number of slides yourself — normally 3 to 5. Do not pad with a slide that doesn't earn its place.
+Decide the right number of slides yourself — normally 3 to 5, whatever the idea needs. Do not pad.
 
-LAYOUT SYSTEM:
-- "statement" — ALWAYS slide 1. Big bold hook headline, short body optional. Make it stop the scroll.
-- "standard" — headline + body. Use for ALL middle slides. Body is where the value lives.
-- "hero" — headline + body + CTA. ALWAYS the final slide. Add "cta_items":["one CTA only"], vary the CTA wording every time (${pageConf.ctaStyle}). Never invent a product, download, or link.
+Every slide is photo-first with very little text on top of the image, so keep every line SHORT:
+- "headline": the main line on that slide. Max 9 words. Punchy, plain language, no jargon.
+- "subline": an optional short second line, max 10 words. Leave it "" on slides that don't need one — never pad it out just to fill the field.
+
+SLIDE 1 — HOOK ONLY: pure scroll-stopping curiosity. State the surprising claim itself or tease it hard, nothing more. Leave subline "" or a 2-4 word teaser at most. Do NOT explain or resolve anything on slide 1.
+MIDDLE SLIDES: deliver the actual "I never knew that" payoff — the surprising fact, mechanism, or reasoning, one idea per slide.
+FINAL SLIDE: a simple, standard follow line — NOT a save/share/comment ask, just a plain invitation to follow, e.g. "FOLLOW FOR MORE" plus a short subline naming what they'll get. Keep this consistent and low-key across every post — it's a formality, not a sales pitch.
 
 RULES:
-- No two consecutive slides use the same layout.
-- Pick ONE accent word per headline — the single most emotionally charged or surprising word, exact match to how it appears in the headline. Put it in "accent_word".
-- Tags: editorially specific to what THAT slide is actually saying, like a magazine subhead. Unique per slide. Never generic ("THE HOOK", "SLIDE 1").
-- Headlines: max 10 words, immediately clear on first read, no ambiguity.
-- Body (standard/hero slides): 1-2 short sentences, plain everyday language, one specific point. Someone reading on a phone should understand it instantly.
-- NO invented statistics or fabricated data. If uncertain, frame as a principle or common pattern, never as a stated fact.
+- No invented statistics or fabricated data. If uncertain, frame as a principle or common pattern, never as a stated fact — but keep it feeling surprising and specific, not vague or wishy-washy.
 - No HTML, no markdown, plain text only.
 
 ALSO WRITE:
@@ -2452,22 +2448,31 @@ ALSO WRITE:
 - "hashtags": an array of 3-5 relevant hashtags, each starting with #.
 
 Return ONLY valid JSON, nothing else:
-{"slides":[{"tag":"LABEL","headline":"text","body":"text","accent_word":"word","layout":"type","items":[],"vs_label":"VS","icon_symbol":"◆","cta_items":[],"cta":null}],"visual_concept":"...","caption":"...","hashtags":["#..."]}`;
+{"slides":[{"headline":"text","subline":"text"}],"visual_concept":"...","caption":"...","hashtags":["#..."]}`;
   };
 
-  const sourceThemeHeroImage = async (visualConcept, pageConf, source) => {
-    const stockQuery = (visualConcept||"").split(/[,.]/)[0].slice(0,80);
+  // Pexels/AI image sourcing with dedupe against usedUrls (a Set threaded
+  // through a whole batch run) so a batch of 10 doesn't keep surfacing the
+  // same top result for similar-sounding visual concepts.
+  const sourceThemeHeroImage = async (visualConcept, pageConf, source, usedUrls) => {
+    const used = usedUrls || new Set();
+    const query = (visualConcept||"").slice(0,90);
     const tryStock = async () => {
       try {
-        const r = await fetch(`/api/pexels?query=${encodeURIComponent(stockQuery)}&per_page=6`);
+        const r = await fetch(`/api/pexels?query=${encodeURIComponent(query)}&per_page=15`);
         const d = await r.json();
-        const photo = (d.photos||[])[0];
+        const all = d.photos||[];
+        const fresh = all.filter(p=>!used.has(p.url));
+        const pool = fresh.length ? fresh : all;
+        if (!pool.length) return null;
+        const photo = pool[Math.floor(Math.random()*Math.min(pool.length,8))];
         return photo ? { url: photo.url, source:"stock", photographer: photo.photographer } : null;
       } catch { return null; }
     };
     const tryAI = async () => {
       try {
-        const prompt = `${visualConcept}. ${pageConf.visualStyle}. Vertical portrait photo, high quality, no text.`;
+        const variation = ["", ", wide shot", ", close up", ", from a different angle"][Math.floor(Math.random()*4)];
+        const prompt = `${visualConcept}${variation}. ${pageConf.visualStyle}. Vertical portrait photo, high quality, no text.`;
         const r = await fetch("/api/generate-bg", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ prompt }) });
         const d = await r.json();
         return d.imageUrl ? { url: d.imageUrl, source:"ai", photographer:null } : null;
@@ -2477,37 +2482,53 @@ Return ONLY valid JSON, nothing else:
     return (await tryStock()) || (await tryAI());
   };
 
-  const generateSingleThemePost = async (pageId, pageConf, planItem, cropSeqIdx) => {
+  // One image per post, reused on every slide with a rotating zoom/pan
+  // "treatment" sequence (real transform:scale + offset — not just a
+  // subtle crop shift, so it actually reads as different framing) — plus
+  // the final slide always renders in grayscale as a deliberate "that's a
+  // wrap" beat.
+  const generateSingleThemePost = async (pageId, pageConf, planItem, treatmentSeqIdx, usedImageUrls) => {
     const prompt = buildThemePostPrompt(pageConf, planItem);
-    const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:2200, messages:[{ role:"user", content:prompt }] }, 3, true);
+    const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:1600, messages:[{ role:"user", content:prompt }] }, 3, true);
     const raw = d.content?.find(b=>b.type==="text")?.text || "";
     const clean = raw.replace(/<[^>]+>/g,"");
     const m = clean.match(/\{[\s\S]*\}/);
     if (!m) throw new Error("Post generation returned no JSON");
     const parsed = JSON.parse(m[0]);
-    const rawSlides = Array.isArray(parsed.slides) ? parsed.slides : [];
+    const rawSlides = (Array.isArray(parsed.slides) ? parsed.slides : []).slice(0,5);
     if (!rawSlides.length) throw new Error("No slides returned");
-    const sanitized = rawSlides.map(sanitize).map((s,i)=>({
-      ...s,
-      layout: i===0 ? "statement" : i===rawSlides.length-1 ? "hero" : "standard",
-    }));
 
-    const image = await sourceThemeHeroImage(parsed.visual_concept || planItem.topic, pageConf, tpVisualSource);
+    const used = usedImageUrls || new Set();
+    const image = await sourceThemeHeroImage(parsed.visual_concept || planItem.topic, pageConf, tpVisualSource, used);
+    if (image) used.add(image.url);
+    const treatment = IMAGE_TREATMENTS[treatmentSeqIdx % IMAGE_TREATMENTS.length];
+
+    const slides = rawSlides.map((s,i)=>{
+      const t = treatment[i % treatment.length];
+      return {
+        headline: (s.headline||"").replace(/<[^>]+>/g,"").trim().slice(0,90),
+        subline: (s.subline||"").replace(/<[^>]+>/g,"").trim().slice(0,70),
+        image: image?.url || null,
+        imagePos: { x: t.x, y: t.y },
+        imageZoom: t.zoom,
+        imageFilter: i === rawSlides.length-1 ? "grayscale" : "none",
+      };
+    });
 
     return {
       id: "tp_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8),
       page: pageId,
       status: "needs_review",
       pillar: planItem.pillar, format: planItem.format, topic: planItem.topic,
-      slides: sanitized,
+      slides,
       caption: (parsed.caption||"").trim(),
       hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags : [],
       visualConcept: parsed.visual_concept || "",
       imageSource: image?.source || null,
       heroImageUrl: image?.url || null,
       photographer: image?.photographer || null,
-      cropSeqIdx,
-      fontId: pageConf.fontId, accentColor: pageConf.accentColor, bgColour: pageConf.bgColour,
+      treatmentSeqIdx,
+      fontId: pageConf.fontId, accentColor: pageConf.accentColor,
       createdAt: Date.now(), postedAt: null,
       metrics: { views:"", likes:"", comments:"", shares:"", saves:"", follows:"" },
     };
@@ -2534,6 +2555,7 @@ Return ONLY valid JSON, nothing else:
 
       const newPosts = [];
       const runningMemory = [...memory];
+      const usedImageUrls = new Set();
       for (let i=0;i<plan.length;i++) {
         setTpProgress(prev=>prev.map((x,idx)=>idx===i?{...x,state:"active"}:x));
         try {
@@ -2541,7 +2563,7 @@ Return ONLY valid JSON, nothing else:
           if (isTooSimilar(item.topic, runningMemory)) {
             item = { ...item, topic: item.topic + " — find a distinctly different angle or example than anything covered before" };
           }
-          const post = await generateSingleThemePost(pageId, pageConf, item, i % CROP_SEQUENCES.length);
+          const post = await generateSingleThemePost(pageId, pageConf, item, i % IMAGE_TREATMENTS.length, usedImageUrls);
           newPosts.push(post);
           runningMemory.push({ topic: post.topic, keywords: extractKeywords(post.topic+" "+(post.slides[0]?.headline||"")) });
           setTpProgress(prev=>prev.map((x,idx)=>idx===i?{...x,state:"done"}:x));
@@ -2587,30 +2609,46 @@ Return ONLY valid JSON, nothing else:
     setTpSelected(prev=>{ const n=new Set(prev); ids.forEach(i=>n.delete(i)); return n; });
   };
 
+  // Per-card busy tracking (separate from the whole-page tpBusy used by
+  // full-batch generation) so a single Regenerate/Swap click only disables
+  // and labels the one card it affects, instead of silently doing
+  // something in the background with no visible feedback.
+  const [tpCardBusy, setTpCardBusyState] = useState({});
+  const setTpCardBusy = (id, kind) => setTpCardBusyState(prev=>({ ...prev, [id]: kind }));
+  const clearTpCardBusy = (id) => setTpCardBusyState(prev=>{ const n={...prev}; delete n[id]; return n; });
+
   const regenerateThemePost = async (id) => {
     const post = tp.posts.find(p=>p.id===id);
     if (!post) return;
-    setTpBusy(true);
+    setTpCardBusy(id, "regen");
     try {
       const pageConf = tp.pages[post.page];
-      const fresh = await generateSingleThemePost(post.page, pageConf, { pillar:post.pillar, format:post.format, topic: post.topic+" — write a fresh take, different wording and structure than before" }, post.cropSeqIdx);
+      const usedImageUrls = new Set(tp.posts.filter(p=>p.id!==id).map(p=>p.heroImageUrl).filter(Boolean));
+      const fresh = await generateSingleThemePost(post.page, pageConf, { pillar:post.pillar, format:post.format, topic: post.topic+" — write a fresh take, different wording and structure than before" }, post.treatmentSeqIdx||0, usedImageUrls);
       updateThemePost(id, { ...fresh, id: post.id, status:"needs_review", createdAt: post.createdAt, postedAt: post.postedAt });
     } catch(e) { console.error(e); alert("Regenerate failed: "+e.message); }
-    setTpBusy(false);
+    clearTpCardBusy(id);
   };
 
   const swapThemeImage = async (id) => {
     const post = tp.posts.find(p=>p.id===id);
     if (!post) return;
-    setTpBusy(true);
+    setTpCardBusy(id, "swap");
     try {
       const pageConf = tp.pages[post.page];
+      const usedImageUrls = new Set(tp.posts.filter(p=>p.id!==id).map(p=>p.heroImageUrl).filter(Boolean));
+      if (post.heroImageUrl) usedImageUrls.add(post.heroImageUrl);
       const variedConcept = (post.visualConcept||post.topic) + (post.imageSource==="stock" ? ", different composition" : ", alternate version");
-      const image = await sourceThemeHeroImage(variedConcept, pageConf, tpVisualSource);
-      if (image) updateThemePost(id, { heroImageUrl: image.url, imageSource: image.source, photographer: image.photographer });
-      else alert("Couldn't find another image — try again.");
+      const image = await sourceThemeHeroImage(variedConcept, pageConf, tpVisualSource, usedImageUrls);
+      if (!image) { alert("Couldn't find another image — try again."); clearTpCardBusy(id); return; }
+      const treatment = IMAGE_TREATMENTS[(post.treatmentSeqIdx||0) % IMAGE_TREATMENTS.length];
+      const newSlides = post.slides.map((s,i)=>{
+        const t = treatment[i % treatment.length];
+        return { ...s, image: image.url, imagePos: { x:t.x, y:t.y }, imageZoom: t.zoom };
+      });
+      updateThemePost(id, { slides: newSlides, heroImageUrl: image.url, imageSource: image.source, photographer: image.photographer });
     } catch(e) { console.error(e); alert("Image swap failed: "+e.message); }
-    setTpBusy(false);
+    clearTpCardBusy(id);
   };
 
   const approveThemePosts = (ids) => {
@@ -2639,9 +2677,10 @@ Return ONLY valid JSON, nothing else:
       for (const post of posts) {
         const num = String(seq++).padStart(3,"0");
         const base = `${post.page}_${num}_${slugify(post.topic)}`;
+        const opts = themeTmplOpts(post);
         for (let i=0;i<post.slides.length;i++) {
           try {
-            const blob = await renderSlideViaServer(post.slides[i], i, post.slides.length, themeSlideOpts(post,i), i===0);
+            const blob = await renderSlideViaServer(post.slides[i], i, post.slides.length, opts, i===0, themeDarkFadeBuilder);
             zip.file(`${base}/${base}_slide-${String(i+1).padStart(2,"0")}.png`, blob);
           } catch(e) { console.error("Export render failed for", base, i, e); }
         }
@@ -2690,10 +2729,11 @@ Return ONLY a valid JSON array of exactly ${count} objects: {"pillar":"<a pillar
       const memory = tp.memory[pageId] || [];
       const runningMemory = [...memory];
       const newPosts = [];
+      const usedImageUrls = new Set();
       for (let i=0;i<plan.length;i++) {
         setTpProgress(prev=>prev.map((x,idx)=>idx===i?{...x,state:"active"}:x));
         try {
-          const generated = await generateSingleThemePost(pageId, pageConf, plan[i], i % CROP_SEQUENCES.length);
+          const generated = await generateSingleThemePost(pageId, pageConf, plan[i], i % IMAGE_TREATMENTS.length, usedImageUrls);
           newPosts.push(generated);
           runningMemory.push({ topic: generated.topic, keywords: extractKeywords(generated.topic+" "+(generated.slides[0]?.headline||"")) });
           setTpProgress(prev=>prev.map((x,idx)=>idx===i?{...x,state:"done"}:x));
@@ -4097,10 +4137,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                           <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Accent</div>
                           <input type="color" value={pageConf.accentColor} onChange={e=>updateThemePageConfig(tpActivePage,{accentColor:e.target.value})} style={{width:44,height:38,border:"none",borderRadius:8,cursor:"pointer",padding:0}}/>
                         </div>
-                        <div>
-                          <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Background</div>
-                          <input type="color" value={pageConf.bgColour} onChange={e=>updateThemePageConfig(tpActivePage,{bgColour:e.target.value})} style={{width:44,height:38,border:"none",borderRadius:8,cursor:"pointer",padding:0}}/>
-                        </div>
                       </div>
                       <div>
                         <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Visual style preset (fed into every image prompt/search)</div>
@@ -4109,10 +4145,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       <div>
                         <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Content rules</div>
                         <textarea value={pageConf.contentRules} onChange={e=>updateThemePageConfig(tpActivePage,{contentRules:e.target.value})} rows={2} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:13,resize:"vertical",fontFamily:"inherit"}}/>
-                      </div>
-                      <div>
-                        <div style={{fontSize:12,color:A.muted,marginBottom:6}}>CTA style</div>
-                        <input value={pageConf.ctaStyle} onChange={e=>updateThemePageConfig(tpActivePage,{ctaStyle:e.target.value})} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:13}}/>
                       </div>
                     </div>
                   )}
@@ -4168,12 +4200,17 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       const isExpanded = tpExpandedId===post.id;
                       return (
                         <div key={post.id} style={{background:A.surface,border:`2px solid ${isSelected?GOLD:A.border}`,borderRadius:14,overflow:"hidden",display:"flex",flexDirection:"column"}}>
-                          <div style={{position:"relative",width:"100%",aspectRatio:"1080/1920",background:"#0A0A0A",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          <div style={{position:"relative",width:"100%",aspectRatio:"1080/1350",background:"#0A0A0A",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center"}}>
                             <label style={{position:"absolute",top:10,left:10,zIndex:5,cursor:"pointer",background:"rgba(0,0,0,0.5)",borderRadius:6,padding:3,display:"flex"}}>
                               <input type="checkbox" checked={isSelected} onChange={()=>setTpSelected(prev=>{const n=new Set(prev);n.has(post.id)?n.delete(post.id):n.add(post.id);return n;})} style={{width:18,height:18,cursor:"pointer"}}/>
                             </label>
                             <span style={{position:"absolute",top:10,right:10,zIndex:5,fontSize:10,fontWeight:800,padding:"4px 9px",borderRadius:20,background:statusColors[post.status]||"#8A8780",color:"#fff",textTransform:"uppercase",letterSpacing:0.5}}>{post.status.replace("_"," ")}</span>
-                            {post.slides?.[0] && <SlidePreview slide={post.slides[0]} idx={0} total={post.slides.length} _c_opts={themeSlideOpts(post,0)} onClick={()=>setTpExpandedId(isExpanded?null:post.id)} isActive={false} isCover={true} previewSize={320}/>}
+                            {post.slides?.[0] && <SlidePreview slide={post.slides[0]} idx={0} total={post.slides.length} _c_opts={themeTmplOpts(post)} builder={themeDarkFadeBuilder} onClick={()=>setTpExpandedId(isExpanded?null:post.id)} isActive={false} isCover={true} previewSize={320}/>}
+                            {tpCardBusy[post.id] && (
+                              <div style={{position:"absolute",inset:0,zIndex:6,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:13,fontWeight:700}}>
+                                {tpCardBusy[post.id]==="regen"?"Regenerating…":"Finding a new image…"}
+                              </div>
+                            )}
                           </div>
                           <div style={{padding:14,display:"flex",flexDirection:"column",gap:8,flex:1}}>
                             <div style={{fontSize:13,fontWeight:700,lineHeight:1.35,cursor:"pointer"}} onClick={()=>setTpExpandedId(isExpanded?null:post.id)}>{post.slides?.[0]?.headline||"(no headline)"}</div>
@@ -4182,8 +4219,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                             </div>
                             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                               <button onClick={()=>approveThemePosts([post.id])} style={smallBtnStyle}>Approve</button>
-                              <button onClick={()=>regenerateThemePost(post.id)} disabled={tpBusy} style={smallBtnStyle}>Regenerate</button>
-                              <button onClick={()=>swapThemeImage(post.id)} disabled={tpBusy} style={smallBtnStyle}>Swap image</button>
+                              <button onClick={()=>regenerateThemePost(post.id)} disabled={!!tpCardBusy[post.id]} style={tpCardBusy[post.id]?{...smallBtnStyle,...disabledStyle}:smallBtnStyle}>{tpCardBusy[post.id]==="regen"?"Regenerating…":"Regenerate"}</button>
+                              <button onClick={()=>swapThemeImage(post.id)} disabled={!!tpCardBusy[post.id]} style={tpCardBusy[post.id]?{...smallBtnStyle,...disabledStyle}:smallBtnStyle}>{tpCardBusy[post.id]==="swap"?"Swapping…":"Swap image"}</button>
                               <button onClick={()=>setTpExpandedId(isExpanded?null:post.id)} style={smallBtnStyle}>{isExpanded?"Collapse":"Details"}</button>
                               <button onClick={()=>{if(window.confirm("Delete this post?")) removeThemePosts([post.id]);}} style={{...smallBtnStyle,color:"#c0392b"}}>Delete</button>
                             </div>
@@ -4192,7 +4229,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                               <div style={{marginTop:6,paddingTop:10,borderTop:`1px solid ${A.border}`,display:"flex",flexDirection:"column",gap:10}}>
                                 <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
                                   {post.slides.map((s,i)=>(
-                                    <SlidePreview key={i} slide={s} idx={i} total={post.slides.length} _c_opts={themeSlideOpts(post,i)} onClick={()=>{}} isActive={false} isCover={i===0} previewSize={100}/>
+                                    <SlidePreview key={i} slide={s} idx={i} total={post.slides.length} _c_opts={themeTmplOpts(post)} builder={themeDarkFadeBuilder} onClick={()=>{}} isActive={false} isCover={i===0} previewSize={100}/>
                                   ))}
                                 </div>
                                 <div>

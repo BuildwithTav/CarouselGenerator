@@ -21,10 +21,8 @@ export const THEME_PAGE_DEFAULTS = {
     pillars: ["Cognitive biases", "Social psychology", "Human behaviour", "Memory", "Habits", "Motivation", "Communication", "Emotional intelligence", "Confidence", "Overthinking", "Decision making", "Psychological effects", "Attachment", "Productivity psychology", "Behavioural psychology"],
     visualStyle: "cinematic editorial photography, realistic humans, slightly moody, premium, modern, subtle film grain, natural lighting, emotion-driven, plenty of negative space, no text or writing anywhere in the image, no obvious AI look",
     contentRules: "Avoid medical diagnosis. Avoid fake neuroscience. Avoid unsupported 'dark psychology' claims. Never present speculation as scientific fact — frame uncertain claims as 'research suggests', 'one theory is', or 'a common pattern is'.",
-    ctaStyle: "follow, save, or share — never a fake product, download, or link",
     fontId: "poppins",
     accentColor: "#60A5FA",
-    bgColour: "#12141c",
   },
   relationships: {
     id: "relationships",
@@ -32,21 +30,21 @@ export const THEME_PAGE_DEFAULTS = {
     pillars: ["Attraction", "Dating", "Communication", "Attachment", "Conflict", "Emotional availability", "Trust", "Compatibility", "Boundaries", "Long-term relationships", "Breakups", "Green flags", "Red flags", "Relationship habits", "Texting and communication", "Emotional connection"],
     visualStyle: "cinematic lifestyle photography, couples or people in emotional situations, realistic, intimate, modern, natural light, editorial, subtle mood, not cheesy stock photography, no text or writing anywhere in the image, no obvious AI look",
     contentRules: "Avoid absolute interpretations of someone else's behaviour. Never state 'if they do X they're cheating' — prefer 'this can sometimes indicate...', 'one possible reason...', 'it may be a sign...'.",
-    ctaStyle: "follow, save, or share — never a fake product, download, or link",
     fontId: "playfair",
     accentColor: "#C4756A",
-    bgColour: "#241418",
   },
 };
 
-// Rotate through these per post so 20 posts don't all crop the hero image
-// the same way. Each sequence is applied slide-by-slide (wrapping if a post
-// has more slides than the sequence).
-export const CROP_SEQUENCES = [
-  [{ x: 50, y: 35 }, { x: 35, y: 50 }, { x: 65, y: 45 }, { x: 50, y: 30 }, { x: 50, y: 50 }],
-  [{ x: 50, y: 50 }, { x: 70, y: 40 }, { x: 30, y: 55 }, { x: 50, y: 35 }, { x: 60, y: 50 }],
-  [{ x: 40, y: 45 }, { x: 60, y: 55 }, { x: 50, y: 35 }, { x: 35, y: 50 }, { x: 50, y: 50 }],
-  [{ x: 55, y: 40 }, { x: 45, y: 55 }, { x: 50, y: 50 }, { x: 65, y: 35 }, { x: 40, y: 45 }],
+// Same hero image on every slide of a post, but rotate through these
+// zoom/pan "treatments" so slides actually look different from each other
+// instead of a near-identical crop shift. x/y are pixel offsets, zoom is a
+// percentage (100 = no zoom) — matches the Classic Theme Page template's
+// imagePos/imageZoom fields. Each sequence wraps if a post has more slides
+// than the sequence is long.
+export const IMAGE_TREATMENTS = [
+  [{ zoom: 100, x: 0, y: 0 }, { zoom: 114, x: -50, y: 10 }, { zoom: 108, x: 40, y: -30 }, { zoom: 120, x: 0, y: 40 }, { zoom: 105, x: -30, y: -10 }],
+  [{ zoom: 105, x: 20, y: -20 }, { zoom: 118, x: -40, y: 20 }, { zoom: 100, x: 0, y: 0 }, { zoom: 112, x: 30, y: 30 }, { zoom: 122, x: -20, y: -30 }],
+  [{ zoom: 100, x: 0, y: 0 }, { zoom: 110, x: 35, y: -25 }, { zoom: 116, x: -35, y: 15 }, { zoom: 106, x: 0, y: 35 }, { zoom: 112, x: 20, y: -15 }],
 ];
 
 const STOPWORDS = new Set(["the", "a", "an", "of", "to", "in", "on", "for", "and", "or", "is", "are", "your", "you", "it", "this", "that", "why", "how", "what", "when", "with", "from", "about", "into", "their", "them", "they", "people", "someone", "one", "can", "do", "does", "did", "be", "if", "than", "then", "just", "not", "so", "as", "at", "by", "way", "will", "most", "more", "really"]);
