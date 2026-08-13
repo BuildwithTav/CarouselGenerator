@@ -2692,9 +2692,13 @@ Return ONLY valid JSON, nothing else:
   };
 
   // Samples the theme page's uploaded logo/photo for its dominant colour and
-  // sets it as the accent — skips near-white/black/grey pixels (common logo
-  // backgrounds) so a busy or transparent-background logo doesn't just
-  // average out to grey.
+  // sets it as the accent. Uses the most common colour by area (a
+  // quantized-histogram mode), not a flat average — averaging washes a
+  // mostly-light logo with fine dark detail (text, thin borders) toward
+  // grey/black, which is not what "the logo's colour" means to a human.
+  // Prefers the most common *saturated* colour when one exists (so a
+  // colorful mark wins over a white background), and only falls back to
+  // the single most common colour overall for genuinely monochrome logos.
   const [tpDetectingColor, setTpDetectingColor] = useState(false);
   const detectLogoAccent = async (pageId) => {
     const url = tp.pages[pageId]?.profileUrl;
@@ -2710,19 +2714,25 @@ Return ONLY valid JSON, nothing else:
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, size, size);
       const data = ctx.getImageData(0, 0, size, size).data;
-      let r=0,g=0,b=0,n=0, ar=0,ag=0,ab=0,an=0;
+      const BUCKET = 24;
+      const buckets = new Map(); // quantized "r,g,b" -> {count, rSum, gSum, bSum, maxSat}
+      let totalPixels = 0;
       for (let i=0;i<data.length;i+=4) {
-        const alpha = data[i+3];
-        if (alpha < 200) continue;
+        if (data[i+3] < 200) continue; // skip transparent
         const rr=data[i], gg=data[i+1], bb=data[i+2];
-        ar+=rr; ag+=gg; ab+=bb; an++;
+        const key = Math.round(rr/BUCKET)+","+Math.round(gg/BUCKET)+","+Math.round(bb/BUCKET);
         const max=Math.max(rr,gg,bb), min=Math.min(rr,gg,bb);
         const sat = max===0 ? 0 : (max-min)/max;
-        if (sat < 0.15) continue; // skip near-white/black/grey (typical logo background)
-        r+=rr; g+=gg; b+=bb; n++;
+        const entry = buckets.get(key);
+        if (entry) { entry.count++; entry.rSum+=rr; entry.gSum+=gg; entry.bSum+=bb; entry.maxSat=Math.max(entry.maxSat,sat); }
+        else buckets.set(key, { count:1, rSum:rr, gSum:gg, bSum:bb, maxSat:sat });
+        totalPixels++;
       }
-      if (!n) { r=ar; g=ag; b=ab; n=an||1; } // fully monochrome logo — fall back to a plain average
-      r=Math.round(r/n); g=Math.round(g/n); b=Math.round(b/n);
+      if (!totalPixels) throw new Error("No visible (non-transparent) pixels found");
+      const byCount = [...buckets.values()].sort((a,b)=>b.count-a.count);
+      const saturatedByCount = byCount.filter(e=>e.maxSat>=0.2);
+      const winner = (saturatedByCount[0] && saturatedByCount[0].count >= totalPixels*0.03) ? saturatedByCount[0] : byCount[0];
+      const r=Math.round(winner.rSum/winner.count), g=Math.round(winner.gSum/winner.count), b=Math.round(winner.bSum/winner.count);
       const hex = "#"+[r,g,b].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,"0")).join("");
       updateThemePageConfig(pageId, { accentColor: hex });
     } catch (e) {
