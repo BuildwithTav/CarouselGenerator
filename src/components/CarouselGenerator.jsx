@@ -2470,7 +2470,7 @@ CONTENT RULES: ${pageConf.contentRules}
 
 QUALITY BAR: this must NOT read as generic advice ("communicate more", "set boundaries", "trust yourself"). Ground it in a specific, real mechanism — attachment theory, evolutionary psychology, established research, a named cognitive/social effect, a specific behavioural pattern. A knowledgeable reader who already follows relationship/psychology content should still learn something specific from this, not recognise it as something they've read a hundred times.
 
-Write exactly 5 content slides (the hook plus 4 more) — that's the target length, not a ceiling to pad toward or a floor to cut short. Split the idea into 5 real, distinct beats rather than one beat stretched thin or five beats crammed into three. Do NOT write a final "follow" slide — that's added automatically afterward, your job is only the hook and the substance.
+Write exactly 6 content slides (the hook plus 5 more) — that's the target length, not a ceiling to pad toward or a floor to cut short. Split the idea into 6 real, distinct beats rather than one beat stretched thin or six beats crammed into three. Do NOT write a final "follow" slide — that's added automatically afterward, your job is only the hook and the substance.
 
 Every slide sits over a photo. Both fields matter:
 - "headline": the punchy hook/claim for that slide. Max 7 words AND max 48 characters — big bold text, zero room for a long sentence.
@@ -2550,7 +2550,7 @@ Return ONLY valid JSON, nothing else:
     const m = clean.match(/\{[\s\S]*\}/);
     if (!m) throw new Error("Post generation returned no JSON");
     const parsed = JSON.parse(m[0]);
-    const rawSlides = (Array.isArray(parsed.slides) ? parsed.slides : []).slice(0,5);
+    const rawSlides = (Array.isArray(parsed.slides) ? parsed.slides : []).slice(0,6);
     if (!rawSlides.length) throw new Error("No slides returned");
 
     const used = usedImageUrls || new Set();
@@ -2734,7 +2734,7 @@ Return ONLY valid JSON, nothing else:
 
   const exportThemePosts = async (ids) => {
     const posts = tp.posts.filter(p=>ids.includes(p.id));
-    if (!posts.length) return;
+    if (!posts.length) { alert("Nothing to export — approve at least one post first (or use \"Export post\" on an individual card)."); return; }
     setTpBusy(true);
     try {
       await new Promise((res,rej) => {
@@ -2745,6 +2745,8 @@ Return ONLY valid JSON, nothing else:
       });
       const zip = new window.JSZip();
       let seq = 1;
+      let renderedCount = 0;
+      let failedCount = 0;
       for (const post of posts) {
         const num = String(seq++).padStart(3,"0");
         const base = `${post.page}_${num}_${slugify(post.topic)}`;
@@ -2753,10 +2755,16 @@ Return ONLY valid JSON, nothing else:
           try {
             const blob = await renderSlideViaServer(post.slides[i], i, post.slides.length, opts, i===0, themePostBuilder);
             zip.file(`${base}/${base}_slide-${String(i+1).padStart(2,"0")}.png`, blob);
-          } catch(e) { console.error("Export render failed for", base, i, e); }
+            renderedCount++;
+          } catch(e) { console.error("Export render failed for", base, i, e); failedCount++; }
         }
         const captionText = post.caption + (post.hashtags?.length ? "\n\n" + post.hashtags.join(" ") : "");
         zip.file(`${base}/${base}_caption.txt`, captionText);
+      }
+      if (renderedCount === 0) {
+        alert("Export failed — none of the slides could be rendered. Check your connection and try again.");
+        setTpBusy(false);
+        return;
       }
       const zipBlob = await zip.generateAsync({type:"blob"});
       const url = URL.createObjectURL(zipBlob);
@@ -2764,6 +2772,7 @@ Return ONLY valid JSON, nothing else:
       a.href = url; a.download = `${tpActivePage}-theme-posts.zip`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(()=>URL.revokeObjectURL(url), 2000);
+      if (failedCount > 0) alert(`Exported, but ${failedCount} slide(s) failed to render and were left out of the zip.`);
     } catch(e) { console.error("Theme export failed:", e); alert("Export failed — try again."); }
     setTpBusy(false);
   };
@@ -4261,7 +4270,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     <button onClick={()=>setTpSelected(new Set())} style={pillBtnStyle}>Clear</button>
                     <button onClick={()=>approveThemePosts(allIds)} style={primaryPillBtnStyle}>Approve all</button>
                     <button onClick={()=>approveThemePosts(Array.from(tpSelected))} disabled={!selectedCount} style={selectedCount?primaryPillBtnStyle:{...primaryPillBtnStyle,...disabledStyle}}>Approve selected</button>
-                    <button onClick={()=>exportThemePosts(pagePosts.filter(p=>p.status==="approved"||p.status==="posted").map(p=>p.id))} disabled={tpBusy} style={primaryPillBtnStyle}>Export approved</button>
+                    <button onClick={()=>exportThemePosts(pagePosts.filter(p=>p.status==="approved"||p.status==="posted").map(p=>p.id))} disabled={tpBusy} style={tpBusy?{...primaryPillBtnStyle,...disabledStyle}:primaryPillBtnStyle}>{tpBusy?"Exporting…":"Export approved"}</button>
                     <button onClick={()=>{Array.from(tpSelected).forEach(id=>regenerateThemePost(id));}} disabled={!selectedCount||tpBusy} style={!selectedCount||tpBusy?{...pillBtnStyle,...disabledStyle}:pillBtnStyle}>Regenerate selected</button>
                     <button onClick={()=>{if(selectedCount&&window.confirm(`Delete ${selectedCount} post(s)?`)) removeThemePosts(Array.from(tpSelected));}} disabled={!selectedCount} style={!selectedCount?{...dangerPillBtnStyle,...disabledStyle}:dangerPillBtnStyle}>Delete selected</button>
                   </div>
@@ -4317,7 +4326,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                                   <input value={(post.hashtags||[]).join(" ")} onChange={e=>updateThemePost(post.id,{hashtags:e.target.value.split(/\s+/).filter(Boolean)})} style={{width:"100%",padding:8,borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:12}}/>
                                 </div>
                                 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                                  <button onClick={()=>exportThemePosts([post.id])} disabled={tpBusy} style={smallBtnStyle}>Export post</button>
+                                  <button onClick={()=>exportThemePosts([post.id])} disabled={tpBusy} style={tpBusy?{...smallBtnStyle,...disabledStyle}:smallBtnStyle}>{tpBusy?"Exporting…":"Export post"}</button>
                                   <button onClick={()=>makeMoreLikeThis(post.id)} disabled={tpBusy} style={{...smallBtnStyle,borderColor:GOLD,color:GOLD,fontWeight:800}}>Make more like this</button>
                                   {post.status!=="posted" && <button onClick={()=>setTpMetricsOpenId(tpMetricsOpenId===post.id?null:post.id)} style={smallBtnStyle}>Mark posted</button>}
                                 </div>
