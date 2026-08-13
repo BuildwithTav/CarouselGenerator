@@ -1830,6 +1830,7 @@ export default function App() {
   const [tpProgress, setTpProgress] = useState([]);
   const [tpSelected, setTpSelected] = useState(()=>new Set());
   const [tpAdvancedOpen, setTpAdvancedOpen] = useState(false);
+  const [tpColorPickerOpen, setTpColorPickerOpen] = useState(false);
   const [tpBusy, setTpBusy] = useState(false);
   const [tpMetricsOpenId, setTpMetricsOpenId] = useState(null);
   const [tpExpandedId, setTpExpandedId] = useState(null);
@@ -4195,7 +4196,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:20}}>
                   <div style={{fontSize:13,fontWeight:700,marginBottom:10}}>Quantity</div>
                   <div style={{display:"flex",gap:8,marginBottom:22}}>
-                    {[5,10,20,30].map(q=>(
+                    {[1,5,10,20,30].map(q=>(
                       <button key={q} onClick={()=>setTpQuantity(q)} style={{flex:1,padding:"12px",borderRadius:9,border:`1.5px solid ${tpQuantity===q?GOLD:A.border}`,background:tpQuantity===q?GOLD+"22":"transparent",fontWeight:700,fontSize:14,color:A.text,cursor:"pointer"}}>{q}</button>
                     ))}
                   </div>
@@ -4220,7 +4221,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         </div>
                         <div>
                           <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Accent</div>
-                          <input type="color" value={pageConf.accentColor} onChange={e=>updateThemePageConfig(tpActivePage,{accentColor:e.target.value})} style={{width:44,height:38,border:"none",borderRadius:8,cursor:"pointer",padding:0}}/>
+                          <button type="button" onClick={()=>setTpColorPickerOpen(true)} title={pageConf.accentColor} style={{width:44,height:38,border:`1.5px solid ${A.border}`,borderRadius:8,cursor:"pointer",padding:0,background:pageConf.accentColor}}/>
                         </div>
                       </div>
                       <div>
@@ -4236,7 +4237,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                 </div>
 
                 <button onClick={generateThemeBatch} disabled={tpBusy} style={{width:"100%",padding:"18px",borderRadius:12,border:"none",background:GOLD,color:"#0A0A0A",fontWeight:800,fontSize:16,cursor:tpBusy?"default":"pointer",opacity:tpBusy?0.6:1}}>
-                  {tpBusy?"Working…":`GENERATE ${tpQuantity} POSTS`}
+                  {tpBusy?"Working…":`GENERATE ${tpQuantity} POST${tpQuantity===1?"":"S"}`}
                 </button>
 
                 {pagePosts.length>0 && (
@@ -6056,6 +6057,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           }
         }}
         onClose={()=>setColorPickerOpen(null)}
+      />
+    )}
+    {mounted&&tpColorPickerOpen&&(
+      <HslColorPicker
+        value={tp.pages[tpActivePage]?.accentColor||GOLD}
+        onChange={color=>updateThemePageConfig(tpActivePage,{accentColor:color})}
+        onClose={()=>setTpColorPickerOpen(false)}
       />
     )}
     </>
