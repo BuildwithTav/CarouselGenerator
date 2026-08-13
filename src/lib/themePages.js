@@ -47,18 +47,6 @@ export const THEME_PAGE_DEFAULTS = {
   },
 };
 
-// Same hero image on every slide of a post, but rotate through these
-// zoom/pan "treatments" so slides actually look different from each other
-// instead of a near-identical crop shift. x/y are pixel offsets, zoom is a
-// percentage (100 = no zoom) — matches the Classic Theme Page template's
-// imagePos/imageZoom fields. Each sequence wraps if a post has more slides
-// than the sequence is long.
-export const IMAGE_TREATMENTS = [
-  [{ zoom: 100, x: 0, y: 0 }, { zoom: 114, x: -50, y: 10 }, { zoom: 108, x: 40, y: -30 }, { zoom: 120, x: 0, y: 40 }, { zoom: 105, x: -30, y: -10 }],
-  [{ zoom: 105, x: 20, y: -20 }, { zoom: 118, x: -40, y: 20 }, { zoom: 100, x: 0, y: 0 }, { zoom: 112, x: 30, y: 30 }, { zoom: 122, x: -20, y: -30 }],
-  [{ zoom: 100, x: 0, y: 0 }, { zoom: 110, x: 35, y: -25 }, { zoom: 116, x: -35, y: 15 }, { zoom: 106, x: 0, y: 35 }, { zoom: 112, x: 20, y: -15 }],
-];
-
 const STOPWORDS = new Set(["the", "a", "an", "of", "to", "in", "on", "for", "and", "or", "is", "are", "your", "you", "it", "this", "that", "why", "how", "what", "when", "with", "from", "about", "into", "their", "them", "they", "people", "someone", "one", "can", "do", "does", "did", "be", "if", "than", "then", "just", "not", "so", "as", "at", "by", "way", "will", "most", "more", "really"]);
 
 export function extractKeywords(text) {

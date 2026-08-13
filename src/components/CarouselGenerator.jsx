@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
-  THEME_FORMATS, IMAGE_TREATMENTS,
+  THEME_FORMATS,
   extractKeywords, mostSimilar, slugify,
   loadThemeState, saveThemeState,
 } from "../lib/themePages";
@@ -1234,11 +1234,14 @@ export default function App() {
       if(eff==="none")return"color:"+pri+";-webkit-text-fill-color:"+pri+";";
       return"-webkit-text-fill-color:"+sec+";color:"+sec+";text-shadow:0 2px 8px rgba(0,0,0,0.6);";
     }
-    function badge(dark){
+    function badge(dark,glow){
       const tc=dark?"#fff":"#0a0a0a",sc=dark?"rgba(255,255,255,0.55)":"rgba(0,0,0,0.45)";
+      const nameShadow=glow?"text-shadow:0 2px 6px rgba(0,0,0,0.7),0 0 18px rgba(0,0,0,0.5);":"";
+      const handleShadow=glow?"text-shadow:0 1px 4px rgba(0,0,0,0.75);":"";
+      const avShadow=glow?"box-shadow:0 3px 10px rgba(0,0,0,0.5);":"";
       const tick=showTick?"<span style='display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#1D9BF0;border-radius:50%;margin-left:8px;vertical-align:middle;flex-shrink:0;'><span style='display:block;width:8px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);margin-top:-2px;'></span></span>":"";
       const av=profUrl?"<img src='"+esc(profUrl)+"' style='width:100%;height:100%;object-fit:cover;border-radius:50%;'/>"  :"<div style='width:100%;height:100%;background:#4a6a9a;border-radius:50%;'></div>";
-      return"<div style='display:flex;align-items:center;gap:18px;'><div style='width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid #fff;flex-shrink:0;background:#4a6a9a;'>"+av+"</div><div style='display:flex;flex-direction:column;gap:4px;'><div style='display:flex;align-items:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;font-weight:800;color:"+tc+";'>"+esc(nm||"")+tick+"</div><div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:28px;color:"+sc+";'>"+esc(hdl||"")+"</div></div></div>";
+      return"<div style='display:flex;align-items:center;gap:18px;'><div style='width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid #fff;flex-shrink:0;background:#4a6a9a;"+avShadow+"'>"+av+"</div><div style='display:flex;flex-direction:column;gap:4px;'><div style='display:flex;align-items:center;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:36px;font-weight:800;color:"+tc+";"+nameShadow+"'>"+esc(nm||"")+tick+"</div><div style='font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:28px;color:"+sc+";"+handleShadow+"'>"+esc(hdl||"")+"</div></div></div>";
     }
     const grad="linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 28%,rgba(0,0,0,0.08) 44%,rgba(0,0,0,0.35) 54%,rgba(0,0,0,0.65) 62%,rgba(0,0,0,0.88) 70%,rgba(0,0,0,0.96) 78%,rgba(0,0,0,0.99) 88%,rgba(0,0,0,1) 100%)";
     const chevron="<div style='position:absolute;bottom:48px;right:56px;z-index:10;'><svg width='52' height='36' viewBox='0 0 52 36' fill='none'><polyline points='4,4 18,18 4,32' stroke='"+effectColor(effect,AL)+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><polyline points='20,4 34,18 20,32' stroke='"+effectColor(effect,AL)+"' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg></div>";
@@ -1266,17 +1269,17 @@ export default function App() {
       const headlineText=esc((s.headline||"").toUpperCase());
       const bodyText=s.body?esc(s.body):"";
       const isCta=!!s.isCta;
-      const effectStyle=effect==="none"?("color:"+primary+";-webkit-text-fill-color:"+primary+";"):effectCSS(effect,AL,secondary);
+      const effectStyle=effect==="none"?("color:"+primary+";-webkit-text-fill-color:"+primary+";text-shadow:0 2px 4px rgba(0,0,0,0.6),0 10px 26px rgba(0,0,0,0.5);"):effectCSS(effect,AL,secondary);
       const zoneTop=Math.round(H*0.50);
       const zoneH=Math.round(H*0.46);
       const fitScript="<script>(function(){var h=document.getElementById('hl');var b=document.getElementById('bd');var zone=document.getElementById('tz');if(!h||!zone)return;var maxH=zone.offsetHeight;var hfs=76,bfs=40;h.style.fontSize=hfs+'px';if(b)b.style.fontSize=bfs+'px';document.fonts.ready.then(function(){while(zone.scrollHeight>maxH&&(hfs>40||bfs>24)){if(hfs>40){hfs-=2;h.style.fontSize=hfs+'px';}else if(bfs>24){bfs-=1;b.style.fontSize=bfs+'px';}}window.__TEXT_FIT_DONE__=true;});})();<\/script>";
       const ctaBox=isCta?("border:2px solid "+AL+";border-radius:18px;padding:36px 40px;background:rgba(0,0,0,0.4);"):"";
       return"<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(s)
         +"<div style='position:absolute;inset:0;background:"+grad+";z-index:1;'></div>"
-        +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.395)+"px;white-space:nowrap;'>"+badge(true)+"</div>"
+        +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.395)+"px;white-space:nowrap;'>"+badge(true,true)+"</div>"
         +"<div id='tz' style='position:absolute;z-index:5;left:70px;right:70px;top:"+zoneTop+"px;height:"+zoneH+"px;display:flex;flex-direction:column;align-items:center;justify-content:"+(isCta?"center":"flex-start")+";gap:24px;overflow:hidden;"+ctaBox+"'>"
         +"<div id='hl' style='font-family:"+fontFamily+",sans-serif;font-size:76px;font-weight:900;line-height:1.12;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectStyle+"'>"+headlineText+"</div>"
-        +(bodyText?"<div id='bd' style='font-family:"+fontFamily+",sans-serif;font-size:40px;color:"+secondary+";text-align:center;font-weight:500;line-height:1.42;max-width:100%;'>"+bodyText+"</div>":"")
+        +(bodyText?"<div id='bd' style='font-family:"+fontFamily+",sans-serif;font-size:40px;color:"+secondary+";text-align:center;font-weight:500;line-height:1.42;max-width:100%;text-shadow:0 2px 5px rgba(0,0,0,0.65),0 1px 2px rgba(0,0,0,0.8);'>"+bodyText+"</div>":"")
         +"</div>"+website+(isCover?chevron:"")+counter+wm+fitScript+"</div>";
     }
     let body="";
@@ -2556,13 +2559,13 @@ Return ONLY valid JSON, nothing else:
     return (await tryAI()) || (await tryStock()); // mixed: AI first for concept accuracy, stock as a free fallback
   };
 
-  // One image per post, reused on every slide with a rotating zoom/pan
-  // "treatment" sequence (real transform:scale + offset — not just a
-  // subtle crop shift, so it actually reads as different framing). The
-  // follow-up slide is always appended here in code — never left for the
-  // model to remember to write — so every post has exactly one, always
-  // last, always in grayscale as a "that's a wrap" beat.
-  const generateSingleThemePost = async (pageId, pageConf, planItem, treatmentSeqIdx, usedImageUrls) => {
+  // One image per post, reused on every slide at the exact same crop/zoom
+  // so it reads as a single blended photo across the carousel rather than
+  // jumping between framings. The follow-up slide is always appended here
+  // in code — never left for the model to remember to write — so every
+  // post has exactly one, always last, always in grayscale as a "that's a
+  // wrap" beat.
+  const generateSingleThemePost = async (pageId, pageConf, planItem, usedImageUrls) => {
     const prompt = buildThemePostPrompt(pageConf, planItem);
     const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:1600, messages:[{ role:"user", content:prompt }] }, 3, true);
     const raw = d.content?.find(b=>b.type==="text")?.text || "";
@@ -2576,29 +2579,24 @@ Return ONLY valid JSON, nothing else:
     const used = usedImageUrls || new Set();
     const image = await sourceThemeHeroImage(parsed.visual_concept || planItem.topic, parsed.image_query, pageConf, tpVisualSource, used);
     if (image) used.add(image.url);
-    const treatment = IMAGE_TREATMENTS[treatmentSeqIdx % IMAGE_TREATMENTS.length];
 
     // Hard character caps as a safety net regardless of the template's own
     // runtime text-fit script — keeps text readable even if that script is
     // slow/unavailable, rather than relying on it entirely.
-    const contentSlides = rawSlides.map((s,i)=>{
-      const t = treatment[i % treatment.length];
-      return {
-        headline: (s.headline||"").replace(/<[^>]+>/g,"").trim().slice(0,48),
-        body: (s.body||"").replace(/<[^>]+>/g,"").trim().slice(0,170),
-        image: image?.url || null,
-        imagePos: { x: t.x, y: t.y },
-        imageZoom: t.zoom,
-        imageFilter: "none",
-      };
-    });
-    const ctaT = treatment[rawSlides.length % treatment.length];
+    const contentSlides = rawSlides.map((s)=>({
+      headline: (s.headline||"").replace(/<[^>]+>/g,"").trim().slice(0,48),
+      body: (s.body||"").replace(/<[^>]+>/g,"").trim().slice(0,170),
+      image: image?.url || null,
+      imagePos: { x: 0, y: 0 },
+      imageZoom: 100,
+      imageFilter: "none",
+    }));
     const ctaSlide = {
       headline: "FOLLOW FOR MORE",
       body: (parsed.cta_body||"").replace(/<[^>]+>/g,"").trim().slice(0,90) || `More ${pageConf.label.toLowerCase()} insights like this.`,
       image: image?.url || null,
-      imagePos: { x: ctaT.x, y: ctaT.y },
-      imageZoom: ctaT.zoom,
+      imagePos: { x: 0, y: 0 },
+      imageZoom: 100,
       imageFilter: "grayscale",
       isCta: true,
     };
@@ -2617,7 +2615,6 @@ Return ONLY valid JSON, nothing else:
       imageSource: image?.source || null,
       heroImageUrl: image?.url || null,
       photographer: image?.photographer || null,
-      treatmentSeqIdx,
       fontId: pageConf.fontId, accentColor: pageConf.accentColor,
       createdAt: Date.now(), postedAt: null,
       metrics: { views:"", likes:"", comments:"", shares:"", saves:"", follows:"" },
@@ -2654,7 +2651,7 @@ Return ONLY valid JSON, nothing else:
           if (closest.score >= 0.45) {
             item = { ...item, topic: item.topic + ` — this is too close to an already-used topic ("${closest.entry.topic}"). Pick a genuinely different underlying fact, not just different wording.` };
           }
-          const post = await generateSingleThemePost(pageId, pageConf, item, i % IMAGE_TREATMENTS.length, usedImageUrls);
+          const post = await generateSingleThemePost(pageId, pageConf, item, usedImageUrls);
           newPosts.push(post);
           runningMemory.push({ topic: post.topic, keywords: extractKeywords(post.topic+" "+(post.slides[0]?.headline||"")) });
           setTpProgress(prev=>prev.map((x,idx)=>idx===i?{...x,state:"done"}:x));
@@ -2694,6 +2691,47 @@ Return ONLY valid JSON, nothing else:
     persistTp({ ...tp, pages: { ...tp.pages, [pageId]: { ...tp.pages[pageId], ...patch } } });
   };
 
+  // Samples the theme page's uploaded logo/photo for its dominant colour and
+  // sets it as the accent — skips near-white/black/grey pixels (common logo
+  // backgrounds) so a busy or transparent-background logo doesn't just
+  // average out to grey.
+  const [tpDetectingColor, setTpDetectingColor] = useState(false);
+  const detectLogoAccent = async (pageId) => {
+    const url = tp.pages[pageId]?.profileUrl;
+    if (!url) return;
+    setTpDetectingColor(true);
+    try {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = url; });
+      const size = 48;
+      const canvas = document.createElement("canvas");
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, size, size);
+      const data = ctx.getImageData(0, 0, size, size).data;
+      let r=0,g=0,b=0,n=0, ar=0,ag=0,ab=0,an=0;
+      for (let i=0;i<data.length;i+=4) {
+        const alpha = data[i+3];
+        if (alpha < 200) continue;
+        const rr=data[i], gg=data[i+1], bb=data[i+2];
+        ar+=rr; ag+=gg; ab+=bb; an++;
+        const max=Math.max(rr,gg,bb), min=Math.min(rr,gg,bb);
+        const sat = max===0 ? 0 : (max-min)/max;
+        if (sat < 0.15) continue; // skip near-white/black/grey (typical logo background)
+        r+=rr; g+=gg; b+=bb; n++;
+      }
+      if (!n) { r=ar; g=ag; b=ab; n=an||1; } // fully monochrome logo — fall back to a plain average
+      r=Math.round(r/n); g=Math.round(g/n); b=Math.round(b/n);
+      const hex = "#"+[r,g,b].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,"0")).join("");
+      updateThemePageConfig(pageId, { accentColor: hex });
+    } catch (e) {
+      console.error("Logo colour detection failed:", e);
+      alert("Couldn't read colours from that logo — try a different image, or set the accent manually.");
+    }
+    setTpDetectingColor(false);
+  };
+
   const removeThemePosts = (ids) => {
     const idSet = new Set(ids);
     persistTp({ ...tp, posts: tp.posts.filter(p=>!idSet.has(p.id)) });
@@ -2715,7 +2753,7 @@ Return ONLY valid JSON, nothing else:
     try {
       const pageConf = tp.pages[post.page];
       const usedImageUrls = new Set(tp.posts.filter(p=>p.id!==id).map(p=>p.heroImageUrl).filter(Boolean));
-      const fresh = await generateSingleThemePost(post.page, pageConf, { pillar:post.pillar, format:post.format, topic: post.topic+" — write a fresh take, different wording and structure than before" }, post.treatmentSeqIdx||0, usedImageUrls);
+      const fresh = await generateSingleThemePost(post.page, pageConf, { pillar:post.pillar, format:post.format, topic: post.topic+" — write a fresh take, different wording and structure than before" }, usedImageUrls);
       updateThemePost(id, { ...fresh, id: post.id, status:"needs_review", createdAt: post.createdAt, postedAt: post.postedAt });
     } catch(e) { console.error(e); alert("Regenerate failed: "+e.message); }
     clearTpCardBusy(id);
@@ -2732,11 +2770,7 @@ Return ONLY valid JSON, nothing else:
       const variedConcept = (post.visualConcept||post.topic) + (post.imageSource==="stock" ? ", different composition" : ", alternate version");
       const image = await sourceThemeHeroImage(variedConcept, post.imageQuery, pageConf, tpVisualSource, usedImageUrls);
       if (!image) { alert("Couldn't find another image — try again."); clearTpCardBusy(id); return; }
-      const treatment = IMAGE_TREATMENTS[(post.treatmentSeqIdx||0) % IMAGE_TREATMENTS.length];
-      const newSlides = post.slides.map((s,i)=>{
-        const t = treatment[i % treatment.length];
-        return { ...s, image: image.url, imagePos: { x:t.x, y:t.y }, imageZoom: t.zoom };
-      });
+      const newSlides = post.slides.map(s=>({ ...s, image: image.url, imagePos: { x:0, y:0 }, imageZoom: 100 }));
       updateThemePost(id, { slides: newSlides, heroImageUrl: image.url, imageSource: image.source, photographer: image.photographer });
     } catch(e) { console.error(e); alert("Image swap failed: "+e.message); }
     clearTpCardBusy(id);
@@ -2838,7 +2872,7 @@ Return ONLY a valid JSON array of exactly ${count} objects: {"pillar":"<a pillar
           if (closest.score >= 0.45) {
             item = { ...item, topic: item.topic + ` — this is too close to an already-used topic ("${closest.entry.topic}"). Pick a genuinely different underlying fact, not just different wording.` };
           }
-          const generated = await generateSingleThemePost(pageId, pageConf, item, i % IMAGE_TREATMENTS.length, usedImageUrls);
+          const generated = await generateSingleThemePost(pageId, pageConf, item, usedImageUrls);
           newPosts.push(generated);
           runningMemory.push({ topic: generated.topic, keywords: extractKeywords(generated.topic+" "+(generated.slides[0]?.headline||"")) });
           setTpProgress(prev=>prev.map((x,idx)=>idx===i?{...x,state:"done"}:x));
@@ -4286,7 +4320,12 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         </div>
                         <div>
                           <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Accent</div>
-                          <button type="button" onClick={()=>setTpColorPickerOpen(true)} title={pageConf.accentColor} style={{width:44,height:38,border:`1.5px solid ${A.border}`,borderRadius:8,cursor:"pointer",padding:0,background:pageConf.accentColor}}/>
+                          <div style={{display:"flex",gap:6}}>
+                            <button type="button" onClick={()=>setTpColorPickerOpen(true)} title={pageConf.accentColor} style={{width:44,height:38,border:`1.5px solid ${A.border}`,borderRadius:8,cursor:"pointer",padding:0,background:pageConf.accentColor}}/>
+                            {pageConf.profileUrl && (
+                              <button type="button" onClick={()=>detectLogoAccent(tpActivePage)} disabled={tpDetectingColor} title="Match accent to logo" style={{width:38,height:38,border:`1.5px solid ${A.border}`,borderRadius:8,cursor:tpDetectingColor?"default":"pointer",background:"transparent",fontSize:16,opacity:tpDetectingColor?0.5:1}}>🎨</button>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div>
