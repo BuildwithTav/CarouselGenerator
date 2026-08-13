@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   THEME_FORMATS,
-  extractKeywords, mostSimilar, slugify,
+  extractKeywords, mostSimilar, slugify, truncateClean,
   loadThemeState, saveThemeState,
 } from "../lib/themePages";
 
@@ -2582,10 +2582,13 @@ Return ONLY valid JSON, nothing else:
 
     // Hard character caps as a safety net regardless of the template's own
     // runtime text-fit script — keeps text readable even if that script is
-    // slow/unavailable, rather than relying on it entirely.
+    // slow/unavailable, rather than relying on it entirely. Caps sit well
+    // above the prompt's own target length so they rarely trigger; when
+    // they do, truncateClean cuts at a sentence or word boundary instead of
+    // slicing mid-word.
     const contentSlides = rawSlides.map((s)=>({
-      headline: (s.headline||"").replace(/<[^>]+>/g,"").trim().slice(0,48),
-      body: (s.body||"").replace(/<[^>]+>/g,"").trim().slice(0,170),
+      headline: truncateClean((s.headline||"").replace(/<[^>]+>/g,"").trim(), 60),
+      body: truncateClean((s.body||"").replace(/<[^>]+>/g,"").trim(), 220),
       image: image?.url || null,
       imagePos: { x: 0, y: 0 },
       imageZoom: 100,
@@ -2593,7 +2596,7 @@ Return ONLY valid JSON, nothing else:
     }));
     const ctaSlide = {
       headline: "FOLLOW FOR MORE",
-      body: (parsed.cta_body||"").replace(/<[^>]+>/g,"").trim().slice(0,90) || `More ${pageConf.label.toLowerCase()} insights like this.`,
+      body: truncateClean((parsed.cta_body||"").replace(/<[^>]+>/g,"").trim(), 110) || `More ${pageConf.label.toLowerCase()} insights like this.`,
       image: image?.url || null,
       imagePos: { x: 0, y: 0 },
       imageZoom: 100,

@@ -81,6 +81,18 @@ export function isTooSimilar(topicText, memoryEntries, threshold = 0.45) {
   return mostSimilar(topicText, memoryEntries).score >= threshold;
 }
 
+// Truncates at a sentence or word boundary instead of slicing mid-word.
+// Used as a safety net for model output that runs past its target length —
+// the cap should sit well above that target so this rarely triggers.
+export function truncateClean(text, maxLen) {
+  if (!text || text.length <= maxLen) return text || "";
+  const cut = text.slice(0, maxLen);
+  const lastSentence = cut.match(/^[\s\S]*[.!?](?=\s|$)/);
+  if (lastSentence && lastSentence[0].length > maxLen * 0.5) return lastSentence[0].trim();
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > maxLen * 0.5 ? cut.slice(0, lastSpace) : cut).trim();
+}
+
 export function slugify(text) {
   return (text || "post")
     .toLowerCase()
