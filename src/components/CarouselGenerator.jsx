@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   THEME_FORMATS, IMAGE_TREATMENTS,
-  extractKeywords, isTooSimilar, slugify,
+  extractKeywords, mostSimilar, slugify,
   loadThemeState, saveThemeState,
 } from "../lib/themePages";
 
@@ -2448,7 +2448,7 @@ RULES:
 - No HTML, no markdown, plain text only.
 
 ALSO WRITE:
-- "visual_concept": ONE highly specific, concrete photographable scene tightly tied to THIS exact topic. The scene must show the actual behavior, tell, or mechanism the post is about — someone DOING the specific thing, not a mood shot that merely implies it. An empty hallway, an empty doorway, a person's back in a vague dark space, or any "atmospheric but nobody's actually doing anything" shot is a FAILURE — reject it and picture the real moment instead. Ask yourself: if someone saw only this image, would they guess the topic? If not, it's too abstract. GOOD examples: for decision-making — "a hand frozen mid-reach between two identical light switches"; for lying/dishonesty — "a person mid-sentence with a hand unconsciously touching their own neck, avoiding eye contact across a table"; for memory — "a hand holding an old photograph that's slightly out of focus, next to a sharp, in-focus modern phone screen". BAD examples: "a dark hallway", "someone standing still in a moody room", "a person looking pensive". Never the headline text itself, never an object with text/signs in it, never a real named/identifiable individual (public figure or otherwise) — describe an anonymous person, body part, object, or scene instead. Style direction to bake into the scene: ${pageConf.visualStyle}.
+- "visual_concept": ONE highly specific, concrete photographable scene tightly tied to THIS exact topic. The scene must show the actual behavior, tell, or mechanism the post is about — someone DOING the specific thing, not a mood shot that merely implies it. An empty hallway, an empty doorway, a person's back in a vague dark space, or any "atmospheric but nobody's actually doing anything" shot is a FAILURE — reject it and picture the real moment instead. Ask yourself: if someone saw only this image, would they guess the topic? If not, it's too abstract. GOOD examples: for decision-making — "a hand frozen mid-reach between two identical light switches"; for lying/dishonesty — "a person mid-sentence with a hand unconsciously touching their own neck, avoiding eye contact across a table"; for memory — "a hand holding an old photograph that's slightly out of focus, next to a sharp, in-focus modern phone screen". BAD examples: "a dark hallway", "someone standing still in a moody room", "a person looking pensive". Never the post's actual headline text, never a real named/identifiable individual (public figure or otherwise) — describe an anonymous person, body part, object, or scene instead. If (and only if) a short diagram-style label or callout would make an abstract mechanism concretely clear — the kind of thing an infographic would annotate — include it, but write the EXACT words in quotes directly in this description (2-3 words max per label, e.g. "...with a small callout reading \\"BODY STAYS STILL\\" pointing at his posture"). Do not leave label wording to be invented downstream — you have the context to write it correctly, an image renderer doesn't. Most scenes don't need a label at all; only add one when it genuinely clarifies something the photo alone can't show. Style direction to bake into the scene: ${pageConf.visualStyle}.
 - "image_query": a short, literal stock-photo search phrase for the SAME concept — 3-5 concrete nouns only (e.g. "hand light switch dark hallway"), no adjectives, no full sentences, no abstract words.
 - "caption": 2-4 sentences for the Instagram caption. Add context, a small example, or a follow-up thought — do NOT just repeat the slide text.
 - "hashtags": an array of 3-5 relevant hashtags, each starting with #.
@@ -2483,11 +2483,12 @@ Return ONLY valid JSON, nothing else:
     const tryAI = async () => {
       try {
         const variation = ["", ", wide shot", ", close up", ", from a different angle"][Math.floor(Math.random()*4)];
-        // Headline/subline are never in the image — the template renders those.
-        // Small diagram-style callouts (short labels, icons, pointer lines) are
-        // allowed when they genuinely clarify the concept, since gpt-image-1 is
-        // strong at composing those cleanly into a photo.
-        const prompt = `${visualConcept}${variation}. ${pageConf.visualStyle}. Vertical portrait image, high quality. Do not include the post's headline, title, or any full sentence in the image. You may add small diagram-style callouts — short 2-3 word labels, simple icons, or thin annotation lines pointing at a detail — directly in the image if they genuinely help explain the concept, styled to blend with the photo rather than looking like a meme caption. Keep any in-image text minimal, secondary to the photo, and spelled correctly.`;
+        // visual_concept already specifies exact quoted wording for any label
+        // it needs (Claude has the topic context to write that correctly) — the
+        // image model's job is to render the scene faithfully, not invent
+        // wording of its own. Headline/subline are never in the image; the
+        // template renders those separately on top of this photo.
+        const prompt = `${visualConcept}${variation}. ${pageConf.visualStyle}. Vertical portrait image, high quality. Render any quoted label text in the description above exactly as written, spelled correctly, styled to blend with the photo rather than looking like a meme caption. Do not add any other text, label, or caption beyond what's explicitly quoted above — and never the post's headline or a full sentence.`;
         const r = await fetch("/api/generate-bg", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ prompt, model:"ideogram-v3" }) });
         const d = await r.json();
         return d.imageUrl ? { url: d.imageUrl, source:"ai", photographer:null } : null;
@@ -2580,8 +2581,9 @@ Return ONLY valid JSON, nothing else:
         setTpProgress(prev=>prev.map((x,idx)=>idx===i?{...x,state:"active"}:x));
         try {
           let item = plan[i];
-          if (isTooSimilar(item.topic, runningMemory)) {
-            item = { ...item, topic: item.topic + " — find a distinctly different angle or example than anything covered before" };
+          const closest = mostSimilar(item.topic, runningMemory);
+          if (closest.score >= 0.45) {
+            item = { ...item, topic: item.topic + ` — this is too close to an already-used topic ("${closest.entry.topic}"). Pick a genuinely different underlying fact, not just different wording.` };
           }
           const post = await generateSingleThemePost(pageId, pageConf, item, i % IMAGE_TREATMENTS.length, usedImageUrls);
           newPosts.push(post);
@@ -2753,7 +2755,12 @@ Return ONLY a valid JSON array of exactly ${count} objects: {"pillar":"<a pillar
       for (let i=0;i<plan.length;i++) {
         setTpProgress(prev=>prev.map((x,idx)=>idx===i?{...x,state:"active"}:x));
         try {
-          const generated = await generateSingleThemePost(pageId, pageConf, plan[i], i % IMAGE_TREATMENTS.length, usedImageUrls);
+          let item = plan[i];
+          const closest = mostSimilar(item.topic, runningMemory);
+          if (closest.score >= 0.45) {
+            item = { ...item, topic: item.topic + ` — this is too close to an already-used topic ("${closest.entry.topic}"). Pick a genuinely different underlying fact, not just different wording.` };
+          }
+          const generated = await generateSingleThemePost(pageId, pageConf, item, i % IMAGE_TREATMENTS.length, usedImageUrls);
           newPosts.push(generated);
           runningMemory.push({ topic: generated.topic, keywords: extractKeywords(generated.topic+" "+(generated.slides[0]?.headline||"")) });
           setTpProgress(prev=>prev.map((x,idx)=>idx===i?{...x,state:"done"}:x));
