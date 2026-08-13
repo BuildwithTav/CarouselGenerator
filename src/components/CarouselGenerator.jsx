@@ -1882,6 +1882,7 @@ export default function App() {
   };
 
   const profileRef = useRef(null);
+  const tpProfileRef = useRef(null);
   const mainTmplCanvasRef = useRef(null);
   const coverDragRef = useRef(null);
   const templateDragRef = useRef(null);
@@ -2423,21 +2424,24 @@ Return ONLY valid JSON, nothing else.` }
   // for the pillar/format/image-treatment constants and dedupe helpers.
   const themePostBuilder = (slide, idx, total, _c_opts) => buildTmplHTML(slide, idx, total, "theme-post", _c_opts);
 
-  const themeTmplOpts = (post) => ({
-    effect: "none",
-    font: post.fontId || fontId,
-    fontSize: 82,
-    primary: "#FFFFFF",
-    secondary: post.accentColor || accentColor,
-    accentLine: post.accentColor || accentColor,
-    bg: "dark",
-    fontStyle: "Inter",
-    profUrl: profileUrl, nm: name, hdl: handle, showTick: blueTick,
-    isFree: currentUser?.plan==="free",
-    userWebsite: website,
-    showWebsite,
-    showCounter: showNums,
-  });
+  const themeTmplOpts = (post) => {
+    const tpPageConf = tp.pages[post.page] || {};
+    return {
+      effect: "none",
+      font: post.fontId || fontId,
+      fontSize: 82,
+      primary: "#FFFFFF",
+      secondary: post.accentColor || accentColor,
+      accentLine: post.accentColor || accentColor,
+      bg: "dark",
+      fontStyle: "Inter",
+      profUrl: tpPageConf.profileUrl || profileUrl, nm: tpPageConf.name || name, hdl: tpPageConf.handle || handle, showTick: tpPageConf.blueTick ?? blueTick,
+      isFree: currentUser?.plan==="free",
+      userWebsite: tpPageConf.website || website,
+      showWebsite: tpPageConf.showWebsite ?? showWebsite,
+      showCounter: showNums,
+    };
+  };
 
   const buildThemeBatchPlanPrompt = (pageConf, quantity, recentTopics) => {
     const maxPerPillar = Math.max(1, Math.ceil(quantity / 4));
@@ -4227,7 +4231,53 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
                   {tpAdvancedOpen && (
                     <div style={{display:"flex",flexDirection:"column",gap:14,marginTop:16}}>
+                      <div style={{fontSize:13,fontWeight:700,paddingTop:2}}>{pageConf.label} branding — separate from your main Brand tab</div>
+                      <div style={{display:"flex",alignItems:"center",gap:14}}>
+                        <div onClick={()=>tpProfileRef.current?.click()} style={{width:56,height:56,borderRadius:"50%",border:`2px solid ${A.border}`,overflow:"hidden",background:A.bg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                          {pageConf.profileUrl?<img src={pageConf.profileUrl} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{color:A.muted,fontSize:18}}>+</span>}
+                        </div>
+                        <div onClick={()=>tpProfileRef.current?.click()} style={{flex:1,background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:12,cursor:"pointer",textAlign:"center"}}>
+                          <span style={{color:A.muted,fontSize:13}}>{pageConf.profileUrl?"Click to change":"Upload square logo/photo"}</span>
+                        </div>
+                        <input ref={tpProfileRef} type="file" accept="image/*" onChange={async e=>{
+                          const file = e.target.files[0]; if(!file) return;
+                          const reader = new FileReader();
+                          reader.onload = async ev => {
+                            const base64 = ev.target.result;
+                            updateThemePageConfig(tpActivePage,{profileUrl:base64});
+                            try {
+                              const res = await fetch('/api/upload-photo', {
+                                method:'POST',
+                                headers:{'Content-Type':'application/json'},
+                                body: JSON.stringify({ imageData: base64, filename: `theme-${tpActivePage}-${Date.now()}.jpg` })
+                              });
+                              const _c_data = await res.json();
+                              if (_c_data.url) updateThemePageConfig(tpActivePage,{profileUrl:_c_data.url});
+                            } catch(err) { console.error('Upload failed, using base64:', err); }
+                          };
+                          reader.readAsDataURL(file);
+                        }} style={{display:"none"}}/>
+                      </div>
                       <div style={{display:"flex",gap:14}}>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Display name</div>
+                          <input value={pageConf.name||""} onChange={e=>updateThemePageConfig(tpActivePage,{name:e.target.value})} placeholder={pageConf.label+" page"} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:13}}/>
+                        </div>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Handle</div>
+                          <input value={pageConf.handle||""} onChange={e=>updateThemePageConfig(tpActivePage,{handle:e.target.value})} placeholder="@yourhandle" style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:13}}/>
+                        </div>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div><div style={{fontWeight:600,fontSize:13}}>Blue tick</div><div style={{color:A.muted,fontSize:12}}>Verified badge on slides</div></div>
+                        {tog(pageConf.blueTick, v=>updateThemePageConfig(tpActivePage,{blueTick:v}))}
+                      </div>
+                      <div style={{borderTop:`1px solid ${A.border}`,paddingTop:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div><div style={{fontWeight:600,fontSize:13}}>Website on slides</div><div style={{color:A.muted,fontSize:12}}>Show URL at bottom</div></div>
+                        {tog(pageConf.showWebsite, v=>updateThemePageConfig(tpActivePage,{showWebsite:v}))}
+                      </div>
+                      {pageConf.showWebsite && <input value={pageConf.website||""} onChange={e=>updateThemePageConfig(tpActivePage,{website:e.target.value})} placeholder="www.yoursite.co" style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:13}}/>}
+                      <div style={{borderTop:`1px solid ${A.border}`,paddingTop:14,display:"flex",gap:14}}>
                         <div style={{flex:1}}>
                           <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Font</div>
                           <select value={pageConf.fontId} onChange={e=>updateThemePageConfig(tpActivePage,{fontId:e.target.value})} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:13}}>

@@ -23,6 +23,12 @@ export const THEME_PAGE_DEFAULTS = {
     contentRules: "Avoid medical diagnosis. Avoid fake neuroscience. Avoid unsupported 'dark psychology' claims. Never present speculation as scientific fact — frame uncertain claims as 'research suggests', 'one theory is', or 'a common pattern is'.",
     fontId: "poppins",
     accentColor: "#60A5FA",
+    profileUrl: "",
+    name: "",
+    handle: "",
+    blueTick: false,
+    website: "",
+    showWebsite: false,
   },
   relationships: {
     id: "relationships",
@@ -32,6 +38,12 @@ export const THEME_PAGE_DEFAULTS = {
     contentRules: "Avoid absolute interpretations of someone else's behaviour. Never state 'if they do X they're cheating' — prefer 'this can sometimes indicate...', 'one possible reason...', 'it may be a sign...'.",
     fontId: "raleway",
     accentColor: "#D6483F",
+    profileUrl: "",
+    name: "",
+    handle: "",
+    blueTick: false,
+    website: "",
+    showWebsite: false,
   },
 };
 
@@ -110,8 +122,13 @@ export function loadThemeState() {
     const raw = JSON.parse(localStorage.getItem(TP_KEY) || "null");
     if (!raw) return defaultThemeState();
     const base = defaultThemeState();
+    const rawPages = raw.pages || {};
+    const pages = {};
+    for (const id of Object.keys(base.pages)) {
+      pages[id] = { ...base.pages[id], ...(rawPages[id] || {}) };
+    }
     return {
-      pages: { ...base.pages, ...(raw.pages || {}) },
+      pages,
       posts: Array.isArray(raw.posts) ? raw.posts : [],
       memory: { ...base.memory, ...(raw.memory || {}) },
     };
