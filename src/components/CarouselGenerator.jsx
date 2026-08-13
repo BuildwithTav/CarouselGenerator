@@ -2470,11 +2470,11 @@ CONTENT RULES: ${pageConf.contentRules}
 
 QUALITY BAR: this must NOT read as generic advice ("communicate more", "set boundaries", "trust yourself"). Ground it in a specific, real mechanism — attachment theory, evolutionary psychology, established research, a named cognitive/social effect, a specific behavioural pattern. A knowledgeable reader who already follows relationship/psychology content should still learn something specific from this, not recognise it as something they've read a hundred times.
 
-Decide the right number of slides yourself — normally 3 to 5, whatever the idea needs. Do not pad. Do NOT write a final "follow" slide — that's added automatically afterward, your job is only the hook and the substance.
+Write exactly 5 content slides (the hook plus 4 more) — that's the target length, not a ceiling to pad toward or a floor to cut short. Split the idea into 5 real, distinct beats rather than one beat stretched thin or five beats crammed into three. Do NOT write a final "follow" slide — that's added automatically afterward, your job is only the hook and the substance.
 
 Every slide sits over a photo. Both fields matter:
 - "headline": the punchy hook/claim for that slide. Max 7 words AND max 48 characters — big bold text, zero room for a long sentence.
-- "body": the real explanation — this is where the actual value lives, so use the room: 1-3 full sentences, up to roughly 200 characters. Specific and complete on its own, not a vague teaser. Never leave it thin just to keep things short — thin is the thing we're fixing.
+- "body": the real explanation — this is where the actual value lives, so use the room, but keep it tight: 1-2 full sentences, up to roughly 150 characters. Specific and complete on its own, not a vague teaser — but every one of the 5 slides only needs to carry ONE beat, not the whole idea, so don't overload any single slide.
 
 SLIDE 1 — HOOK: the headline must make the SPECIFIC topic instantly clear on its own — a stranger scrolling past should immediately know what this carousel is about, not just that something intriguing exists. Specific beats clever: name the actual thing (the myth, the effect, the behaviour) rather than teasing it vaguely. Body on slide 1 can be a short 1-sentence teaser rather than the full payoff.
 MIDDLE SLIDES: headline states the surprising fact in short form, body delivers the actual "I never knew that" payoff in full — the mechanism, the reasoning, the specific research or pattern behind it. Together they must make complete sense with no other context, and genuinely teach the reader something.
@@ -2565,7 +2565,7 @@ Return ONLY valid JSON, nothing else:
       const t = treatment[i % treatment.length];
       return {
         headline: (s.headline||"").replace(/<[^>]+>/g,"").trim().slice(0,48),
-        body: (s.body||"").replace(/<[^>]+>/g,"").trim().slice(0,220),
+        body: (s.body||"").replace(/<[^>]+>/g,"").trim().slice(0,170),
         image: image?.url || null,
         imagePos: { x: t.x, y: t.y },
         imageZoom: t.zoom,

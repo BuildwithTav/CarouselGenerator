@@ -30,8 +30,8 @@ export const THEME_PAGE_DEFAULTS = {
     pillars: ["Attraction", "Dating", "Communication", "Attachment", "Conflict", "Emotional availability", "Trust", "Compatibility", "Boundaries", "Long-term relationships", "Breakups", "Green flags", "Red flags", "Relationship habits", "Texting and communication", "Emotional connection"],
     visualStyle: "cinematic lifestyle photography, couples or people in emotional situations, realistic, intimate, modern, natural light, editorial, subtle mood, not cheesy stock photography, no text or writing anywhere in the image, no obvious AI look",
     contentRules: "Avoid absolute interpretations of someone else's behaviour. Never state 'if they do X they're cheating' — prefer 'this can sometimes indicate...', 'one possible reason...', 'it may be a sign...'.",
-    fontId: "playfair",
-    accentColor: "#C4756A",
+    fontId: "raleway",
+    accentColor: "#D6483F",
   },
 };
 
