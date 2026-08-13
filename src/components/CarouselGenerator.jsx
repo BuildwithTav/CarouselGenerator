@@ -1232,7 +1232,7 @@ export default function App() {
     const website=showWebsite&&websiteStr?"<div style='position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:10;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:22px;color:rgba(255,255,255,0.45);'>"+websiteStr+"</div>":"";
     const wm=isFree?"<div style='position:absolute;top:32px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-family:-apple-system,Helvetica Neue,Arial,sans-serif;font-size:32px;font-weight:800;color:#ffffff;text-shadow:0 2px 8px rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.8);letter-spacing:1px;'>studio.buildwithtav.co</div>":"";
     const counter=showCounter?"<div style='position:absolute;top:24px;right:40px;z-index:10;background:rgba(0,0,0,0.55);border-radius:6px;padding:6px 14px;font-size:22px;font-weight:700;color:#fff;'>"+(idx+1)+"/"+total+"</div>":"";
-    function imgTag(s){if(!s||!s.image)return"<div style='position:absolute;inset:0;background:#1a1a1a;z-index:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;'><div style='background:rgba(187,153,0,0.15);border:2px dashed rgba(187,153,0,0.6);border-radius:16px;padding:40px 60px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:42px;margin-bottom:16px;'>📷</div><div style='font-family:-apple-system,sans-serif;font-size:34px;font-weight:700;color:#BB9900;'>Upload your image</div><div style='font-family:-apple-system,sans-serif;font-size:26px;color:rgba(255,255,255,0.5);margin-top:8px;'>in the Photo section</div></div></div>";const px=(s.imagePos&&s.imagePos.x!=null)?s.imagePos.x:0,py=(s.imagePos&&s.imagePos.y!=null)?s.imagePos.y:0;const isPlaceholder=s.image&&!s.image.startsWith("_c_data:")&&!s.image.startsWith("https://")&&!s.image.startsWith("http://");const overlay=isPlaceholder?"<div style='position:absolute;bottom:80px;left:50%;transform:translateX(-50%);z-index:3;pointer-events:none;white-space:nowrap;'><div style='background:rgba(0,0,0,0.75);border:2px solid rgba(187,153,0,0.8);border-radius:12px;padding:12px 28px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:22px;font-weight:700;color:#BB9900;'>📷 Replace with your image</div></div></div>":"";const imgSrc=s.image.startsWith("_c_data:")?s.image.replace(/^_c_data:/,"data:"):s.image;const zoom=s.imageZoom||100;const opa=s.imageOpacity!=null?s.imageOpacity/100:1;const zm=(s.imageZoom||100)/100;return"<div style='position:absolute;inset:0;z-index:0;overflow:hidden;'><img src=\""+imgSrc+"\" style=\"position:absolute;top:50%;left:50%;min-width:100%;min-height:100%;width:auto;height:auto;max-width:none;opacity:"+opa+";transform-origin:center center;transform:translate(calc(-50% + "+px+"px),calc(-50% + "+py+"px)) scale("+zm+");\" />"+overlay+"</div>";}
+    function imgTag(s){if(!s||!s.image)return"<div style='position:absolute;inset:0;background:#1a1a1a;z-index:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;'><div style='background:rgba(187,153,0,0.15);border:2px dashed rgba(187,153,0,0.6);border-radius:16px;padding:40px 60px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:42px;margin-bottom:16px;'>📷</div><div style='font-family:-apple-system,sans-serif;font-size:34px;font-weight:700;color:#BB9900;'>Upload your image</div><div style='font-family:-apple-system,sans-serif;font-size:26px;color:rgba(255,255,255,0.5);margin-top:8px;'>in the Photo section</div></div></div>";const px=(s.imagePos&&s.imagePos.x!=null)?s.imagePos.x:0,py=(s.imagePos&&s.imagePos.y!=null)?s.imagePos.y:0;const isPlaceholder=s.image&&!s.image.startsWith("_c_data:")&&!s.image.startsWith("https://")&&!s.image.startsWith("http://");const overlay=isPlaceholder?"<div style='position:absolute;bottom:80px;left:50%;transform:translateX(-50%);z-index:3;pointer-events:none;white-space:nowrap;'><div style='background:rgba(0,0,0,0.75);border:2px solid rgba(187,153,0,0.8);border-radius:12px;padding:12px 28px;text-align:center;'><div style='font-family:-apple-system,sans-serif;font-size:22px;font-weight:700;color:#BB9900;'>📷 Replace with your image</div></div></div>":"";const imgSrc=s.image.startsWith("_c_data:")?s.image.replace(/^_c_data:/,"data:"):s.image;const zoom=s.imageZoom||100;const opa=s.imageOpacity!=null?s.imageOpacity/100:1;const zm=(s.imageZoom||100)/100;const imgFilter=s.imageFilter==="grayscale"?"grayscale(1) contrast(1.05);":"";return"<div style='position:absolute;inset:0;z-index:0;overflow:hidden;'><img src=\""+imgSrc+"\" style=\"position:absolute;top:50%;left:50%;min-width:100%;min-height:100%;width:auto;height:auto;max-width:none;opacity:"+opa+";filter:"+imgFilter+";transform-origin:center center;transform:translate(calc(-50% + "+px+"px),calc(-50% + "+py+"px)) scale("+zm+");\" />"+overlay+"</div>";}
     function darkFadeCover(s){
       const headlineText=esc((s.headline||"").toUpperCase());
       const sublineText=s.subline?esc(s.subline):"";
@@ -2430,33 +2430,39 @@ CONTENT RULES: ${pageConf.contentRules}
 
 Decide the right number of slides yourself — normally 3 to 5, whatever the idea needs. Do not pad.
 
-Every slide is photo-first with very little text on top of the image, so keep every line SHORT:
-- "headline": the main line on that slide. Max 9 words. Punchy, plain language, no jargon.
-- "subline": an optional short second line, max 10 words. Leave it "" on slides that don't need one — never pad it out just to fill the field.
+Every slide sits over a photo, in a fixed-size text box, so both lines are STRICT on length:
+- "headline": the main line. Max 6 words AND max 42 characters — it must fit on screen at large size with zero margin for error. Punchy, plain language, no jargon.
+- "subline": a second line that must always carry real meaning — never decorative, never left thin. Max 14 words AND max 95 characters. This is where the actual explanation/payoff of the slide lives — a headline alone should never leave the reader confused about what point is being made.
 
-SLIDE 1 — HOOK ONLY: pure scroll-stopping curiosity. State the surprising claim itself or tease it hard, nothing more. Leave subline "" or a 2-4 word teaser at most. Do NOT explain or resolve anything on slide 1.
-MIDDLE SLIDES: deliver the actual "I never knew that" payoff — the surprising fact, mechanism, or reasoning, one idea per slide.
-FINAL SLIDE: a simple, standard follow line — NOT a save/share/comment ask, just a plain invitation to follow, e.g. "FOLLOW FOR MORE" plus a short subline naming what they'll get. Keep this consistent and low-key across every post — it's a formality, not a sales pitch.
+SLIDE 1 — HOOK: the headline is the scroll-stopping claim itself. The subline may tease rather than fully resolve it, but it must still read as a complete thought, not a fragment — do not leave slide 1's subline empty.
+MIDDLE SLIDES: headline states the surprising fact in short form, subline delivers the actual "I never knew that" payoff — the mechanism, reasoning, or specific detail. Together they must make complete sense with no other context.
+FINAL SLIDE: headline "FOLLOW FOR MORE" (or a very close variant), subline a short, plain line naming what they'll get. NOT a save/share/comment ask — just a low-key, consistent formality, not a sales pitch.
 
 RULES:
 - No invented statistics or fabricated data. If uncertain, frame as a principle or common pattern, never as a stated fact — but keep it feeling surprising and specific, not vague or wishy-washy.
 - No HTML, no markdown, plain text only.
 
 ALSO WRITE:
-- "visual_concept": ONE photographable scene that captures the emotional idea behind this post — translate the idea into a real, photographable moment. Never the headline text itself, never an object with text/signs in it. GOOD example: "two friends in relaxed conversation on a sofa, natural light". BAD example: "psychological safety signs". Style direction to bake into the scene: ${pageConf.visualStyle}.
+- "visual_concept": ONE highly specific, concrete photographable scene tightly tied to THIS exact topic — not a generic mood shot. Picture the single most visually striking real-world moment that embodies the idea, described with a specific action, object, or framing (e.g. for a decision-making post: "a hand frozen mid-reach between two identical light switches" — not just "a thoughtful person"). Never the headline text itself, never an object with text/signs in it, never a real named/identifiable individual (public figure or otherwise) — describe an anonymous person, body part, object, or scene instead. Style direction to bake into the scene: ${pageConf.visualStyle}.
+- "image_query": a short, literal stock-photo search phrase for the SAME concept — 3-5 concrete nouns only (e.g. "hand light switch dark hallway"), no adjectives, no full sentences, no abstract words.
 - "caption": 2-4 sentences for the Instagram caption. Add context, a small example, or a follow-up thought — do NOT just repeat the slide text.
 - "hashtags": an array of 3-5 relevant hashtags, each starting with #.
 
 Return ONLY valid JSON, nothing else:
-{"slides":[{"headline":"text","subline":"text"}],"visual_concept":"...","caption":"...","hashtags":["#..."]}`;
+{"slides":[{"headline":"text","subline":"text"}],"visual_concept":"...","image_query":"...","caption":"...","hashtags":["#..."]}`;
   };
 
   // Pexels/AI image sourcing with dedupe against usedUrls (a Set threaded
   // through a whole batch run) so a batch of 10 doesn't keep surfacing the
-  // same top result for similar-sounding visual concepts.
-  const sourceThemeHeroImage = async (visualConcept, pageConf, source, usedUrls) => {
+  // same top result for similar-sounding visual concepts. AI goes first by
+  // default — a Pexels keyword search is hit-or-miss for abstract
+  // psychology/relationship concepts (it can only match what's already in
+  // the stock library), while an AI prompt can be written to match the
+  // exact idea. "Stock" mode skips AI entirely to stay free; "Mixed" tries
+  // AI then falls back to stock if generation fails.
+  const sourceThemeHeroImage = async (visualConcept, imageQuery, pageConf, source, usedUrls) => {
     const used = usedUrls || new Set();
-    const query = (visualConcept||"").slice(0,90);
+    const query = (imageQuery || visualConcept || "").slice(0,80);
     const tryStock = async () => {
       try {
         const r = await fetch(`/api/pexels?query=${encodeURIComponent(query)}&per_page=15`);
@@ -2478,8 +2484,9 @@ Return ONLY valid JSON, nothing else:
         return d.imageUrl ? { url: d.imageUrl, source:"ai", photographer:null } : null;
       } catch { return null; }
     };
+    if (source === "stock") return (await tryStock()) || (await tryAI());
     if (source === "ai") return await tryAI();
-    return (await tryStock()) || (await tryAI());
+    return (await tryAI()) || (await tryStock()); // mixed: AI first for concept accuracy, stock as a free fallback
   };
 
   // One image per post, reused on every slide with a rotating zoom/pan
@@ -2499,15 +2506,18 @@ Return ONLY valid JSON, nothing else:
     if (!rawSlides.length) throw new Error("No slides returned");
 
     const used = usedImageUrls || new Set();
-    const image = await sourceThemeHeroImage(parsed.visual_concept || planItem.topic, pageConf, tpVisualSource, used);
+    const image = await sourceThemeHeroImage(parsed.visual_concept || planItem.topic, parsed.image_query, pageConf, tpVisualSource, used);
     if (image) used.add(image.url);
     const treatment = IMAGE_TREATMENTS[treatmentSeqIdx % IMAGE_TREATMENTS.length];
 
+    // Hard character caps as a safety net regardless of the template's own
+    // runtime text-fit script — keeps headlines readable even if that
+    // script is slow/unavailable, rather than relying on it entirely.
     const slides = rawSlides.map((s,i)=>{
       const t = treatment[i % treatment.length];
       return {
-        headline: (s.headline||"").replace(/<[^>]+>/g,"").trim().slice(0,90),
-        subline: (s.subline||"").replace(/<[^>]+>/g,"").trim().slice(0,70),
+        headline: (s.headline||"").replace(/<[^>]+>/g,"").trim().slice(0,48),
+        subline: (s.subline||"").replace(/<[^>]+>/g,"").trim().slice(0,105),
         image: image?.url || null,
         imagePos: { x: t.x, y: t.y },
         imageZoom: t.zoom,
@@ -2524,6 +2534,7 @@ Return ONLY valid JSON, nothing else:
       caption: (parsed.caption||"").trim(),
       hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags : [],
       visualConcept: parsed.visual_concept || "",
+      imageQuery: parsed.image_query || "",
       imageSource: image?.source || null,
       heroImageUrl: image?.url || null,
       photographer: image?.photographer || null,
@@ -2639,7 +2650,7 @@ Return ONLY valid JSON, nothing else:
       const usedImageUrls = new Set(tp.posts.filter(p=>p.id!==id).map(p=>p.heroImageUrl).filter(Boolean));
       if (post.heroImageUrl) usedImageUrls.add(post.heroImageUrl);
       const variedConcept = (post.visualConcept||post.topic) + (post.imageSource==="stock" ? ", different composition" : ", alternate version");
-      const image = await sourceThemeHeroImage(variedConcept, pageConf, tpVisualSource, usedImageUrls);
+      const image = await sourceThemeHeroImage(variedConcept, post.imageQuery, pageConf, tpVisualSource, usedImageUrls);
       if (!image) { alert("Couldn't find another image — try again."); clearTpCardBusy(id); return; }
       const treatment = IMAGE_TREATMENTS[(post.treatmentSeqIdx||0) % IMAGE_TREATMENTS.length];
       const newSlides = post.slides.map((s,i)=>{
