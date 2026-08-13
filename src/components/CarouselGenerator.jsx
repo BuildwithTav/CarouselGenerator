@@ -1,5 +1,10 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  THEME_FORMATS, THEME_PAGE_DEFAULTS, CROP_SEQUENCES,
+  extractKeywords, isTooSimilar, mostSimilar, slugify,
+  defaultThemeState, loadThemeState, saveThemeState,
+} from "../lib/themePages";
 
 const GOLD = "#C9A84C";
 const STORAGE_KEY = "bwt_v11";
@@ -1797,6 +1802,21 @@ export default function App() {
   const [quoteTextCustomSlots, setQuoteTextCustomSlots] = useState(["","",""]);
   const [expandedQuote, setExpandedQuote] = useState(null);
   const [quoteHistory, setQuoteHistory] = useState(()=>{try{return JSON.parse(localStorage.getItem("bwt_quote_history")||"[]");}catch{return [];}});
+
+  // ─── THEME PAGES (production mode) ──────────────────────
+  const [tp, setTp] = useState(()=>loadThemeState());
+  const [tpView, setTpView] = useState("setup"); // setup | generating | review
+  const [tpActivePage, setTpActivePage] = useState("psychology");
+  const [tpQuantity, setTpQuantity] = useState(10);
+  const [tpVisualSource, setTpVisualSource] = useState("mixed"); // ai | stock | mixed
+  const [tpProgress, setTpProgress] = useState([]);
+  const [tpSelected, setTpSelected] = useState(()=>new Set());
+  const [tpAdvancedOpen, setTpAdvancedOpen] = useState(false);
+  const [tpBusy, setTpBusy] = useState(false);
+  const [tpMetricsOpenId, setTpMetricsOpenId] = useState(null);
+  const [tpExpandedId, setTpExpandedId] = useState(null);
+  const persistTp = (next) => { setTp(next); saveThemeState(next); };
+
   const [slideOverlays, setSlideOverlays] = useState({});
   const [coverImgPos, setCoverImgPos] = useState({x:50,y:50});
   const [templateImgPos, setTemplateImgPos] = useState({x:50,y:50});
@@ -2360,6 +2380,340 @@ Return ONLY valid JSON, nothing else.` }
     return new Blob([byteArr],{type:"image/png"});
   };
 
+  // ─── THEME PAGES: production-mode content + image pipeline ──────────
+  // Reuses the same brand identity (profileUrl/name/handle/font/etc.) as
+  // the rest of the app — only the accent colour, background, and the
+  // per-post hero image/crop vary. See src/lib/themePages.js for the
+  // pillar/format/crop-sequence constants and dedupe helpers.
+
+  const themeCropPos = (post, slideIdx) => {
+    const seq = CROP_SEQUENCES[(post.cropSeqIdx||0) % CROP_SEQUENCES.length];
+    return seq[slideIdx % seq.length];
+  };
+
+  const themeSlideOpts = (post, slideIdx) => {
+    const pos = themeCropPos(post, slideIdx);
+    return {
+      fontId: post.fontId || fontId, headlineStyle, bgMode:"colour", templateBgUrl:null,
+      overlayDark, coverImageUrl: post.heroImageUrl, coverPosition,
+      badgeArea, photoOpacity,
+      profileUrl, name, handle, blueTick,
+      websiteUrl: currentUser?.plan==="free" ? "studio.buildwithtav.co" : (showWebsite?website:""),
+      showNums, ratio:"portrait",
+      accentColor: post.accentColor || accentColor,
+      bgColour: post.bgColour || "#12141c",
+      customColourDark:true, slideTextDark:true,
+      coverImgPos: pos, templateImgPos: pos, gradientMode,
+    };
+  };
+
+  const buildThemeBatchPlanPrompt = (pageConf, quantity, recentTopics) => `Plan ${quantity} Instagram carousel posts for a "${pageConf.label}" theme page.
+
+PILLARS to draw from (mix across them — no single pillar should cover more than roughly a quarter of the batch):
+${pageConf.pillars.join(", ")}
+
+FORMATS to rotate between (do not use the same format more than 2 times in a row):
+${THEME_FORMATS.map(f=>`${f.id} — ${f.label}: ${f.hint}`).join("\n")}
+
+AVOID repeating these topics/angles already covered recently — do not generate the same fact, effect, or advice again even reworded:
+${recentTopics.length ? recentTopics.join(" | ") : "(none yet — this is the first batch)"}
+
+Return ONLY a valid JSON array of exactly ${quantity} objects, each: {"pillar":"<one pillar from the list above>","format":"<one format id from the list above>","topic":"<a specific, concrete angle for this post — not just the pillar name, phrased as a real content idea>"}`;
+
+  const buildThemePostPrompt = (pageConf, planItem) => {
+    const format = THEME_FORMATS.find(f=>f.id===planItem.format) || THEME_FORMATS[0];
+    return `You are creating an Instagram carousel for a "${pageConf.label}" theme page. You are the copywriter, subject-matter writer, and creative director in one.
+
+PILLAR: ${planItem.pillar}
+FORMAT: ${format.label} — ${format.hint}
+TOPIC / ANGLE: "${planItem.topic}"
+
+CONTENT RULES: ${pageConf.contentRules}
+
+Decide the right number of slides yourself — normally 3 to 5. Do not pad with a slide that doesn't earn its place.
+
+LAYOUT SYSTEM:
+- "statement" — ALWAYS slide 1. Big bold hook headline, short body optional. Make it stop the scroll.
+- "standard" — headline + body. Use for ALL middle slides. Body is where the value lives.
+- "hero" — headline + body + CTA. ALWAYS the final slide. Add "cta_items":["one CTA only"], vary the CTA wording every time (${pageConf.ctaStyle}). Never invent a product, download, or link.
+
+RULES:
+- No two consecutive slides use the same layout.
+- Pick ONE accent word per headline — the single most emotionally charged or surprising word, exact match to how it appears in the headline. Put it in "accent_word".
+- Tags: editorially specific to what THAT slide is actually saying, like a magazine subhead. Unique per slide. Never generic ("THE HOOK", "SLIDE 1").
+- Headlines: max 10 words, immediately clear on first read, no ambiguity.
+- Body (standard/hero slides): 1-2 short sentences, plain everyday language, one specific point. Someone reading on a phone should understand it instantly.
+- NO invented statistics or fabricated data. If uncertain, frame as a principle or common pattern, never as a stated fact.
+- No HTML, no markdown, plain text only.
+
+ALSO WRITE:
+- "visual_concept": ONE photographable scene that captures the emotional idea behind this post — translate the idea into a real, photographable moment. Never the headline text itself, never an object with text/signs in it. GOOD example: "two friends in relaxed conversation on a sofa, natural light". BAD example: "psychological safety signs". Style direction to bake into the scene: ${pageConf.visualStyle}.
+- "caption": 2-4 sentences for the Instagram caption. Add context, a small example, or a follow-up thought — do NOT just repeat the slide text.
+- "hashtags": an array of 3-5 relevant hashtags, each starting with #.
+
+Return ONLY valid JSON, nothing else:
+{"slides":[{"tag":"LABEL","headline":"text","body":"text","accent_word":"word","layout":"type","items":[],"vs_label":"VS","icon_symbol":"◆","cta_items":[],"cta":null}],"visual_concept":"...","caption":"...","hashtags":["#..."]}`;
+  };
+
+  const sourceThemeHeroImage = async (visualConcept, pageConf, source) => {
+    const stockQuery = (visualConcept||"").split(/[,.]/)[0].slice(0,80);
+    const tryStock = async () => {
+      try {
+        const r = await fetch(`/api/pexels?query=${encodeURIComponent(stockQuery)}&per_page=6`);
+        const d = await r.json();
+        const photo = (d.photos||[])[0];
+        return photo ? { url: photo.url, source:"stock", photographer: photo.photographer } : null;
+      } catch { return null; }
+    };
+    const tryAI = async () => {
+      try {
+        const prompt = `${visualConcept}. ${pageConf.visualStyle}. Vertical portrait photo, high quality, no text.`;
+        const r = await fetch("/api/generate-bg", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ prompt }) });
+        const d = await r.json();
+        return d.imageUrl ? { url: d.imageUrl, source:"ai", photographer:null } : null;
+      } catch { return null; }
+    };
+    if (source === "ai") return await tryAI();
+    return (await tryStock()) || (await tryAI());
+  };
+
+  const generateSingleThemePost = async (pageId, pageConf, planItem, cropSeqIdx) => {
+    const prompt = buildThemePostPrompt(pageConf, planItem);
+    const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:2200, messages:[{ role:"user", content:prompt }] }, 3, true);
+    const raw = d.content?.find(b=>b.type==="text")?.text || "";
+    const clean = raw.replace(/<[^>]+>/g,"");
+    const m = clean.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error("Post generation returned no JSON");
+    const parsed = JSON.parse(m[0]);
+    const rawSlides = Array.isArray(parsed.slides) ? parsed.slides : [];
+    if (!rawSlides.length) throw new Error("No slides returned");
+    const sanitized = rawSlides.map(sanitize).map((s,i)=>({
+      ...s,
+      layout: i===0 ? "statement" : i===rawSlides.length-1 ? "hero" : "standard",
+    }));
+
+    const image = await sourceThemeHeroImage(parsed.visual_concept || planItem.topic, pageConf, tpVisualSource);
+
+    return {
+      id: "tp_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8),
+      page: pageId,
+      status: "needs_review",
+      pillar: planItem.pillar, format: planItem.format, topic: planItem.topic,
+      slides: sanitized,
+      caption: (parsed.caption||"").trim(),
+      hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags : [],
+      visualConcept: parsed.visual_concept || "",
+      imageSource: image?.source || null,
+      heroImageUrl: image?.url || null,
+      photographer: image?.photographer || null,
+      cropSeqIdx,
+      fontId: pageConf.fontId, accentColor: pageConf.accentColor, bgColour: pageConf.bgColour,
+      createdAt: Date.now(), postedAt: null,
+      metrics: { views:"", likes:"", comments:"", shares:"", saves:"", follows:"" },
+    };
+  };
+
+  const generateThemeBatch = async () => {
+    if (!canGenerate()) { setNav("upgrade"); return; }
+    const pageId = tpActivePage;
+    const pageConf = tp.pages[pageId];
+    setTpBusy(true); setTpView("generating");
+    setTpProgress([{ label: "Planning "+tpQuantity+" posts...", state:"active" }]);
+    try {
+      const memory = tp.memory[pageId]||[];
+      const recentTopics = memory.slice(-40).map(m=>m.topic);
+      const planPrompt = buildThemeBatchPlanPrompt(pageConf, tpQuantity, recentTopics);
+      const planData = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:1800, messages:[{ role:"user", content:planPrompt }] }, 3, true);
+      const planRaw = planData.content?.find(b=>b.type==="text")?.text || "";
+      const planMatch = planRaw.replace(/<[^>]+>/g,"").match(/\[[\s\S]*\]/);
+      if (!planMatch) throw new Error("Batch planning failed — try again.");
+      let plan = JSON.parse(planMatch[0]).slice(0, tpQuantity);
+      if (!plan.length) throw new Error("Batch planning returned nothing.");
+
+      setTpProgress(plan.map((p)=>({ label: p.topic, state:"pending" })));
+
+      const newPosts = [];
+      const runningMemory = [...memory];
+      for (let i=0;i<plan.length;i++) {
+        setTpProgress(prev=>prev.map((x,idx)=>idx===i?{...x,state:"active"}:x));
+        try {
+          let item = plan[i];
+          if (isTooSimilar(item.topic, runningMemory)) {
+            item = { ...item, topic: item.topic + " — find a distinctly different angle or example than anything covered before" };
+          }
+          const post = await generateSingleThemePost(pageId, pageConf, item, i % CROP_SEQUENCES.length);
+          newPosts.push(post);
+          runningMemory.push({ topic: post.topic, keywords: extractKeywords(post.topic+" "+(post.slides[0]?.headline||"")) });
+          setTpProgress(prev=>prev.map((x,idx)=>idx===i?{...x,state:"done"}:x));
+        } catch(e) {
+          console.error("Theme post generation failed:", e);
+          setTpProgress(prev=>prev.map((x,idx)=>idx===i?{...x,state:"error"}:x));
+        }
+      }
+
+      if (!newPosts.length) throw new Error("All posts failed to generate — try again.");
+
+      const nextTp = {
+        ...tp,
+        posts: [...newPosts, ...tp.posts],
+        memory: { ...tp.memory, [pageId]: runningMemory.slice(-400) },
+      };
+      persistTp(nextTp);
+      setTpSelected(new Set(newPosts.map(p=>p.id)));
+      setTpView("review");
+    } catch(e) {
+      console.error("Theme batch failed:", e);
+      alert("Batch generation failed: " + e.message);
+      setTpView("setup");
+    }
+    setTpBusy(false);
+  };
+
+  const updateThemePost = (id, patch) => {
+    setTp(prev => {
+      const next = { ...prev, posts: prev.posts.map(p=>p.id===id ? { ...p, ...patch } : p) };
+      saveThemeState(next);
+      return next;
+    });
+  };
+
+  const updateThemePageConfig = (pageId, patch) => {
+    persistTp({ ...tp, pages: { ...tp.pages, [pageId]: { ...tp.pages[pageId], ...patch } } });
+  };
+
+  const removeThemePosts = (ids) => {
+    const idSet = new Set(ids);
+    persistTp({ ...tp, posts: tp.posts.filter(p=>!idSet.has(p.id)) });
+    setTpSelected(prev=>{ const n=new Set(prev); ids.forEach(i=>n.delete(i)); return n; });
+  };
+
+  const regenerateThemePost = async (id) => {
+    const post = tp.posts.find(p=>p.id===id);
+    if (!post) return;
+    setTpBusy(true);
+    try {
+      const pageConf = tp.pages[post.page];
+      const fresh = await generateSingleThemePost(post.page, pageConf, { pillar:post.pillar, format:post.format, topic: post.topic+" — write a fresh take, different wording and structure than before" }, post.cropSeqIdx);
+      updateThemePost(id, { ...fresh, id: post.id, status:"needs_review", createdAt: post.createdAt, postedAt: post.postedAt });
+    } catch(e) { console.error(e); alert("Regenerate failed: "+e.message); }
+    setTpBusy(false);
+  };
+
+  const swapThemeImage = async (id) => {
+    const post = tp.posts.find(p=>p.id===id);
+    if (!post) return;
+    setTpBusy(true);
+    try {
+      const pageConf = tp.pages[post.page];
+      const variedConcept = (post.visualConcept||post.topic) + (post.imageSource==="stock" ? ", different composition" : ", alternate version");
+      const image = await sourceThemeHeroImage(variedConcept, pageConf, tpVisualSource);
+      if (image) updateThemePost(id, { heroImageUrl: image.url, imageSource: image.source, photographer: image.photographer });
+      else alert("Couldn't find another image — try again.");
+    } catch(e) { console.error(e); alert("Image swap failed: "+e.message); }
+    setTpBusy(false);
+  };
+
+  const approveThemePosts = (ids) => {
+    const idSet = new Set(ids);
+    persistTp({ ...tp, posts: tp.posts.map(p=>idSet.has(p.id)?{...p,status:"approved"}:p) });
+  };
+
+  const markThemePosted = (id, metrics) => {
+    updateThemePost(id, { status:"posted", postedAt: Date.now(), metrics });
+    setTpMetricsOpenId(null);
+  };
+
+  const exportThemePosts = async (ids) => {
+    const posts = tp.posts.filter(p=>ids.includes(p.id));
+    if (!posts.length) return;
+    setTpBusy(true);
+    try {
+      await new Promise((res,rej) => {
+        if (window.JSZip) return res();
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+        s.onload = res; s.onerror = rej; document.head.appendChild(s); setTimeout(res,5000);
+      });
+      const zip = new window.JSZip();
+      let seq = 1;
+      for (const post of posts) {
+        const num = String(seq++).padStart(3,"0");
+        const base = `${post.page}_${num}_${slugify(post.topic)}`;
+        for (let i=0;i<post.slides.length;i++) {
+          try {
+            const blob = await renderSlideViaServer(post.slides[i], i, post.slides.length, themeSlideOpts(post,i), i===0);
+            zip.file(`${base}/${base}_slide-${String(i+1).padStart(2,"0")}.png`, blob);
+          } catch(e) { console.error("Export render failed for", base, i, e); }
+        }
+        const captionText = post.caption + (post.hashtags?.length ? "\n\n" + post.hashtags.join(" ") : "");
+        zip.file(`${base}/${base}_caption.txt`, captionText);
+      }
+      const zipBlob = await zip.generateAsync({type:"blob"});
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `${tpActivePage}-theme-posts.zip`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    } catch(e) { console.error("Theme export failed:", e); alert("Export failed — try again."); }
+    setTpBusy(false);
+  };
+
+  const makeMoreLikeThis = async (id) => {
+    const post = tp.posts.find(p=>p.id===id);
+    if (!post) return;
+    const countStr = typeof window!=="undefined" ? window.prompt("How many new posts inspired by this one? (3, 5 or 10)", "5") : null;
+    const count = parseInt(countStr, 10);
+    if (!count || count < 1) return;
+    setTpBusy(true); setTpActivePage(post.page); setTpView("generating");
+    setTpProgress([{ label: "Analysing what made this post work...", state:"active" }]);
+    try {
+      const pageId = post.page;
+      const pageConf = tp.pages[pageId];
+      const analysisPrompt = `Analyse this winning Instagram carousel post and generate ${count} NEW post ideas inspired by the same pattern — not clones, but sharing its subject area, hook structure, psychological/emotional angle, format, and slide structure.
+
+WINNING POST:
+Pillar: ${post.pillar}
+Format: ${post.format}
+Topic: ${post.topic}
+Slide 1 (hook): ${post.slides[0]?.headline||""}
+All slide headlines: ${post.slides.map(s=>s.headline).join(" | ")}
+Caption: ${post.caption}
+
+Return ONLY a valid JSON array of exactly ${count} objects: {"pillar":"<a pillar, can repeat the winning pillar or a close neighbour>","format":"<a format id — can repeat the winning format or vary it slightly>","topic":"<a new, specific, concrete angle inspired by the pattern above, not a copy>"}`;
+      const planData = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:1200, messages:[{ role:"user", content:analysisPrompt }] }, 3, true);
+      const planRaw = planData.content?.find(b=>b.type==="text")?.text || "";
+      const planMatch = planRaw.replace(/<[^>]+>/g,"").match(/\[[\s\S]*\]/);
+      if (!planMatch) throw new Error("Analysis failed — try again.");
+      const plan = JSON.parse(planMatch[0]).slice(0, count);
+      setTpProgress(plan.map((p)=>({ label: p.topic, state:"pending" })));
+
+      const memory = tp.memory[pageId] || [];
+      const runningMemory = [...memory];
+      const newPosts = [];
+      for (let i=0;i<plan.length;i++) {
+        setTpProgress(prev=>prev.map((x,idx)=>idx===i?{...x,state:"active"}:x));
+        try {
+          const generated = await generateSingleThemePost(pageId, pageConf, plan[i], i % CROP_SEQUENCES.length);
+          newPosts.push(generated);
+          runningMemory.push({ topic: generated.topic, keywords: extractKeywords(generated.topic+" "+(generated.slides[0]?.headline||"")) });
+          setTpProgress(prev=>prev.map((x,idx)=>idx===i?{...x,state:"done"}:x));
+        } catch(e) {
+          console.error("Winner-inspired post failed:", e);
+          setTpProgress(prev=>prev.map((x,idx)=>idx===i?{...x,state:"error"}:x));
+        }
+      }
+      if (!newPosts.length) throw new Error("All posts failed to generate.");
+      const nextTp = { ...tp, posts:[...newPosts, ...tp.posts], memory: { ...tp.memory, [pageId]: runningMemory.slice(-400) } };
+      persistTp(nextTp);
+      setTpSelected(new Set(newPosts.map(p=>p.id)));
+      setTpView("review");
+    } catch(e) {
+      console.error(e); alert("Make More Like This failed: "+e.message);
+      setTpView("review");
+    }
+    setTpBusy(false);
+  };
+
   const renderSlideViaCanvas = (slide, idx, total, _c_opts, isCover) => {
     return new Promise((res,rej) => {
       const isPortrait = _c_opts.ratio==="portrait";
@@ -2813,7 +3167,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
   const planLabel = currentUser?.plan === "agency" ? "agency" : currentUser?.plan === "pro" ? "pro" : currentUser?.plan === "starter" ? "starter" : currentUser?.plan === "affiliate_licence" ? "affiliate_licence" : currentUser?.plan === "white_label" ? "white_label" : "free";
   const isPexelsUser = ["pro","agency","affiliate_licence","white_label"].includes(planLabel);
-  const NAV_ITEMS = [["generate","Generate"],["brand","Brand"],["templates","Templates"],["quotes","Quotes"],["history","History"],["help","Help"],["account","Account"]];
+  const NAV_ITEMS = [["generate","Generate"],["themepages","Theme Pages"],["brand","Brand"],["templates","Templates"],["quotes","Quotes"],["history","History"],["help","Help"],["account","Account"]];
   const BURGER_ITEMS = [["templates","Templates"],["quotes","Quotes"],["history","History"],["help","Help"],["account","Account"]];
   const MAIN_NAV = [["generate","Generate"],["brand","Brand"]];
 
@@ -3684,6 +4038,203 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
             </div>
           </div>
         )}
+
+        {nav==="themepages"&&(()=>{
+          const pageConf = tp.pages[tpActivePage];
+          const pagePosts = tp.posts.filter(p=>p.page===tpActivePage);
+          const allIds = pagePosts.map(p=>p.id);
+          const selectedCount = allIds.filter(id=>tpSelected.has(id)).length;
+          const smallBtnStyle = {background:"transparent",border:`1.5px solid ${A.border}`,color:A.text,padding:"6px 12px",borderRadius:7,fontSize:11.5,fontWeight:700,cursor:"pointer"};
+          const pillBtnStyle = {background:"transparent",border:`1.5px solid ${A.border}`,color:A.text,padding:"8px 14px",borderRadius:20,fontSize:12,fontWeight:700,cursor:"pointer"};
+          const primaryPillBtnStyle = {...pillBtnStyle,background:GOLD,border:"none",color:"#0A0A0A"};
+          const dangerPillBtnStyle = {...pillBtnStyle,color:"#c0392b",borderColor:"#c0392b44"};
+          const disabledStyle = {opacity:0.45,cursor:"default"};
+          const statusColors = {needs_review:"#8A8780",approved:"#2E7D32",posted:"#1D6FA5",rejected:"#c0392b"};
+
+          return (
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:1100,margin:"0 auto",width:"100%",paddingBottom:60}}>
+            <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 4px"}}>Theme Pages</h2>
+            <p style={{color:A.muted,fontSize:13,margin:"0 0 24px"}}>Automated batch production for your own theme pages — pick a page, choose quantity, generate, review, export.</p>
+
+            {tpView==="setup" && (
+              <div>
+                <div style={{display:"flex",gap:10,marginBottom:20,flexWrap:"wrap"}}>
+                  {Object.values(tp.pages).map(p=>(
+                    <button key={p.id} onClick={()=>setTpActivePage(p.id)} style={{flex:"1 1 200px",padding:"16px 18px",borderRadius:12,border:`2px solid ${tpActivePage===p.id?GOLD:A.border}`,background:tpActivePage===p.id?A.surface:"transparent",cursor:"pointer",textAlign:"left"}}>
+                      <div style={{fontWeight:800,fontSize:16,marginBottom:4,color:A.text}}>{p.label}</div>
+                      <div style={{fontSize:12,color:A.muted}}>{tp.posts.filter(x=>x.page===p.id).length} posts generated so far</div>
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24,marginBottom:20}}>
+                  <div style={{fontSize:13,fontWeight:700,marginBottom:10}}>Quantity</div>
+                  <div style={{display:"flex",gap:8,marginBottom:22}}>
+                    {[5,10,20,30].map(q=>(
+                      <button key={q} onClick={()=>setTpQuantity(q)} style={{flex:1,padding:"12px",borderRadius:9,border:`1.5px solid ${tpQuantity===q?GOLD:A.border}`,background:tpQuantity===q?GOLD+"22":"transparent",fontWeight:700,fontSize:14,color:A.text,cursor:"pointer"}}>{q}</button>
+                    ))}
+                  </div>
+
+                  <div style={{fontSize:13,fontWeight:700,marginBottom:10}}>Visual Source</div>
+                  <div style={{display:"flex",gap:8,marginBottom:tpAdvancedOpen?22:4}}>
+                    {[["ai","AI"],["stock","Stock"],["mixed","Mixed"]].map(([id,label])=>(
+                      <button key={id} onClick={()=>setTpVisualSource(id)} style={{flex:1,padding:"12px",borderRadius:9,border:`1.5px solid ${tpVisualSource===id?GOLD:A.border}`,background:tpVisualSource===id?GOLD+"22":"transparent",fontWeight:700,fontSize:14,color:A.text,cursor:"pointer"}}>{label}</button>
+                    ))}
+                  </div>
+
+                  <button onClick={()=>setTpAdvancedOpen(v=>!v)} style={{background:"none",border:"none",color:A.muted,fontSize:12,fontWeight:600,cursor:"pointer",padding:"6px 0 0"}}>{tpAdvancedOpen?"▾":"▸"} Advanced settings — {pageConf.label} branding</button>
+
+                  {tpAdvancedOpen && (
+                    <div style={{display:"flex",flexDirection:"column",gap:14,marginTop:16}}>
+                      <div style={{display:"flex",gap:14}}>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Font</div>
+                          <select value={pageConf.fontId} onChange={e=>updateThemePageConfig(tpActivePage,{fontId:e.target.value})} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:13}}>
+                            {FONTS.map(f=><option key={f.id} value={f.id}>{f.label}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Accent</div>
+                          <input type="color" value={pageConf.accentColor} onChange={e=>updateThemePageConfig(tpActivePage,{accentColor:e.target.value})} style={{width:44,height:38,border:"none",borderRadius:8,cursor:"pointer",padding:0}}/>
+                        </div>
+                        <div>
+                          <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Background</div>
+                          <input type="color" value={pageConf.bgColour} onChange={e=>updateThemePageConfig(tpActivePage,{bgColour:e.target.value})} style={{width:44,height:38,border:"none",borderRadius:8,cursor:"pointer",padding:0}}/>
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Visual style preset (fed into every image prompt/search)</div>
+                        <textarea value={pageConf.visualStyle} onChange={e=>updateThemePageConfig(tpActivePage,{visualStyle:e.target.value})} rows={2} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:13,resize:"vertical",fontFamily:"inherit"}}/>
+                      </div>
+                      <div>
+                        <div style={{fontSize:12,color:A.muted,marginBottom:6}}>Content rules</div>
+                        <textarea value={pageConf.contentRules} onChange={e=>updateThemePageConfig(tpActivePage,{contentRules:e.target.value})} rows={2} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:13,resize:"vertical",fontFamily:"inherit"}}/>
+                      </div>
+                      <div>
+                        <div style={{fontSize:12,color:A.muted,marginBottom:6}}>CTA style</div>
+                        <input value={pageConf.ctaStyle} onChange={e=>updateThemePageConfig(tpActivePage,{ctaStyle:e.target.value})} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:13}}/>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <button onClick={generateThemeBatch} disabled={tpBusy} style={{width:"100%",padding:"18px",borderRadius:12,border:"none",background:GOLD,color:"#0A0A0A",fontWeight:800,fontSize:16,cursor:tpBusy?"default":"pointer",opacity:tpBusy?0.6:1}}>
+                  {tpBusy?"Working…":`GENERATE ${tpQuantity} POSTS`}
+                </button>
+
+                {pagePosts.length>0 && (
+                  <button onClick={()=>setTpView("review")} style={{width:"100%",padding:"12px",marginTop:10,borderRadius:10,border:`1.5px solid ${A.border}`,background:"transparent",color:A.text,fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                    Review existing posts ({pagePosts.length})
+                  </button>
+                )}
+              </div>
+            )}
+
+            {tpView==="generating" && (
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:14,padding:24}}>
+                <div style={{fontWeight:800,fontSize:15,marginBottom:16}}>Generating {pageConf.label} posts…</div>
+                <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:440,overflowY:"auto"}}>
+                  {tpProgress.map((p,i)=>(
+                    <div key={i} style={{display:"flex",alignItems:"center",gap:10,fontSize:13,padding:"8px 10px",borderRadius:8,background:p.state==="active"?GOLD+"18":"transparent"}}>
+                      <span style={{width:16,textAlign:"center",flexShrink:0}}>{p.state==="done"?"✓":p.state==="error"?"✕":p.state==="active"?"…":"○"}</span>
+                      <span style={{color:p.state==="error"?"#c0392b":A.text}}>{p.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {tpView==="review" && (
+              <div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:10}}>
+                  <button onClick={()=>setTpView("setup")} style={{background:"none",border:"none",color:A.muted,fontSize:13,fontWeight:600,cursor:"pointer",padding:0}}>← Back to setup</button>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    <button onClick={()=>setTpSelected(new Set(allIds))} style={pillBtnStyle}>Select all</button>
+                    <button onClick={()=>setTpSelected(new Set())} style={pillBtnStyle}>Clear</button>
+                    <button onClick={()=>approveThemePosts(allIds)} style={primaryPillBtnStyle}>Approve all</button>
+                    <button onClick={()=>approveThemePosts(Array.from(tpSelected))} disabled={!selectedCount} style={selectedCount?primaryPillBtnStyle:{...primaryPillBtnStyle,...disabledStyle}}>Approve selected</button>
+                    <button onClick={()=>exportThemePosts(pagePosts.filter(p=>p.status==="approved"||p.status==="posted").map(p=>p.id))} disabled={tpBusy} style={primaryPillBtnStyle}>Export approved</button>
+                    <button onClick={()=>{Array.from(tpSelected).forEach(id=>regenerateThemePost(id));}} disabled={!selectedCount||tpBusy} style={!selectedCount||tpBusy?{...pillBtnStyle,...disabledStyle}:pillBtnStyle}>Regenerate selected</button>
+                    <button onClick={()=>{if(selectedCount&&window.confirm(`Delete ${selectedCount} post(s)?`)) removeThemePosts(Array.from(tpSelected));}} disabled={!selectedCount} style={!selectedCount?{...dangerPillBtnStyle,...disabledStyle}:dangerPillBtnStyle}>Delete selected</button>
+                  </div>
+                </div>
+
+                {pagePosts.length===0 ? (
+                  <div style={{textAlign:"center",padding:"60px 0",color:A.muted}}>No posts yet for {pageConf.label} — go back and generate a batch.</div>
+                ) : (
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(250px,1fr))",gap:16}}>
+                    {pagePosts.map(post=>{
+                      const isSelected = tpSelected.has(post.id);
+                      const isExpanded = tpExpandedId===post.id;
+                      return (
+                        <div key={post.id} style={{background:A.surface,border:`2px solid ${isSelected?GOLD:A.border}`,borderRadius:14,overflow:"hidden",display:"flex",flexDirection:"column"}}>
+                          <div style={{position:"relative",width:"100%",aspectRatio:"1080/1920",background:"#0A0A0A",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                            <label style={{position:"absolute",top:10,left:10,zIndex:5,cursor:"pointer",background:"rgba(0,0,0,0.5)",borderRadius:6,padding:3,display:"flex"}}>
+                              <input type="checkbox" checked={isSelected} onChange={()=>setTpSelected(prev=>{const n=new Set(prev);n.has(post.id)?n.delete(post.id):n.add(post.id);return n;})} style={{width:18,height:18,cursor:"pointer"}}/>
+                            </label>
+                            <span style={{position:"absolute",top:10,right:10,zIndex:5,fontSize:10,fontWeight:800,padding:"4px 9px",borderRadius:20,background:statusColors[post.status]||"#8A8780",color:"#fff",textTransform:"uppercase",letterSpacing:0.5}}>{post.status.replace("_"," ")}</span>
+                            {post.slides?.[0] && <SlidePreview slide={post.slides[0]} idx={0} total={post.slides.length} _c_opts={themeSlideOpts(post,0)} onClick={()=>setTpExpandedId(isExpanded?null:post.id)} isActive={false} isCover={true} previewSize={320}/>}
+                          </div>
+                          <div style={{padding:14,display:"flex",flexDirection:"column",gap:8,flex:1}}>
+                            <div style={{fontSize:13,fontWeight:700,lineHeight:1.35,cursor:"pointer"}} onClick={()=>setTpExpandedId(isExpanded?null:post.id)}>{post.slides?.[0]?.headline||"(no headline)"}</div>
+                            <div style={{fontSize:11,color:A.muted,display:"flex",gap:6,flexWrap:"wrap"}}>
+                              <span>{post.pillar}</span><span>·</span><span>{post.slides?.length||0} slides</span><span>·</span><span>{post.imageSource||"no image"}</span>
+                            </div>
+                            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                              <button onClick={()=>approveThemePosts([post.id])} style={smallBtnStyle}>Approve</button>
+                              <button onClick={()=>regenerateThemePost(post.id)} disabled={tpBusy} style={smallBtnStyle}>Regenerate</button>
+                              <button onClick={()=>swapThemeImage(post.id)} disabled={tpBusy} style={smallBtnStyle}>Swap image</button>
+                              <button onClick={()=>setTpExpandedId(isExpanded?null:post.id)} style={smallBtnStyle}>{isExpanded?"Collapse":"Details"}</button>
+                              <button onClick={()=>{if(window.confirm("Delete this post?")) removeThemePosts([post.id]);}} style={{...smallBtnStyle,color:"#c0392b"}}>Delete</button>
+                            </div>
+
+                            {isExpanded && (
+                              <div style={{marginTop:6,paddingTop:10,borderTop:`1px solid ${A.border}`,display:"flex",flexDirection:"column",gap:10}}>
+                                <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
+                                  {post.slides.map((s,i)=>(
+                                    <SlidePreview key={i} slide={s} idx={i} total={post.slides.length} _c_opts={themeSlideOpts(post,i)} onClick={()=>{}} isActive={false} isCover={i===0} previewSize={100}/>
+                                  ))}
+                                </div>
+                                <div>
+                                  <div style={{fontSize:11,color:A.muted,marginBottom:4}}>Caption</div>
+                                  <textarea value={post.caption||""} onChange={e=>updateThemePost(post.id,{caption:e.target.value})} rows={3} style={{width:"100%",padding:8,borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:12,resize:"vertical",fontFamily:"inherit"}}/>
+                                </div>
+                                <div>
+                                  <div style={{fontSize:11,color:A.muted,marginBottom:4}}>Hashtags</div>
+                                  <input value={(post.hashtags||[]).join(" ")} onChange={e=>updateThemePost(post.id,{hashtags:e.target.value.split(/\s+/).filter(Boolean)})} style={{width:"100%",padding:8,borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:12}}/>
+                                </div>
+                                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                                  <button onClick={()=>exportThemePosts([post.id])} disabled={tpBusy} style={smallBtnStyle}>Export post</button>
+                                  <button onClick={()=>makeMoreLikeThis(post.id)} disabled={tpBusy} style={{...smallBtnStyle,borderColor:GOLD,color:GOLD,fontWeight:800}}>Make more like this</button>
+                                  {post.status!=="posted" && <button onClick={()=>setTpMetricsOpenId(tpMetricsOpenId===post.id?null:post.id)} style={smallBtnStyle}>Mark posted</button>}
+                                </div>
+                                {post.status==="posted" && (
+                                  <div style={{fontSize:11,color:A.muted}}>
+                                    Posted {new Date(post.postedAt).toLocaleDateString()} — {Object.entries(post.metrics||{}).filter(([,v])=>v!=="").map(([k,v])=>`${k}: ${v}`).join(", ")||"no metrics logged"}
+                                    <button onClick={()=>setTpMetricsOpenId(tpMetricsOpenId===post.id?null:post.id)} style={{marginLeft:8,background:"none",border:"none",color:GOLD,fontWeight:700,cursor:"pointer",padding:0}}>Edit</button>
+                                  </div>
+                                )}
+                                {tpMetricsOpenId===post.id && (
+                                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+                                    {["views","likes","comments","shares","saves","follows"].map(k=>(
+                                      <input key={k} placeholder={k} value={post.metrics?.[k]||""} onChange={e=>updateThemePost(post.id,{metrics:{...post.metrics,[k]:e.target.value}})} style={{padding:6,borderRadius:6,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:11}}/>
+                                    ))}
+                                    <button onClick={()=>markThemePosted(post.id, post.metrics)} style={{...smallBtnStyle,gridColumn:"1 / -1",background:GOLD,color:"#0A0A0A",fontWeight:800,borderColor:GOLD}}>Save &amp; mark posted</button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          );
+        })()}
 
         {nav==="templates"&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:1100,margin:"0 auto",width:"100%",paddingBottom:60}}>
