@@ -2483,8 +2483,12 @@ Return ONLY valid JSON, nothing else:
     const tryAI = async () => {
       try {
         const variation = ["", ", wide shot", ", close up", ", from a different angle"][Math.floor(Math.random()*4)];
-        const prompt = `${visualConcept}${variation}. ${pageConf.visualStyle}. Vertical portrait photo, high quality, no text.`;
-        const r = await fetch("/api/generate-bg", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ prompt }) });
+        // Headline/subline are never in the image — the template renders those.
+        // Small diagram-style callouts (short labels, icons, pointer lines) are
+        // allowed when they genuinely clarify the concept, since gpt-image-1 is
+        // strong at composing those cleanly into a photo.
+        const prompt = `${visualConcept}${variation}. ${pageConf.visualStyle}. Vertical portrait image, high quality. Do not include the post's headline, title, or any full sentence in the image. You may add small diagram-style callouts — short 2-3 word labels, simple icons, or thin annotation lines pointing at a detail — directly in the image if they genuinely help explain the concept, styled to blend with the photo rather than looking like a meme caption. Keep any in-image text minimal, secondary to the photo, and spelled correctly.`;
+        const r = await fetch("/api/generate-bg", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ prompt, model:"gpt-image-1" }) });
         const d = await r.json();
         return d.imageUrl ? { url: d.imageUrl, source:"ai", photographer:null } : null;
       } catch { return null; }
