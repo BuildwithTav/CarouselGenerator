@@ -1,18 +1,22 @@
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 
-// fal.ai hosts several image models behind the same API key. "schnell" is
-// fal's fastest/cheapest Flux tier (near-free, noticeably lower quality —
-// this was the default). "nano-banana" (Google's Gemini 2.5 Flash Image) is
-// much stronger for realistic photography at ~$0.04/image; "flux-dev" is a
-// quality step up from schnell at ~$0.025/image. All three go through the
-// same FAL_API_KEY, no extra signup needed.
+// fal.ai hosts several image models behind the same API key — no separate
+// signup/billing needed for any of these. "schnell" is fal's fastest/
+// cheapest Flux tier (near-free, noticeably lower quality). "nano-banana"
+// (Google's Gemini 2.5 Flash Image) is strong for realistic photography at
+// ~$0.04/image. "flux-dev" is a quality step up from schnell at ~$0.025/
+// image. "ideogram-v3" is the pick when the image needs short in-image
+// labels/icons/callouts composed cleanly — it's built specifically for
+// legible typography in images (posters, diagrams) — at $0.06/image
+// ("balanced" tier).
 const FAL_MODELS = {
   "nano-banana": { endpoint: "fal-ai/gemini-25-flash-image", body: (prompt) => ({ prompt, num_images: 1 }) },
+  "ideogram-v3": { endpoint: "fal-ai/ideogram/v3", body: (prompt) => ({ prompt, image_size: "portrait_4_3", rendering_speed: "BALANCED", num_images: 1 }) },
   "flux-dev": { endpoint: "fal-ai/flux/dev", body: (prompt) => ({ prompt, image_size: "portrait_4_3", num_inference_steps: 28, num_images: 1, enable_safety_checker: true }) },
   "flux-schnell": { endpoint: "fal-ai/flux/schnell", body: (prompt) => ({ prompt, image_size: "portrait_4_3", num_inference_steps: 4, num_images: 1, enable_safety_checker: true }) },
 };
-const DEFAULT_MODEL = "nano-banana";
+const DEFAULT_MODEL = "ideogram-v3";
 
 // gpt-image-1 (OpenAI) — separate provider, separate API key (OPENAI_API_KEY,
 // not set up yet as of writing). Requires its own billing at
