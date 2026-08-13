@@ -1237,8 +1237,8 @@ export default function App() {
     }
     function badge(dark,glow){
       const tc=dark?"#fff":"#0a0a0a",sc=dark?"rgba(255,255,255,0.55)":"rgba(0,0,0,0.45)";
-      const nameShadow=glow?"text-shadow:0 2px 6px rgba(0,0,0,0.7),0 0 18px rgba(0,0,0,0.5);":"";
-      const handleShadow=glow?"text-shadow:0 1px 4px rgba(0,0,0,0.75);":"";
+      const nameShadow=glow?"text-shadow:-1px -1px 0 rgba(0,0,0,0.85),1px -1px 0 rgba(0,0,0,0.85),-1px 1px 0 rgba(0,0,0,0.85),1px 1px 0 rgba(0,0,0,0.85),0 2px 6px rgba(0,0,0,0.7),0 0 18px rgba(0,0,0,0.5);":"";
+      const handleShadow=glow?"text-shadow:-1px -1px 0 rgba(0,0,0,0.75),1px -1px 0 rgba(0,0,0,0.75),-1px 1px 0 rgba(0,0,0,0.75),1px 1px 0 rgba(0,0,0,0.75),0 1px 4px rgba(0,0,0,0.75);":"";
       const avShadow=glow?"box-shadow:0 3px 10px rgba(0,0,0,0.5);":"";
       const tick=showTick?"<span style='display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#1D9BF0;border-radius:50%;margin-left:8px;vertical-align:middle;flex-shrink:0;'><span style='display:block;width:8px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);margin-top:-2px;'></span></span>":"";
       const av=profUrl?"<img src='"+esc(profUrl)+"' style='width:100%;height:100%;object-fit:cover;border-radius:50%;'/>"  :"<div style='width:100%;height:100%;background:#4a6a9a;border-radius:50%;'></div>";
@@ -1270,7 +1270,7 @@ export default function App() {
       const headlineText=esc((s.headline||"").toUpperCase());
       const bodyText=s.body?esc(s.body):"";
       const isCta=!!s.isCta;
-      const effectStyle=effect==="none"?("color:"+primary+";-webkit-text-fill-color:"+primary+";text-shadow:0 2px 4px rgba(0,0,0,0.6),0 10px 26px rgba(0,0,0,0.5);"):effectCSS(effect,AL,secondary);
+      const effectStyle=effect==="none"?("color:"+primary+";-webkit-text-fill-color:"+primary+";text-shadow:-2px -2px 0 rgba(0,0,0,0.8),2px -2px 0 rgba(0,0,0,0.8),-2px 2px 0 rgba(0,0,0,0.8),2px 2px 0 rgba(0,0,0,0.8),0 2px 4px rgba(0,0,0,0.6),0 10px 26px rgba(0,0,0,0.5);"):effectCSS(effect,AL,secondary);
       const zoneTop=Math.round(H*0.50);
       const zoneH=Math.round(H*0.46);
       const fitScript="<script>(function(){var h=document.getElementById('hl');var b=document.getElementById('bd');var zone=document.getElementById('tz');if(!h||!zone)return;var maxH=zone.offsetHeight;var hfs=76,bfs=40;h.style.fontSize=hfs+'px';if(b)b.style.fontSize=bfs+'px';document.fonts.ready.then(function(){while(zone.scrollHeight>maxH&&(hfs>40||bfs>24)){if(hfs>40){hfs-=2;h.style.fontSize=hfs+'px';}else if(bfs>24){bfs-=1;b.style.fontSize=bfs+'px';}}window.__TEXT_FIT_DONE__=true;});})();<\/script>";
@@ -1284,7 +1284,7 @@ export default function App() {
         +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.395)+"px;white-space:nowrap;'>"+badge(true,true)+"</div>"
         +"<div id='tz' style='position:absolute;z-index:5;left:70px;right:70px;top:"+zoneTop+"px;height:"+zoneH+"px;display:flex;flex-direction:column;align-items:center;justify-content:"+(isCta?"center":"flex-start")+";gap:24px;overflow:hidden;"+ctaBox+"'>"
         +"<div id='hl' style='font-family:"+fontFamily+",sans-serif;font-size:76px;font-weight:900;line-height:1.12;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectStyle+"'>"+headlineText+"</div>"
-        +(bodyText?"<div id='bd' style='font-family:"+fontFamily+",sans-serif;font-size:40px;color:"+secondary+";text-align:center;font-weight:500;line-height:1.42;max-width:100%;text-shadow:0 2px 5px rgba(0,0,0,0.65),0 1px 2px rgba(0,0,0,0.8);'>"+bodyText+"</div>":"")
+        +(bodyText?"<div id='bd' style='font-family:"+fontFamily+",sans-serif;font-size:40px;color:"+secondary+";text-align:center;font-weight:500;line-height:1.42;max-width:100%;text-shadow:-1px -1px 0 rgba(0,0,0,0.8),1px -1px 0 rgba(0,0,0,0.8),-1px 1px 0 rgba(0,0,0,0.8),1px 1px 0 rgba(0,0,0,0.8),0 2px 5px rgba(0,0,0,0.65),0 1px 2px rgba(0,0,0,0.8);'>"+bodyText+"</div>":"")
         +"</div>"+website+(isCover?chevron:"")+counter+wm+fitScript+"</div>";
     }
     let body="";
