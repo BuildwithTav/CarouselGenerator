@@ -2411,17 +2411,31 @@ Return ONLY valid JSON, nothing else.` }
     const W=1080, H=isPortrait?1920:1350;
     let _c_html = (builder||buildSlideHTML)(slide,idx,total,_c_opts,isCover);
     _c_html = await uploadBase64Images(_c_html);
-    const res = await fetch("/api/render-slide", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ html:_c_html, width:W, height:H })
-    });
-    const _c_data = await res.json();
-    if (!_c_data.image) throw new Error(_c_data.error||"Render failed");
-    const byteChars = atob(_c_data.image);
-    const byteArr = new Uint8Array(byteChars.length);
-    for (let j=0;j<byteChars.length;j++) byteArr[j]=byteChars.charCodeAt(j);
-    return new Blob([byteArr],{type:"image/png"});
+    // Puppeteer renders occasionally hit a transient timeout/cold-start
+    // hiccup on Vercel's serverless function, especially mid-way through a
+    // long batch export — retry a couple of times before giving up rather
+    // than silently dropping the slide from the zip.
+    let lastErr;
+    for (let attempt=0; attempt<3; attempt++) {
+      try {
+        const res = await fetch("/api/render-slide", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ html:_c_html, width:W, height:H })
+        });
+        let _c_data;
+        try { _c_data = await res.json(); } catch { throw new Error("Render failed — server returned "+res.status+" "+(res.statusText||"")); }
+        if (!_c_data.image) throw new Error(_c_data.error || ("Render failed — HTTP "+res.status));
+        const byteChars = atob(_c_data.image);
+        const byteArr = new Uint8Array(byteChars.length);
+        for (let j=0;j<byteChars.length;j++) byteArr[j]=byteChars.charCodeAt(j);
+        return new Blob([byteArr],{type:"image/png"});
+      } catch(e) {
+        lastErr = e;
+        if (attempt < 2) await new Promise(r=>setTimeout(r, 800*(attempt+1)));
+      }
+    }
+    throw lastErr;
   };
 
   // ─── THEME PAGES: production-mode content + image pipeline ──────────
