@@ -2405,9 +2405,11 @@ Return ONLY valid JSON, nothing else.` }
     showCounter: showNums,
   });
 
-  const buildThemeBatchPlanPrompt = (pageConf, quantity, recentTopics) => `Plan ${quantity} Instagram carousel posts for a "${pageConf.label}" theme page built purely to go viral — every post needs a "wait, WHAT?" reaction. Favour surprising, counterintuitive, "I never knew that" content over generic advice — strange, shocking, wow-factor angles outperform safe, predictable ones. Lean into that hard.
+  const buildThemeBatchPlanPrompt = (pageConf, quantity, recentTopics) => {
+    const maxPerPillar = Math.max(1, Math.ceil(quantity / 4));
+    return `Plan ${quantity} Instagram carousel posts for a "${pageConf.label}" theme page built purely to go viral — every post needs a "wait, WHAT?" reaction. Favour surprising, counterintuitive, "I never knew that" content over generic advice — strange, shocking, wow-factor angles outperform safe, predictable ones. Lean into that hard.
 
-PILLARS to draw from (mix across them — no single pillar should cover more than roughly a quarter of the batch):
+PILLARS to draw from — no single pillar may appear more than ${maxPerPillar} time(s) in this batch of ${quantity}:
 ${pageConf.pillars.join(", ")}
 
 FORMATS to rotate between (do not use the same format more than 2 times in a row):
@@ -2416,7 +2418,10 @@ ${THEME_FORMATS.map(f=>`${f.id} — ${f.label}: ${f.hint}`).join("\n")}
 AVOID repeating these topics/angles already covered recently — do not generate the same fact, effect, or advice again even reworded:
 ${recentTopics.length ? recentTopics.join(" | ") : "(none yet — this is the first batch)"}
 
-Return ONLY a valid JSON array of exactly ${quantity} objects, each: {"pillar":"<one pillar from the list above>","format":"<one format id from the list above>","topic":"<a specific, surprising, concrete angle for this post — the kind of thing that makes someone stop scrolling and think 'I never knew that' — not just the pillar name>"}`;
+CRITICAL — EACH TOPIC MUST BE A DIFFERENT UNDERLYING FACT: it's not enough for the headlines to sound different. Two posts about the same underlying fact, study, myth, or mechanism — even worded completely differently — are duplicates. For example "21 days to a habit? Nope" and "A surgeon started this myth" are THE SAME topic (the 21-day habit myth) even though they share no words. Before returning your answer, re-read your own list of ${quantity} topics and check every pair against each other: if any two rely on the same core fact/study/mechanism, replace one of them with a genuinely different one. This check matters more than variety in phrasing.
+
+Return ONLY a valid JSON array of exactly ${quantity} objects, each: {"pillar":"<one pillar from the list above>","format":"<one format id from the list above>","topic":"<a specific, surprising, concrete angle for this post, including the specific fact/mechanism/example it's built on — not just the pillar name>"}`;
+  };
 
   const buildThemePostPrompt = (pageConf, planItem) => {
     const format = THEME_FORMATS.find(f=>f.id===planItem.format) || THEME_FORMATS[0];
@@ -2430,11 +2435,11 @@ CONTENT RULES: ${pageConf.contentRules}
 
 Decide the right number of slides yourself — normally 3 to 5, whatever the idea needs. Do not pad.
 
-Every slide sits over a photo, in a fixed-size text box, so both lines are STRICT on length:
+Every slide sits over a photo, in a FIXED-HEIGHT text box that does NOT expand and does NOT auto-shrink the subline — going over the limit gets the text cut off mid-word, so treat these as hard ceilings, not targets:
 - "headline": the main line. Max 6 words AND max 42 characters — it must fit on screen at large size with zero margin for error. Punchy, plain language, no jargon.
-- "subline": a second line that must always carry real meaning — never decorative, never left thin. Max 14 words AND max 95 characters. This is where the actual explanation/payoff of the slide lives — a headline alone should never leave the reader confused about what point is being made.
+- "subline": a second line that must always carry real meaning — never decorative, never left thin — but must be SHORT: max 9 words AND max 60 characters, ideally one line. This is where the actual explanation/payoff of the slide lives, in as few words as possible — a headline alone should never leave the reader confused about what point is being made, but a long subline gets truncated, so make every word earn its place.
 
-SLIDE 1 — HOOK: the headline is the scroll-stopping claim itself. The subline may tease rather than fully resolve it, but it must still read as a complete thought, not a fragment — do not leave slide 1's subline empty.
+SLIDE 1 — HOOK: the headline must make the SPECIFIC topic instantly clear on its own — a stranger scrolling past should immediately know what this carousel is about, not just that something intriguing exists. Specific beats clever: name the actual thing (the myth, the effect, the behaviour) rather than teasing it vaguely. The subline may add a short tease but must still read as a complete thought, not a fragment — do not leave slide 1's subline empty.
 MIDDLE SLIDES: headline states the surprising fact in short form, subline delivers the actual "I never knew that" payoff — the mechanism, reasoning, or specific detail. Together they must make complete sense with no other context.
 FINAL SLIDE: headline "FOLLOW FOR MORE" (or a very close variant), subline a short, plain line naming what they'll get. NOT a save/share/comment ask — just a low-key, consistent formality, not a sales pitch.
 
@@ -2517,7 +2522,7 @@ Return ONLY valid JSON, nothing else:
       const t = treatment[i % treatment.length];
       return {
         headline: (s.headline||"").replace(/<[^>]+>/g,"").trim().slice(0,48),
-        subline: (s.subline||"").replace(/<[^>]+>/g,"").trim().slice(0,105),
+        subline: (s.subline||"").replace(/<[^>]+>/g,"").trim().slice(0,65),
         image: image?.url || null,
         imagePos: { x: t.x, y: t.y },
         imageZoom: t.zoom,
