@@ -1214,6 +1214,7 @@ export default function App() {
         const FONT_CSS_MAP={montserrat:"Montserrat",playfair:"Playfair Display",poppins:"Poppins",inter:"Inter",oswald:"Oswald",dancing:"Dancing Script",raleway:"Raleway",lato:"Lato",roboto:"Roboto",ubuntu:"Ubuntu",nunito:"Nunito",sourcesans:"Source Sans 3",crimson:"Crimson Text",merriweather:"Merriweather",bebasneue:"Bebas Neue",abril:"Abril Fatface",pacifico:"Pacifico",josefin:"Josefin Sans",quicksand:"Quicksand",dmserif:"DM Serif Display",cormorant:"Cormorant Garamond",righteous:"Righteous"};
     const fontFamily=(FONT_CSS_MAP[font]||font||"Bebas Neue").replace(/'/g,"");
     function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+    function hexToRgba(hex,alpha){const h=(hex||"#ffffff").replace("#","");const r=parseInt(h.substring(0,2),16)||0,g=parseInt(h.substring(2,4),16)||0,b=parseInt(h.substring(4,6),16)||0;return"rgba("+r+","+g+","+b+","+alpha+")";}
     const gFonts="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Oswald:wght@700&family=Barlow+Condensed:wght@800;900&family=Archivo+Black&family=Playfair+Display:ital,wght@0,900;1,900&family=Alfa+Slab+One&family=Cormorant+Garamond:ital,wght@0,700;1,700&family=Josefin+Sans:wght@700&family=Raleway:wght@800;900&family=Quicksand:wght@700&family=Dancing+Script:wght@700&family=Inter:wght@400;600;700;800&family=Poppins:wght@400;600;700;800&family=Montserrat:wght@400;600;700;800&display=swap";
     function effectCSS(eff,pri,sec){
       const cs="padding-top:0.15em;display:inline-block;";
@@ -1274,8 +1275,12 @@ export default function App() {
       const zoneH=Math.round(H*0.46);
       const fitScript="<script>(function(){var h=document.getElementById('hl');var b=document.getElementById('bd');var zone=document.getElementById('tz');if(!h||!zone)return;var maxH=zone.offsetHeight;var hfs=76,bfs=40;h.style.fontSize=hfs+'px';if(b)b.style.fontSize=bfs+'px';document.fonts.ready.then(function(){while(zone.scrollHeight>maxH&&(hfs>40||bfs>24)){if(hfs>40){hfs-=2;h.style.fontSize=hfs+'px';}else if(bfs>24){bfs-=1;b.style.fontSize=bfs+'px';}}window.__TEXT_FIT_DONE__=true;});})();<\/script>";
       const ctaBox=isCta?("border:2px solid "+AL+";border-radius:18px;padding:36px 40px;background:rgba(0,0,0,0.4);"):"";
+      const glowTop=Math.round(H*0.34);
+      const glowH=H-glowTop+60;
+      const glow="<div style='position:absolute;left:50%;top:"+glowTop+"px;transform:translateX(-50%);width:"+Math.round(W*0.95)+"px;height:"+glowH+"px;background:radial-gradient(ellipse at center,"+hexToRgba(AL,0.55)+" 0%,"+hexToRgba(AL,0.22)+" 40%,transparent 72%);filter:blur(70px);z-index:2;pointer-events:none;'></div>";
       return"<div style='position:relative;width:"+W+"px;height:"+H+"px;background:#000;overflow:hidden;'>"+imgTag(s)
         +"<div style='position:absolute;inset:0;background:"+grad+";z-index:1;'></div>"
+        +glow
         +"<div style='position:absolute;z-index:5;left:50%;transform:translateX(-50%);top:"+Math.round(H*0.395)+"px;white-space:nowrap;'>"+badge(true,true)+"</div>"
         +"<div id='tz' style='position:absolute;z-index:5;left:70px;right:70px;top:"+zoneTop+"px;height:"+zoneH+"px;display:flex;flex-direction:column;align-items:center;justify-content:"+(isCta?"center":"flex-start")+";gap:24px;overflow:hidden;"+ctaBox+"'>"
         +"<div id='hl' style='font-family:"+fontFamily+",sans-serif;font-size:76px;font-weight:900;line-height:1.12;text-align:center;text-transform:uppercase;word-break:break-word;max-width:100%;"+effectStyle+"'>"+headlineText+"</div>"
