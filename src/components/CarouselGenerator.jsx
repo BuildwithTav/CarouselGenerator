@@ -1848,6 +1848,7 @@ export default function App() {
   const [tpView, setTpView] = useState("setup"); // setup | generating | review
   const [tpActivePage, setTpActivePage] = useState("relationships");
   const [tpQuantity, setTpQuantity] = useState(10);
+  const [tpFocus, setTpFocus] = useState(""); // optional subject to constrain the batch to, e.g. "narcissism"
   const [tpVisualSource, setTpVisualSource] = useState("mixed"); // ai | stock | mixed
   const [tpProgress, setTpProgress] = useState([]);
   const [tpSelected, setTpSelected] = useState(()=>new Set());
@@ -2451,8 +2452,9 @@ Return ONLY valid JSON, nothing else.` }
     };
   };
 
-  const buildThemeBatchPlanPrompt = (pageConf, quantity, recentTopics) => {
-    const maxPerPillar = Math.max(1, Math.ceil(quantity / 4));
+  const buildThemeBatchPlanPrompt = (pageConf, quantity, recentTopics, focus) => {
+    const hasFocus = !!(focus && focus.trim());
+    const maxPerPillar = hasFocus ? quantity : Math.max(1, Math.ceil(quantity / 4));
     const isRelationships = pageConf.id === "relationships";
     const her = isRelationships ? Math.round(quantity*0.3) : 0;
     const him = isRelationships ? Math.round(quantity*0.3) : 0;
@@ -2464,6 +2466,9 @@ AUDIENCE ANGLE — hit this mix across the batch as a whole:
 - ${him} posts written specifically from a man's perspective/experience in relationships — mark these "audience":"him"
 - ${general} posts kept general, for anyone in a relationship regardless of gender — mark these "audience":"general"
 Don't force an artificial gendered lean onto a topic that's naturally universal — but hit the counts above overall.` : "";
+    const focusSection = hasFocus ? `
+
+FOCUS — every single topic in this batch must be specifically about "${focus.trim()}". Do not drift into unrelated ${pageConf.label.toLowerCase()} territory just to hit pillar variety — staying on-subject matters more than spreading across pillars here. Still vary the FORMAT and the specific angle/mechanism/example within that subject so the ${quantity} posts don't repeat each other.` : "";
     return `Plan ${quantity} Instagram carousel posts for a "${pageConf.label}" theme page built purely to go viral — every post needs a "wait, WHAT?" reaction. Favour surprising, counterintuitive, "I never knew that" content over generic advice — strange, shocking, wow-factor angles outperform safe, predictable ones. Lean into that hard.
 
 QUALITY BAR: reject generic advice a dating coach or self-help account already says constantly ("communicate more", "set boundaries", "trust yourself", "overthinking is bad"). Ground every topic in a specific, real mechanism — attachment theory, evolutionary psychology, established relationship/psychology research, a named cognitive or social effect, a specific behavioural pattern — something a genuinely knowledgeable person would find interesting, not a caption you've read a hundred times. Ask yourself of every topic: would someone who already knows basic relationship/psychology advice still be surprised by this specific angle? If not, replace it.
@@ -2473,7 +2478,7 @@ ${pageConf.pillars.join(", ")}
 
 FORMATS to rotate between (do not use the same format more than 2 times in a row):
 ${THEME_FORMATS.map(f=>`${f.id} — ${f.label}: ${f.hint}`).join("\n")}
-${audienceSection}
+${audienceSection}${focusSection}
 
 AVOID repeating these topics/angles already covered recently — do not generate the same fact, effect, or advice again even reworded:
 ${recentTopics.length ? recentTopics.join(" | ") : "(none yet — this is the first batch)"}
@@ -2638,7 +2643,7 @@ Return ONLY valid JSON, nothing else:
     try {
       const memory = tp.memory[pageId]||[];
       const recentTopics = memory.slice(-40).map(m=>m.topic);
-      const planPrompt = buildThemeBatchPlanPrompt(pageConf, tpQuantity, recentTopics);
+      const planPrompt = buildThemeBatchPlanPrompt(pageConf, tpQuantity, recentTopics, tpFocus);
       const planData = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:1800, messages:[{ role:"user", content:planPrompt }] }, 3, true);
       const planRaw = planData.content?.find(b=>b.type==="text")?.text || "";
       const planMatch = planRaw.replace(/<[^>]+>/g,"").match(/\[[\s\S]*\]/);
@@ -4273,11 +4278,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                   </div>
 
                   <div style={{fontSize:13,fontWeight:700,marginBottom:10}}>Visual Source</div>
-                  <div style={{display:"flex",gap:8,marginBottom:tpAdvancedOpen?22:4}}>
+                  <div style={{display:"flex",gap:8,marginBottom:22}}>
                     {[["ai","AI"],["stock","Stock"],["mixed","Mixed"]].map(([id,label])=>(
                       <button key={id} onClick={()=>setTpVisualSource(id)} style={{flex:1,padding:"12px",borderRadius:9,border:`1.5px solid ${tpVisualSource===id?GOLD:A.border}`,background:tpVisualSource===id?GOLD+"22":"transparent",fontWeight:700,fontSize:14,color:A.text,cursor:"pointer"}}>{label}</button>
                     ))}
                   </div>
+
+                  <div style={{fontSize:13,fontWeight:700,marginBottom:6}}>Focus this batch on <span style={{fontWeight:500,color:A.muted}}>(optional)</span></div>
+                  <input value={tpFocus} onChange={e=>setTpFocus(e.target.value)} placeholder="e.g. narcissism, texting habits, avoidant partners…" style={{width:"100%",padding:"12px 14px",borderRadius:9,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:14,marginBottom:tpAdvancedOpen?22:4}}/>
 
                   <button onClick={()=>setTpAdvancedOpen(v=>!v)} style={{background:"none",border:"none",color:A.muted,fontSize:12,fontWeight:600,cursor:"pointer",padding:"6px 0 0"}}>{tpAdvancedOpen?"▾":"▸"} Advanced settings — {pageConf.label} branding</button>
 
