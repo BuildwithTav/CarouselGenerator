@@ -43,13 +43,24 @@ export async function POST(req) {
       return Response.json({ error: "No HTML provided" }, { status: 400 });
     }
 
+    const targetWidth = width || 1080;
+    const targetHeight = height || 1350;
+    // Render at 2x and downscale to target size — a native 1x screenshot
+    // gives text/logo edges only Chromium's default anti-aliasing, which
+    // looks visibly softer once Instagram re-compresses the upload.
+    // Supersampling + downscale acts as a sharpening pass that survives
+    // that re-compression much better.
+    const SCALE = 2;
+
     const htmlWithFonts = await inlineFonts(html);
     let browser;
     try {
       const chromiumModule = await import('@sparticuz/chromium');
       const puppeteerModule = await import('puppeteer-core');
+      const sharpModule = await import('sharp');
       const chromium = chromiumModule.default;
       const puppeteer = puppeteerModule.default;
+      const sharp = sharpModule.default;
       const executablePath = await chromium.executablePath();
       process.env.LD_LIBRARY_PATH = [
         executablePath.replace('/chromium', ''),
@@ -64,22 +75,26 @@ export async function POST(req) {
           '--disable-gpu',
           '--single-process',
         ],
-        defaultViewport: { width: width || 1080, height: height || 1350 },
+        defaultViewport: { width: targetWidth, height: targetHeight, deviceScaleFactor: SCALE },
         executablePath,
         headless: true,
         ignoreHTTPSErrors: true,
       });
       const page = await browser.newPage();
-      await page.setViewport({ width: width || 1080, height: height || 1350 });
+      await page.setViewport({ width: targetWidth, height: targetHeight, deviceScaleFactor: SCALE });
       await page.setContent(htmlWithFonts, { waitUntil: 'domcontentloaded', timeout: 25000 });
       await new Promise(r => setTimeout(r, 1500));
       const screenshot = await page.screenshot({
         type: 'png',
-        clip: { x: 0, y: 0, width: width || 1080, height: height || 1350 },
+        clip: { x: 0, y: 0, width: targetWidth, height: targetHeight },
         omitBackground: false,
       });
       await browser.close();
-      const base64 = Buffer.from(screenshot).toString('base64');
+      const resized = await sharp(screenshot)
+        .resize(targetWidth, targetHeight, { kernel: 'lanczos3' })
+        .png()
+        .toBuffer();
+      const base64 = resized.toString('base64');
       return Response.json({ image: base64 });
     } catch (e) {
       if (browser) await browser.close().catch(() => {});
