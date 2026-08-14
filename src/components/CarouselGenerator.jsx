@@ -1850,6 +1850,7 @@ export default function App() {
   const [tpActivePage, setTpActivePage] = useState("relationships");
   const [tpQuantity, setTpQuantity] = useState(10);
   const [tpFocus, setTpFocus] = useState(""); // optional subject to constrain the batch to, e.g. "narcissism"
+  const [tpShowDownloaded, setTpShowDownloaded] = useState(false);
   const [tpVisualSource, setTpVisualSource] = useState("mixed"); // ai | stock | mixed
   const [tpProgress, setTpProgress] = useState([]);
   const [tpSelected, setTpSelected] = useState(()=>new Set());
@@ -2644,7 +2645,7 @@ Return ONLY valid JSON, nothing else:
       heroImageUrl: image?.url || null,
       photographer: image?.photographer || null,
       fontId: pageConf.fontId, accentColor: pageConf.accentColor,
-      createdAt: Date.now(), postedAt: null,
+      createdAt: Date.now(), postedAt: null, exportedAt: null,
       metrics: { views:"", likes:"", comments:"", shares:"", saves:"", follows:"" },
     };
   };
@@ -2809,7 +2810,7 @@ Return ONLY valid JSON, nothing else:
       const image = await sourceThemeHeroImage(variedConcept, post.imageQuery, pageConf, tpVisualSource, usedImageUrls);
       if (!image) { alert("Couldn't find another image — try again."); clearTpCardBusy(id); return; }
       const newSlides = post.slides.map(s=>({ ...s, image: image.url, imagePos: { x:0, y:0 }, imageZoom: 100 }));
-      updateThemePost(id, { slides: newSlides, heroImageUrl: image.url, imageSource: image.source, photographer: image.photographer });
+      updateThemePost(id, { slides: newSlides, heroImageUrl: image.url, imageSource: image.source, photographer: image.photographer, exportedAt: null });
     } catch(e) { console.error(e); alert("Image swap failed: "+e.message); }
     clearTpCardBusy(id);
   };
@@ -2839,17 +2840,20 @@ Return ONLY valid JSON, nothing else:
       let seq = 1;
       let renderedCount = 0;
       let failedCount = 0;
+      const exportedIds = [];
       for (const post of posts) {
         const num = String(seq++).padStart(3,"0");
         const base = `${post.page}_${num}_${slugify(post.topic)}`;
         const opts = themeTmplOpts(post);
+        let postRendered = 0;
         for (let i=0;i<post.slides.length;i++) {
           try {
             const blob = await renderSlideViaServer(post.slides[i], i, post.slides.length, opts, i===0, themePostBuilder);
             zip.file(`${base}/${base}_slide-${String(i+1).padStart(2,"0")}.png`, blob);
-            renderedCount++;
+            renderedCount++; postRendered++;
           } catch(e) { console.error("Export render failed for", base, i, e); failedCount++; }
         }
+        if (postRendered > 0) exportedIds.push(post.id);
         const captionText = post.caption + (post.hashtags?.length ? "\n\n" + post.hashtags.join(" ") : "");
         zip.file(`${base}/${base}_caption.txt`, captionText);
       }
@@ -2864,6 +2868,14 @@ Return ONLY valid JSON, nothing else:
       a.href = url; a.download = `${tpActivePage}-theme-posts.zip`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(()=>URL.revokeObjectURL(url), 2000);
+      // Mark exported posts so they drop out of the main review list and
+      // into "Downloaded" — otherwise a bulk "Export approved" click keeps
+      // re-exporting everything ever approved, including posts already
+      // downloaded in a previous run.
+      if (exportedIds.length) {
+        const exportedSet = new Set(exportedIds);
+        persistTp({ ...tp, posts: tp.posts.map(p=>exportedSet.has(p.id)?{...p,exportedAt:Date.now()}:p) });
+      }
       if (failedCount > 0) alert(`Exported, but ${failedCount} slide(s) failed to render and were left out of the zip.`);
     } catch(e) { console.error("Theme export failed:", e); alert("Export failed — try again."); }
     setTpBusy(false);
@@ -4259,14 +4271,92 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         {nav==="themepages"&&(()=>{
           const pageConf = tp.pages[tpActivePage];
           const pagePosts = tp.posts.filter(p=>p.page===tpActivePage);
-          const allIds = pagePosts.map(p=>p.id);
-          const selectedCount = allIds.filter(id=>tpSelected.has(id)).length;
+          const activePosts = pagePosts.filter(p=>!p.exportedAt);
+          const downloadedPosts = pagePosts.filter(p=>p.exportedAt);
+          const allIds = activePosts.map(p=>p.id);
+          const selectedCount = pagePosts.filter(p=>tpSelected.has(p.id)).length;
           const smallBtnStyle = {background:"transparent",border:`1.5px solid ${A.border}`,color:A.text,padding:"6px 12px",borderRadius:7,fontSize:11.5,fontWeight:700,cursor:"pointer"};
           const pillBtnStyle = {background:"transparent",border:`1.5px solid ${A.border}`,color:A.text,padding:"8px 14px",borderRadius:20,fontSize:12,fontWeight:700,cursor:"pointer"};
           const primaryPillBtnStyle = {...pillBtnStyle,background:GOLD,border:"none",color:"#0A0A0A"};
           const dangerPillBtnStyle = {...pillBtnStyle,color:"#c0392b",borderColor:"#c0392b44"};
           const disabledStyle = {opacity:0.45,cursor:"default"};
           const statusColors = {needs_review:"#8A8780",approved:"#2E7D32",posted:"#1D6FA5",rejected:"#c0392b"};
+
+          const renderPostCard = (post) => {
+            const isSelected = tpSelected.has(post.id);
+            const isExpanded = tpExpandedId===post.id;
+            const previewIdx = Math.min(tpPreviewIdx[post.id]||0, (post.slides?.length||1)-1);
+            return (
+              <div key={post.id} style={{background:A.surface,border:`2px solid ${isSelected?GOLD:A.border}`,borderRadius:14,overflow:"hidden",display:"flex",flexDirection:"column"}}>
+                <div style={{position:"relative",width:"100%",aspectRatio:"1080/1350",background:"#0A0A0A",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <label style={{position:"absolute",top:10,left:10,zIndex:5,cursor:"pointer",background:"rgba(0,0,0,0.5)",borderRadius:6,padding:3,display:"flex"}}>
+                    <input type="checkbox" checked={isSelected} onChange={()=>setTpSelected(prev=>{const n=new Set(prev);n.has(post.id)?n.delete(post.id):n.add(post.id);return n;})} style={{width:18,height:18,cursor:"pointer"}}/>
+                  </label>
+                  <span style={{position:"absolute",top:10,right:10,zIndex:5,fontSize:10,fontWeight:800,padding:"4px 9px",borderRadius:20,background:statusColors[post.status]||"#8A8780",color:"#fff",textTransform:"uppercase",letterSpacing:0.5}}>{post.status.replace("_"," ")}</span>
+                  {post.exportedAt && <span style={{position:"absolute",top:38,right:10,zIndex:5,fontSize:10,fontWeight:800,padding:"4px 9px",borderRadius:20,background:"rgba(0,0,0,0.55)",color:"#fff"}}>⬇ Downloaded</span>}
+                  {post.slides?.[previewIdx] && <SlidePreview slide={post.slides[previewIdx]} idx={previewIdx} total={post.slides.length} _c_opts={themeTmplOpts(post)} builder={themePostBuilder} onClick={()=>setTpExpandedId(isExpanded?null:post.id)} isActive={false} isCover={previewIdx===0} fill/>}
+                  {tpCardBusy[post.id] && (
+                    <div style={{position:"absolute",inset:0,zIndex:6,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:13,fontWeight:700}}>
+                      {tpCardBusy[post.id]==="regen"?"Regenerating…":"Finding a new image…"}
+                    </div>
+                  )}
+                </div>
+                <div style={{padding:14,display:"flex",flexDirection:"column",gap:8,flex:1}}>
+                  <div style={{fontSize:13,fontWeight:700,lineHeight:1.35,cursor:"pointer"}} onClick={()=>setTpExpandedId(isExpanded?null:post.id)}>{post.slides?.[0]?.headline||"(no headline)"}</div>
+                  <div style={{fontSize:11,color:A.muted,display:"flex",gap:6,flexWrap:"wrap"}}>
+                    <span>{post.pillar}</span><span>·</span><span>{post.slides?.length||0} slides</span><span>·</span><span>{post.imageSource||"no image"}</span>
+                  </div>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                    <button onClick={()=>approveThemePosts([post.id])} style={smallBtnStyle}>Approve</button>
+                    <button onClick={()=>regenerateThemePost(post.id)} disabled={!!tpCardBusy[post.id]} style={tpCardBusy[post.id]?{...smallBtnStyle,...disabledStyle}:smallBtnStyle}>{tpCardBusy[post.id]==="regen"?"Regenerating…":"Regenerate"}</button>
+                    <button onClick={()=>swapThemeImage(post.id)} disabled={!!tpCardBusy[post.id]} style={tpCardBusy[post.id]?{...smallBtnStyle,...disabledStyle}:smallBtnStyle}>{tpCardBusy[post.id]==="swap"?"Swapping…":"Swap image"}</button>
+                    <button onClick={()=>setTpExpandedId(isExpanded?null:post.id)} style={smallBtnStyle}>{isExpanded?"Collapse":"Details"}</button>
+                    <button onClick={()=>{if(window.confirm("Delete this post?")) removeThemePosts([post.id]);}} style={{...smallBtnStyle,color:"#c0392b"}}>Delete</button>
+                  </div>
+
+                  {isExpanded && (
+                    <div style={{marginTop:6,paddingTop:10,borderTop:`1px solid ${A.border}`,display:"flex",flexDirection:"column",gap:10}}>
+                      <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
+                        {post.slides.map((s,i)=>(
+                          <SlidePreview key={i} slide={s} idx={i} total={post.slides.length} _c_opts={themeTmplOpts(post)} builder={themePostBuilder} onClick={()=>setTpPreviewIdx(prev=>({...prev,[post.id]:i}))} isActive={i===previewIdx} isCover={i===0} previewSize={100}/>
+                        ))}
+                      </div>
+                      <div>
+                        <div style={{fontSize:11,color:A.muted,marginBottom:4}}>Caption</div>
+                        <textarea value={post.caption||""} onChange={e=>updateThemePost(post.id,{caption:e.target.value})} rows={3} style={{width:"100%",padding:8,borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:12,resize:"vertical",fontFamily:"inherit"}}/>
+                      </div>
+                      <div>
+                        <div style={{fontSize:11,color:A.muted,marginBottom:4}}>Hashtags</div>
+                        <input value={(post.hashtags||[]).join(" ")} onChange={e=>updateThemePost(post.id,{hashtags:e.target.value.split(/\s+/).filter(Boolean)})} style={{width:"100%",padding:8,borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:12}}/>
+                      </div>
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                        <button onClick={()=>exportThemePosts([post.id])} disabled={tpBusy} style={tpBusy?{...smallBtnStyle,...disabledStyle}:smallBtnStyle}>{tpBusy?"Exporting…":post.exportedAt?"Re-export post":"Export post"}</button>
+                        <button onClick={()=>makeMoreLikeThis(post.id)} disabled={tpBusy} style={{...smallBtnStyle,borderColor:GOLD,color:GOLD,fontWeight:800}}>Make more like this</button>
+                        {post.status!=="posted" && <button onClick={()=>setTpMetricsOpenId(tpMetricsOpenId===post.id?null:post.id)} style={smallBtnStyle}>Mark posted</button>}
+                      </div>
+                      {post.exportedAt && (
+                        <div style={{fontSize:11,color:A.muted}}>Downloaded {new Date(post.exportedAt).toLocaleDateString()}</div>
+                      )}
+                      {post.status==="posted" && (
+                        <div style={{fontSize:11,color:A.muted}}>
+                          Posted {new Date(post.postedAt).toLocaleDateString()} — {Object.entries(post.metrics||{}).filter(([,v])=>v!=="").map(([k,v])=>`${k}: ${v}`).join(", ")||"no metrics logged"}
+                          <button onClick={()=>setTpMetricsOpenId(tpMetricsOpenId===post.id?null:post.id)} style={{marginLeft:8,background:"none",border:"none",color:GOLD,fontWeight:700,cursor:"pointer",padding:0}}>Edit</button>
+                        </div>
+                      )}
+                      {tpMetricsOpenId===post.id && (
+                        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+                          {["views","likes","comments","shares","saves","follows"].map(k=>(
+                            <input key={k} placeholder={k} value={post.metrics?.[k]||""} onChange={e=>updateThemePost(post.id,{metrics:{...post.metrics,[k]:e.target.value}})} style={{padding:6,borderRadius:6,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:11}}/>
+                          ))}
+                          <button onClick={()=>markThemePosted(post.id, post.metrics)} style={{...smallBtnStyle,gridColumn:"1 / -1",background:GOLD,color:"#0A0A0A",fontWeight:800,borderColor:GOLD}}>Save &amp; mark posted</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          };
 
           return (
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:1100,margin:"0 auto",width:"100%",paddingBottom:60}}>
@@ -4416,87 +4506,32 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                     <button onClick={()=>setTpSelected(new Set())} style={pillBtnStyle}>Clear</button>
                     <button onClick={()=>approveThemePosts(allIds)} style={primaryPillBtnStyle}>Approve all</button>
                     <button onClick={()=>approveThemePosts(Array.from(tpSelected))} disabled={!selectedCount} style={selectedCount?primaryPillBtnStyle:{...primaryPillBtnStyle,...disabledStyle}}>Approve selected</button>
-                    <button onClick={()=>exportThemePosts(pagePosts.filter(p=>p.status==="approved"||p.status==="posted").map(p=>p.id))} disabled={tpBusy} style={tpBusy?{...primaryPillBtnStyle,...disabledStyle}:primaryPillBtnStyle}>{tpBusy?"Exporting…":"Export approved"}</button>
+                    <button onClick={()=>exportThemePosts(activePosts.filter(p=>p.status==="approved"||p.status==="posted").map(p=>p.id))} disabled={tpBusy} style={tpBusy?{...primaryPillBtnStyle,...disabledStyle}:primaryPillBtnStyle}>{tpBusy?"Exporting…":"Export approved"}</button>
                     <button onClick={()=>{Array.from(tpSelected).forEach(id=>regenerateThemePost(id));}} disabled={!selectedCount||tpBusy} style={!selectedCount||tpBusy?{...pillBtnStyle,...disabledStyle}:pillBtnStyle}>Regenerate selected</button>
                     <button onClick={()=>{if(selectedCount&&window.confirm(`Delete ${selectedCount} post(s)?`)) removeThemePosts(Array.from(tpSelected));}} disabled={!selectedCount} style={!selectedCount?{...dangerPillBtnStyle,...disabledStyle}:dangerPillBtnStyle}>Delete selected</button>
                   </div>
                 </div>
 
-                {pagePosts.length===0 ? (
-                  <div style={{textAlign:"center",padding:"60px 0",color:A.muted}}>No posts yet for {pageConf.label} — go back and generate a batch.</div>
+                {activePosts.length===0 ? (
+                  <div style={{textAlign:"center",padding:"60px 0",color:A.muted}}>
+                    {pagePosts.length===0
+                      ? `No posts yet for ${pageConf.label} — go back and generate a batch.`
+                      : `All caught up — every ${pageConf.label} post has already been downloaded. Generate a new batch, or check "Downloaded" below to re-export.`}
+                  </div>
                 ) : (
                   <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:16}}>
-                    {pagePosts.map(post=>{
-                      const isSelected = tpSelected.has(post.id);
-                      const isExpanded = tpExpandedId===post.id;
-                      const previewIdx = Math.min(tpPreviewIdx[post.id]||0, (post.slides?.length||1)-1);
-                      return (
-                        <div key={post.id} style={{background:A.surface,border:`2px solid ${isSelected?GOLD:A.border}`,borderRadius:14,overflow:"hidden",display:"flex",flexDirection:"column"}}>
-                          <div style={{position:"relative",width:"100%",aspectRatio:"1080/1350",background:"#0A0A0A",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                            <label style={{position:"absolute",top:10,left:10,zIndex:5,cursor:"pointer",background:"rgba(0,0,0,0.5)",borderRadius:6,padding:3,display:"flex"}}>
-                              <input type="checkbox" checked={isSelected} onChange={()=>setTpSelected(prev=>{const n=new Set(prev);n.has(post.id)?n.delete(post.id):n.add(post.id);return n;})} style={{width:18,height:18,cursor:"pointer"}}/>
-                            </label>
-                            <span style={{position:"absolute",top:10,right:10,zIndex:5,fontSize:10,fontWeight:800,padding:"4px 9px",borderRadius:20,background:statusColors[post.status]||"#8A8780",color:"#fff",textTransform:"uppercase",letterSpacing:0.5}}>{post.status.replace("_"," ")}</span>
-                            {post.slides?.[previewIdx] && <SlidePreview slide={post.slides[previewIdx]} idx={previewIdx} total={post.slides.length} _c_opts={themeTmplOpts(post)} builder={themePostBuilder} onClick={()=>setTpExpandedId(isExpanded?null:post.id)} isActive={false} isCover={previewIdx===0} fill/>}
-                            {tpCardBusy[post.id] && (
-                              <div style={{position:"absolute",inset:0,zIndex:6,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:13,fontWeight:700}}>
-                                {tpCardBusy[post.id]==="regen"?"Regenerating…":"Finding a new image…"}
-                              </div>
-                            )}
-                          </div>
-                          <div style={{padding:14,display:"flex",flexDirection:"column",gap:8,flex:1}}>
-                            <div style={{fontSize:13,fontWeight:700,lineHeight:1.35,cursor:"pointer"}} onClick={()=>setTpExpandedId(isExpanded?null:post.id)}>{post.slides?.[0]?.headline||"(no headline)"}</div>
-                            <div style={{fontSize:11,color:A.muted,display:"flex",gap:6,flexWrap:"wrap"}}>
-                              <span>{post.pillar}</span><span>·</span><span>{post.slides?.length||0} slides</span><span>·</span><span>{post.imageSource||"no image"}</span>
-                            </div>
-                            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                              <button onClick={()=>approveThemePosts([post.id])} style={smallBtnStyle}>Approve</button>
-                              <button onClick={()=>regenerateThemePost(post.id)} disabled={!!tpCardBusy[post.id]} style={tpCardBusy[post.id]?{...smallBtnStyle,...disabledStyle}:smallBtnStyle}>{tpCardBusy[post.id]==="regen"?"Regenerating…":"Regenerate"}</button>
-                              <button onClick={()=>swapThemeImage(post.id)} disabled={!!tpCardBusy[post.id]} style={tpCardBusy[post.id]?{...smallBtnStyle,...disabledStyle}:smallBtnStyle}>{tpCardBusy[post.id]==="swap"?"Swapping…":"Swap image"}</button>
-                              <button onClick={()=>setTpExpandedId(isExpanded?null:post.id)} style={smallBtnStyle}>{isExpanded?"Collapse":"Details"}</button>
-                              <button onClick={()=>{if(window.confirm("Delete this post?")) removeThemePosts([post.id]);}} style={{...smallBtnStyle,color:"#c0392b"}}>Delete</button>
-                            </div>
+                    {activePosts.map(post=>renderPostCard(post))}
+                  </div>
+                )}
 
-                            {isExpanded && (
-                              <div style={{marginTop:6,paddingTop:10,borderTop:`1px solid ${A.border}`,display:"flex",flexDirection:"column",gap:10}}>
-                                <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
-                                  {post.slides.map((s,i)=>(
-                                    <SlidePreview key={i} slide={s} idx={i} total={post.slides.length} _c_opts={themeTmplOpts(post)} builder={themePostBuilder} onClick={()=>setTpPreviewIdx(prev=>({...prev,[post.id]:i}))} isActive={i===previewIdx} isCover={i===0} previewSize={100}/>
-                                  ))}
-                                </div>
-                                <div>
-                                  <div style={{fontSize:11,color:A.muted,marginBottom:4}}>Caption</div>
-                                  <textarea value={post.caption||""} onChange={e=>updateThemePost(post.id,{caption:e.target.value})} rows={3} style={{width:"100%",padding:8,borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:12,resize:"vertical",fontFamily:"inherit"}}/>
-                                </div>
-                                <div>
-                                  <div style={{fontSize:11,color:A.muted,marginBottom:4}}>Hashtags</div>
-                                  <input value={(post.hashtags||[]).join(" ")} onChange={e=>updateThemePost(post.id,{hashtags:e.target.value.split(/\s+/).filter(Boolean)})} style={{width:"100%",padding:8,borderRadius:8,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:12}}/>
-                                </div>
-                                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                                  <button onClick={()=>exportThemePosts([post.id])} disabled={tpBusy} style={tpBusy?{...smallBtnStyle,...disabledStyle}:smallBtnStyle}>{tpBusy?"Exporting…":"Export post"}</button>
-                                  <button onClick={()=>makeMoreLikeThis(post.id)} disabled={tpBusy} style={{...smallBtnStyle,borderColor:GOLD,color:GOLD,fontWeight:800}}>Make more like this</button>
-                                  {post.status!=="posted" && <button onClick={()=>setTpMetricsOpenId(tpMetricsOpenId===post.id?null:post.id)} style={smallBtnStyle}>Mark posted</button>}
-                                </div>
-                                {post.status==="posted" && (
-                                  <div style={{fontSize:11,color:A.muted}}>
-                                    Posted {new Date(post.postedAt).toLocaleDateString()} — {Object.entries(post.metrics||{}).filter(([,v])=>v!=="").map(([k,v])=>`${k}: ${v}`).join(", ")||"no metrics logged"}
-                                    <button onClick={()=>setTpMetricsOpenId(tpMetricsOpenId===post.id?null:post.id)} style={{marginLeft:8,background:"none",border:"none",color:GOLD,fontWeight:700,cursor:"pointer",padding:0}}>Edit</button>
-                                  </div>
-                                )}
-                                {tpMetricsOpenId===post.id && (
-                                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
-                                    {["views","likes","comments","shares","saves","follows"].map(k=>(
-                                      <input key={k} placeholder={k} value={post.metrics?.[k]||""} onChange={e=>updateThemePost(post.id,{metrics:{...post.metrics,[k]:e.target.value}})} style={{padding:6,borderRadius:6,border:`1.5px solid ${A.border}`,background:A.input,color:A.text,fontSize:11}}/>
-                                    ))}
-                                    <button onClick={()=>markThemePosted(post.id, post.metrics)} style={{...smallBtnStyle,gridColumn:"1 / -1",background:GOLD,color:"#0A0A0A",fontWeight:800,borderColor:GOLD}}>Save &amp; mark posted</button>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                {downloadedPosts.length>0 && (
+                  <div style={{marginTop:28}}>
+                    <button onClick={()=>setTpShowDownloaded(v=>!v)} style={{background:"none",border:"none",color:A.muted,fontSize:13,fontWeight:700,cursor:"pointer",padding:0,marginBottom:tpShowDownloaded?16:0}}>{tpShowDownloaded?"▾":"▸"} Downloaded ({downloadedPosts.length})</button>
+                    {tpShowDownloaded && (
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:16}}>
+                        {downloadedPosts.map(post=>renderPostCard(post))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
