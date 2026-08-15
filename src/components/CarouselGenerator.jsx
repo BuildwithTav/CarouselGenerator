@@ -2869,7 +2869,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
   const CLIP_ALLOWED_TYPES = ["video/mp4","video/quicktime","video/webm"];
   const CLIP_MAX_DURATION = 31;
-  const CLIP_MAX_BYTES = 100*1024*1024;
+  const CLIP_MAX_BYTES = 300*1024*1024;
 
   const readVideoDuration = (file) => new Promise((resolve, reject) => {
     const v = document.createElement("video");
@@ -2887,7 +2887,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
     for (const file of files) {
       try {
         if (!CLIP_ALLOWED_TYPES.includes(file.type)) { setClipUploadError(`${file.name}: use MP4, MOV, or WebM.`); continue; }
-        if (file.size > CLIP_MAX_BYTES) { setClipUploadError(`${file.name}: over the 100MB limit.`); continue; }
+        if (file.size > CLIP_MAX_BYTES) { setClipUploadError(`${file.name}: over the 300MB limit.`); continue; }
         const duration = await readVideoDuration(file);
         if (duration > CLIP_MAX_DURATION) { setClipUploadError(`${file.name}: ${Math.round(duration)}s is over the 30s max — trim it before uploading.`); continue; }
         const blob = await uploadToBlob(`clips/${Date.now()}-${file.name}`, file, { access:"public", handleUploadUrl:"/api/upload-video" });
