@@ -177,12 +177,104 @@ function getPlanLabel(plan) {
 
 export const maxDuration = 60;
 
+// Emails allowed to skip the OTP-code step entirely (send-otp mints and
+// returns a real Supabase session immediately). Scoped to specific,
+// trusted addresses only — every other email still goes through the
+// normal emailed-code flow.
+const DIRECT_LOGIN_EMAILS = ["runerbean85@icloud.com"];
+
+// Shared post-authentication step for both the normal verify-otp flow and
+// the direct-login bypass above: provisions the user row on first login,
+// sends welcome/affiliate-welcome emails, and returns the session payload.
+async function finishLogin(user, session, body) {
+  const resolvedFirstName = body.firstName || user.email.split("@")[0];
+  const marketingConsent = body.marketingConsent === true;
+  const affiliateRef = body.affiliateRef;
+
+  const { data: existing } = await supabase.from("users").select("*").eq("email", user.email).single();
+
+  if (!existing) {
+    let affiliateId = generateAffiliateId();
+    let { data: idCheck } = await supabase.from("users").select("affiliate_id").eq("affiliate_id", affiliateId).single();
+    while (idCheck) {
+      affiliateId = generateAffiliateId();
+      const check = await supabase.from("users").select("affiliate_id").eq("affiliate_id", affiliateId).single();
+      idCheck = check.data;
+    }
+
+    const { data: pendingRef } = await supabase
+      .from("pending_affiliate_refs")
+      .select("affiliate_ref")
+      .eq("email", user.email)
+      .single();
+
+    const resolvedRef = affiliateRef || pendingRef?.affiliate_ref || null;
+
+    await supabase.from("users").insert({
+      email: user.email,
+      first_name: resolvedFirstName,
+      marketing_consent: marketingConsent,
+      plan: "free",
+      credits_used: 0,
+      credits_limit: 60,
+      downloads_used: 0,
+      bonus_credits: 0,
+      period_start: new Date().toISOString(),
+      affiliate_id: affiliateId,
+      affiliate_ref: resolvedRef,
+      affiliate_tier: "none",
+      affiliate_active: false
+    });
+
+    const { subject, html } = emailFreeWelcome(resolvedFirstName);
+    await sendEmail(user.email, subject, html);
+
+    if (resolvedRef) {
+      try {
+        const { data: affiliateUser } = await supabase.from("users").select("email, first_name").eq("affiliate_id", resolvedRef).single();
+        if (affiliateUser?.email) {
+          const { subject: aSubject, html: aHtml } = emailNewReferral(affiliateUser.first_name || "there", user.email);
+          await sendEmail(affiliateUser.email, aSubject, aHtml, true);
+        }
+      } catch {}
+    }
+
+    await addToSysteme(user.email, "carousel-studio-free");
+
+  } else if (existing.plan !== "free" && existing.affiliate_id && existing.affiliate_active && !existing.affiliate_welcome_email_sent) {
+    const commissionRate = getCommissionRate(existing.plan);
+    const planLabel = getPlanLabel(existing.plan);
+    const nameToUse = existing.first_name || resolvedFirstName;
+    const { subject, html } = emailPaidWelcome(nameToUse, planLabel, existing.affiliate_id, commissionRate);
+    await sendEmail(user.email, subject, html);
+    await supabase.from("users").update({ affiliate_welcome_email_sent: true }).eq("email", user.email);
+  }
+
+  const { data: profile } = await supabase.from("users").select("*").eq("email", user.email).single();
+
+  return NextResponse.json({
+    success: true,
+    email: user.email,
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    user: profile
+  });
+}
+
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { action, email, token, affiliateRef } = body;
+    const { action, email, token } = body;
 
     if (action === "send-otp") {
+      const normalizedEmail = (email||"").trim().toLowerCase();
+      if (DIRECT_LOGIN_EMAILS.includes(normalizedEmail)) {
+        const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({ type: "magiclink", email: normalizedEmail });
+        if (linkError) return NextResponse.json({ error: linkError.message }, { status: 400 });
+        const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({ token_hash: linkData.properties.hashed_token, type: "magiclink" });
+        if (verifyError) return NextResponse.json({ error: verifyError.message }, { status: 400 });
+        return finishLogin(verifyData.user, verifyData.session, body);
+      }
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: { shouldCreateUser: true }
@@ -194,79 +286,7 @@ export async function POST(req) {
     if (action === "verify-otp") {
       const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
       if (error) return NextResponse.json({ error: "Invalid code — check your email and try again." }, { status: 400 });
-
-      const user = data.user;
-      const resolvedFirstName = body.firstName || user.email.split("@")[0];
-      const marketingConsent = body.marketingConsent === true;
-
-      const { data: existing } = await supabase.from("users").select("*").eq("email", user.email).single();
-
-      if (!existing) {
-        let affiliateId = generateAffiliateId();
-        let { data: idCheck } = await supabase.from("users").select("affiliate_id").eq("affiliate_id", affiliateId).single();
-        while (idCheck) {
-          affiliateId = generateAffiliateId();
-          const check = await supabase.from("users").select("affiliate_id").eq("affiliate_id", affiliateId).single();
-          idCheck = check.data;
-        }
-
-        const { data: pendingRef } = await supabase
-          .from("pending_affiliate_refs")
-          .select("affiliate_ref")
-          .eq("email", user.email)
-          .single();
-
-        const resolvedRef = affiliateRef || pendingRef?.affiliate_ref || null;
-
-        await supabase.from("users").insert({
-          email: user.email,
-          first_name: resolvedFirstName,
-          marketing_consent: marketingConsent,
-          plan: "free",
-          credits_used: 0,
-          credits_limit: 60,
-          downloads_used: 0,
-          bonus_credits: 0,
-          period_start: new Date().toISOString(),
-          affiliate_id: affiliateId,
-          affiliate_ref: resolvedRef,
-          affiliate_tier: "none",
-          affiliate_active: false
-        });
-
-        const { subject, html } = emailFreeWelcome(resolvedFirstName);
-        await sendEmail(user.email, subject, html);
-
-        if (resolvedRef) {
-          try {
-            const { data: affiliateUser } = await supabase.from("users").select("email, first_name").eq("affiliate_id", resolvedRef).single();
-            if (affiliateUser?.email) {
-              const { subject: aSubject, html: aHtml } = emailNewReferral(affiliateUser.first_name || "there", user.email);
-              await sendEmail(affiliateUser.email, aSubject, aHtml, true);
-            }
-          } catch {}
-        }
-
-        await addToSysteme(user.email, "carousel-studio-free");
-
-      } else if (existing.plan !== "free" && existing.affiliate_id && existing.affiliate_active && !existing.affiliate_welcome_email_sent) {
-        const commissionRate = getCommissionRate(existing.plan);
-        const planLabel = getPlanLabel(existing.plan);
-        const nameToUse = existing.first_name || resolvedFirstName;
-        const { subject, html } = emailPaidWelcome(nameToUse, planLabel, existing.affiliate_id, commissionRate);
-        await sendEmail(user.email, subject, html);
-        await supabase.from("users").update({ affiliate_welcome_email_sent: true }).eq("email", user.email);
-      }
-
-      const { data: profile } = await supabase.from("users").select("*").eq("email", user.email).single();
-
-      return NextResponse.json({
-        success: true,
-        email: user.email,
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-        user: profile
-      });
+      return finishLogin(data.user, data.session, body);
     }
 
     if (action === "me") {

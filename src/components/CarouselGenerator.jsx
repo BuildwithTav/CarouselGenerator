@@ -951,15 +951,32 @@ export default function App() {
     .finally(()=>setAuthLoading(false));
   }, []);
 
+  const applyLoginSuccess = (d) => {
+    setToken(d.access_token);
+    if (d.refresh_token) setRefreshToken(d.refresh_token);
+    setCurrentUser(d.user||{ email: d.email, plan:"free", credits_used:0, credits_limit:60 }); setShowAuthModal(false);
+    // Fire Meta Pixel CompleteRegistration for new signups
+    try {
+      const createdAt = d.user?.created_at;
+      if (createdAt && (Date.now() - new Date(createdAt).getTime()) < 60000) {
+        if (typeof window !== "undefined" && window.fbq) {
+          window.fbq("track", "CompleteRegistration");
+        }
+      }
+    } catch(e) {}
+  };
+
   const sendOtp = async () => {
     if (!authFirstName.trim()) { setAuthError("Enter your first name."); return; }
     if (!authEmail.trim()) { setAuthError("Enter your email address."); return; }
     if (!marketingConsent) { setAuthError("Please agree to receive emails to continue."); return; }
     setAuthSubmitting(true); setAuthError("");
     try {
-      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"send-otp", email: authEmail.trim().toLowerCase() }) });
+      const affiliateRef = getAffiliateRef();
+      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"send-otp", email: authEmail.trim().toLowerCase(), affiliateRef, firstName: authFirstName.trim(), marketingConsent }) });
       const d = await r.json();
       if (d.error) { setAuthError(d.error); }
+      else if (d.access_token) { applyLoginSuccess(d); }
       else { setOtpSent(true); }
     } catch { setAuthError("Something went wrong — try again."); }
     setAuthSubmitting(false);
@@ -973,21 +990,7 @@ export default function App() {
       const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"verify-otp", email: authEmail.trim().toLowerCase(), token: otpCode.trim(), affiliateRef, firstName: authFirstName.trim(), marketingConsent }) });
       const d = await r.json();
       if (d.error) { setAuthError("Invalid code — check your email and try again."); }
-      else { 
-
-        setToken(d.access_token);
-        if (d.refresh_token) setRefreshToken(d.refresh_token);
-        setCurrentUser(d.user||{ email: d.email, plan:"free", credits_used:0, credits_limit:60 }); setShowAuthModal(false);
-        // Fire Meta Pixel CompleteRegistration for new signups
-        try {
-          const createdAt = d.user?.created_at;
-          if (createdAt && (Date.now() - new Date(createdAt).getTime()) < 60000) {
-            if (typeof window !== "undefined" && window.fbq) {
-              window.fbq("track", "CompleteRegistration");
-            }
-          }
-        } catch(e) {} 
-      }
+      else { applyLoginSuccess(d); }
     } catch { setAuthError("Something went wrong — try again."); }
     setAuthSubmitting(false);
   };
