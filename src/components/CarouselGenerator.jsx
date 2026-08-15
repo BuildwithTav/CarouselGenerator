@@ -1634,6 +1634,7 @@ export default function App() {
   const [blueTick, setBlueTick] = useState(S?.blueTick??false);
   const [clipLibrary, setClipLibrary] = useState(S?.clipLibrary||[]);
   const [clipUploading, setClipUploading] = useState(false);
+  const [clipUploadStage, setClipUploadStage] = useState("");
   const [clipUploadingFile, setClipUploadingFile] = useState("");
   const [clipUploadPercent, setClipUploadPercent] = useState(0);
   const [clipUploadError, setClipUploadError] = useState("");
@@ -2924,6 +2925,28 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
     v.src = URL.createObjectURL(file);
   });
 
+  // Downscale/strip-audio before upload — a raw 4K phone clip can be
+  // 5-10x bigger than it needs to be for a 5-7s 1080x1920 output, and that
+  // extra size is what was making uploads take minutes. Compressing
+  // locally first (a few seconds to ~1 min of local CPU) trades that for a
+  // much smaller, much faster upload.
+  const compressClipForUpload = async (file) => {
+    const { fetchFile } = await import("@ffmpeg/util");
+    const ffmpeg = await loadClipFfmpeg();
+    const inName = "up-in";
+    const outName = "up-out.mp4";
+    await ffmpeg.writeFile(inName, await fetchFile(file));
+    await ffmpeg.exec([
+      "-i",inName,
+      "-vf","scale='min(1080,iw)':'min(1920,ih)':force_original_aspect_ratio=decrease",
+      "-an","-c:v","libx264","-preset","ultrafast","-crf","28",outName
+    ]);
+    const data = await ffmpeg.readFile(outName);
+    try { await ffmpeg.deleteFile(inName); } catch {}
+    try { await ffmpeg.deleteFile(outName); } catch {}
+    return new Blob([data.buffer], { type:"video/mp4" });
+  };
+
   const handleClipFilesSelected = async (e) => {
     const files = Array.from(e.target.files||[]);
     if (!files.length) return;
@@ -2932,14 +2955,19 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
     for (let i=0; i<files.length; i++) {
       const file = files[i];
       const fileLabel = files.length>1 ? `${file.name} (${i+1}/${files.length})` : file.name;
-      setClipUploadingFile(fileLabel);
-      setClipUploadPercent(0);
       try {
         if (!CLIP_ALLOWED_TYPES.includes(file.type)) { setClipUploadError(`${file.name}: use MP4, MOV, or WebM.`); continue; }
         if (file.size > CLIP_MAX_BYTES) { setClipUploadError(`${file.name}: over the 300MB limit.`); continue; }
         const duration = await readVideoDuration(file);
         if (duration > CLIP_MAX_DURATION) { setClipUploadError(`${file.name}: ${Math.round(duration)}s is over the 30s max — trim it before uploading.`); continue; }
-        const blob = await uploadToBlob(`clips/${Date.now()}-${file.name}`, file, {
+
+        setClipUploadStage("Compressing");
+        setClipUploadingFile(fileLabel);
+        setClipUploadPercent(0);
+        const compressedBlob = await compressClipForUpload(file);
+
+        setClipUploadStage("Uploading");
+        const blob = await uploadToBlob(`clips/${Date.now()}-${file.name.replace(/\.[^.]+$/,"")}.mp4`, compressedBlob, {
           access:"public", handleUploadUrl:"/api/upload-video",
           onUploadProgress: (ev) => setClipUploadPercent(Math.round(ev.percentage)),
         });
@@ -2950,6 +2978,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
       }
     }
     setClipUploading(false);
+    setClipUploadStage("");
     setClipUploadingFile("");
     setClipUploadPercent(0);
     if (clipFileRef.current) clipFileRef.current.value = "";
@@ -4753,9 +4782,9 @@ Return ONLY the caption text — no quotes, no markdown, no explanation, no head
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Source clip library</label>
                 <div onClick={()=>!clipUploading&&clipFileRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:16,cursor:clipUploading?"default":"pointer",textAlign:"center",marginTop:8}}>
-                  <span style={{color:A.muted,fontSize:13}}>{clipUploading?`Uploading ${clipUploadingFile} — ${clipUploadPercent}%`:"Upload video clips (MP4/MOV/WebM, max 30s each)"}</span>
+                  <span style={{color:A.muted,fontSize:13}}>{clipUploading?(clipUploadStage==="Uploading"?`Uploading ${clipUploadingFile} — ${clipUploadPercent}%`:`Compressing ${clipUploadingFile}…`):"Upload video clips (MP4/MOV/WebM, max 30s each)"}</span>
                 </div>
-                {clipUploading&&(
+                {clipUploading&&clipUploadStage==="Uploading"&&(
                   <div style={{width:"100%",height:6,background:A.border,borderRadius:3,marginTop:8,overflow:"hidden"}}>
                     <div style={{width:`${clipUploadPercent}%`,height:"100%",background:GOLD,transition:"width 0.2s ease"}}/>
                   </div>
