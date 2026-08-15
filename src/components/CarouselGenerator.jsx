@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { upload as uploadToBlob } from "@vercel/blob/client";
 
 const GOLD = "#C9A84C";
 const STORAGE_KEY = "bwt_v11";
@@ -575,6 +576,51 @@ function buildSlideHTML(slide, idx, total, _c_opts, isCover = false) {
     const label = isCover ? `<div class="swipe-label"><span>Swipe for more</span><span style="font-size:${Math.round(isPortrait?22:18)}px;opacity:0.6;">→</span></div>` : "";
     return `<div class="swipe"><div class="swipe-dots">${dots}</div>${label}</div>`;
   })()}
+</div>
+</body></html>`;
+}
+
+// ─── CLIP OVERLAY (video text overlay, rendered transparent) ──────────
+function buildClipOverlayHTML({ hookText, transitionText, promptItems, followHandle, commentKeyword, rewardText, profileUrl, name, handle, blueTick, showBadge }) {
+  const W = 1080, H = 1920;
+  function esc(s) { return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  const gFonts = `https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap`;
+  const shadow = "text-shadow:0 2px 4px rgba(0,0,0,0.85),0 0 24px rgba(0,0,0,0.55),0 4px 16px rgba(0,0,0,0.5);";
+
+  const tickHTML = blueTick ? `<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:#1D9BF0;border-radius:50%;margin-left:5px;position:relative;flex-shrink:0;"><span style="position:absolute;width:7px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);top:6px;left:5px;"></span></span>` : "";
+
+  const badgeHTML = showBadge ? `
+    <div style="position:absolute;top:64px;left:56px;z-index:10;display:inline-flex;align-items:center;gap:12px;">
+      <div style="width:56px;height:56px;border-radius:50%;overflow:hidden;flex-shrink:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;border:2px solid #fff;">
+        ${profileUrl?`<img src="${profileUrl}" style="width:100%;height:100%;object-fit:cover;"/>`:`<span style="font-size:22px;font-weight:800;color:#fff;">${esc((name||"?")[0].toUpperCase())}</span>`}
+      </div>
+      <div style="display:flex;flex-direction:column;">
+        <div style="font-size:17px;font-weight:800;color:#fff;line-height:1.2;display:flex;align-items:center;${shadow}">${esc(name||"Your Brand")}${tickHTML}</div>
+        <div style="font-size:13px;color:#fff;${shadow}">${esc(handle||"@yourhandle")}</div>
+      </div>
+    </div>` : "";
+
+  const promptListHTML = promptItems.length ? `
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      ${promptItems.map((p,i)=>`<div style="font-size:30px;font-weight:700;color:#fff;line-height:1.35;${shadow}">${i+1}. ${esc(p)}</div>`).join("")}
+    </div>` : "";
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>
+  @import url('${gFonts}');
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-font-smoothing:antialiased; }
+  html, body { width:${W}px; height:${H}px; overflow:hidden; background:transparent; font-family:'Poppins',sans-serif; }
+</style>
+</head><body>
+<div style="position:relative;width:${W}px;height:${H}px;">
+  ${badgeHTML}
+  <div style="position:absolute;top:50%;left:64px;right:64px;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:30px;text-align:center;">
+    <div style="font-size:58px;font-weight:800;color:#fff;line-height:1.25;${shadow}">${esc(hookText)}</div>
+    ${transitionText ? `<div style="font-size:32px;font-weight:700;color:#fff;${shadow}">${esc(transitionText)}</div>` : ""}
+    ${promptListHTML}
+    <div style="font-size:34px;font-weight:800;color:#fff;margin-top:10px;${shadow}">Follow me ${esc(followHandle||"@yourhandle")}</div>
+    ${(commentKeyword||rewardText) ? `<div style="font-size:32px;font-weight:700;color:#fff;line-height:1.4;${shadow}">Comment <span style="color:#FFD84D;">${esc((commentKeyword||"").toUpperCase())}</span>${rewardText?` and I'll send you ${esc(rewardText)}`:""}</div>` : ""}
+  </div>
 </div>
 </body></html>`;
 }
@@ -1549,6 +1595,18 @@ export default function App() {
   const [name, setName] = useState(S?.name||"");
   const [handle, setHandle] = useState(S?.handle||"");
   const [blueTick, setBlueTick] = useState(S?.blueTick??false);
+  const [clipLibrary, setClipLibrary] = useState(S?.clipLibrary||[]);
+  const [clipUploading, setClipUploading] = useState(false);
+  const [clipUploadError, setClipUploadError] = useState("");
+  const [clipHookText, setClipHookText] = useState(S?.clipHookText||"");
+  const [clipTransitionText, setClipTransitionText] = useState(S?.clipTransitionText??"Here's the prompt it gave me ⬇");
+  const [clipPromptList, setClipPromptList] = useState(S?.clipPromptList||"");
+  const [clipCommentKeyword, setClipCommentKeyword] = useState(S?.clipCommentKeyword||"");
+  const [clipRewardText, setClipRewardText] = useState(S?.clipRewardText||"");
+  const [clipShowBadge, setClipShowBadge] = useState(S?.clipShowBadge??true);
+  const [clipResultUrl, setClipResultUrl] = useState(null);
+  const [clipGenerating, setClipGenerating] = useState(false);
+  const [clipGenError, setClipGenError] = useState("");
   // Component-level vars for drawer
   const generateList=async()=>{
     if(!tmplBrief&&!tmplSlides.some(s=>s.headline))return;
@@ -1836,6 +1894,8 @@ export default function App() {
   const inspirationRef = useRef(null);
   const quoteBgRef = useRef(null);
   const quotePhotoRef = useRef(null);
+  const clipFileRef = useRef(null);
+  const clipFfmpegRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1848,10 +1908,12 @@ export default function App() {
     const safeActiveCover = activeCoverPhoto?.startsWith('_c_data:') ? '' : activeCoverPhoto;
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,quotePhotos,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
-           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("_c_data:")),overlayDark,photoOpacity,templateOpacity,ratio,bgColour,customColourDark,slideTextDark,audienceType,customActiveSlot,textDensity});
+           bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("_c_data:")),overlayDark,photoOpacity,templateOpacity,ratio,bgColour,customColourDark,slideTextDark,audienceType,customActiveSlot,textDensity,
+           clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
-      bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType,customActiveSlot,textDensity,quotePhotos]);
+      bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType,customActiveSlot,textDensity,quotePhotos,
+      clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge]);
 
   const readFile = (e, cb) => {
     const f = e.target.files[0]; if (!f) return;
@@ -2802,6 +2864,114 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
     setDownloadingQuotes(false);
   };
 
+  const CLIP_ALLOWED_TYPES = ["video/mp4","video/quicktime","video/webm"];
+  const CLIP_MAX_DURATION = 31;
+  const CLIP_MAX_BYTES = 100*1024*1024;
+
+  const readVideoDuration = (file) => new Promise((resolve, reject) => {
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.onloadedmetadata = () => { URL.revokeObjectURL(v.src); resolve(v.duration); };
+    v.onerror = () => { URL.revokeObjectURL(v.src); reject(new Error("Could not read video")); };
+    v.src = URL.createObjectURL(file);
+  });
+
+  const handleClipFilesSelected = async (e) => {
+    const files = Array.from(e.target.files||[]);
+    if (!files.length) return;
+    setClipUploadError("");
+    setClipUploading(true);
+    for (const file of files) {
+      try {
+        if (!CLIP_ALLOWED_TYPES.includes(file.type)) { setClipUploadError(`${file.name}: use MP4, MOV, or WebM.`); continue; }
+        if (file.size > CLIP_MAX_BYTES) { setClipUploadError(`${file.name}: over the 100MB limit.`); continue; }
+        const duration = await readVideoDuration(file);
+        if (duration > CLIP_MAX_DURATION) { setClipUploadError(`${file.name}: ${Math.round(duration)}s is over the 30s max — trim it before uploading.`); continue; }
+        const blob = await uploadToBlob(`clips/${Date.now()}-${file.name}`, file, { access:"public", handleUploadUrl:"/api/upload-video" });
+        setClipLibrary(prev => [...prev, { id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`, url:blob.url, filename:file.name, duration }]);
+      } catch (err) {
+        console.error("Clip upload failed:", err);
+        setClipUploadError(`${file.name}: upload failed — try again.`);
+      }
+    }
+    setClipUploading(false);
+    if (clipFileRef.current) clipFileRef.current.value = "";
+  };
+
+  const removeClipFromLibrary = (id) => setClipLibrary(prev => prev.filter(c => c.id !== id));
+
+  const loadClipFfmpeg = async () => {
+    if (clipFfmpegRef.current) return clipFfmpegRef.current;
+    const { FFmpeg } = await import("@ffmpeg/ffmpeg");
+    const { toBlobURL } = await import("@ffmpeg/util");
+    const ffmpeg = new FFmpeg();
+    const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
+    await ffmpeg.load({
+      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
+      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+    });
+    clipFfmpegRef.current = ffmpeg;
+    return ffmpeg;
+  };
+
+  const generateClip = async () => {
+    if (!clipLibrary.length) { setClipGenError("Upload at least one source clip first."); return; }
+    if (!clipHookText.trim()) { setClipGenError("Add a hook line first."); return; }
+    setClipGenError("");
+    setClipGenerating(true);
+    try {
+      const source = clipLibrary[Math.floor(Math.random()*clipLibrary.length)];
+      const inPoint = Math.max(0, Math.min(3, source.duration - 6)) * Math.random();
+      const clipDur = Math.min(5 + Math.random()*2, Math.max(1, source.duration - inPoint));
+
+      const { fetchFile } = await import("@ffmpeg/util");
+      const ffmpeg = await loadClipFfmpeg();
+
+      const srcRes = await fetch(source.url);
+      const srcBuf = await srcRes.arrayBuffer();
+      await ffmpeg.writeFile("in.mp4", await fetchFile(new Blob([srcBuf])));
+
+      try {
+        await ffmpeg.exec(["-i","in.mp4","-ss",String(inPoint),"-t",String(clipDur),"-c","copy","trimmed.mp4"]);
+      } catch {
+        await ffmpeg.exec(["-i","in.mp4","-ss",String(inPoint),"-t",String(clipDur),"trimmed.mp4"]);
+      }
+
+      const promptItems = clipPromptList.split("\n").map(s=>s.trim()).filter(Boolean);
+      const overlayHtml = buildClipOverlayHTML({
+        hookText: clipHookText, transitionText: clipTransitionText, promptItems,
+        followHandle: handle, commentKeyword: clipCommentKeyword, rewardText: clipRewardText,
+        profileUrl, name, handle, blueTick, showBadge: clipShowBadge,
+      });
+      const renderRes = await fetch("/api/render-slide", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ html: overlayHtml, width:1080, height:1920, transparent:true })
+      });
+      const renderData = await renderRes.json();
+      if (!renderData.image) throw new Error(renderData.error||"Overlay render failed");
+      const overlayBytes = Uint8Array.from(atob(renderData.image), c=>c.charCodeAt(0));
+      await ffmpeg.writeFile("overlay.png", overlayBytes);
+
+      await ffmpeg.exec(["-i","trimmed.mp4","-i","overlay.png","-filter_complex","overlay=0:0","-an","-c:v","libx264","-preset","fast","out.mp4"]);
+      const outData = await ffmpeg.readFile("out.mp4");
+      const outBlob = new Blob([outData.buffer], { type:"video/mp4" });
+      setClipResultUrl(prev => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(outBlob); });
+
+      for (const f of ["in.mp4","trimmed.mp4","overlay.png","out.mp4"]) { try { await ffmpeg.deleteFile(f); } catch {} }
+    } catch (err) {
+      console.error("Clip generation failed:", err);
+      setClipGenError("Generation failed — try again.");
+    }
+    setClipGenerating(false);
+  };
+
+  const downloadClipVideo = () => {
+    if (!clipResultUrl) return;
+    const a = document.createElement("a");
+    a.href = clipResultUrl; a.download = `clip-${Date.now()}.mp4`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  };
+
   const A = { bg:"#F5F3EF", surface:"#FFF", border:"#E8E5E0", text:"#0A0A0A", muted:"#8A8780", accentText:"#FFF", input:"#FFF" };
   const inp = { width:"100%", background:A.input, border:`1.5px solid ${A.border}`, borderRadius:10, padding:"11px 14px", color:A.text, fontSize:14, fontFamily:"inherit" };
   const lbl = { display:"block", fontSize:10, fontWeight:700, letterSpacing:3, textTransform:"uppercase", color:A.muted, marginBottom:7 };
@@ -2813,8 +2983,9 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
   const planLabel = currentUser?.plan === "agency" ? "agency" : currentUser?.plan === "pro" ? "pro" : currentUser?.plan === "starter" ? "starter" : currentUser?.plan === "affiliate_licence" ? "affiliate_licence" : currentUser?.plan === "white_label" ? "white_label" : "free";
   const isPexelsUser = ["pro","agency","affiliate_licence","white_label"].includes(planLabel);
-  const NAV_ITEMS = [["generate","Generate"],["brand","Brand"],["templates","Templates"],["quotes","Quotes"],["history","History"],["help","Help"],["account","Account"]];
-  const BURGER_ITEMS = [["templates","Templates"],["quotes","Quotes"],["history","History"],["help","Help"],["account","Account"]];
+  const isClipsAdmin = !!currentUser?.is_admin;
+  const NAV_ITEMS = [["generate","Generate"],["brand","Brand"],["templates","Templates"],["quotes","Quotes"],["history","History"],...(isClipsAdmin?[["clips","Clips"]]:[]),["help","Help"],["account","Account"]];
+  const BURGER_ITEMS = [["templates","Templates"],["quotes","Quotes"],["history","History"],...(isClipsAdmin?[["clips","Clips"]]:[]),["help","Help"],["account","Account"]];
   const MAIN_NAV = [["generate","Generate"],["brand","Brand"]];
 
   return (
@@ -4374,6 +4545,62 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
             </div>
           </div>
+          </div>
+        )}
+
+        {nav==="clips"&&currentUser?.is_admin&&(
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
+            <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px"}}>Clips</h2>
+            <div style={{color:A.muted,fontSize:13,marginBottom:20}}>Admin-only test feature — turn uploaded source clips into randomized 5-7s video clips with a text overlay.</div>
+
+            <div style={{display:"flex",flexDirection:"column",gap:20}}>
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <label style={lbl}>Source clip library</label>
+                <div onClick={()=>clipFileRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:16,cursor:"pointer",textAlign:"center",marginTop:8}}>
+                  <span style={{color:A.muted,fontSize:13}}>{clipUploading?"Uploading…":"Upload video clips (MP4/MOV/WebM, max 30s each)"}</span>
+                </div>
+                <input ref={clipFileRef} type="file" accept="video/mp4,video/quicktime,video/webm" multiple onChange={handleClipFilesSelected} style={{display:"none"}}/>
+                {clipUploadError&&<div style={{color:"#C0392B",fontSize:12,marginTop:8}}>{clipUploadError}</div>}
+                {clipLibrary.length>0&&(
+                  <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:14}}>
+                    {clipLibrary.map(c=>(
+                      <div key={c.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:A.bg,border:`1px solid ${A.border}`,borderRadius:8,padding:"8px 12px"}}>
+                        <span style={{fontSize:12,color:A.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{c.filename} · {Math.round(c.duration)}s</span>
+                        <button onClick={()=>removeClipFromLibrary(c.id)} style={{background:"none",border:"none",color:A.muted,cursor:"pointer",fontSize:14,padding:"2px 8px"}}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",flexDirection:"column",gap:14}}>
+                <div><label style={lbl}>Hook line</label><textarea value={clipHookText} onChange={e=>setClipHookText(e.target.value)} placeholder={`I told Claude I wanted to start an online business that ran automated to earn me 4-5 figures a month`} rows={2} style={{...inp,resize:"vertical"}}/></div>
+                <div><label style={lbl}>Transition line</label><input value={clipTransitionText} onChange={e=>setClipTransitionText(e.target.value)} style={inp}/></div>
+                <div><label style={lbl}>Prompts / questions (one per line)</label><textarea value={clipPromptList} onChange={e=>setClipPromptList(e.target.value)} placeholder={"What's your budget?\nHow many hours a week can you commit?"} rows={4} style={{...inp,resize:"vertical"}}/></div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                  <div><label style={lbl}>Comment keyword</label><input value={clipCommentKeyword} onChange={e=>setClipCommentKeyword(e.target.value)} placeholder="TAV" style={inp}/></div>
+                  <div><label style={lbl}>Reward text</label><input value={clipRewardText} onChange={e=>setClipRewardText(e.target.value)} placeholder="the full breakdown" style={inp}/></div>
+                </div>
+                <div style={{fontSize:12,color:A.muted}}>Follow line uses your handle from the Brand tab ({handle||"@yourhandle"}).</div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div><div style={{fontWeight:600,fontSize:13}}>Show profile badge</div><div style={{color:A.muted,fontSize:12}}>Avatar + name/handle watermark</div></div>
+                  {tog(clipShowBadge,setClipShowBadge)}
+                </div>
+              </div>
+
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                  <button onClick={generateClip} disabled={clipGenerating} style={{padding:"12px 22px",background:GOLD,color:"#000",borderRadius:9,fontWeight:700,fontSize:13,border:"none",cursor:clipGenerating?"default":"pointer",opacity:clipGenerating?0.6:1}}>{clipGenerating?"Generating…":clipResultUrl?"Shuffle":"Generate"}</button>
+                  {clipResultUrl&&<button onClick={downloadClipVideo} style={{padding:"12px 22px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,fontWeight:700,fontSize:13,cursor:"pointer"}}>Download MP4</button>}
+                </div>
+                {clipGenError&&<div style={{color:"#C0392B",fontSize:12,marginTop:10}}>{clipGenError}</div>}
+                {clipResultUrl&&(
+                  <div style={{marginTop:18,display:"flex",justifyContent:"center"}}>
+                    <video src={clipResultUrl} controls style={{width:270,borderRadius:12,background:"#000"}}/>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

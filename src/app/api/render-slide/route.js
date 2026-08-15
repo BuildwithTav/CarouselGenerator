@@ -37,7 +37,7 @@ async function inlineFonts(html) {
 export async function POST(req) {
   try {
     const body = await req.text();
-    const { html, width, height } = JSON.parse(body);
+    const { html, width, height, transparent } = JSON.parse(body);
 
     if (!html) {
       return Response.json({ error: "No HTML provided" }, { status: 400 });
@@ -76,7 +76,7 @@ export async function POST(req) {
       const screenshot = await page.screenshot({
         type: 'png',
         clip: { x: 0, y: 0, width: width || 1080, height: height || 1350 },
-        omitBackground: false,
+        omitBackground: !!transparent,
       });
       await browser.close();
       const base64 = Buffer.from(screenshot).toString('base64');
