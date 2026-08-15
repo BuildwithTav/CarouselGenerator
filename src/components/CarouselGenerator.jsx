@@ -580,49 +580,81 @@ function buildSlideHTML(slide, idx, total, _c_opts, isCover = false) {
 </body></html>`;
 }
 
-// ─── CLIP OVERLAY (video text overlay, rendered transparent) ──────────
-function buildClipOverlayHTML({ hookText, transitionText, promptItems, followHandle, commentKeyword, rewardText, profileUrl, name, handle, blueTick, showBadge }) {
+// ─── CLIP OVERLAY (video text overlay, drawn on canvas — no server round-trip) ──
+function wrapCanvasText(ctx, text, maxWidth) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = "";
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (line && ctx.measureText(test).width > maxWidth) { lines.push(line); line = word; }
+    else line = test;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function loadImageEl(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+async function renderClipOverlayCanvas({ hookText, transitionText, promptItems, followHandle, commentKeyword, rewardText, profileUrl, name, handle, showBadge }) {
   const W = 1080, H = 1920;
-  function esc(s) { return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
-  const gFonts = `https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap`;
-  const shadow = "text-shadow:0 2px 4px rgba(0,0,0,0.85),0 0 24px rgba(0,0,0,0.55),0 4px 16px rgba(0,0,0,0.5);";
+  const FONT = "system-ui,-apple-system,'Segoe UI',sans-serif";
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  ctx.shadowColor = "rgba(0,0,0,0.85)";
+  ctx.shadowBlur = 14;
+  ctx.shadowOffsetY = 3;
 
-  const tickHTML = blueTick ? `<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:#1D9BF0;border-radius:50%;margin-left:5px;position:relative;flex-shrink:0;"><span style="position:absolute;width:7px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg);top:6px;left:5px;"></span></span>` : "";
+  if (showBadge) {
+    const bx=56, by=64, size=56;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(bx+size/2, by+size/2, size/2, 0, Math.PI*2); ctx.closePath(); ctx.clip();
+    if (profileUrl) {
+      try { ctx.drawImage(await loadImageEl(profileUrl), bx, by, size, size); }
+      catch { ctx.fillStyle="rgba(0,0,0,0.4)"; ctx.fillRect(bx,by,size,size); }
+    } else {
+      ctx.fillStyle="rgba(0,0,0,0.4)"; ctx.fillRect(bx,by,size,size);
+    }
+    ctx.restore();
+    ctx.textAlign="left";
+    ctx.fillStyle="#fff";
+    ctx.font=`800 17px ${FONT}`;
+    ctx.fillText(name||"Your Brand", bx+size+12, by+24);
+    ctx.font=`600 13px ${FONT}`;
+    ctx.fillText(handle||"@yourhandle", bx+size+12, by+44);
+  }
 
-  const badgeHTML = showBadge ? `
-    <div style="position:absolute;top:64px;left:56px;z-index:10;display:inline-flex;align-items:center;gap:12px;">
-      <div style="width:56px;height:56px;border-radius:50%;overflow:hidden;flex-shrink:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;border:2px solid #fff;">
-        ${profileUrl?`<img src="${profileUrl}" style="width:100%;height:100%;object-fit:cover;"/>`:`<span style="font-size:22px;font-weight:800;color:#fff;">${esc((name||"?")[0].toUpperCase())}</span>`}
-      </div>
-      <div style="display:flex;flex-direction:column;">
-        <div style="font-size:17px;font-weight:800;color:#fff;line-height:1.2;display:flex;align-items:center;${shadow}">${esc(name||"Your Brand")}${tickHTML}</div>
-        <div style="font-size:13px;color:#fff;${shadow}">${esc(handle||"@yourhandle")}</div>
-      </div>
-    </div>` : "";
+  const maxWidth = W - 128;
+  const blocks = [];
+  const addBlock = (text, font, lh) => { ctx.font = font; blocks.push({ lines: wrapCanvasText(ctx, text, maxWidth), font, lh }); };
+  addBlock(hookText, `800 58px ${FONT}`, 66);
+  if (transitionText) addBlock(transitionText, `700 32px ${FONT}`, 40);
+  promptItems.forEach((p,i) => addBlock(`${i+1}. ${p}`, `700 30px ${FONT}`, 38));
+  addBlock(`Follow me ${followHandle||"@yourhandle"}`, `800 34px ${FONT}`, 42);
+  if (commentKeyword||rewardText) addBlock(`Comment ${(commentKeyword||"").toUpperCase()}${rewardText?` and I'll send you ${rewardText}`:""}`, `700 32px ${FONT}`, 40);
 
-  const promptListHTML = promptItems.length ? `
-    <div style="display:flex;flex-direction:column;gap:16px;">
-      ${promptItems.map((p,i)=>`<div style="font-size:30px;font-weight:700;color:#fff;line-height:1.35;${shadow}">${i+1}. ${esc(p)}</div>`).join("")}
-    </div>` : "";
+  const gap = 30;
+  const totalHeight = blocks.reduce((sum,b)=>sum+b.lines.length*b.lh, 0) + gap*(blocks.length-1);
+  let y = H/2 - totalHeight/2;
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#fff";
+  for (const b of blocks) {
+    ctx.font = b.font;
+    for (const line of b.lines) { y += b.lh; ctx.fillText(line, W/2, y); }
+    y += gap;
+  }
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8">
-<style>
-  @import url('${gFonts}');
-  * { box-sizing:border-box; margin:0; padding:0; -webkit-font-smoothing:antialiased; }
-  html, body { width:${W}px; height:${H}px; overflow:hidden; background:transparent; font-family:'Poppins',sans-serif; }
-</style>
-</head><body>
-<div style="position:relative;width:${W}px;height:${H}px;">
-  ${badgeHTML}
-  <div style="position:absolute;top:50%;left:64px;right:64px;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:30px;text-align:center;">
-    <div style="font-size:58px;font-weight:800;color:#fff;line-height:1.25;${shadow}">${esc(hookText)}</div>
-    ${transitionText ? `<div style="font-size:32px;font-weight:700;color:#fff;${shadow}">${esc(transitionText)}</div>` : ""}
-    ${promptListHTML}
-    <div style="font-size:34px;font-weight:800;color:#fff;margin-top:10px;${shadow}">Follow me ${esc(followHandle||"@yourhandle")}</div>
-    ${(commentKeyword||rewardText) ? `<div style="font-size:32px;font-weight:700;color:#fff;line-height:1.4;${shadow}">Comment <span style="color:#FFD84D;">${esc((commentKeyword||"").toUpperCase())}</span>${rewardText?` and I'll send you ${esc(rewardText)}`:""}</div>` : ""}
-  </div>
-</div>
-</body></html>`;
+  const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+  return new Uint8Array(await blob.arrayBuffer());
 }
 
 // ─── PREVIEW ─────────────────────────────────────────────
@@ -1612,8 +1644,10 @@ export default function App() {
   const [clipTopic, setClipTopic] = useState(S?.clipTopic||"");
   const [clipAiWriting, setClipAiWriting] = useState(false);
   const [clipAiError, setClipAiError] = useState("");
+  const [clipSelectedId, setClipSelectedId] = useState(null);
   const [clipResultUrl, setClipResultUrl] = useState(null);
   const [clipGenerating, setClipGenerating] = useState(false);
+  const [clipGenStage, setClipGenStage] = useState("");
   const [clipGenError, setClipGenError] = useState("");
   // Component-level vars for drawer
   const generateList=async()=>{
@@ -2915,7 +2949,10 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
     if (clipFileRef.current) clipFileRef.current.value = "";
   };
 
-  const removeClipFromLibrary = (id) => setClipLibrary(prev => prev.filter(c => c.id !== id));
+  const removeClipFromLibrary = (id) => {
+    setClipLibrary(prev => prev.filter(c => c.id !== id));
+    setClipSelectedId(prev => prev===id ? null : prev);
+  };
 
   const loadClipFfmpeg = async () => {
     if (clipFfmpegRef.current) return clipFfmpegRef.current;
@@ -2970,40 +3007,42 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
     if (!clipHookText.trim()) { setClipGenError("Add a hook line first."); return; }
     setClipGenError("");
     setClipGenerating(true);
+    setClipGenStage("Loading clip…");
     try {
-      const source = clipLibrary[Math.floor(Math.random()*clipLibrary.length)];
+      const source = (clipSelectedId && clipLibrary.find(c=>c.id===clipSelectedId)) || clipLibrary[Math.floor(Math.random()*clipLibrary.length)];
       const inPoint = Math.max(0, Math.min(3, source.duration - 6)) * Math.random();
       const clipDur = Math.min(5 + Math.random()*2, Math.max(1, source.duration - inPoint));
 
       const { fetchFile } = await import("@ffmpeg/util");
+      setClipGenStage("Starting engine…");
       const ffmpeg = await loadClipFfmpeg();
 
       const srcRes = await fetch(source.url);
       const srcBuf = await srcRes.arrayBuffer();
       await ffmpeg.writeFile("in.mp4", await fetchFile(new Blob([srcBuf])));
 
+      setClipGenStage("Trimming…");
       try {
         await ffmpeg.exec(["-i","in.mp4","-ss",String(inPoint),"-t",String(clipDur),"-c","copy","trimmed.mp4"]);
       } catch {
         await ffmpeg.exec(["-i","in.mp4","-ss",String(inPoint),"-t",String(clipDur),"trimmed.mp4"]);
       }
 
+      setClipGenStage("Drawing overlay…");
       const promptItems = clipPromptList.split("\n").map(s=>s.trim()).filter(Boolean);
-      const overlayHtml = buildClipOverlayHTML({
+      const overlayBytes = await renderClipOverlayCanvas({
         hookText: clipHookText, transitionText: clipTransitionText, promptItems,
         followHandle: handle, commentKeyword: clipCommentKeyword, rewardText: clipRewardText,
-        profileUrl, name, handle, blueTick, showBadge: clipShowBadge,
+        profileUrl, name, handle, showBadge: clipShowBadge,
       });
-      const renderRes = await fetch("/api/render-slide", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ html: overlayHtml, width:1080, height:1920, transparent:true })
-      });
-      const renderData = await renderRes.json();
-      if (!renderData.image) throw new Error(renderData.error||"Overlay render failed");
-      const overlayBytes = Uint8Array.from(atob(renderData.image), c=>c.charCodeAt(0));
       await ffmpeg.writeFile("overlay.png", overlayBytes);
 
-      await ffmpeg.exec(["-i","trimmed.mp4","-i","overlay.png","-filter_complex","overlay=0:0","-an","-c:v","libx264","-preset","fast","out.mp4"]);
+      setClipGenStage("Encoding…");
+      await ffmpeg.exec([
+        "-i","trimmed.mp4","-i","overlay.png",
+        "-filter_complex","[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30[bg];[bg][1:v]overlay=0:0[out]",
+        "-map","[out]","-an","-c:v","libx264","-preset","ultrafast","-crf","26","out.mp4"
+      ]);
       const outData = await ffmpeg.readFile("out.mp4");
       const outBlob = new Blob([outData.buffer], { type:"video/mp4" });
       setClipResultUrl(prev => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(outBlob); });
@@ -3013,6 +3052,7 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
       console.error("Clip generation failed:", err);
       setClipGenError("Generation failed — try again.");
     }
+    setClipGenStage("");
     setClipGenerating(false);
   };
 
@@ -4602,7 +4642,7 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
         {nav==="clips"&&currentUser?.is_admin&&(
           <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
             <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px"}}>Clips</h2>
-            <div style={{color:A.muted,fontSize:13,marginBottom:20}}>Admin-only test feature — turn uploaded source clips into randomized 5-7s video clips with a text overlay.</div>
+            <div style={{color:A.muted,fontSize:13,marginBottom:20}}>Admin-only test feature — turn uploaded source clips into 5-7s video clips with a text overlay. Pick a clip yourself or let it choose randomly.</div>
 
             <div style={{display:"flex",flexDirection:"column",gap:20}}>
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
@@ -4618,14 +4658,22 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
                 <input ref={clipFileRef} type="file" accept="video/mp4,video/quicktime,video/webm" multiple onChange={handleClipFilesSelected} style={{display:"none"}}/>
                 {clipUploadError&&<div style={{color:"#C0392B",fontSize:12,marginTop:8}}>{clipUploadError}</div>}
                 {clipLibrary.length>0&&(
-                  <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:14}}>
-                    {clipLibrary.map(c=>(
-                      <div key={c.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:A.bg,border:`1px solid ${A.border}`,borderRadius:8,padding:"8px 12px"}}>
-                        <span style={{fontSize:12,color:A.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{c.filename} · {Math.round(c.duration)}s</span>
-                        <button onClick={()=>removeClipFromLibrary(c.id)} style={{background:"none",border:"none",color:A.muted,cursor:"pointer",fontSize:14,padding:"2px 8px"}}>×</button>
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:16,marginBottom:8}}>
+                      <span style={{fontSize:12,color:A.muted}}>Click a clip to pick it manually — otherwise a random one is used each time.</span>
+                      {clipSelectedId&&<button onClick={()=>setClipSelectedId(null)} style={{background:"none",border:`1px solid ${A.border}`,borderRadius:20,padding:"4px 12px",fontSize:11,fontWeight:700,color:A.text,cursor:"pointer"}}>🎲 Use random</button>}
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:10}}>
+                      {clipLibrary.map(c=>(
+                        <div key={c.id} onClick={()=>setClipSelectedId(c.id)} style={{cursor:"pointer",borderRadius:10,overflow:"hidden",border:`2px solid ${clipSelectedId===c.id?GOLD:"transparent"}`,position:"relative",background:"#000"}}>
+                          <video src={c.url} muted preload="metadata" style={{width:"100%",height:160,objectFit:"cover",display:"block"}}/>
+                          <div style={{position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(transparent,rgba(0,0,0,0.75))",padding:"16px 8px 6px",fontSize:11,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{Math.round(c.duration)}s</div>
+                          {clipSelectedId===c.id&&<div style={{position:"absolute",top:6,left:6,background:GOLD,color:"#000",fontSize:10,fontWeight:800,borderRadius:6,padding:"2px 6px"}}>SELECTED</div>}
+                          <button onClick={(e)=>{e.stopPropagation();removeClipFromLibrary(c.id);}} style={{position:"absolute",top:4,right:4,width:22,height:22,background:"rgba(0,0,0,0.6)",border:"none",borderRadius:"50%",color:"#fff",cursor:"pointer",fontSize:13,lineHeight:1}}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -4654,7 +4702,7 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                  <button onClick={generateClip} disabled={clipGenerating} style={{padding:"12px 22px",background:GOLD,color:"#000",borderRadius:9,fontWeight:700,fontSize:13,border:"none",cursor:clipGenerating?"default":"pointer",opacity:clipGenerating?0.6:1}}>{clipGenerating?"Generating…":clipResultUrl?"Shuffle":"Generate"}</button>
+                  <button onClick={generateClip} disabled={clipGenerating} style={{padding:"12px 22px",background:GOLD,color:"#000",borderRadius:9,fontWeight:700,fontSize:13,border:"none",cursor:clipGenerating?"default":"pointer",opacity:clipGenerating?0.6:1}}>{clipGenerating?(clipGenStage||"Generating…"):clipResultUrl?(clipSelectedId?"Regenerate":"Shuffle"):"Generate"}</button>
                   {clipResultUrl&&<button onClick={downloadClipVideo} style={{padding:"12px 22px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,fontWeight:700,fontSize:13,cursor:"pointer"}}>Download MP4</button>}
                 </div>
                 {clipGenError&&<div style={{color:"#C0392B",fontSize:12,marginTop:10}}>{clipGenError}</div>}
