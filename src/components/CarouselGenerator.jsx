@@ -3081,50 +3081,42 @@ Return ONLY valid JSON, no other text: {"hook":"...","transition":"...","prompts
       const srcBuf = await srcRes.arrayBuffer();
       await ffmpeg.writeFile("in.mp4", await fetchFile(new Blob([srcBuf])));
 
-      setClipGenStage(numCuts>1 ? "Cutting…" : "Trimming…");
-      const cutFiles = [];
-      for (let i=0; i<numCuts; i++) {
-        let start;
-        if (i===0) {
-          start = Math.random() * Math.max(0, Math.min(3, zoneLen-subDur));
-        } else {
-          start = i*zoneLen + Math.random()*Math.max(0, zoneLen-subDur);
-        }
-        start = Math.max(0, Math.min(start, Math.max(0, source.duration-subDur)));
-        const fname = `cut${i}.mp4`;
-        try {
-          await ffmpeg.exec(["-i","in.mp4","-ss",String(start),"-t",String(subDur),"-c","copy",fname]);
-        } catch {
-          await ffmpeg.exec(["-i","in.mp4","-ss",String(start),"-t",String(subDur),fname]);
-        }
-        cutFiles.push(fname);
-      }
-      if (numCuts > 1) {
-        await ffmpeg.writeFile("cuts.txt", new TextEncoder().encode(cutFiles.map(f=>`file '${f}'`).join("\n")));
-        try {
-          await ffmpeg.exec(["-f","concat","-safe","0","-i","cuts.txt","-c","copy","trimmed.mp4"]);
-        } catch {
-          await ffmpeg.exec(["-f","concat","-safe","0","-i","cuts.txt","trimmed.mp4"]);
-        }
-      } else {
-        await ffmpeg.writeFile("trimmed.mp4", await ffmpeg.readFile(cutFiles[0]));
-      }
       const clipDur = subDur*numCuts;
       const transitionStart = Math.min(CLIP_HOOK_ONLY_SECONDS, clipDur);
 
       setClipGenStage("Drawing overlay…");
       const hasTransition = !!clipTransitionText.trim();
       await ffmpeg.writeFile("hook.png", await renderClipTextCanvas(clipHookText, { fontPx:58, fontWeight:800, centerYFrac:0.42 }));
-      if (hasTransition) await ffmpeg.writeFile("transition.png", await renderClipTextCanvas(clipTransitionText, { fontPx:46, fontWeight:800, centerYFrac:0.82 }));
+      if (hasTransition) await ffmpeg.writeFile("transition.png", await renderClipTextCanvas(clipTransitionText, { fontPx:46, fontWeight:800, centerYFrac:0.68 }));
       if (clipShowBadge) await ffmpeg.writeFile("badge.png", await renderClipBadgeCanvas({ profileUrl, name, handle }));
 
+      setClipGenStage(numCuts>1 ? "Cutting…" : "Trimming…");
+      // Cut points, spread across the source (first one still lands in the
+      // first ~3s per the "same-theme b-roll" upload constraint).
+      const cutStarts = [];
+      for (let i=0; i<numCuts; i++) {
+        let start;
+        if (i===0) start = Math.random() * Math.max(0, Math.min(3, zoneLen-subDur));
+        else start = i*zoneLen + Math.random()*Math.max(0, zoneLen-subDur);
+        cutStarts.push(Math.max(0, Math.min(start, Math.max(0, source.duration-subDur))));
+      }
+
       setClipGenStage("Encoding…");
-      // Hook is on for the whole clip; the transition line joins it (doesn't
-      // replace it) from CLIP_HOOK_ONLY_SECONDS onward; badge (if on) is
-      // also on for the whole clip. A contrast/saturation/vignette pass
-      // makes the footage punchier and helps the white overlay text pop.
-      const inputArgs = ["-i","trimmed.mp4","-i","hook.png"];
-      let filter = `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30,eq=contrast=1.08:saturation=1.2:brightness=0.02,vignette=PI/4[bg];[bg][1:v]overlay=0:0[v1]`;
+      // Cuts are done with the trim+setpts+concat *filters* (not separate
+      // stream-copy files + concat demuxer) so the joins are frame-accurate
+      // with continuous timestamps — no gap/duplicate-frame stall at the
+      // cut points. Hook is on for the whole clip; the transition line
+      // joins it (doesn't replace it) from CLIP_HOOK_ONLY_SECONDS onward;
+      // badge (if on) is also on for the whole clip. A contrast/saturation/
+      // vignette pass makes the footage punchier and helps the overlay pop.
+      const inputArgs = ["-i","in.mp4","-i","hook.png"];
+      let trimChain = "";
+      let concatLabels = "";
+      cutStarts.forEach((start,i) => {
+        trimChain += `[0:v]trim=start=${start}:duration=${subDur},setpts=PTS-STARTPTS[c${i}];`;
+        concatLabels += `[c${i}]`;
+      });
+      let filter = `${trimChain}${concatLabels}concat=n=${numCuts}:v=1:a=0[cut];[cut]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30,eq=contrast=1.08:saturation=1.2:brightness=0.02,vignette=PI/4[bg];[bg][1:v]overlay=0:0[v1]`;
       let last = "[v1]", idx = 2;
       if (hasTransition) {
         inputArgs.push("-i","transition.png");
@@ -3142,7 +3134,7 @@ Return ONLY valid JSON, no other text: {"hook":"...","transition":"...","prompts
       const outBlob = new Blob([outData.buffer], { type:"video/mp4" });
       setClipResultUrl(prev => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(outBlob); });
 
-      for (const f of ["in.mp4","cut0.mp4","cut1.mp4","cut2.mp4","cuts.txt","trimmed.mp4","hook.png","transition.png","badge.png","out.mp4"]) { try { await ffmpeg.deleteFile(f); } catch {} }
+      for (const f of ["in.mp4","hook.png","transition.png","badge.png","out.mp4"]) { try { await ffmpeg.deleteFile(f); } catch {} }
     } catch (err) {
       console.error("Clip generation failed:", err);
       setClipGenError("Generation failed — try again.");
