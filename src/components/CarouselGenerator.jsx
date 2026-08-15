@@ -604,7 +604,11 @@ function loadImageEl(url) {
   });
 }
 
-async function renderClipOverlayCanvas({ hookText, transitionText, promptItems, followHandle, commentKeyword, rewardText, profileUrl, name, handle, showBadge }) {
+// Renders one block of centered, wrapped, drop-shadowed text onto a
+// transparent 1080x1920 canvas — used for both the hook (shown for most of
+// the clip) and the transition line (shown only in the last couple of
+// seconds), composited as separate timed overlay layers in ffmpeg.
+async function renderClipTextCanvas(text, { fontPx=58, fontWeight=800, centerYFrac=0.42 } = {}) {
   const W = 1080, H = 1920;
   const FONT = "system-ui,-apple-system,'Segoe UI',sans-serif";
   const canvas = document.createElement("canvas");
@@ -613,46 +617,44 @@ async function renderClipOverlayCanvas({ hookText, transitionText, promptItems, 
   ctx.shadowColor = "rgba(0,0,0,0.85)";
   ctx.shadowBlur = 14;
   ctx.shadowOffsetY = 3;
-
-  if (showBadge) {
-    const bx=56, by=64, size=56;
-    ctx.save();
-    ctx.beginPath(); ctx.arc(bx+size/2, by+size/2, size/2, 0, Math.PI*2); ctx.closePath(); ctx.clip();
-    if (profileUrl) {
-      try { ctx.drawImage(await loadImageEl(profileUrl), bx, by, size, size); }
-      catch { ctx.fillStyle="rgba(0,0,0,0.4)"; ctx.fillRect(bx,by,size,size); }
-    } else {
-      ctx.fillStyle="rgba(0,0,0,0.4)"; ctx.fillRect(bx,by,size,size);
-    }
-    ctx.restore();
-    ctx.textAlign="left";
-    ctx.fillStyle="#fff";
-    ctx.font=`800 17px ${FONT}`;
-    ctx.fillText(name||"Your Brand", bx+size+12, by+24);
-    ctx.font=`600 13px ${FONT}`;
-    ctx.fillText(handle||"@yourhandle", bx+size+12, by+44);
-  }
-
-  const maxWidth = W - 128;
-  const blocks = [];
-  const addBlock = (text, font, lh) => { ctx.font = font; blocks.push({ lines: wrapCanvasText(ctx, text, maxWidth), font, lh }); };
-  addBlock(hookText, `800 58px ${FONT}`, 66);
-  if (transitionText) addBlock(transitionText, `700 32px ${FONT}`, 40);
-  promptItems.forEach((p,i) => addBlock(`${i+1}. ${p}`, `700 30px ${FONT}`, 38));
-  addBlock(`Follow me ${followHandle||"@yourhandle"}`, `800 34px ${FONT}`, 42);
-  if (commentKeyword||rewardText) addBlock(`Comment ${(commentKeyword||"").toUpperCase()}${rewardText?` and I'll send you ${rewardText}`:""}`, `700 32px ${FONT}`, 40);
-
-  const gap = 30;
-  const totalHeight = blocks.reduce((sum,b)=>sum+b.lines.length*b.lh, 0) + gap*(blocks.length-1);
-  let y = H/2 - totalHeight/2;
+  ctx.font = `${fontWeight} ${fontPx}px ${FONT}`;
+  const lines = wrapCanvasText(ctx, text, W-128);
+  const lh = Math.round(fontPx*1.15);
+  let y = H*centerYFrac - (lines.length*lh)/2;
   ctx.textAlign = "center";
   ctx.fillStyle = "#fff";
-  for (const b of blocks) {
-    ctx.font = b.font;
-    for (const line of b.lines) { y += b.lh; ctx.fillText(line, W/2, y); }
-    y += gap;
-  }
+  for (const line of lines) { y += lh; ctx.fillText(line, W/2, y); }
+  const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+  return new Uint8Array(await blob.arrayBuffer());
+}
 
+// Renders the avatar + name/handle watermark, shown for the whole clip
+// regardless of hook/transition timing.
+async function renderClipBadgeCanvas({ profileUrl, name, handle }) {
+  const W = 1080, H = 1920;
+  const FONT = "system-ui,-apple-system,'Segoe UI',sans-serif";
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  ctx.shadowColor = "rgba(0,0,0,0.85)";
+  ctx.shadowBlur = 14;
+  ctx.shadowOffsetY = 3;
+  const bx=56, by=64, size=56;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(bx+size/2, by+size/2, size/2, 0, Math.PI*2); ctx.closePath(); ctx.clip();
+  if (profileUrl) {
+    try { ctx.drawImage(await loadImageEl(profileUrl), bx, by, size, size); }
+    catch { ctx.fillStyle="rgba(0,0,0,0.4)"; ctx.fillRect(bx,by,size,size); }
+  } else {
+    ctx.fillStyle="rgba(0,0,0,0.4)"; ctx.fillRect(bx,by,size,size);
+  }
+  ctx.restore();
+  ctx.textAlign="left";
+  ctx.fillStyle="#fff";
+  ctx.font=`800 17px ${FONT}`;
+  ctx.fillText(name||"Your Brand", bx+size+12, by+24);
+  ctx.font=`600 13px ${FONT}`;
+  ctx.fillText(handle||"@yourhandle", bx+size+12, by+44);
   const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
   return new Uint8Array(await blob.arrayBuffer());
 }
@@ -1649,6 +1651,7 @@ export default function App() {
   const [clipGenerating, setClipGenerating] = useState(false);
   const [clipGenStage, setClipGenStage] = useState("");
   const [clipGenError, setClipGenError] = useState("");
+  const [clipCaptionCopied, setClipCaptionCopied] = useState(false);
   // Component-level vars for drawer
   const generateList=async()=>{
     if(!tmplBrief&&!tmplSlides.some(s=>s.headline))return;
@@ -3002,6 +3005,10 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
     setClipAiWriting(false);
   };
 
+  const CLIP_DURATION_MIN = 6;
+  const CLIP_DURATION_MAX = 7;
+  const CLIP_HOOK_ONLY_SECONDS = 4;
+
   const generateClip = async () => {
     if (!clipLibrary.length) { setClipGenError("Upload at least one source clip first."); return; }
     if (!clipHookText.trim()) { setClipGenError("Add a hook line first."); return; }
@@ -3010,8 +3017,10 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
     setClipGenStage("Loading clip…");
     try {
       const source = (clipSelectedId && clipLibrary.find(c=>c.id===clipSelectedId)) || clipLibrary[Math.floor(Math.random()*clipLibrary.length)];
-      const inPoint = Math.max(0, Math.min(3, source.duration - 6)) * Math.random();
-      const clipDur = Math.min(5 + Math.random()*2, Math.max(1, source.duration - inPoint));
+      const targetDur = CLIP_DURATION_MIN + Math.random()*(CLIP_DURATION_MAX-CLIP_DURATION_MIN);
+      const inPoint = Math.max(0, Math.min(3, source.duration - targetDur)) * Math.random();
+      const clipDur = Math.min(targetDur, Math.max(1, source.duration - inPoint));
+      const transitionStart = Math.min(CLIP_HOOK_ONLY_SECONDS, clipDur);
 
       const { fetchFile } = await import("@ffmpeg/util");
       setClipGenStage("Starting engine…");
@@ -3029,25 +3038,35 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
       }
 
       setClipGenStage("Drawing overlay…");
-      const promptItems = clipPromptList.split("\n").map(s=>s.trim()).filter(Boolean);
-      const overlayBytes = await renderClipOverlayCanvas({
-        hookText: clipHookText, transitionText: clipTransitionText, promptItems,
-        followHandle: handle, commentKeyword: clipCommentKeyword, rewardText: clipRewardText,
-        profileUrl, name, handle, showBadge: clipShowBadge,
-      });
-      await ffmpeg.writeFile("overlay.png", overlayBytes);
+      const hasTransition = !!clipTransitionText.trim();
+      await ffmpeg.writeFile("hook.png", await renderClipTextCanvas(clipHookText, { fontPx:58, fontWeight:800, centerYFrac:0.42 }));
+      if (hasTransition) await ffmpeg.writeFile("transition.png", await renderClipTextCanvas(clipTransitionText, { fontPx:34, fontWeight:700, centerYFrac:0.82 }));
+      if (clipShowBadge) await ffmpeg.writeFile("badge.png", await renderClipBadgeCanvas({ profileUrl, name, handle }));
 
       setClipGenStage("Encoding…");
-      await ffmpeg.exec([
-        "-i","trimmed.mp4","-i","overlay.png",
-        "-filter_complex","[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30[bg];[bg][1:v]overlay=0:0[out]",
-        "-map","[out]","-an","-c:v","libx264","-preset","ultrafast","-crf","26","out.mp4"
-      ]);
+      // Hook is on for the whole clip; the transition line joins it (doesn't
+      // replace it) from CLIP_HOOK_ONLY_SECONDS onward; badge (if on) is
+      // also on for the whole clip.
+      const inputArgs = ["-i","trimmed.mp4","-i","hook.png"];
+      let filter = `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30[bg];[bg][1:v]overlay=0:0[v1]`;
+      let last = "[v1]", idx = 2;
+      if (hasTransition) {
+        inputArgs.push("-i","transition.png");
+        filter += `;${last}[${idx}:v]overlay=0:0:enable='gte(t,${transitionStart})'[v${idx}]`;
+        last = `[v${idx}]`; idx++;
+      }
+      if (clipShowBadge) {
+        inputArgs.push("-i","badge.png");
+        filter += `;${last}[${idx}:v]overlay=0:0[v${idx}]`;
+        last = `[v${idx}]`; idx++;
+      }
+
+      await ffmpeg.exec([...inputArgs,"-filter_complex",filter,"-map",last,"-an","-c:v","libx264","-preset","ultrafast","-crf","26","out.mp4"]);
       const outData = await ffmpeg.readFile("out.mp4");
       const outBlob = new Blob([outData.buffer], { type:"video/mp4" });
       setClipResultUrl(prev => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(outBlob); });
 
-      for (const f of ["in.mp4","trimmed.mp4","overlay.png","out.mp4"]) { try { await ffmpeg.deleteFile(f); } catch {} }
+      for (const f of ["in.mp4","trimmed.mp4","hook.png","transition.png","badge.png","out.mp4"]) { try { await ffmpeg.deleteFile(f); } catch {} }
     } catch (err) {
       console.error("Clip generation failed:", err);
       setClipGenError("Generation failed — try again.");
@@ -3061,6 +3080,22 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
     const a = document.createElement("a");
     a.href = clipResultUrl; a.download = `clip-${Date.now()}.mp4`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  };
+
+  const buildClipCaption = () => {
+    const followLine = `Follow @${(handle||"yourhandle").replace(/^@/,"")} first so my message can reach you.`;
+    const commentLine = clipCommentKeyword.trim() ? `Comment ${clipCommentKeyword.trim().toUpperCase()}${clipRewardText.trim()?` and I'll send you ${clipRewardText.trim()}.`:"."}` : "";
+    const promptItems = clipPromptList.split("\n").map(s=>s.trim()).filter(Boolean);
+    const promptsBlock = promptItems.length ? promptItems.map((p,i)=>`${i+1}. ${p}`).join("\n") : "";
+    return [followLine, commentLine, promptsBlock].filter(Boolean).join("\n\n");
+  };
+
+  const copyClipCaption = async () => {
+    try {
+      await navigator.clipboard.writeText(buildClipCaption());
+      setClipCaptionCopied(true);
+      setTimeout(()=>setClipCaptionCopied(false), 1500);
+    } catch { setClipGenError("Couldn't copy — select and copy the text manually."); }
   };
 
   const A = { bg:"#F5F3EF", surface:"#FFF", border:"#E8E5E0", text:"#0A0A0A", muted:"#8A8780", accentText:"#FFF", input:"#FFF" };
@@ -4686,17 +4721,30 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
                   </div>
                   {clipAiError&&<div style={{color:"#C0392B",fontSize:12,marginTop:6}}>{clipAiError}</div>}
                 </div>
-                <div><label style={lbl}>Hook line</label><textarea value={clipHookText} onChange={e=>setClipHookText(e.target.value)} placeholder={`I told Claude I wanted to start an online business that ran automated to earn me 4-5 figures a month`} rows={2} style={{...inp,resize:"vertical"}}/></div>
-                <div><label style={lbl}>Transition line</label><input value={clipTransitionText} onChange={e=>setClipTransitionText(e.target.value)} style={inp}/></div>
+              </div>
+
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",flexDirection:"column",gap:14}}>
+                <label style={lbl}>Video overlay <span style={{textTransform:"none",fontWeight:400,color:A.muted}}>— burned into the clip itself</span></label>
+                <div><label style={lbl}>Hook line <span style={{textTransform:"none",fontWeight:400}}>(shown for the whole clip)</span></label><textarea value={clipHookText} onChange={e=>setClipHookText(e.target.value)} placeholder={`I told Claude I wanted to start an online business that ran automated to earn me 4-5 figures a month`} rows={2} style={{...inp,resize:"vertical"}}/></div>
+                <div><label style={lbl}>Transition line <span style={{textTransform:"none",fontWeight:400}}>(joins the hook from {CLIP_HOOK_ONLY_SECONDS}s onward)</span></label><input value={clipTransitionText} onChange={e=>setClipTransitionText(e.target.value)} style={inp}/></div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div><div style={{fontWeight:600,fontSize:13}}>Show profile badge</div><div style={{color:A.muted,fontSize:12}}>Avatar + name/handle watermark</div></div>
+                  {tog(clipShowBadge,setClipShowBadge)}
+                </div>
+              </div>
+
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",flexDirection:"column",gap:14}}>
+                <label style={lbl}>Caption <span style={{textTransform:"none",fontWeight:400,color:A.muted}}>— the actual info goes in the post caption, not on the video</span></label>
                 <div><label style={lbl}>Prompts / questions (one per line)</label><textarea value={clipPromptList} onChange={e=>setClipPromptList(e.target.value)} placeholder={"What's your budget?\nHow many hours a week can you commit?"} rows={4} style={{...inp,resize:"vertical"}}/></div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                   <div><label style={lbl}>Comment keyword</label><input value={clipCommentKeyword} onChange={e=>setClipCommentKeyword(e.target.value)} placeholder="TAV" style={inp}/></div>
                   <div><label style={lbl}>Reward text</label><input value={clipRewardText} onChange={e=>setClipRewardText(e.target.value)} placeholder="the full breakdown" style={inp}/></div>
                 </div>
                 <div style={{fontSize:12,color:A.muted}}>Follow line uses your handle from the Brand tab ({handle||"@yourhandle"}).</div>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <div><div style={{fontWeight:600,fontSize:13}}>Show profile badge</div><div style={{color:A.muted,fontSize:12}}>Avatar + name/handle watermark</div></div>
-                  {tog(clipShowBadge,setClipShowBadge)}
+                <div>
+                  <label style={lbl}>Caption preview</label>
+                  <textarea readOnly value={buildClipCaption()} rows={5} style={{...inp,resize:"vertical",color:A.muted}}/>
+                  <button onClick={copyClipCaption} style={{marginTop:8,padding:"8px 16px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,fontWeight:700,fontSize:12,cursor:"pointer"}}>{clipCaptionCopied?"Copied!":"Copy caption"}</button>
                 </div>
               </div>
 
