@@ -1607,6 +1607,9 @@ export default function App() {
   const [clipCommentKeyword, setClipCommentKeyword] = useState(S?.clipCommentKeyword||"");
   const [clipRewardText, setClipRewardText] = useState(S?.clipRewardText||"");
   const [clipShowBadge, setClipShowBadge] = useState(S?.clipShowBadge??true);
+  const [clipTopic, setClipTopic] = useState(S?.clipTopic||"");
+  const [clipAiWriting, setClipAiWriting] = useState(false);
+  const [clipAiError, setClipAiError] = useState("");
   const [clipResultUrl, setClipResultUrl] = useState(null);
   const [clipGenerating, setClipGenerating] = useState(false);
   const [clipGenError, setClipGenError] = useState("");
@@ -1912,11 +1915,11 @@ export default function App() {
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,quotePhotos,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
            bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("_c_data:")),overlayDark,photoOpacity,templateOpacity,ratio,bgColour,customColourDark,slideTextDark,audienceType,customActiveSlot,textDensity,
-           clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge});
+           clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge,clipTopic});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
       bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType,customActiveSlot,textDensity,quotePhotos,
-      clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge]);
+      clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge,clipTopic]);
 
   const readFile = (e, cb) => {
     const f = e.target.files[0]; if (!f) return;
@@ -2915,6 +2918,40 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
     });
     clipFfmpegRef.current = ffmpeg;
     return ffmpeg;
+  };
+
+  const writeClipHookWithAI = async () => {
+    if (!clipTopic.trim()) { setClipAiError("Enter a topic first."); return; }
+    if (!canGenerate()) { setNav("upgrade"); return; }
+    setClipAiError("");
+    setClipAiWriting(true);
+    try {
+      const prompt = `You're writing a short, punchy Instagram/TikTok Reels script for a "viral AI prompt" hook video. The format: someone says they asked Claude (an AI) for help with a specific goal, shows the numbered follow-up questions Claude asked to build a plan, then tells viewers to follow and comment a keyword to get the full guide.
+
+Topic: "${clipTopic.trim()}"
+${voiceProfile?`Voice/brand tone: ${voiceProfile}`:""}
+${businessType&&businessType!=="other"?`Business type: ${businessType}`:""}
+
+Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","..."],"reward":"..."}
+- hook: one first-person sentence, e.g. "I told Claude I wanted to start an online business that ran automated to earn me 4-5 figures a month"
+- prompts: 3-5 short, punchy follow-up questions Claude would realistically ask to build a plan for that goal
+- reward: 2-5 words for what commenters get, e.g. "the full roadmap" or "the exact prompt guide"`;
+
+      const messages = [{ role:"user", content: prompt }];
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:600, messages }, 3, true);
+      const raw = d.content?.find(b=>b.type==="text")?.text||"";
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("No JSON in response");
+      const parsed = JSON.parse(match[0]);
+      const stripHtml = s => (s||"").replace(/<[^>]+>/g,"").trim();
+      if (parsed.hook) setClipHookText(stripHtml(parsed.hook));
+      if (Array.isArray(parsed.prompts)) setClipPromptList(parsed.prompts.map(stripHtml).filter(Boolean).join("\n"));
+      if (parsed.reward) setClipRewardText(stripHtml(parsed.reward));
+    } catch (err) {
+      console.error("Clip AI write failed:", err);
+      setClipAiError("Couldn't write that — try again.");
+    }
+    setClipAiWriting(false);
   };
 
   const generateClip = async () => {
@@ -4577,6 +4614,14 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
               </div>
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",flexDirection:"column",gap:14}}>
+                <div>
+                  <label style={lbl}>Topic</label>
+                  <div style={{display:"flex",gap:8}}>
+                    <input value={clipTopic} onChange={e=>setClipTopic(e.target.value)} placeholder="e.g. start an automated online business" style={{...inp,flex:1}}/>
+                    <button onClick={writeClipHookWithAI} disabled={clipAiWriting} style={{padding:"0 18px",background:GOLD,color:"#000",borderRadius:9,fontWeight:700,fontSize:12,border:"none",whiteSpace:"nowrap",cursor:clipAiWriting?"default":"pointer",opacity:clipAiWriting?0.6:1}}>{clipAiWriting?"Writing…":"Write with AI"}</button>
+                  </div>
+                  {clipAiError&&<div style={{color:"#C0392B",fontSize:12,marginTop:6}}>{clipAiError}</div>}
+                </div>
                 <div><label style={lbl}>Hook line</label><textarea value={clipHookText} onChange={e=>setClipHookText(e.target.value)} placeholder={`I told Claude I wanted to start an online business that ran automated to earn me 4-5 figures a month`} rows={2} style={{...inp,resize:"vertical"}}/></div>
                 <div><label style={lbl}>Transition line</label><input value={clipTransitionText} onChange={e=>setClipTransitionText(e.target.value)} style={inp}/></div>
                 <div><label style={lbl}>Prompts / questions (one per line)</label><textarea value={clipPromptList} onChange={e=>setClipPromptList(e.target.value)} placeholder={"What's your budget?\nHow many hours a week can you commit?"} rows={4} style={{...inp,resize:"vertical"}}/></div>
