@@ -2974,21 +2974,35 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
     return ffmpeg;
   };
 
+  const CLIP_HOOK_FORMATS = [
+    `the AI-prompt-reveal format: "I told Claude I wanted [goal], and it completely mapped out [outcome]" — pairs with a transition like "Here's the prompt it gave me ⬇" and prompts being the follow-up questions Claude asked`,
+    `a contrarian/unpopular-opinion format: a blunt opinion that goes against the common advice on this topic`,
+    `a "nobody tells you this" curiosity format: e.g. "Here's what nobody tells you about [topic]"`,
+    `a mistake-warning format: e.g. "Stop doing [common thing] if you want [goal]" or "The biggest mistake people make with [topic] is..."`,
+    `a "fastest/best way to X (and it's not Y)" format: e.g. "The fastest way to [result] — and it's not [obvious thing]"`,
+    `a POV format: e.g. "POV: you just found out [surprising thing about the topic]"`,
+    `a blunt list-tease format: e.g. "Best way to [goal] in 2026 is: [step], [step], [step]"`,
+  ];
+
   const writeClipHookWithAI = async () => {
     if (!clipTopic.trim()) { setClipAiError("Enter a topic first."); return; }
     if (!canGenerate()) { setNav("upgrade"); return; }
     setClipAiError("");
     setClipAiWriting(true);
     try {
-      const prompt = `You're writing a short, punchy Instagram/TikTok Reels script for a "viral AI prompt" hook video. The format: someone says they asked Claude (an AI) for help with a specific goal, shows the numbered follow-up questions Claude asked to build a plan, then tells viewers to follow and comment a keyword to get the full guide.
+      const format = CLIP_HOOK_FORMATS[Math.floor(Math.random()*CLIP_HOOK_FORMATS.length)];
+      const prompt = `You're writing a short, punchy Instagram Reels/TikTok script that stops the scroll in the first second. Negative framing, unpopular opinions, and specific outcomes consistently outperform generic positive claims — the hook has to land in one sentence, no warm-up, no "hey guys" intro.
 
 Topic: "${clipTopic.trim()}"
 ${voiceProfile?`Voice/brand tone: ${voiceProfile}`:""}
 ${businessType&&businessType!=="other"?`Business type: ${businessType}`:""}
 
-Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","..."],"reward":"..."}
-- hook: one first-person sentence, e.g. "I told Claude I wanted to start an online business that ran automated to earn me 4-5 figures a month"
-- prompts: 3-5 short, punchy follow-up questions Claude would realistically ask to build a plan for that goal
+Write this one using ${format}. Make it feel native to that format, not forced into a different template.
+
+Return ONLY valid JSON, no other text: {"hook":"...","transition":"...","prompts":["...","...","..."],"reward":"..."}
+- hook: one sentence, 10-20 words, matching the format above
+- transition: a short line (3-6 words) that appears near the end of the clip pointing viewers to the caption — match it to the hook's format (e.g. "Here's the prompt it gave me ⬇" only fits the AI-prompt format; otherwise something like "Here's exactly how ⬇" or "Save this ⬇")
+- prompts: 3-5 short supporting lines for the caption (follow-up questions, steps, or reasons — whichever fits the hook's format)
 - reward: 2-5 words for what commenters get, e.g. "the full roadmap" or "the exact prompt guide"`;
 
       const messages = [{ role:"user", content: prompt }];
@@ -2999,6 +3013,7 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
       const parsed = JSON.parse(match[0]);
       const stripHtml = s => (s||"").replace(/<[^>]+>/g,"").trim();
       if (parsed.hook) setClipHookText(stripHtml(parsed.hook));
+      if (parsed.transition) setClipTransitionText(stripHtml(parsed.transition));
       if (Array.isArray(parsed.prompts)) setClipPromptList(parsed.prompts.map(stripHtml).filter(Boolean).join("\n"));
       if (parsed.reward) setClipRewardText(stripHtml(parsed.reward));
     } catch (err) {
@@ -3021,9 +3036,13 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
     try {
       const source = (clipSelectedId && clipLibrary.find(c=>c.id===clipSelectedId)) || clipLibrary[Math.floor(Math.random()*clipLibrary.length)];
       const targetDur = CLIP_DURATION_MIN + Math.random()*(CLIP_DURATION_MAX-CLIP_DURATION_MIN);
-      const inPoint = Math.max(0, Math.min(3, source.duration - targetDur)) * Math.random();
-      const clipDur = Math.min(targetDur, Math.max(1, source.duration - inPoint));
-      const transitionStart = Math.min(CLIP_HOOK_ONLY_SECONDS, clipDur);
+      // Quick-cut edit: 2-3 sub-clips spread across the source instead of one
+      // static trim. First sub-clip still starts within the first ~3s (per
+      // the "same-theme b-roll" upload constraint); the rest are spread
+      // across the remaining timeline for a more "edited" feel.
+      const numCuts = source.duration >= 10 ? 3 : (source.duration >= 6 ? 2 : 1);
+      const subDur = targetDur / numCuts;
+      const zoneLen = source.duration / numCuts;
 
       const { fetchFile } = await import("@ffmpeg/util");
       setClipGenStage("Starting engine…");
@@ -3033,25 +3052,50 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
       const srcBuf = await srcRes.arrayBuffer();
       await ffmpeg.writeFile("in.mp4", await fetchFile(new Blob([srcBuf])));
 
-      setClipGenStage("Trimming…");
-      try {
-        await ffmpeg.exec(["-i","in.mp4","-ss",String(inPoint),"-t",String(clipDur),"-c","copy","trimmed.mp4"]);
-      } catch {
-        await ffmpeg.exec(["-i","in.mp4","-ss",String(inPoint),"-t",String(clipDur),"trimmed.mp4"]);
+      setClipGenStage(numCuts>1 ? "Cutting…" : "Trimming…");
+      const cutFiles = [];
+      for (let i=0; i<numCuts; i++) {
+        let start;
+        if (i===0) {
+          start = Math.random() * Math.max(0, Math.min(3, zoneLen-subDur));
+        } else {
+          start = i*zoneLen + Math.random()*Math.max(0, zoneLen-subDur);
+        }
+        start = Math.max(0, Math.min(start, Math.max(0, source.duration-subDur)));
+        const fname = `cut${i}.mp4`;
+        try {
+          await ffmpeg.exec(["-i","in.mp4","-ss",String(start),"-t",String(subDur),"-c","copy",fname]);
+        } catch {
+          await ffmpeg.exec(["-i","in.mp4","-ss",String(start),"-t",String(subDur),fname]);
+        }
+        cutFiles.push(fname);
       }
+      if (numCuts > 1) {
+        await ffmpeg.writeFile("cuts.txt", new TextEncoder().encode(cutFiles.map(f=>`file '${f}'`).join("\n")));
+        try {
+          await ffmpeg.exec(["-f","concat","-safe","0","-i","cuts.txt","-c","copy","trimmed.mp4"]);
+        } catch {
+          await ffmpeg.exec(["-f","concat","-safe","0","-i","cuts.txt","trimmed.mp4"]);
+        }
+      } else {
+        await ffmpeg.writeFile("trimmed.mp4", await ffmpeg.readFile(cutFiles[0]));
+      }
+      const clipDur = subDur*numCuts;
+      const transitionStart = Math.min(CLIP_HOOK_ONLY_SECONDS, clipDur);
 
       setClipGenStage("Drawing overlay…");
       const hasTransition = !!clipTransitionText.trim();
       await ffmpeg.writeFile("hook.png", await renderClipTextCanvas(clipHookText, { fontPx:58, fontWeight:800, centerYFrac:0.42 }));
-      if (hasTransition) await ffmpeg.writeFile("transition.png", await renderClipTextCanvas(clipTransitionText, { fontPx:34, fontWeight:700, centerYFrac:0.82 }));
+      if (hasTransition) await ffmpeg.writeFile("transition.png", await renderClipTextCanvas(clipTransitionText, { fontPx:46, fontWeight:800, centerYFrac:0.82 }));
       if (clipShowBadge) await ffmpeg.writeFile("badge.png", await renderClipBadgeCanvas({ profileUrl, name, handle }));
 
       setClipGenStage("Encoding…");
       // Hook is on for the whole clip; the transition line joins it (doesn't
       // replace it) from CLIP_HOOK_ONLY_SECONDS onward; badge (if on) is
-      // also on for the whole clip.
+      // also on for the whole clip. A contrast/saturation/vignette pass
+      // makes the footage punchier and helps the white overlay text pop.
       const inputArgs = ["-i","trimmed.mp4","-i","hook.png"];
-      let filter = `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30[bg];[bg][1:v]overlay=0:0[v1]`;
+      let filter = `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30,eq=contrast=1.08:saturation=1.2:brightness=0.02,vignette=PI/4[bg];[bg][1:v]overlay=0:0[v1]`;
       let last = "[v1]", idx = 2;
       if (hasTransition) {
         inputArgs.push("-i","transition.png");
@@ -3069,7 +3113,7 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
       const outBlob = new Blob([outData.buffer], { type:"video/mp4" });
       setClipResultUrl(prev => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(outBlob); });
 
-      for (const f of ["in.mp4","trimmed.mp4","hook.png","transition.png","badge.png","out.mp4"]) { try { await ffmpeg.deleteFile(f); } catch {} }
+      for (const f of ["in.mp4","cut0.mp4","cut1.mp4","cut2.mp4","cuts.txt","trimmed.mp4","hook.png","transition.png","badge.png","out.mp4"]) { try { await ffmpeg.deleteFile(f); } catch {} }
     } catch (err) {
       console.error("Clip generation failed:", err);
       setClipGenError("Generation failed — try again.");
