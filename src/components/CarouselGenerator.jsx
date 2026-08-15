@@ -1600,6 +1600,8 @@ export default function App() {
   const [blueTick, setBlueTick] = useState(S?.blueTick??false);
   const [clipLibrary, setClipLibrary] = useState(S?.clipLibrary||[]);
   const [clipUploading, setClipUploading] = useState(false);
+  const [clipUploadingFile, setClipUploadingFile] = useState("");
+  const [clipUploadPercent, setClipUploadPercent] = useState(0);
   const [clipUploadError, setClipUploadError] = useState("");
   const [clipHookText, setClipHookText] = useState(S?.clipHookText||"");
   const [clipTransitionText, setClipTransitionText] = useState(S?.clipTransitionText??"Here's the prompt it gave me ⬇");
@@ -2887,13 +2889,20 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
     if (!files.length) return;
     setClipUploadError("");
     setClipUploading(true);
-    for (const file of files) {
+    for (let i=0; i<files.length; i++) {
+      const file = files[i];
+      const fileLabel = files.length>1 ? `${file.name} (${i+1}/${files.length})` : file.name;
+      setClipUploadingFile(fileLabel);
+      setClipUploadPercent(0);
       try {
         if (!CLIP_ALLOWED_TYPES.includes(file.type)) { setClipUploadError(`${file.name}: use MP4, MOV, or WebM.`); continue; }
         if (file.size > CLIP_MAX_BYTES) { setClipUploadError(`${file.name}: over the 300MB limit.`); continue; }
         const duration = await readVideoDuration(file);
         if (duration > CLIP_MAX_DURATION) { setClipUploadError(`${file.name}: ${Math.round(duration)}s is over the 30s max — trim it before uploading.`); continue; }
-        const blob = await uploadToBlob(`clips/${Date.now()}-${file.name}`, file, { access:"public", handleUploadUrl:"/api/upload-video" });
+        const blob = await uploadToBlob(`clips/${Date.now()}-${file.name}`, file, {
+          access:"public", handleUploadUrl:"/api/upload-video",
+          onUploadProgress: (ev) => setClipUploadPercent(Math.round(ev.percentage)),
+        });
         setClipLibrary(prev => [...prev, { id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`, url:blob.url, filename:file.name, duration }]);
       } catch (err) {
         console.error("Clip upload failed:", err);
@@ -2901,6 +2910,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
       }
     }
     setClipUploading(false);
+    setClipUploadingFile("");
+    setClipUploadPercent(0);
     if (clipFileRef.current) clipFileRef.current.value = "";
   };
 
@@ -4596,9 +4607,14 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
             <div style={{display:"flex",flexDirection:"column",gap:20}}>
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <label style={lbl}>Source clip library</label>
-                <div onClick={()=>clipFileRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:16,cursor:"pointer",textAlign:"center",marginTop:8}}>
-                  <span style={{color:A.muted,fontSize:13}}>{clipUploading?"Uploading…":"Upload video clips (MP4/MOV/WebM, max 30s each)"}</span>
+                <div onClick={()=>!clipUploading&&clipFileRef.current?.click()} style={{background:A.bg,border:`1.5px dashed ${A.border}`,borderRadius:9,padding:16,cursor:clipUploading?"default":"pointer",textAlign:"center",marginTop:8}}>
+                  <span style={{color:A.muted,fontSize:13}}>{clipUploading?`Uploading ${clipUploadingFile} — ${clipUploadPercent}%`:"Upload video clips (MP4/MOV/WebM, max 30s each)"}</span>
                 </div>
+                {clipUploading&&(
+                  <div style={{width:"100%",height:6,background:A.border,borderRadius:3,marginTop:8,overflow:"hidden"}}>
+                    <div style={{width:`${clipUploadPercent}%`,height:"100%",background:GOLD,transition:"width 0.2s ease"}}/>
+                  </div>
+                )}
                 <input ref={clipFileRef} type="file" accept="video/mp4,video/quicktime,video/webm" multiple onChange={handleClipFilesSelected} style={{display:"none"}}/>
                 {clipUploadError&&<div style={{color:"#C0392B",fontSize:12,marginTop:8}}>{clipUploadError}</div>}
                 {clipLibrary.length>0&&(
