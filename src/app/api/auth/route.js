@@ -181,7 +181,7 @@ export const maxDuration = 60;
 // returns a real Supabase session immediately). Scoped to specific,
 // trusted addresses only — every other email still goes through the
 // normal emailed-code flow.
-const DIRECT_LOGIN_EMAILS = ["runerbean85@icloud.com"];
+const DIRECT_LOGIN_EMAILS = ["runnerbean85@icloud.com"];
 
 // Shared post-authentication step for both the normal verify-otp flow and
 // the direct-login bypass above: provisions the user row on first login,
