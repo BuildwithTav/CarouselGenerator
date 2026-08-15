@@ -1651,6 +1651,9 @@ export default function App() {
   const [clipGenerating, setClipGenerating] = useState(false);
   const [clipGenStage, setClipGenStage] = useState("");
   const [clipGenError, setClipGenError] = useState("");
+  const [clipCaption, setClipCaption] = useState(S?.clipCaption||"");
+  const [clipCaptionWriting, setClipCaptionWriting] = useState(false);
+  const [clipCaptionError, setClipCaptionError] = useState("");
   const [clipCaptionCopied, setClipCaptionCopied] = useState(false);
   // Component-level vars for drawer
   const generateList=async()=>{
@@ -1954,11 +1957,11 @@ export default function App() {
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,quotePhotos,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
            bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("_c_data:")),overlayDark,photoOpacity,templateOpacity,ratio,bgColour,customColourDark,slideTextDark,audienceType,customActiveSlot,textDensity,
-           clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge,clipTopic});
+           clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge,clipTopic,clipCaption});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
       bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType,customActiveSlot,textDensity,quotePhotos,
-      clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge,clipTopic]);
+      clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge,clipTopic,clipCaption]);
 
   const readFile = (e, cb) => {
     const f = e.target.files[0]; if (!f) return;
@@ -3082,20 +3085,43 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
 
-  const buildClipCaption = () => {
-    const followLine = `Follow @${(handle||"yourhandle").replace(/^@/,"")} first so my message can reach you.`;
-    const commentLine = clipCommentKeyword.trim() ? `Comment ${clipCommentKeyword.trim().toUpperCase()}${clipRewardText.trim()?` and I'll send you ${clipRewardText.trim()}.`:"."}` : "";
-    const promptItems = clipPromptList.split("\n").map(s=>s.trim()).filter(Boolean);
-    const promptsBlock = promptItems.length ? promptItems.map((p,i)=>`${i+1}. ${p}`).join("\n") : "";
-    return [followLine, commentLine, promptsBlock].filter(Boolean).join("\n\n");
+  const writeClipCaptionWithAI = async () => {
+    if (!clipHookText.trim()) { setClipCaptionError("Add a hook line first."); return; }
+    if (!canGenerate()) { setNav("upgrade"); return; }
+    setClipCaptionError("");
+    setClipCaptionWriting(true);
+    try {
+      const followHandle = `@${(handle||"yourhandle").replace(/^@/,"")}`;
+      const promptItems = clipPromptList.split("\n").map(s=>s.trim()).filter(Boolean);
+      const prompt = `Here's the overlay text for my video:
+Hook: "${clipHookText.trim()}"
+${clipTransitionText.trim()?`Transition line (appears near the end): "${clipTransitionText.trim()}"`:""}
+
+Write me a caption that logically goes with it — like a real Instagram caption a creator would actually post, not a template. Include the follow and comment structure I always use, but write the sentences around it so they flow naturally from the hook rather than sounding like a fill-in-the-blank form:
+- Tell people to follow ${followHandle} first so the message can reach them
+- Tell them to comment "${(clipCommentKeyword||"the keyword").toUpperCase()}"${clipRewardText.trim()?` and you'll send them ${clipRewardText.trim()}`:""}
+${promptItems.length?`\nWeave in or reference these details where it makes sense:\n${promptItems.map(p=>`- ${p}`).join("\n")}`:""}
+
+Return ONLY the caption text — no quotes, no markdown, no explanation, no headers.`;
+
+      const messages = [{ role:"user", content: prompt }];
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:500, messages }, 3, true);
+      const raw = d.content?.find(b=>b.type==="text")?.text||"";
+      if (!raw.trim()) throw new Error("Empty response");
+      setClipCaption(raw.trim());
+    } catch (err) {
+      console.error("Clip caption AI write failed:", err);
+      setClipCaptionError("Couldn't write that — try again.");
+    }
+    setClipCaptionWriting(false);
   };
 
   const copyClipCaption = async () => {
     try {
-      await navigator.clipboard.writeText(buildClipCaption());
+      await navigator.clipboard.writeText(clipCaption);
       setClipCaptionCopied(true);
       setTimeout(()=>setClipCaptionCopied(false), 1500);
-    } catch { setClipGenError("Couldn't copy — select and copy the text manually."); }
+    } catch { setClipCaptionError("Couldn't copy — select and copy the text manually."); }
   };
 
   const A = { bg:"#F5F3EF", surface:"#FFF", border:"#E8E5E0", text:"#0A0A0A", muted:"#8A8780", accentText:"#FFF", input:"#FFF" };
@@ -4742,9 +4768,13 @@ Return ONLY valid JSON, no other text: {"hook":"...","prompts":["...","...","...
                 </div>
                 <div style={{fontSize:12,color:A.muted}}>Follow line uses your handle from the Brand tab ({handle||"@yourhandle"}).</div>
                 <div>
-                  <label style={lbl}>Caption preview</label>
-                  <textarea readOnly value={buildClipCaption()} rows={5} style={{...inp,resize:"vertical",color:A.muted}}/>
-                  <button onClick={copyClipCaption} style={{marginTop:8,padding:"8px 16px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,fontWeight:700,fontSize:12,cursor:"pointer"}}>{clipCaptionCopied?"Copied!":"Copy caption"}</button>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:7}}>
+                    <label style={{...lbl,marginBottom:0}}>Caption</label>
+                    <button onClick={writeClipCaptionWithAI} disabled={clipCaptionWriting} style={{padding:"6px 14px",background:GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:12,border:"none",cursor:clipCaptionWriting?"default":"pointer",opacity:clipCaptionWriting?0.6:1}}>{clipCaptionWriting?"Writing…":"Write with AI"}</button>
+                  </div>
+                  <textarea value={clipCaption} onChange={e=>setClipCaption(e.target.value)} placeholder="Click Write with AI to draft a caption from your hook, or write your own here." rows={6} style={{...inp,resize:"vertical"}}/>
+                  {clipCaptionError&&<div style={{color:"#C0392B",fontSize:12,marginTop:6}}>{clipCaptionError}</div>}
+                  <button onClick={copyClipCaption} disabled={!clipCaption} style={{marginTop:8,padding:"8px 16px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,fontWeight:700,fontSize:12,cursor:clipCaption?"pointer":"default",opacity:clipCaption?1:0.5}}>{clipCaptionCopied?"Copied!":"Copy caption"}</button>
                 </div>
               </div>
 
