@@ -1646,6 +1646,7 @@ export default function App() {
   const [clipCommentKeyword, setClipCommentKeyword] = useState(S?.clipCommentKeyword||"");
   const [clipRewardText, setClipRewardText] = useState(S?.clipRewardText||"");
   const [clipShowBadge, setClipShowBadge] = useState(S?.clipShowBadge??true);
+  const [clipFilterPreset, setClipFilterPreset] = useState(S?.clipFilterPreset||"vivid");
   const [clipTopic, setClipTopic] = useState(S?.clipTopic||"");
   const [clipAiWriting, setClipAiWriting] = useState(false);
   const [clipAiError, setClipAiError] = useState("");
@@ -1962,11 +1963,11 @@ export default function App() {
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,quotePhotos,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
            bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("_c_data:")),overlayDark,photoOpacity,templateOpacity,ratio,bgColour,customColourDark,slideTextDark,audienceType,customActiveSlot,textDensity,
-           clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge,clipTopic,clipCaption});
+           clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge,clipTopic,clipCaption,clipFilterPreset});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
       bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType,customActiveSlot,textDensity,quotePhotos,
-      clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge,clipTopic,clipCaption]);
+      clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge,clipTopic,clipCaption,clipFilterPreset]);
 
   const readFile = (e, cb) => {
     const f = e.target.files[0]; if (!f) return;
@@ -3059,6 +3060,12 @@ Return ONLY valid JSON, no other text: {"hook":"...","transition":"...","prompts
   const CLIP_DURATION_MIN = 6;
   const CLIP_DURATION_MAX = 7;
   const CLIP_HOOK_ONLY_SECONDS = 4;
+  const CLIP_FILTER_PRESETS = [
+    { id:"vivid", label:"Vivid", filter:"eq=contrast=1.08:saturation=1.2:brightness=0.02,vignette=PI/4" },
+    { id:"moody", label:"Moody", filter:"eq=contrast=1.15:saturation=0.85:brightness=-0.02,vignette=PI/3.5" },
+    { id:"warm", label:"Warm", filter:"eq=contrast=1.06:saturation=1.15:brightness=0.02:gamma_r=1.05:gamma_b=0.95,vignette=PI/4.5" },
+    { id:"none", label:"None", filter:"" },
+  ];
 
   const generateClip = async () => {
     if (!clipLibrary.length) { setClipGenError("Upload at least one source clip first."); return; }
@@ -3120,7 +3127,9 @@ Return ONLY valid JSON, no other text: {"hook":"...","transition":"...","prompts
         trimChain += `[0:v]trim=start=${start}:duration=${subDur},setpts=PTS-STARTPTS[c${i}];`;
         concatLabels += `[c${i}]`;
       });
-      let filter = `${trimChain}${concatLabels}concat=n=${numCuts}:v=1:a=0[cut];[cut]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30,eq=contrast=1.08:saturation=1.2:brightness=0.02,vignette=PI/4[bg];[bg][1:v]overlay=0:0[v1]`;
+      const gradePreset = CLIP_FILTER_PRESETS.find(p=>p.id===clipFilterPreset) || CLIP_FILTER_PRESETS[0];
+      const gradeFilter = gradePreset.filter ? `,${gradePreset.filter}` : "";
+      let filter = `${trimChain}${concatLabels}concat=n=${numCuts}:v=1:a=0[cut];[cut]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30${gradeFilter}[bg];[bg][1:v]overlay=0:0[v1]`;
       let last = "[v1]", idx = 2;
       if (hasTransition) {
         inputArgs.push("-i","transition.png");
@@ -4845,6 +4854,14 @@ Return ONLY the caption text — no quotes, no markdown, no explanation, no head
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <div><div style={{fontWeight:600,fontSize:13}}>Show profile badge</div><div style={{color:A.muted,fontSize:12}}>Avatar + name/handle watermark</div></div>
                   {tog(clipShowBadge,setClipShowBadge)}
+                </div>
+                <div>
+                  <label style={lbl}>Look</label>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:6}}>
+                    {CLIP_FILTER_PRESETS.map(p=>(
+                      <button key={p.id} onClick={()=>setClipFilterPreset(p.id)} style={{background:clipFilterPreset===p.id?A.text:A.bg,border:`1.5px solid ${clipFilterPreset===p.id?A.text:A.border}`,borderRadius:20,padding:"6px 16px",fontSize:12,fontWeight:700,color:clipFilterPreset===p.id?A.accentText:A.muted,cursor:"pointer"}}>{p.label}</button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
