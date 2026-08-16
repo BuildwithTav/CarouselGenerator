@@ -108,6 +108,8 @@ function loadS() { try { if (typeof window === "undefined") return null; return 
 function saveS(d) { try { if (typeof window === "undefined") return; localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} }
 function loadHistory() { try { if (typeof window === "undefined") return []; return JSON.parse(localStorage.getItem("bwt_history")||"[]"); } catch { return []; } }
 function saveHistory(h) { try { if (typeof window === "undefined") return; localStorage.setItem("bwt_history", JSON.stringify(h.slice(0,10))); } catch(e) { console.error("History save failed:", e); } }
+function loadClipHistory() { try { if (typeof window === "undefined") return []; return JSON.parse(localStorage.getItem("bwt_clip_history")||"[]"); } catch { return []; } }
+function saveClipHistory(h) { try { if (typeof window === "undefined") return; localStorage.setItem("bwt_clip_history", JSON.stringify(h.slice(0,12))); } catch(e) { console.error("Clip history save failed:", e); } }
 function Spin({c="#fff"}) { return <div style={{width:14,height:14,borderRadius:"50%",border:`2px solid rgba(255,255,255,0.15)`,borderTop:`2px solid ${c}`,animation:"spin 0.7s linear infinite",flexShrink:0}}/>; }
 
 async function sampleImageBrightness(imageUrl) {
@@ -1656,6 +1658,8 @@ export default function App() {
   const [clipCaptionWriting, setClipCaptionWriting] = useState(false);
   const [clipCaptionError, setClipCaptionError] = useState("");
   const [clipCaptionCopied, setClipCaptionCopied] = useState(false);
+  const [clipHistory, setClipHistory] = useState(()=>loadClipHistory());
+  const [clipSaving, setClipSaving] = useState(false);
   // Component-level vars for drawer
   const generateList=async()=>{
     if(!tmplBrief&&!tmplSlides.some(s=>s.headline))return;
@@ -3143,12 +3147,32 @@ Return ONLY valid JSON, no other text: {"hook":"...","transition":"...","prompts
     setClipGenerating(false);
   };
 
-  const downloadClipVideo = () => {
-    if (!clipResultUrl) return;
+  const downloadClipVideo = (url) => {
+    const target = url || clipResultUrl;
+    if (!target) return;
     const a = document.createElement("a");
-    a.href = clipResultUrl; a.download = `clip-${Date.now()}.mp4`;
+    a.href = target; a.download = `clip-${Date.now()}.mp4`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
+
+  const saveClipToHistory = async () => {
+    if (!clipResultUrl) return;
+    setClipSaving(true);
+    setClipGenError("");
+    try {
+      const blob = await fetch(clipResultUrl).then(r=>r.blob());
+      const uploaded = await uploadToBlob(`clips/history-${Date.now()}.mp4`, blob, { access:"public", handleUploadUrl:"/api/upload-video" });
+      const entry = { id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`, url:uploaded.url, hookText:clipHookText, createdAt:Date.now() };
+      setClipHistory(prev => { const next = [entry, ...prev].slice(0,12); saveClipHistory(next); return next; });
+    } catch (err) {
+      console.error("Save clip to history failed:", err);
+      setClipGenError("Couldn't save to history — try again.");
+    }
+    setClipSaving(false);
+  };
+
+  const removeClipFromHistory = (id) => setClipHistory(prev => { const next = prev.filter(c=>c.id!==id); saveClipHistory(next); return next; });
+  const clearClipHistory = () => { setClipHistory([]); saveClipHistory([]); };
 
   const writeClipCaptionWithAI = async () => {
     if (!clipHookText.trim()) { setClipCaptionError("Add a hook line first."); return; }
@@ -4846,7 +4870,8 @@ Return ONLY the caption text — no quotes, no markdown, no explanation, no head
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
                 <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                   <button onClick={generateClip} disabled={clipGenerating} style={{padding:"12px 22px",background:GOLD,color:"#000",borderRadius:9,fontWeight:700,fontSize:13,border:"none",cursor:clipGenerating?"default":"pointer",opacity:clipGenerating?0.6:1}}>{clipGenerating?(clipGenStage||"Generating…"):clipResultUrl?(clipSelectedId?"Regenerate":"Shuffle"):"Generate"}</button>
-                  {clipResultUrl&&<button onClick={downloadClipVideo} style={{padding:"12px 22px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,fontWeight:700,fontSize:13,cursor:"pointer"}}>Download MP4</button>}
+                  {clipResultUrl&&<button onClick={()=>downloadClipVideo()} style={{padding:"12px 22px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,fontWeight:700,fontSize:13,cursor:"pointer"}}>Download MP4</button>}
+                  {clipResultUrl&&<button onClick={saveClipToHistory} disabled={clipSaving} style={{padding:"12px 22px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,fontWeight:700,fontSize:13,cursor:clipSaving?"default":"pointer",opacity:clipSaving?0.6:1}}>{clipSaving?"Saving…":"Save to history"}</button>}
                 </div>
                 {clipGenError&&<div style={{color:"#C0392B",fontSize:12,marginTop:10}}>{clipGenError}</div>}
                 {clipResultUrl&&(
@@ -4854,6 +4879,31 @@ Return ONLY the caption text — no quotes, no markdown, no explanation, no head
                     <video src={clipResultUrl} controls style={{width:270,borderRadius:12,background:"#000"}}/>
                   </div>
                 )}
+              </div>
+
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+                  <label style={{...lbl,marginBottom:0}}>History <span style={{textTransform:"none",fontWeight:400,color:A.muted}}>— saved clips</span></label>
+                  {clipHistory.length>0&&<button onClick={()=>{if(window.confirm("Clear clip history?")) clearClipHistory();}} style={{background:"none",border:`1.5px solid ${A.border}`,borderRadius:7,padding:"4px 10px",fontSize:11,color:"#c0392b",fontWeight:600,cursor:"pointer"}}>Clear</button>}
+                </div>
+                {clipHistory.length===0
+                  ? <div style={{color:A.muted,fontSize:13}}>Nothing saved yet — generate a clip and hit "Save to history".</div>
+                  : (
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10}}>
+                      {clipHistory.map(c=>(
+                        <div key={c.id} style={{borderRadius:10,overflow:"hidden",position:"relative",background:"#000"}}>
+                          <video src={c.url} controls preload="metadata" style={{width:"100%",height:200,objectFit:"cover",display:"block"}}/>
+                          <div style={{padding:"8px 8px 6px",background:A.bg}}>
+                            <div style={{fontSize:11,color:A.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.hookText||"(no hook)"}</div>
+                            <div style={{display:"flex",gap:6,marginTop:6}}>
+                              <button onClick={()=>downloadClipVideo(c.url)} style={{flex:1,padding:"5px 0",background:A.surface,border:`1px solid ${A.border}`,borderRadius:6,fontSize:11,fontWeight:700,cursor:"pointer"}}>Download</button>
+                              <button onClick={()=>removeClipFromHistory(c.id)} style={{padding:"5px 10px",background:A.surface,border:`1px solid ${A.border}`,borderRadius:6,fontSize:11,color:"#c0392b",cursor:"pointer"}}>×</button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
               </div>
             </div>
           </div>
