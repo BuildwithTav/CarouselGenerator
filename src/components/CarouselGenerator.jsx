@@ -1642,7 +1642,6 @@ export default function App() {
   const [clipUploadError, setClipUploadError] = useState("");
   const [clipHookText, setClipHookText] = useState(S?.clipHookText||"");
   const [clipTransitionText, setClipTransitionText] = useState(S?.clipTransitionText??"Here's the prompt it gave me ⬇");
-  const [clipPromptList, setClipPromptList] = useState(S?.clipPromptList||"");
   const [clipCommentKeyword, setClipCommentKeyword] = useState(S?.clipCommentKeyword||"");
   const [clipRewardText, setClipRewardText] = useState(S?.clipRewardText||"");
   const [clipShowBadge, setClipShowBadge] = useState(S?.clipShowBadge??true);
@@ -1656,8 +1655,6 @@ export default function App() {
   const [clipGenStage, setClipGenStage] = useState("");
   const [clipGenError, setClipGenError] = useState("");
   const [clipCaption, setClipCaption] = useState(S?.clipCaption||"");
-  const [clipCaptionWriting, setClipCaptionWriting] = useState(false);
-  const [clipCaptionError, setClipCaptionError] = useState("");
   const [clipCaptionCopied, setClipCaptionCopied] = useState(false);
   const [clipHistory, setClipHistory] = useState(()=>loadClipHistory());
   const [clipSaving, setClipSaving] = useState(false);
@@ -1963,11 +1960,11 @@ export default function App() {
     saveS({profileUrl:safeProfileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
            coverPhotos:safeCoverPhotos,activeCoverPhoto:safeActiveCover,quoteBgCustomUrl:safeQuoteBg,quotePhotos,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
            bgMode,templateBgUrl:safeTemplateBg,templatePhotos:templatePhotos.filter(p=>!p?.startsWith("_c_data:")),overlayDark,photoOpacity,templateOpacity,ratio,bgColour,customColourDark,slideTextDark,audienceType,customActiveSlot,textDensity,
-           clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge,clipTopic,clipCaption,clipFilterPreset});
+           clipLibrary,clipHookText,clipTransitionText,clipCommentKeyword,clipRewardText,clipShowBadge,clipTopic,clipCaption,clipFilterPreset});
   }, [profileUrl,name,handle,blueTick,website,showWebsite,voiceProfile,businessType,otherType,
       coverPhotos,activeCoverPhoto,coverPosition,accentSwatch,accentColor,accentCustomSlots,bgCustomSlots,fontId,headlineStyle,showNums,
       bgMode,templateBgUrl,overlayDark,ratio,bgColour,audienceType,customActiveSlot,textDensity,quotePhotos,
-      clipLibrary,clipHookText,clipTransitionText,clipPromptList,clipCommentKeyword,clipRewardText,clipShowBadge,clipTopic,clipCaption,clipFilterPreset]);
+      clipLibrary,clipHookText,clipTransitionText,clipCommentKeyword,clipRewardText,clipShowBadge,clipTopic,clipCaption,clipFilterPreset]);
 
   const readFile = (e, cb) => {
     const f = e.target.files[0]; if (!f) return;
@@ -3018,29 +3015,48 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
     `a blunt list-tease format: e.g. "Best way to [goal] in 2026 is: [step], [step], [step]"`,
   ];
 
-  const writeClipHookWithAI = async () => {
-    if (!clipTopic.trim()) { setClipAiError("Enter a topic first."); return; }
+  const writeClipWithAI = async () => {
+    if (!clipTopic.trim() && !voiceProfile.trim() && (!businessType || businessType==="other")) {
+      setClipAiError("Enter a topic, or set your business type/voice profile in the Brand tab first.");
+      return;
+    }
     if (!canGenerate()) { setNav("upgrade"); return; }
     setClipAiError("");
     setClipAiWriting(true);
     try {
-      const format = CLIP_HOOK_FORMATS[Math.floor(Math.random()*CLIP_HOOK_FORMATS.length)];
-      const prompt = `You're writing a short, punchy Instagram Reels/TikTok script that stops the scroll in the first second. Negative framing, unpopular opinions, and specific outcomes consistently outperform generic positive claims — the hook has to land in one sentence, no warm-up, no "hey guys" intro.
+      // Nudge toward a rotating format so repeated clicks don't converge on
+      // the same one, but let the model override it if another format
+      // actually fits the topic better — smarter than pure random, cheaper
+      // than a real "which format performs best" analysis.
+      const suggested = CLIP_HOOK_FORMATS[Math.floor(Math.random()*CLIP_HOOK_FORMATS.length)];
+      const followHandle = `@${(handle||"yourhandle").replace(/^@/,"")}`;
+      const commentLine = clipCommentKeyword.trim()
+        ? `Tell them to comment "${clipCommentKeyword.trim().toUpperCase()}"${clipRewardText.trim()?` and you'll send them ${clipRewardText.trim()}`:""}`
+        : "";
+      const prompt = `You're writing a complete Instagram Reels/TikTok script: a hook + transition line (burned into the video) and a caption (goes in the post description — this is where the actual value/payoff and CTA live, not on the video).
 
-Topic: "${clipTopic.trim()}"
+${clipTopic.trim()?`Topic: "${clipTopic.trim()}"`:"No topic given — pick one that fits the brand/niche below."}
 ${voiceProfile?`Voice/brand tone: ${voiceProfile}`:""}
 ${businessType&&businessType!=="other"?`Business type: ${businessType}`:""}
+${audienceType?`Audience: ${audienceType}`:""}
 
-Write this one using ${format}. Make it feel native to that format, not forced into a different template.
+Negative framing, unpopular opinions, and specific outcomes consistently outperform generic positive claims — the hook has to land in one sentence, no warm-up, no "hey guys" intro.
 
-Return ONLY valid JSON, no other text: {"hook":"...","transition":"...","prompts":["...","...","..."],"reward":"..."}
-- hook: one sentence, 10-20 words, matching the format above
+Pick whichever of these hook formats best fits the topic — don't default to the same one every time:
+${CLIP_HOOK_FORMATS.map(f=>`- ${f}`).join("\n")}
+("${suggested}" is a reasonable default if nothing else fits better.)
+
+Then write the caption. It should logically continue from the hook and actually deliver the value/payoff — flowing prose like a real caption a creator would post, not a bullet list. Weave this in naturally rather than as a rigid template:
+- Tell people to follow ${followHandle} first so the message can reach them
+${commentLine?`- ${commentLine}`:""}
+
+Return ONLY valid JSON, no other text: {"hook":"...","transition":"...","caption":"..."}
+- hook: one sentence, 10-20 words, matching the format you picked
 - transition: a short line (3-6 words) that appears near the end of the clip pointing viewers to the caption — match it to the hook's format (e.g. "Here's the prompt it gave me ⬇" only fits the AI-prompt format; otherwise something like "Here's exactly how ⬇" or "Save this ⬇")
-- prompts: 3-5 short supporting lines for the caption (follow-up questions, steps, or reasons — whichever fits the hook's format)
-- reward: 2-5 words for what commenters get, e.g. "the full roadmap" or "the exact prompt guide"`;
+- caption: the full caption text, 2-4 short paragraphs`;
 
       const messages = [{ role:"user", content: prompt }];
-      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:600, messages }, 3, true);
+      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:800, messages }, 3, true);
       const raw = d.content?.find(b=>b.type==="text")?.text||"";
       const match = raw.match(/\{[\s\S]*\}/);
       if (!match) throw new Error("No JSON in response");
@@ -3048,8 +3064,7 @@ Return ONLY valid JSON, no other text: {"hook":"...","transition":"...","prompts
       const stripHtml = s => (s||"").replace(/<[^>]+>/g,"").trim();
       if (parsed.hook) setClipHookText(stripHtml(parsed.hook));
       if (parsed.transition) setClipTransitionText(stripHtml(parsed.transition));
-      if (Array.isArray(parsed.prompts)) setClipPromptList(parsed.prompts.map(stripHtml).filter(Boolean).join("\n"));
-      if (parsed.reward) setClipRewardText(stripHtml(parsed.reward));
+      if (parsed.caption) setClipCaption(stripHtml(parsed.caption));
     } catch (err) {
       console.error("Clip AI write failed:", err);
       setClipAiError("Couldn't write that — try again.");
@@ -3183,43 +3198,12 @@ Return ONLY valid JSON, no other text: {"hook":"...","transition":"...","prompts
   const removeClipFromHistory = (id) => setClipHistory(prev => { const next = prev.filter(c=>c.id!==id); saveClipHistory(next); return next; });
   const clearClipHistory = () => { setClipHistory([]); saveClipHistory([]); };
 
-  const writeClipCaptionWithAI = async () => {
-    if (!clipHookText.trim()) { setClipCaptionError("Add a hook line first."); return; }
-    if (!canGenerate()) { setNav("upgrade"); return; }
-    setClipCaptionError("");
-    setClipCaptionWriting(true);
-    try {
-      const followHandle = `@${(handle||"yourhandle").replace(/^@/,"")}`;
-      const promptItems = clipPromptList.split("\n").map(s=>s.trim()).filter(Boolean);
-      const prompt = `Here's the overlay text for my video:
-Hook: "${clipHookText.trim()}"
-${clipTransitionText.trim()?`Transition line (appears near the end): "${clipTransitionText.trim()}"`:""}
-
-Write me a caption that logically goes with it — like a real Instagram caption a creator would actually post, not a template. Include the follow and comment structure I always use, but write the sentences around it so they flow naturally from the hook rather than sounding like a fill-in-the-blank form:
-- Tell people to follow ${followHandle} first so the message can reach them
-- Tell them to comment "${(clipCommentKeyword||"the keyword").toUpperCase()}"${clipRewardText.trim()?` and you'll send them ${clipRewardText.trim()}`:""}
-${promptItems.length?`\nWeave in or reference these details where it makes sense:\n${promptItems.map(p=>`- ${p}`).join("\n")}`:""}
-
-Return ONLY the caption text — no quotes, no markdown, no explanation, no headers.`;
-
-      const messages = [{ role:"user", content: prompt }];
-      const d = await fetchWithRetry({ model:"claude-sonnet-4-6", max_tokens:500, messages }, 3, true);
-      const raw = d.content?.find(b=>b.type==="text")?.text||"";
-      if (!raw.trim()) throw new Error("Empty response");
-      setClipCaption(raw.trim());
-    } catch (err) {
-      console.error("Clip caption AI write failed:", err);
-      setClipCaptionError("Couldn't write that — try again.");
-    }
-    setClipCaptionWriting(false);
-  };
-
   const copyClipCaption = async () => {
     try {
       await navigator.clipboard.writeText(clipCaption);
       setClipCaptionCopied(true);
       setTimeout(()=>setClipCaptionCopied(false), 1500);
-    } catch { setClipCaptionError("Couldn't copy — select and copy the text manually."); }
+    } catch { setClipAiError("Couldn't copy — select and copy the text manually."); }
   };
 
   const A = { bg:"#F5F3EF", surface:"#FFF", border:"#E8E5E0", text:"#0A0A0A", muted:"#8A8780", accentText:"#FFF", input:"#FFF" };
@@ -4836,13 +4820,14 @@ Return ONLY the caption text — no quotes, no markdown, no explanation, no head
                 )}
               </div>
 
-              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",flexDirection:"column",gap:14}}>
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",flexDirection:"column",gap:10}}>
                 <div>
-                  <label style={lbl}>Topic</label>
-                  <div style={{display:"flex",gap:8}}>
+                  <label style={lbl}>Topic <span style={{textTransform:"none",fontWeight:400,color:A.muted}}>(optional — leave blank and AI picks one from your Brand tab niche)</span></label>
+                  <div style={{display:"flex",gap:8,marginTop:6}}>
                     <input value={clipTopic} onChange={e=>setClipTopic(e.target.value)} placeholder="e.g. start an automated online business" style={{...inp,flex:1}}/>
-                    <button onClick={writeClipHookWithAI} disabled={clipAiWriting} style={{padding:"0 18px",background:GOLD,color:"#000",borderRadius:9,fontWeight:700,fontSize:12,border:"none",whiteSpace:"nowrap",cursor:clipAiWriting?"default":"pointer",opacity:clipAiWriting?0.6:1}}>{clipAiWriting?"Writing…":"Write with AI"}</button>
+                    <button onClick={writeClipWithAI} disabled={clipAiWriting} style={{padding:"0 18px",background:GOLD,color:"#000",borderRadius:9,fontWeight:700,fontSize:12,border:"none",whiteSpace:"nowrap",cursor:clipAiWriting?"default":"pointer",opacity:clipAiWriting?0.6:1}}>{clipAiWriting?"Writing…":"Write with AI"}</button>
                   </div>
+                  <div style={{fontSize:12,color:A.muted,marginTop:6}}>Writes the hook, transition, and caption together — picks whichever viral format fits the topic.</div>
                   {clipAiError&&<div style={{color:"#C0392B",fontSize:12,marginTop:6}}>{clipAiError}</div>}
                 </div>
               </div>
@@ -4866,20 +4851,15 @@ Return ONLY the caption text — no quotes, no markdown, no explanation, no head
               </div>
 
               <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",flexDirection:"column",gap:14}}>
-                <label style={lbl}>Caption <span style={{textTransform:"none",fontWeight:400,color:A.muted}}>— the actual info goes in the post caption, not on the video</span></label>
-                <div><label style={lbl}>Prompts / questions (one per line)</label><textarea value={clipPromptList} onChange={e=>setClipPromptList(e.target.value)} placeholder={"What's your budget?\nHow many hours a week can you commit?"} rows={4} style={{...inp,resize:"vertical"}}/></div>
+                <label style={lbl}>Caption <span style={{textTransform:"none",fontWeight:400,color:A.muted}}>— the actual value/payoff and CTA go in the post caption, not on the video</span></label>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                   <div><label style={lbl}>Comment keyword</label><input value={clipCommentKeyword} onChange={e=>setClipCommentKeyword(e.target.value)} placeholder="TAV" style={inp}/></div>
                   <div><label style={lbl}>Reward text</label><input value={clipRewardText} onChange={e=>setClipRewardText(e.target.value)} placeholder="the full breakdown" style={inp}/></div>
                 </div>
                 <div style={{fontSize:12,color:A.muted}}>Follow line uses your handle from the Brand tab ({handle||"@yourhandle"}).</div>
                 <div>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:7}}>
-                    <label style={{...lbl,marginBottom:0}}>Caption</label>
-                    <button onClick={writeClipCaptionWithAI} disabled={clipCaptionWriting} style={{padding:"6px 14px",background:GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:12,border:"none",cursor:clipCaptionWriting?"default":"pointer",opacity:clipCaptionWriting?0.6:1}}>{clipCaptionWriting?"Writing…":"Write with AI"}</button>
-                  </div>
-                  <textarea value={clipCaption} onChange={e=>setClipCaption(e.target.value)} placeholder="Click Write with AI to draft a caption from your hook, or write your own here." rows={6} style={{...inp,resize:"vertical"}}/>
-                  {clipCaptionError&&<div style={{color:"#C0392B",fontSize:12,marginTop:6}}>{clipCaptionError}</div>}
+                  <label style={{...lbl,marginBottom:7}}>Caption</label>
+                  <textarea value={clipCaption} onChange={e=>setClipCaption(e.target.value)} placeholder="Click Write with AI above to draft hook + transition + caption together, or write your own here." rows={6} style={{...inp,resize:"vertical"}}/>
                   <button onClick={copyClipCaption} disabled={!clipCaption} style={{marginTop:8,padding:"8px 16px",background:A.bg,border:`1.5px solid ${A.border}`,borderRadius:9,fontWeight:700,fontSize:12,cursor:clipCaption?"pointer":"default",opacity:clipCaption?1:0.5}}>{clipCaptionCopied?"Copied!":"Copy caption"}</button>
                 </div>
               </div>
