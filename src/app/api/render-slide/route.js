@@ -83,7 +83,25 @@ export async function POST(req) {
       const page = await browser.newPage();
       await page.setViewport({ width: targetWidth, height: targetHeight, deviceScaleFactor: SCALE });
       await page.setContent(htmlWithFonts, { waitUntil: 'domcontentloaded', timeout: 25000 });
-      await new Promise(r => setTimeout(r, 1500));
+      // 'domcontentloaded' fires once the HTML is parsed — it does not wait for
+      // <img> tags (avatar badge, background photo, etc.) to actually finish
+      // fetching. A flat delay here is a guess: images that resolve slower than
+      // the guess (a cold Vercel Blob fetch, a slow Pexels response) are still
+      // mid-request when the screenshot is taken, so the browser paints the
+      // element's background-color fallback instead of the image — this is
+      // exactly the "blank placeholder circle" avatar bug. Wait for every image
+      // on the page to actually settle (loaded or errored) instead, capped so a
+      // single hung request can't stall the export.
+      await Promise.race([
+        page.evaluate(() => Promise.all(Array.from(document.images).map(img =>
+          img.complete ? Promise.resolve() : new Promise(resolve => {
+            img.addEventListener('load', resolve, { once: true });
+            img.addEventListener('error', resolve, { once: true });
+          })
+        ))),
+        new Promise(r => setTimeout(r, 8000)),
+      ]);
+      await new Promise(r => setTimeout(r, 500));
       const screenshot = await page.screenshot({
         type: 'png',
         clip: { x: 0, y: 0, width: targetWidth, height: targetHeight },
