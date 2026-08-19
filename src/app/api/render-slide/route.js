@@ -101,6 +101,26 @@ export async function POST(req) {
         ))),
         new Promise(r => setTimeout(r, 8000)),
       ]);
+      // The wait above resolves on 'error' too, so a request that fails outright
+      // (a transient connection reset / cold-edge blip on Vercel Blob or Pexels,
+      // as opposed to one that's merely slow) still leaves a broken image at this
+      // point — that's what produced "some slides render the avatar, some don't"
+      // even though every slide requests the exact same avatar URL. Give any
+      // image that isn't actually showing pixels one cache-busted retry before
+      // giving up on it.
+      await Promise.race([
+        page.evaluate(() => Promise.all(
+          Array.from(document.images)
+            .filter(img => !img.complete || img.naturalWidth === 0)
+            .map(img => new Promise(resolve => {
+              const src = img.src;
+              img.addEventListener('load', resolve, { once: true });
+              img.addEventListener('error', resolve, { once: true });
+              img.src = src + (src.includes('?') ? '&' : '?') + '_retry=' + Date.now();
+            }))
+        )),
+        new Promise(r => setTimeout(r, 5000)),
+      ]);
       await new Promise(r => setTimeout(r, 500));
       const screenshot = await page.screenshot({
         type: 'png',
