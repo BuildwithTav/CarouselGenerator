@@ -177,12 +177,23 @@ function getPlanLabel(plan) {
 
 export const maxDuration = 60;
 
+// Dev/testing account only — skips the emailed 6-digit code so repeat test
+// logins don't require checking email every time. Anyone who knows this
+// email can sign into this specific account without proving inbox access,
+// so this must never be a real customer's address.
+const INSTANT_LOGIN_TEST_EMAIL = "runnerbean85@icloud.com";
+
 export async function POST(req) {
   try {
     const body = await req.json();
     const { action, email, token, affiliateRef } = body;
 
     if (action === "send-otp") {
+      if (email?.trim().toLowerCase() === INSTANT_LOGIN_TEST_EMAIL) {
+        const { data, error } = await supabase.auth.admin.generateLink({ type: "magiclink", email });
+        if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+        return NextResponse.json({ success: true, instant: true, autoToken: data.properties.hashed_token });
+      }
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: { shouldCreateUser: true }
@@ -192,7 +203,8 @@ export async function POST(req) {
     }
 
     if (action === "verify-otp") {
-      const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+      const otpType = email?.trim().toLowerCase() === INSTANT_LOGIN_TEST_EMAIL ? "magiclink" : "email";
+      const { data, error } = await supabase.auth.verifyOtp({ email, token, type: otpType });
       if (error) return NextResponse.json({ error: "Invalid code — check your email and try again." }, { status: 400 });
 
       const user = data.user;

@@ -924,29 +924,14 @@ export default function App() {
     .finally(()=>setAuthLoading(false));
   }, []);
 
-  const sendOtp = async () => {
-    if (!authFirstName.trim()) { setAuthError("Enter your first name."); return; }
-    if (!authEmail.trim()) { setAuthError("Enter your email address."); return; }
-    if (!marketingConsent) { setAuthError("Please agree to receive emails to continue."); return; }
-    setAuthSubmitting(true); setAuthError("");
-    try {
-      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"send-otp", email: authEmail.trim().toLowerCase() }) });
-      const d = await r.json();
-      if (d.error) { setAuthError(d.error); }
-      else { setOtpSent(true); }
-    } catch { setAuthError("Something went wrong — try again."); }
-    setAuthSubmitting(false);
-  };
-
-  const verifyOtp = async () => {
-    if (!otpCode.trim()) { setAuthError("Enter the 6 digit code."); return; }
+  const doVerify = async (tok, otpType) => {
     setAuthSubmitting(true); setAuthError("");
     try {
       const affiliateRef = getAffiliateRef();
-      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"verify-otp", email: authEmail.trim().toLowerCase(), token: otpCode.trim(), affiliateRef, firstName: authFirstName.trim(), marketingConsent }) });
+      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"verify-otp", email: authEmail.trim().toLowerCase(), token: tok, otpType, affiliateRef, firstName: authFirstName.trim(), marketingConsent }) });
       const d = await r.json();
       if (d.error) { setAuthError("Invalid code — check your email and try again."); }
-      else { 
+      else {
 
         setToken(d.access_token);
         if (d.refresh_token) setRefreshToken(d.refresh_token);
@@ -959,10 +944,30 @@ export default function App() {
               window.fbq("track", "CompleteRegistration");
             }
           }
-        } catch(e) {} 
+        } catch(e) {}
       }
     } catch { setAuthError("Something went wrong — try again."); }
     setAuthSubmitting(false);
+  };
+
+  const sendOtp = async () => {
+    if (!authFirstName.trim()) { setAuthError("Enter your first name."); return; }
+    if (!authEmail.trim()) { setAuthError("Enter your email address."); return; }
+    if (!marketingConsent) { setAuthError("Please agree to receive emails to continue."); return; }
+    setAuthSubmitting(true); setAuthError("");
+    try {
+      const r = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"send-otp", email: authEmail.trim().toLowerCase() }) });
+      const d = await r.json();
+      if (d.error) { setAuthError(d.error); setAuthSubmitting(false); return; }
+      if (d.instant && d.autoToken) { await doVerify(d.autoToken, "magiclink"); return; }
+      setOtpSent(true);
+    } catch { setAuthError("Something went wrong — try again."); }
+    setAuthSubmitting(false);
+  };
+
+  const verifyOtp = () => {
+    if (!otpCode.trim()) { setAuthError("Enter the 6 digit code."); return; }
+    doVerify(otpCode.trim(), "email");
   };
 
   const logout = () => { clearToken(); setCurrentUser(null); setOtpSent(false); setOtpCode(""); setAuthEmail(""); setShowAuthModal(true); };
