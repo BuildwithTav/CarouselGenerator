@@ -203,8 +203,16 @@ export async function POST(req) {
     }
 
     if (action === "verify-otp") {
-      const otpType = email?.trim().toLowerCase() === INSTANT_LOGIN_TEST_EMAIL ? "magiclink" : "email";
-      const { data, error } = await supabase.auth.verifyOtp({ email, token, type: otpType });
+      const isInstant = email?.trim().toLowerCase() === INSTANT_LOGIN_TEST_EMAIL;
+      // A typed-in 6-digit code is verified as {email, token, type:"email"}. A
+      // token from admin.generateLink() is a token *hash*, not a code — Supabase
+      // verifies that shape as {token_hash, type:"magiclink"} with no email, a
+      // different call entirely. Passing the hash through as `token` alongside
+      // `email` makes Supabase validate it as if it were a literal 6-digit code,
+      // which always fails as "Invalid code".
+      const { data, error } = isInstant
+        ? await supabase.auth.verifyOtp({ token_hash: token, type: "magiclink" })
+        : await supabase.auth.verifyOtp({ email, token, type: "email" });
       if (error) return NextResponse.json({ error: "Invalid code — check your email and try again." }, { status: 400 });
 
       const user = data.user;
