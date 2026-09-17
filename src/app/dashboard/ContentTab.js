@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { C, inp, lbl, card, btn, Chip, Badge, STATUS_COLOR, Spinner, CopyButton } from "./ui";
 import { PackageView, SlideStrip } from "./PackageView";
-import { themeOf, slideCanHaveImage, TEMPLATES } from "@/lib/brandTemplate";
+import { themeOf, slideCanHaveImage, templateAllowsAiImage, TEMPLATES } from "@/lib/brandTemplate";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -97,7 +97,7 @@ function NewContent({ api, brand, onCreated }) {
 
       {media.length > 0 && (
         <div style={{ marginBottom: 12 }}>
-          <label style={lbl}>{template === "raw" ? "Slide 1 photo" : "Cover photo"} <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(optional — least used first{template === "raw" ? "; the other slides get the next least-used photos" : ""})</span></label>
+          <label style={lbl}>{template === "raw" ? "Photo for this set" : "Cover photo"} <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>({template === "raw" ? "goes on every slide — " : ""}optional, least used first{template === "clean-pro" ? ", or generate one with AI in the editor" : ""})</span></label>
           <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
             {[...media].sort((a, b) => (a.use_count || 0) - (b.use_count || 0)).map((m) => (
               <div key={m.id} onClick={() => setMediaId(mediaId === m.id ? null : m.id)} style={{ flexShrink: 0, width: 72, height: 72, borderRadius: 8, overflow: "hidden", border: `2px solid ${mediaId === m.id ? C.gold : C.border}`, cursor: "pointer", position: "relative" }}>
@@ -109,7 +109,7 @@ function NewContent({ api, brand, onCreated }) {
         </div>
       )}
 
-      {template === "raw" && media.length === 0 && <div style={{ fontSize: 12, color: C.danger, marginBottom: 10 }}>Raw puts a photo on every slide — upload some to this brand's library first (Brands tab), or generate them per slide after writing.</div>}
+      {template === "raw" && media.length === 0 && <div style={{ fontSize: 12, color: C.danger, marginBottom: 10 }}>Raw needs one of your photos for the set — upload some to this brand's library first (Brands tab).</div>}
       {err && <div style={{ color: C.danger, fontSize: 12, marginBottom: 10 }}>{err}</div>}
 
       <button onClick={generate} disabled={!!phase || !idea.trim()} style={btn("primary", { width: "100%", padding: 12, fontSize: 14, opacity: !idea.trim() ? 0.5 : 1 })}>
@@ -119,18 +119,19 @@ function NewContent({ api, brand, onCreated }) {
   );
 }
 
-function SlideImage({ slide, idx, media, busy, onPick, onGenerate }) {
+function SlideImage({ slide, idx, media, busy, onPick, onGenerate, label }) {
   const [picking, setPicking] = useState(false);
   const current = media.find((m) => m.id === slide.image_media_id);
   const sorted = [...media].sort((a, b) => (a.use_count || 0) - (b.use_count || 0));
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
         <div style={{ width: 44, aspectRatio: "1080/1350", borderRadius: 6, overflow: "hidden", background: C.bg, border: `1px solid ${slide.image_media_id ? C.border : C.danger}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
           {current?.url ? <img src={current.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 9, color: C.danger, textAlign: "center" }}>no photo</span>}
         </div>
+        {label && <span style={{ fontSize: 12, color: C.muted }}>{label}</span>}
         <button type="button" onClick={() => setPicking((p) => !p)} style={btn("small")}>{slide.image_media_id ? "Change photo" : "Pick photo"}</button>
-        <button type="button" onClick={onGenerate} disabled={!!busy} style={btn("small", { color: C.gold, borderColor: C.gold + "88" })}>{busy === `image-${idx}` ? <><Spinner /> Generating…</> : "✨ Generate photo"}</button>
+        {onGenerate && <button type="button" onClick={onGenerate} disabled={!!busy} style={btn("small", { color: C.gold, borderColor: C.gold + "88" })}>{busy === `image-${idx}` ? <><Spinner /> Generating…</> : "✨ Generate photo (AI)"}</button>}
       </div>
       {picking && (
         <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
@@ -209,6 +210,9 @@ function Editor({ api, itemId, onBack, onChanged }) {
   const template = themeOf(item.brands).template;
   const setSlide = (i, k, v) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, [k]: v } : s)) }));
   const pickImage = (i, m) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, image_media_id: m.id, image_path: m.storage_path } : s)) }));
+  // Raw is one photo set: the same photo goes on every slide.
+  const pickSetImage = (m) => setDraft((d) => ({ ...d, slides: d.slides.map((s) => (s.isCta ? s : { ...s, image_media_id: m.id, image_path: m.storage_path })) }));
+  const aiAllowed = templateAllowsAiImage(template);
   const stale = item.slide_paths?.length && JSON.stringify(item.slides) !== JSON.stringify(draft.slides);
   const platforms = item.brands?.visual_theme?.platforms?.length ? item.brands.visual_theme.platforms : ["instagram", "tiktok", "youtube"];
 
@@ -275,13 +279,18 @@ function Editor({ api, itemId, onBack, onChanged }) {
         </div>
         {stale ? <div style={{ fontSize: 11, color: C.gold, marginBottom: 6 }}>Slides changed — save, then re-render to update the images.</div> : null}
         <SlideStrip item={item} size={84} />
+        {template === "raw" && draft.slides[0] && (
+          <div style={{ marginTop: 10, padding: 10, background: C.bg, borderRadius: 8 }}>
+            <SlideImage slide={draft.slides[0]} idx={0} media={media} busy={busy} onPick={pickSetImage} label="Photo for this set (every slide)" />
+          </div>
+        )}
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 10 }}>
           {draft.slides.map((s, i) => (
             <div key={i} style={{ display: "grid", gridTemplateColumns: "28px 1fr", gap: 8, alignItems: "start" }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: C.muted, paddingTop: 12 }}>{i + 1}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 {slideFields(s, i)}
-                {slideCanHaveImage(template, i, s) && <SlideImage slide={s} idx={i} media={media} busy={busy} onPick={(m) => pickImage(i, m)} onGenerate={() => generateImage(i)} />}
+                {template !== "raw" && slideCanHaveImage(template, i, s) && <SlideImage slide={s} idx={i} media={media} busy={busy} onPick={(m) => pickImage(i, m)} onGenerate={aiAllowed ? () => generateImage(i) : null} label={i === 0 ? "Cover photo" : null} />}
               </div>
             </div>
           ))}

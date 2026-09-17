@@ -3,8 +3,8 @@ import { buildSlideHTML } from "./slideTemplate.js";
 
 export const TEMPLATES = [
   { id: "bold", label: "Bold", desc: "Big headline on a solid colour. Text-led, no photos needed." },
-  { id: "raw", label: "Raw", desc: "Your photo on every slide, one line of text in a tight box. Authentic, minimal." },
-  { id: "clean-pro", label: "Clean Pro", desc: "Photo cover with a dark fade, then clean white or black fact slides." },
+  { id: "raw", label: "Raw", desc: "One of your photos across every slide, a line of text in a tight box. Authentic, minimal." },
+  { id: "clean-pro", label: "Clean Pro", desc: "Photo cover (yours or AI-made) with a dark fade, then clean fact or story slides." },
 ];
 
 export const TEMPLATE_FONTS = [
@@ -101,10 +101,15 @@ export function slideNeedsImage(template, idx, slide) {
   return false; // bold: cover photo is optional
 }
 
-// Which slides may carry a photo (shown with a photo picker in the editor).
+// Which slides may carry a photo.
 export function slideCanHaveImage(template, idx, slide) {
   if (slide?.isCta) return false;
   return template === "raw" || idx === 0;
+}
+
+// AI photo generation is offered for Clean Pro only (facts / story covers).
+export function templateAllowsAiImage(template) {
+  return template === "clean-pro";
 }
 
 // Sample slides for the live preview in the brand form. `imageUrl` is any

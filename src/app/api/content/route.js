@@ -1,6 +1,6 @@
 import { dashboardAuthorized, unauthorized, supabaseAdmin, BUCKET, attachSlideUrls, attachSlideUrlsMany, brandPlatforms, postedColumn, PLATFORMS, bumpMediaUse, assignSlideImages } from "@/lib/dashboard";
 import { generatePackage } from "@/lib/contentAi";
-import { themeOf, slideNeedsImage } from "@/lib/brandTemplate";
+import { themeOf, slideNeedsImage, slideCanHaveImage } from "@/lib/brandTemplate";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -47,14 +47,15 @@ export async function POST(req) {
     return Response.json({ error: e.message }, { status: 502 });
   }
 
-  // Photos: the chosen cover goes on slide 1; Raw needs one on every slide,
-  // so fill the rest from the library, least-used first.
+  // Photos: the chosen photo goes on slide 1 (Bold / Clean Pro cover) or on
+  // every slide (Raw — one photo set). Anything still missing comes from the
+  // library, least-used first.
   const slides = pkg.slides.map((s) => ({ ...s, image_media_id: null, image_path: null }));
   if (mediaId) {
     const { data: m } = await supabase.from("brand_media").select("id, storage_path, file_type").eq("id", mediaId).single();
-    if (m?.file_type === "image" && slides[0] && !slides[0].isCta) { slides[0].image_media_id = m.id; slides[0].image_path = m.storage_path; }
+    if (m?.file_type === "image") slides.forEach((s, i) => { if (slideCanHaveImage(template, i, s)) { s.image_media_id = m.id; s.image_path = m.storage_path; } });
   }
-  if (autoImages) await assignSlideImages(brandId, slides, (i, s) => slideNeedsImage(template, i, s), [theme.profile_media_id]);
+  if (autoImages) await assignSlideImages(brandId, slides, (i, s) => slideNeedsImage(template, i, s), [theme.profile_media_id], { sameForAll: template === "raw" });
   pkg.slides = slides;
 
   const { data: item, error } = await supabase
