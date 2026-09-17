@@ -8,23 +8,16 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-async function requireAdmin(email) {
-  if (!email) return null;
-  const { data: user } = await supabase
-    .from("users")
-    .select("email,is_admin")
-    .eq("email", email)
-    .single();
-  return user?.is_admin ? user : null;
+function authorized(req, formKey) {
+  const key = req.headers.get("x-dashboard-key") || formKey;
+  return !!process.env.DASHBOARD_PASSPHRASE && key === process.env.DASHBOARD_PASSPHRASE;
 }
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60; // 1 hour
 
 export async function GET(req) {
-  const url = new URL(req.url);
-  const email = url.searchParams.get("email");
-  const brandId = url.searchParams.get("brandId");
-  if (!(await requireAdmin(email))) return Response.json({ error: "Not authorized" }, { status: 403 });
+  if (!authorized(req)) return Response.json({ error: "Not authorized" }, { status: 403 });
+  const brandId = new URL(req.url).searchParams.get("brandId");
   if (!brandId) return Response.json({ error: "brandId is required" }, { status: 400 });
 
   const { data, error } = await supabase
@@ -48,11 +41,11 @@ export async function GET(req) {
 
 export async function POST(req) {
   const formData = await req.formData();
-  const email = formData.get("email");
+  const formKey = formData.get("dashboardKey");
+  if (!authorized(req, formKey)) return Response.json({ error: "Not authorized" }, { status: 403 });
+
   const brandId = formData.get("brandId");
   const file = formData.get("file");
-
-  if (!(await requireAdmin(email))) return Response.json({ error: "Not authorized" }, { status: 403 });
   if (!brandId || !file) return Response.json({ error: "brandId and file are required" }, { status: 400 });
 
   const mimeType = file.type || "application/octet-stream";
@@ -89,9 +82,8 @@ export async function POST(req) {
 }
 
 export async function DELETE(req) {
-  const body = await req.json();
-  const { email, id, storagePath } = body;
-  if (!(await requireAdmin(email))) return Response.json({ error: "Not authorized" }, { status: 403 });
+  if (!authorized(req)) return Response.json({ error: "Not authorized" }, { status: 403 });
+  const { id, storagePath } = await req.json();
   if (!id || !storagePath) return Response.json({ error: "id and storagePath are required" }, { status: 400 });
 
   await supabase.storage.from("brand-media").remove([storagePath]);

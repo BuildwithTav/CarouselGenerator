@@ -5,19 +5,13 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-async function requireAdmin(email) {
-  if (!email) return null;
-  const { data: user } = await supabase
-    .from("users")
-    .select("email,is_admin")
-    .eq("email", email)
-    .single();
-  return user?.is_admin ? user : null;
+function authorized(req) {
+  const key = req.headers.get("x-dashboard-key");
+  return !!process.env.DASHBOARD_PASSPHRASE && key === process.env.DASHBOARD_PASSPHRASE;
 }
 
 export async function GET(req) {
-  const email = new URL(req.url).searchParams.get("email");
-  if (!(await requireAdmin(email))) return Response.json({ error: "Not authorized" }, { status: 403 });
+  if (!authorized(req)) return Response.json({ error: "Not authorized" }, { status: 403 });
 
   const { data, error } = await supabase.from("brands").select("*").order("created_at", { ascending: true });
   if (error) return Response.json({ error: error.message }, { status: 500 });
@@ -25,9 +19,8 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  const body = await req.json();
-  const { email, ...fields } = body;
-  if (!(await requireAdmin(email))) return Response.json({ error: "Not authorized" }, { status: 403 });
+  if (!authorized(req)) return Response.json({ error: "Not authorized" }, { status: 403 });
+  const fields = await req.json();
   if (!fields.name || !fields.slug) return Response.json({ error: "name and slug are required" }, { status: 400 });
 
   const { data, error } = await supabase
@@ -49,9 +42,8 @@ export async function POST(req) {
 }
 
 export async function PATCH(req) {
-  const body = await req.json();
-  const { email, id, ...fields } = body;
-  if (!(await requireAdmin(email))) return Response.json({ error: "Not authorized" }, { status: 403 });
+  if (!authorized(req)) return Response.json({ error: "Not authorized" }, { status: 403 });
+  const { id, ...fields } = await req.json();
   if (!id) return Response.json({ error: "id is required" }, { status: 400 });
 
   const update = { ...fields, updated_at: new Date().toISOString() };
@@ -63,9 +55,8 @@ export async function PATCH(req) {
 }
 
 export async function DELETE(req) {
-  const body = await req.json();
-  const { email, id } = body;
-  if (!(await requireAdmin(email))) return Response.json({ error: "Not authorized" }, { status: 403 });
+  if (!authorized(req)) return Response.json({ error: "Not authorized" }, { status: 403 });
+  const { id } = await req.json();
   if (!id) return Response.json({ error: "id is required" }, { status: 400 });
 
   const { data: media } = await supabase.from("brand_media").select("storage_path").eq("brand_id", id);
