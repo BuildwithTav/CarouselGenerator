@@ -37,6 +37,14 @@ export function themeOf(brand) {
   return t;
 }
 
+export const TEMPLATE_IDS = TEMPLATES.map((t) => t.id);
+
+// The template a content item renders with: its own choice, else the brand's default.
+export function itemTemplate(item, brand) {
+  const t = item?.template;
+  return TEMPLATE_IDS.includes(t) ? t : themeOf(brand).template;
+}
+
 export function ctaCopy(theme) {
   const c = theme.cta || {};
   const type = c.type || "follow";
@@ -76,10 +84,11 @@ export function templateOpts(brand, theme, profileUrl) {
 
 // slides: stored slide objects (with an `image_url` already resolved to a
 // signed URL where the slide has one). Returns one full HTML document per slide.
-export function buildBrandSlides({ brand, slides, profileUrl, coverImageUrl, ctaOverride }) {
+export function buildBrandSlides({ brand, slides, profileUrl, coverImageUrl, ctaOverride, template }) {
   const theme = themeOf(brand);
+  const tmpl = TEMPLATE_IDS.includes(template) ? template : theme.template;
   const total = slides.length;
-  if (theme.template === "bold") {
+  if (tmpl === "bold") {
     return slides.map((s, i) => buildSlideHTML(s, i, total, theme, brand, i === 0 ? s.image_url || coverImageUrl || null : null));
   }
   const opts = templateOpts(brand, theme, profileUrl);
@@ -89,7 +98,7 @@ export function buildBrandSlides({ brand, slides, profileUrl, coverImageUrl, cta
       return buildCtaHTML(opts, cta.type, cta.keyword, s.line1 || cta.line1, s.line2 || cta.line2, s.line3 || cta.line3, cta.bg, opts.nm, opts.hdl, opts.profUrl, opts.showTick, opts.font, total, opts.showCounter);
     }
     const slide = { ...s, image: s.image_url || (i === 0 ? coverImageUrl : null) || null };
-    return buildTmplHTML(slide, i, total, theme.template, opts);
+    return buildTmplHTML(slide, i, total, tmpl, opts);
   });
 }
 
@@ -114,9 +123,9 @@ export function templateAllowsAiImage(template) {
 
 // Sample slides for the live preview in the brand form. `imageUrl` is any
 // https photo from the library (or null for the template's placeholder).
-export function previewSlides(brand, imageUrl, profileUrl) {
+export function previewSlides(brand, imageUrl, profileUrl, template) {
   const cover = { headline: "Five things nobody tells you", subline: "Number three changes everything", rawText: "Golden hour.\nNowhere to be.", body: "", image_url: imageUrl };
   const body = { headline: "It starts small", bodyText: "One honest post a day beats a perfect one a month. Consistency compounds.", accentText: "Show up. Then show up again.", rawText: "Save this.\nYou'll want it later.", body: "One honest post a day beats a perfect one a month.", image_url: imageUrl };
   const cta = { isCta: true };
-  return buildBrandSlides({ brand, slides: [cover, body, cta], profileUrl: profileUrl || null, coverImageUrl: imageUrl });
+  return buildBrandSlides({ brand, slides: [cover, body, cta], profileUrl: profileUrl || null, coverImageUrl: imageUrl, template });
 }

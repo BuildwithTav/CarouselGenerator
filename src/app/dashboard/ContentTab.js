@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { C, inp, lbl, card, btn, Chip, Badge, STATUS_COLOR, Spinner, CopyButton } from "./ui";
 import { PackageView, SlideStrip } from "./PackageView";
-import { themeOf, slideCanHaveImage, templateAllowsAiImage, TEMPLATES } from "@/lib/brandTemplate";
+import { themeOf, itemTemplate, slideCanHaveImage, templateAllowsAiImage, TEMPLATES } from "@/lib/brandTemplate";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -23,11 +23,10 @@ function NewContent({ api, brand, onCreated }) {
   const [phase, setPhase] = useState(null); // writing | rendering
   const [err, setErr] = useState("");
   const pillars = splitPillars(brand.pillars);
-  const template = themeOf(brand).template;
-  const templateLabel = TEMPLATES.find((t) => t.id === template)?.label || template;
+  const [template, setTemplate] = useState(themeOf(brand).template);
 
   useEffect(() => {
-    setMediaId(null); setIdeas([]); setPillar("");
+    setMediaId(null); setIdeas([]); setPillar(""); setTemplate(themeOf(brand).template);
     api.get(`/api/brand-media?brandId=${brand.id}`).then((d) => setMedia((d.media || []).filter((m) => m.file_type === "image"))).catch(() => setMedia([]));
   }, [brand.id]);
 
@@ -43,7 +42,7 @@ function NewContent({ api, brand, onCreated }) {
     setPhase("writing");
     let item;
     try {
-      ({ item } = await api.post("/api/content", { brandId: brand.id, idea: idea.trim(), pillar: pillar || null, mediaId, slideCount, scheduledFor: date }));
+      ({ item } = await api.post("/api/content", { brandId: brand.id, idea: idea.trim(), pillar: pillar || null, mediaId, slideCount, scheduledFor: date, template }));
     } catch (e) { setErr(e.message); setPhase(null); return; }
     setPhase("rendering");
     try {
@@ -59,7 +58,7 @@ function NewContent({ api, brand, onCreated }) {
   return (
     <div style={{ ...card, marginBottom: 20 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 10 }}>
-        <label style={{ ...lbl, margin: 0 }}>New content — {brand.name} <span style={{ color: C.gold }}>· {templateLabel}</span></label>
+        <label style={{ ...lbl, margin: 0 }}>New content — {brand.name}</label>
         <button onClick={suggest} disabled={suggesting} style={btn("ghost", { opacity: suggesting ? 0.6 : 1 })}>{suggesting ? <><Spinner /> Thinking…</> : "✨ Suggest ideas"}</button>
       </div>
 
@@ -72,6 +71,14 @@ function NewContent({ api, brand, onCreated }) {
       )}
 
       <textarea value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="What's this post about? One line is enough — e.g. '3 mistakes people make when they start…'" rows={3} style={{ ...inp, resize: "vertical", lineHeight: 1.6, marginBottom: 12 }} />
+
+      <div style={{ marginBottom: 12 }}>
+        <label style={lbl}>Template <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(the look for each is set in Brands)</span></label>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {TEMPLATES.map((t) => <Chip key={t.id} active={template === t.id} onClick={() => setTemplate(t.id)}>{t.label}</Chip>)}
+        </div>
+        <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>{TEMPLATES.find((t) => t.id === template)?.desc}</div>
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10, marginBottom: 12 }}>
         {pillars.length > 0 && (
@@ -207,7 +214,7 @@ function Editor({ api, itemId, onBack, onChanged }) {
   if (err && !item) return <div style={{ ...card, color: C.danger }}>{err}</div>;
   if (!item || !draft) return <div style={{ textAlign: "center", padding: 40, color: C.muted }}><Spinner /> Loading…</div>;
 
-  const template = themeOf(item.brands).template;
+  const template = itemTemplate(item, item.brands);
   const setSlide = (i, k, v) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, [k]: v } : s)) }));
   const pickImage = (i, m) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, image_media_id: m.id, image_path: m.storage_path } : s)) }));
   // Raw is one photo set: the same photo goes on every slide.

@@ -32,10 +32,10 @@ function SlidePreview({ theme, name }) {
   );
 }
 
-function TemplatePreview({ brand, media }) {
+function TemplatePreview({ brand, media, template }) {
   const photo = media.find((m) => m.file_type === "image" && m.url && m.id !== brand.visual_theme?.profile_media_id)?.url || null;
   const profile = media.find((m) => m.id === brand.visual_theme?.profile_media_id)?.url || null;
-  const docs = useMemo(() => { try { return previewSlides(brand, photo, profile); } catch (e) { console.error(e); return []; } }, [JSON.stringify(brand.visual_theme), brand.name, photo, profile]);
+  const docs = useMemo(() => { try { return previewSlides(brand, photo, profile, template); } catch (e) { console.error(e); return []; } }, [JSON.stringify(brand.visual_theme), brand.name, photo, profile, template]);
   const scale = 150 / 1080;
   return (
     <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
@@ -78,6 +78,7 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
   const [autoReady, setAutoReady] = useState(brand.automation_mode === "auto_ready");
   const [theme, setTheme] = useState(themeOf(brand));
   const [pickingProfile, setPickingProfile] = useState(false);
+  const [lookTab, setLookTab] = useState(themeOf(brand).template); // which template's look is being edited
 
   const original = JSON.stringify({ voice: brand.voice || "", pillars: brand.pillars || "", ctaRules: brand.cta_rules || "", dailyTarget: brand.daily_target ?? 1, autoReady: brand.automation_mode === "auto_ready", theme: themeOf(brand) });
   const dirty = original !== JSON.stringify({ voice, pillars, ctaRules, dailyTarget, autoReady, theme });
@@ -86,7 +87,7 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
   const togglePlatform = (p) => setT("platforms", theme.platforms.includes(p) ? theme.platforms.filter((x) => x !== p) : [...theme.platforms, p]);
   const images = media.filter((m) => m.file_type === "image" && m.url);
   const profile = images.find((m) => m.id === theme.profile_media_id);
-  const tmpl = theme.template;
+  const tmpl = lookTab;
 
   return (
     <div style={{ ...card, display: "flex", flexDirection: "column", gap: 14 }}>
@@ -104,15 +105,19 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
       </div>
 
       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
-        <label style={lbl}>Carousel template</label>
+        <label style={lbl}>Slide looks</label>
+        <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>You pick the template for each post when you create it. Set how each one looks for this brand here.</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 8, marginBottom: 12 }}>
           {TEMPLATES.map((t) => (
-            <button key={t.id} type="button" onClick={() => setT("template", t.id)} style={{ textAlign: "left", background: tmpl === t.id ? C.gold + "22" : C.bg, border: `1.5px solid ${tmpl === t.id ? C.gold : C.border}`, borderRadius: 10, padding: "10px 12px", cursor: "pointer", color: C.text, fontFamily: "inherit" }}>
-              <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 2 }}>{t.label}</div>
+            <button key={t.id} type="button" onClick={() => setLookTab(t.id)} style={{ textAlign: "left", background: tmpl === t.id ? C.gold + "22" : C.bg, border: `1.5px solid ${tmpl === t.id ? C.gold : C.border}`, borderRadius: 10, padding: "10px 12px", cursor: "pointer", color: C.text, fontFamily: "inherit", position: "relative" }}>
+              <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 2 }}>{t.label}{theme.template === t.id && <span style={{ fontSize: 9, fontWeight: 700, color: C.gold, marginLeft: 6, letterSpacing: 1 }}>DEFAULT</span>}</div>
               <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.4 }}>{t.desc}</div>
             </button>
           ))}
         </div>
+        {theme.template !== tmpl && (
+          <button type="button" onClick={() => setT("template", tmpl)} style={btn("small", { marginBottom: 12 })}>Make {TEMPLATES.find((t) => t.id === tmpl)?.label} the default for new posts</button>
+        )}
 
         {tmpl === "bold" ? (
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
@@ -135,7 +140,7 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <TemplatePreview brand={{ ...brand, visual_theme: theme }} media={media} />
+            <TemplatePreview brand={{ ...brand, visual_theme: theme }} media={media} template={tmpl} />
             {images.length === 0 && <div style={{ fontSize: 11, color: C.muted }}>Upload a photo to the library below to see it in the preview.</div>}
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
