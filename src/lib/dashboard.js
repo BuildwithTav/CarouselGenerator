@@ -52,3 +52,60 @@ export async function attachSlideUrlsMany(items) {
     return { ...i, slide_urls, thumb_url: slide_urls[0] || null };
   });
 }
+
+// Increments use_count / last_used_at on brand_media rows. One carousel
+// counts as one use of a photo, however many slides it sits on.
+export async function bumpMediaUse(ids) {
+  const unique = [...new Set((ids || []).filter(Boolean))];
+  if (!unique.length) return;
+  const supabase = supabaseAdmin();
+  const { data: rows } = await supabase.from("brand_media").select("id, use_count").in("id", unique);
+  const now = new Date().toISOString();
+  await Promise.all((rows || []).map((r) => supabase.from("brand_media").update({ use_count: (r.use_count || 0) + 1, last_used_at: now }).eq("id", r.id)));
+}
+
+// Picks photos for slides that need one but have none, least-used first.
+// Mutates and returns the slides array. `needs(idx, slide)` decides which
+// slides get a photo; `exclude` is a list of media ids to skip (profile photo).
+// With `sameForAll`, every slide that needs a photo gets the same one (the one
+// already on the first such slide, if any) — a Raw carousel is one photo set.
+export async function assignSlideImages(brandId, slides, needs, exclude = [], { sameForAll = false } = {}) {
+  const supabase = supabaseAdmin();
+  const { data: media } = await supabase
+    .from("brand_media")
+    .select("id, storage_path, use_count, last_used_at")
+    .eq("brand_id", brandId)
+    .eq("file_type", "image")
+    .order("use_count", { ascending: true })
+    .order("last_used_at", { ascending: true, nullsFirst: true })
+    .limit(500);
+  const skip = new Set(exclude.filter(Boolean));
+  const pool = (media || []).filter((m) => !skip.has(m.id));
+  if (!pool.length) return slides;
+
+  if (sameForAll) {
+    const first = slides.find((s, i) => needs(i, s) && s.image_media_id);
+    const chosen = first ? { id: first.image_media_id, storage_path: first.image_path } : pool[0];
+    slides.forEach((s, i) => { if (needs(i, s)) { s.image_media_id = chosen.id; s.image_path = chosen.storage_path; } });
+    return slides;
+  }
+
+  const usedHere = new Set(slides.map((s) => s.image_media_id).filter(Boolean));
+  let cursor = 0;
+  const next = () => {
+    for (let n = 0; n < pool.length; n++) {
+      const m = pool[(cursor + n) % pool.length];
+      if (!usedHere.has(m.id)) { cursor = (cursor + n + 1) % pool.length; usedHere.add(m.id); return m; }
+    }
+    const m = pool[cursor % pool.length];
+    cursor = (cursor + 1) % pool.length;
+    return m;
+  };
+  slides.forEach((s, i) => {
+    if (s.image_media_id || !needs(i, s)) return;
+    const m = next();
+    s.image_media_id = m.id;
+    s.image_path = m.storage_path;
+  });
+  return slides;
+}

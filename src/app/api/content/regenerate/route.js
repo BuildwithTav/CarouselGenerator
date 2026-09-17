@@ -1,5 +1,6 @@
 import { dashboardAuthorized, unauthorized, supabaseAdmin, BUCKET, attachSlideUrls } from "@/lib/dashboard";
 import { regenerateSlides, regenerateCopy } from "@/lib/contentAi";
+import { themeOf } from "@/lib/brandTemplate";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export async function POST(req) {
   let update;
   try {
     if (field === "slides") {
-      const slides = await regenerateSlides(item.brands, item);
+      const slides = await regenerateSlides(item.brands, item, themeOf(item.brands).template);
       if (item.slide_paths?.length) await supabase.storage.from(BUCKET).remove(item.slide_paths);
       update = { slides, slide_paths: [] };
     } else {
