@@ -81,6 +81,32 @@ export async function POST(req) {
   return Response.json({ media: { ...row, url: signed?.signedUrl || null } });
 }
 
+export async function PATCH(req) {
+  if (!authorized(req)) return Response.json({ error: "Not authorized" }, { status: 403 });
+  const { id, action } = await req.json();
+  if (!id) return Response.json({ error: "id is required" }, { status: 400 });
+
+  const { data: current, error: fetchError } = await supabase
+    .from("brand_media")
+    .select("use_count")
+    .eq("id", id)
+    .single();
+  if (fetchError) return Response.json({ error: fetchError.message }, { status: 500 });
+
+  const nextCount = action === "unmark_used"
+    ? Math.max(0, (current.use_count || 0) - 1)
+    : (current.use_count || 0) + 1;
+
+  const { data, error } = await supabase
+    .from("brand_media")
+    .update({ use_count: nextCount, last_used_at: action === "unmark_used" ? current.last_used_at : new Date().toISOString() })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ media: data });
+}
+
 export async function DELETE(req) {
   if (!authorized(req)) return Response.json({ error: "Not authorized" }, { status: 403 });
   const { id, storagePath } = await req.json();

@@ -125,6 +125,7 @@ function Dashboard({ dashKey, onLock }) {
   const [media, setMedia] = useState([]);
   const [mediaLoading, setMediaLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [sortMode, setSortMode] = useState("least_used");
 
   const headers = { "x-dashboard-key": dashKey };
 
@@ -208,7 +209,18 @@ function Dashboard({ dashKey, onLock }) {
     } catch (e) { console.error(e); alert("Could not delete file."); }
   };
 
+  const setUsed = async (id, action) => {
+    try {
+      const res = await fetch("/api/brand-media", { method: "PATCH", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ id, action }) });
+      const d = await res.json();
+      if (d.media) setMedia(m => m.map(x => x.id === id ? d.media : x));
+    } catch (e) { console.error(e); alert("Could not update use count."); }
+  };
+
   const activeBrand = brands.find(b => b.id === activeId);
+  const sortedMedia = [...media].sort((a, b) => sortMode === "least_used"
+    ? (a.use_count || 0) - (b.use_count || 0) || new Date(b.uploaded_at) - new Date(a.uploaded_at)
+    : new Date(b.uploaded_at) - new Date(a.uploaded_at));
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "Plus Jakarta Sans,system-ui,sans-serif" }}>
@@ -249,15 +261,22 @@ function Dashboard({ dashKey, onLock }) {
                 <input type="file" accept="image/*,video/*" multiple disabled={uploading} onChange={e => { const files = [...(e.target.files || [])]; e.target.value = ""; if (files.length) uploadFiles(files); }} style={{ display: "none" }} />
               </label>
             </div>
-            <p style={{ color: C.muted, fontSize: 11, margin: "0 0 14px" }}>Stored privately, full original quality — nothing is recompressed on upload.</p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <p style={{ color: C.muted, fontSize: 11, margin: 0 }}>Stored privately, full original quality — nothing is recompressed on upload.</p>
+              <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                {[["least_used", "Least used"], ["newest", "Newest"]].map(([id, label]) => (
+                  <button key={id} onClick={() => setSortMode(id)} style={{ fontSize: 10, fontWeight: 700, padding: "5px 10px", background: sortMode === id ? C.gold : "none", color: sortMode === id ? "#000" : C.muted, border: `1px solid ${sortMode === id ? C.gold : C.border}`, borderRadius: 6, cursor: "pointer" }}>{label}</button>
+                ))}
+              </div>
+            </div>
             {mediaLoading ? (
               <div style={{ textAlign: "center", padding: "20px 0", color: C.muted, fontSize: 13 }}>Loading…</div>
             ) : media.length === 0 ? (
               <div style={{ textAlign: "center", padding: "20px 0", color: C.muted, fontSize: 13 }}>No media uploaded yet.</div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))", gap: 12 }}>
-                {media.map(m => (
-                  <div key={m.id} style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, overflow: "hidden" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 12 }}>
+                {sortedMedia.map(m => (
+                  <div key={m.id} style={{ background: C.bg, border: `1px solid ${(m.use_count||0)===0?C.gold+"66":C.border}`, borderRadius: 10, overflow: "hidden" }}>
                     <div style={{ width: "100%", aspectRatio: "1", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                       {m.file_type === "image" && m.url
                         ? <img src={m.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -267,7 +286,14 @@ function Dashboard({ dashKey, onLock }) {
                     </div>
                     <div style={{ padding: 8 }}>
                       <div style={{ fontSize: 11, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 2 }}>{m.original_filename || "file"}</div>
-                      <div style={{ fontSize: 10, color: C.muted, marginBottom: 6 }}>{fmtSize(m.size_bytes)}</div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: (m.use_count||0)===0?C.gold:C.muted }}>{(m.use_count||0)===0?"Never used":`Used ${m.use_count}×`}</span>
+                        <span style={{ fontSize: 9, color: C.muted }}>{fmtSize(m.size_bytes)}</span>
+                      </div>
+                      <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                        <button onClick={() => setUsed(m.id, "mark_used")} style={{ flex: 1, fontSize: 10, fontWeight: 700, padding: "5px 0", background: C.gold, color: "#000", border: "none", borderRadius: 6, cursor: "pointer" }}>Mark used</button>
+                        {(m.use_count||0)>0 && <button onClick={() => setUsed(m.id, "unmark_used")} title="Undo last use" style={{ fontSize: 10, fontWeight: 700, padding: "5px 8px", background: "none", border: `1px solid ${C.border}`, color: C.muted, borderRadius: 6, cursor: "pointer" }}>↺</button>}
+                      </div>
                       <div style={{ display: "flex", gap: 6 }}>
                         {m.url && <a href={m.url} download target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", fontSize: 10, fontWeight: 700, padding: "5px 0", background: C.text, color: "#000", borderRadius: 6, textDecoration: "none" }}>Download</a>}
                         <button onClick={() => deleteMedia(m.id, m.storage_path)} style={{ flex: 1, fontSize: 10, fontWeight: 700, padding: "5px 0", background: "none", border: `1px solid ${C.border}`, color: "#e05252", borderRadius: 6, cursor: "pointer" }}>Delete</button>
