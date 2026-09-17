@@ -644,7 +644,7 @@ async function downloadSlideAsPNG(slide, idx, total, _c_opts, filename, isCover=
           const win = iframe.contentWindow;
           await new Promise(r => { const s=doc.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"; s.onload=r; s.onerror=r; doc.head.appendChild(s); setTimeout(r,4000); });
           if (!win.html2canvas) throw new Error("html2canvas not loaded");
-          const canvas = await win.html2canvas(doc.querySelector(".slide")||doc.body, {useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+          const canvas = await win.html2canvas(doc.querySelector(".slide")||doc.body, {useCORS:true,allowTaint:true,scale:2,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
           canvas.toBlob(b => { document.body.removeChild(iframe); resolve(b); }, "image/png", 1.0);
         } catch(e) { document.body.removeChild(iframe); reject(e); }
       }, 2500);
@@ -742,6 +742,49 @@ function ContactForm({ A, inp, GOLD, userEmail }) {
       <button onClick={send} disabled={sending||!message.trim()} style={{padding:"11px",background:message.trim()?A.text:A.border,color:A.accentText,borderRadius:9,fontWeight:700,fontSize:13,border:"none",cursor:message.trim()?"pointer":"default"}}>
         {sending?"Sending...":"Send"}
       </button>
+    </div>
+  );
+}
+
+function BrandConfigCard({ brand, saving, onSave, onDelete, A, GOLD, lbl, inp, tog }) {
+  const [voice, setVoice] = useState(brand.voice||"");
+  const [pillars, setPillars] = useState(brand.pillars||"");
+  const [ctaRules, setCtaRules] = useState(brand.cta_rules||"");
+  const [dailyTarget, setDailyTarget] = useState(brand.daily_target??1);
+  const [autoReady, setAutoReady] = useState(brand.automation_mode==="auto_ready");
+
+  const dirty = voice!==(brand.voice||"") || pillars!==(brand.pillars||"") || ctaRules!==(brand.cta_rules||"") || dailyTarget!==(brand.daily_target??1) || autoReady!==(brand.automation_mode==="auto_ready");
+
+  return (
+    <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,display:"flex",flexDirection:"column",gap:14}}>
+      <div>
+        <label style={lbl}>Voice & tone</label>
+        <textarea value={voice} onChange={e=>setVoice(e.target.value)} placeholder="How this brand sounds — tone, audience, what to avoid." rows={3} style={{...inp,resize:"vertical",lineHeight:1.6}}/>
+      </div>
+      <div>
+        <label style={lbl}>Content pillars</label>
+        <textarea value={pillars} onChange={e=>setPillars(e.target.value)} placeholder="e.g. Training tips, client wins, myth-busting" rows={2} style={{...inp,resize:"vertical",lineHeight:1.6}}/>
+      </div>
+      <div>
+        <label style={lbl}>CTA rules</label>
+        <input value={ctaRules} onChange={e=>setCtaRules(e.target.value)} placeholder="e.g. Always soft CTA — 'link in bio'" style={inp}/>
+      </div>
+      <div style={{display:"flex",gap:14,alignItems:"flex-end"}}>
+        <div style={{flex:1}}>
+          <label style={lbl}>Daily target</label>
+          <input type="number" min={0} value={dailyTarget} onChange={e=>setDailyTarget(Number(e.target.value)||0)} style={inp}/>
+        </div>
+        <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"space-between",paddingBottom:10}}>
+          <div><div style={{fontWeight:600,fontSize:13}}>Auto-ready</div><div style={{color:A.muted,fontSize:11}}>Skip manual review once generated</div></div>
+          {tog(autoReady,setAutoReady)}
+        </div>
+      </div>
+      <div style={{display:"flex",gap:8,borderTop:`1px solid ${A.border}`,paddingTop:14}}>
+        <button onClick={()=>onSave({ voice, pillars, cta_rules: ctaRules, daily_target: dailyTarget, automation_mode: autoReady?"auto_ready":"needs_review" })} disabled={saving||!dirty} style={{flex:1,padding:"10px",background:dirty?GOLD:A.border,color:"#000",borderRadius:8,fontWeight:700,fontSize:13,border:"none",cursor:dirty?"pointer":"default",opacity:saving?0.6:1}}>
+          {saving?"Saving…":"Save changes"}
+        </button>
+        <button onClick={onDelete} style={{padding:"10px 16px",background:"none",border:`1.5px solid ${A.border}`,color:"#c0392b",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>Delete brand</button>
+      </div>
     </div>
   );
 }
@@ -1694,6 +1737,128 @@ export default function App() {
   });
   const [adminPresetName, setAdminPresetName] = useState("");
   const [adminActivePreset, setAdminActivePreset] = useState(null);
+  // ADMIN-ONLY multi-brand workspace — server-backed via Supabase, isolated feature, zero effect on normal users
+  const [brandsList, setBrandsList] = useState([]);
+  const [brandsLoading, setBrandsLoading] = useState(false);
+  const [activeBrandId, setActiveBrandId] = useState(null);
+  const [brandForm, setBrandForm] = useState({ name:"", slug:"", voice:"", pillars:"", cta_rules:"", daily_target:1, automation_mode:"needs_review" });
+  const [brandCreating, setBrandCreating] = useState(false);
+  const [brandSaving, setBrandSaving] = useState(false);
+  const [brandMedia, setBrandMedia] = useState([]);
+  const [brandMediaLoading, setBrandMediaLoading] = useState(false);
+  const [brandMediaUploading, setBrandMediaUploading] = useState(false);
+
+  const loadBrands = async () => {
+    if (!currentUser?.email) return;
+    setBrandsLoading(true);
+    try {
+      const res = await fetch(`/api/brands?email=${encodeURIComponent(currentUser.email)}`);
+      const d = await res.json();
+      if (d.brands) {
+        setBrandsList(d.brands);
+        if (!activeBrandId && d.brands.length) setActiveBrandId(d.brands[0].id);
+      }
+    } catch (e) { console.error("Load brands failed:", e); }
+    setBrandsLoading(false);
+  };
+
+  const createBrand = async () => {
+    if (!currentUser?.email || !brandForm.name.trim()) return;
+    setBrandCreating(true);
+    try {
+      const slug = brandForm.name.trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+      const res = await fetch("/api/brands", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: currentUser.email, name: brandForm.name.trim(), slug }),
+      });
+      const d = await res.json();
+      if (d.brand) {
+        setBrandsList(b => [...b, d.brand]);
+        setActiveBrandId(d.brand.id);
+        setBrandForm({ name:"", slug:"", voice:"", pillars:"", cta_rules:"", daily_target:1, automation_mode:"needs_review" });
+      } else if (d.error) { alert(d.error); }
+    } catch (e) { console.error("Create brand failed:", e); alert("Could not create brand."); }
+    setBrandCreating(false);
+  };
+
+  const saveBrand = async (id, fields) => {
+    if (!currentUser?.email) return;
+    setBrandSaving(true);
+    try {
+      const res = await fetch("/api/brands", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: currentUser.email, id, ...fields }),
+      });
+      const d = await res.json();
+      if (d.brand) setBrandsList(list => list.map(b => b.id === id ? d.brand : b));
+    } catch (e) { console.error("Save brand failed:", e); alert("Could not save brand."); }
+    setBrandSaving(false);
+  };
+
+  const deleteBrand = async (id) => {
+    if (!currentUser?.email) return;
+    if (!window.confirm("Delete this brand and all its media? This can't be undone.")) return;
+    try {
+      await fetch("/api/brands", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: currentUser.email, id }),
+      });
+      setBrandsList(list => list.filter(b => b.id !== id));
+      if (activeBrandId === id) { setActiveBrandId(null); setBrandMedia([]); }
+    } catch (e) { console.error("Delete brand failed:", e); alert("Could not delete brand."); }
+  };
+
+  const loadBrandMedia = async (brandId) => {
+    if (!currentUser?.email || !brandId) return;
+    setBrandMediaLoading(true);
+    try {
+      const res = await fetch(`/api/brand-media?email=${encodeURIComponent(currentUser.email)}&brandId=${brandId}`);
+      const d = await res.json();
+      if (d.media) setBrandMedia(d.media);
+    } catch (e) { console.error("Load brand media failed:", e); }
+    setBrandMediaLoading(false);
+  };
+
+  const uploadBrandMedia = async (files) => {
+    if (!currentUser?.email || !activeBrandId || !files?.length) return;
+    setBrandMediaUploading(true);
+    try {
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append("email", currentUser.email);
+        fd.append("brandId", activeBrandId);
+        fd.append("file", file);
+        const res = await fetch("/api/brand-media", { method: "POST", body: fd });
+        const d = await res.json();
+        if (d.media) setBrandMedia(m => [d.media, ...m]);
+      }
+    } catch (e) { console.error("Upload failed:", e); alert("Upload failed for one or more files."); }
+    setBrandMediaUploading(false);
+  };
+
+  const deleteBrandMedia = async (id, storagePath) => {
+    if (!currentUser?.email) return;
+    if (!window.confirm("Delete this file?")) return;
+    try {
+      await fetch("/api/brand-media", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: currentUser.email, id, storagePath }),
+      });
+      setBrandMedia(m => m.filter(x => x.id !== id));
+    } catch (e) { console.error("Delete media failed:", e); alert("Could not delete file."); }
+  };
+
+  useEffect(() => {
+    if (nav === "brands" && currentUser?.is_admin && brandsList.length === 0 && !brandsLoading) loadBrands();
+  }, [nav, currentUser?.is_admin]);
+
+  useEffect(() => {
+    if (activeBrandId) loadBrandMedia(activeBrandId);
+  }, [activeBrandId]);
   const [otherType, setOtherType] = useState(S?.otherType||"");
   const [coverPhotos, setCoverPhotos] = useState(S?.coverPhotos||[]);
   const [activeCoverPhoto, setActiveCoverPhoto] = useState(S?.activeCoverPhoto||null);
@@ -2375,7 +2540,7 @@ Return ONLY valid JSON, nothing else.` }
           const win=iframe.contentWindow;
           await new Promise(r=>{const s=doc.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=r;s.onerror=r;doc.head.appendChild(s);setTimeout(r,5000);});
           if(!win.html2canvas) throw new Error("no h2c");
-          const canvas=await win.html2canvas(doc.querySelector(".slide")||doc.body,{useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+          const canvas=await win.html2canvas(doc.querySelector(".slide")||doc.body,{useCORS:true,allowTaint:true,scale:2,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
           canvas.toBlob(b=>{document.body.removeChild(iframe);res(b);},"image/png",1.0);
         } catch(e){document.body.removeChild(iframe);rej(e);}
       },4000);
@@ -2395,7 +2560,7 @@ Return ONLY valid JSON, nothing else.` }
           const win=iframe.contentWindow;
           await new Promise(r=>{const s=doc.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=r;s.onerror=r;doc.head.appendChild(s);setTimeout(r,5000);});
           if(!win.html2canvas) throw new Error("no h2c");
-          const canvas=await win.html2canvas(doc.body,{useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+          const canvas=await win.html2canvas(doc.body,{useCORS:true,allowTaint:true,scale:2,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
           canvas.toBlob(b=>{document.body.removeChild(iframe);res(b);},"image/png",1.0);
         } catch(e){document.body.removeChild(iframe);rej(e);}
       },3000);
@@ -2758,7 +2923,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           const win = iframe.contentWindow;
           await new Promise(r => { const s=doc.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"; s.onload=r; s.onerror=r; doc.head.appendChild(s); setTimeout(r,4000); });
           if (!win.html2canvas) throw new Error("no h2c");
-          const canvas = await win.html2canvas(doc.querySelector(".slide")||doc.body, {useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+          const canvas = await win.html2canvas(doc.querySelector(".slide")||doc.body, {useCORS:true,allowTaint:true,scale:2,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
           canvas.toBlob(blob => { document.body.removeChild(iframe); resolve(blob); }, "image/png", 1.0);
         } catch(e) { document.body.removeChild(iframe); reject(e); }
       }, 2000);
@@ -2813,8 +2978,8 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
 
   const planLabel = currentUser?.plan === "agency" ? "agency" : currentUser?.plan === "pro" ? "pro" : currentUser?.plan === "starter" ? "starter" : currentUser?.plan === "affiliate_licence" ? "affiliate_licence" : currentUser?.plan === "white_label" ? "white_label" : "free";
   const isPexelsUser = ["pro","agency","affiliate_licence","white_label"].includes(planLabel);
-  const NAV_ITEMS = [["generate","Generate"],["brand","Brand"],["templates","Templates"],["quotes","Quotes"],["history","History"],["help","Help"],["account","Account"]];
-  const BURGER_ITEMS = [["templates","Templates"],["quotes","Quotes"],["history","History"],["help","Help"],["account","Account"]];
+  const NAV_ITEMS = [["generate","Generate"],["brand","Brand"],...(currentUser?.is_admin?[["brands","Brands"]]:[]),["templates","Templates"],["quotes","Quotes"],["history","History"],["help","Help"],["account","Account"]];
+  const BURGER_ITEMS = [...(currentUser?.is_admin?[["brands","Brands"]]:[]),["templates","Templates"],["quotes","Quotes"],["history","History"],["help","Help"],["account","Account"]];
   const MAIN_NAV = [["generate","Generate"],["brand","Brand"]];
 
   return (
@@ -4376,6 +4541,83 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           </div>
           </div>
         )}
+
+        {nav==="brands"&&currentUser?.is_admin&&(()=>{
+          const activeBrand = brandsList.find(b=>b.id===activeBrandId);
+          const fmtSize = (bytes)=>{ if(!bytes) return ""; if(bytes<1024*1024) return Math.round(bytes/1024)+" KB"; return (bytes/(1024*1024)).toFixed(1)+" MB"; };
+          return (
+          <div style={{animation:"fadeUp 0.3s ease",maxWidth:900,margin:"0 auto",width:"100%"}}>
+            <h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px"}}>Brands</h2>
+            <p style={{color:A.muted,fontSize:12,margin:"0 0 20px"}}>Admin-only workspace — voice, config and media library per brand, saved to your account so it's the same on every device.</p>
+
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:20}}>
+              {brandsList.map(b=>(
+                <button key={b.id} onClick={()=>setActiveBrandId(b.id)} style={{background:activeBrandId===b.id?GOLD:A.surface,border:`1.5px solid ${activeBrandId===b.id?GOLD:A.border}`,borderRadius:20,padding:"7px 16px",fontSize:13,fontWeight:700,color:activeBrandId===b.id?"#000":A.text,cursor:"pointer"}}>{b.name}</button>
+              ))}
+              {brandsLoading&&<span style={{color:A.muted,fontSize:12,alignSelf:"center"}}>Loading…</span>}
+            </div>
+
+            <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,marginBottom:20}}>
+              <label style={lbl}>New brand</label>
+              <div style={{display:"flex",gap:8,marginTop:8}}>
+                <input value={brandForm.name} onChange={e=>setBrandForm(f=>({...f,name:e.target.value}))} placeholder="e.g. HealthCode Performance" style={{...inp,flex:1}}/>
+                <button onClick={createBrand} disabled={brandCreating||!brandForm.name.trim()} style={{padding:"8px 18px",background:GOLD,color:"#000",borderRadius:8,fontWeight:700,fontSize:12,border:"none",whiteSpace:"nowrap",opacity:brandCreating||!brandForm.name.trim()?0.5:1}}>{brandCreating?"Creating…":"Create"}</button>
+              </div>
+            </div>
+
+            {activeBrand&&(
+              <BrandConfigCard
+                key={activeBrand.id}
+                brand={activeBrand}
+                saving={brandSaving}
+                onSave={(fields)=>saveBrand(activeBrand.id,fields)}
+                onDelete={()=>deleteBrand(activeBrand.id)}
+                A={A} GOLD={GOLD} lbl={lbl} inp={inp} tog={tog}
+              />
+            )}
+
+            {activeBrand&&(
+              <div style={{background:A.surface,border:`1.5px solid ${A.border}`,borderRadius:12,padding:20,marginTop:20}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+                  <label style={{...lbl,margin:0}}>Media library — {activeBrand.name}</label>
+                  <label style={{padding:"7px 16px",background:A.text,color:A.accentText,borderRadius:8,fontSize:12,fontWeight:700,cursor:"pointer",opacity:brandMediaUploading?0.6:1}}>
+                    {brandMediaUploading?"Uploading…":"Upload photos/video"}
+                    <input type="file" accept="image/*,video/*" multiple disabled={brandMediaUploading} onChange={e=>{ const files=[...(e.target.files||[])]; e.target.value=""; if(files.length) uploadBrandMedia(files); }} style={{display:"none"}}/>
+                  </label>
+                </div>
+                <p style={{color:A.muted,fontSize:11,margin:"0 0 14px"}}>Stored privately, full original quality — nothing is recompressed on upload.</p>
+                {brandMediaLoading?(
+                  <div style={{textAlign:"center",padding:"20px 0",color:A.muted,fontSize:13}}>Loading…</div>
+                ):brandMedia.length===0?(
+                  <div style={{textAlign:"center",padding:"20px 0",color:A.muted,fontSize:13}}>No media uploaded yet.</div>
+                ):(
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:12}}>
+                    {brandMedia.map(m=>(
+                      <div key={m.id} style={{background:A.bg,border:`1px solid ${A.border}`,borderRadius:10,overflow:"hidden"}}>
+                        <div style={{width:"100%",aspectRatio:"1",background:"#000",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+                          {m.file_type==="image"&&m.url
+                            ?<img src={m.url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                            :m.file_type==="video"&&m.url
+                              ?<video src={m.url} style={{width:"100%",height:"100%",objectFit:"cover"}} muted/>
+                              :<span style={{color:A.muted,fontSize:24}}>📄</span>}
+                        </div>
+                        <div style={{padding:8}}>
+                          <div style={{fontSize:11,color:A.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:2}}>{m.original_filename||"file"}</div>
+                          <div style={{fontSize:10,color:A.muted,marginBottom:6}}>{fmtSize(m.size_bytes)}</div>
+                          <div style={{display:"flex",gap:6}}>
+                            {m.url&&<a href={m.url} download target="_blank" rel="noreferrer" style={{flex:1,textAlign:"center",fontSize:10,fontWeight:700,padding:"5px 0",background:A.text,color:A.accentText,borderRadius:6,textDecoration:"none"}}>Download</a>}
+                            <button onClick={()=>deleteBrandMedia(m.id,m.storage_path)} style={{flex:1,fontSize:10,fontWeight:700,padding:"5px 0",background:"none",border:`1px solid ${A.border}`,color:"#c0392b",borderRadius:6,cursor:"pointer"}}>Delete</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          );
+        })()}
 
         {nav==="generate"&&view==="generating"&&(
           <div style={{textAlign:"center",padding:"100px 0",animation:"fadeUp 0.3s ease"}}>
