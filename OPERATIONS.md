@@ -34,4 +34,4 @@ Theme Page → batch generate → review → approve → export (slide PNGs + ca
 - Currently stored only in a local `secrets.env` file on Tav's machine — not in the repo, not reproduced in these docs. Read fresh each time rather than assuming values are current.
 
 ## Security
-- RLS is disabled on all tables in the `Carousel-studio` Supabase project. Unresolved as of this doc — see `DECISIONS.md`.
+- RLS was disabled on all tables in the `Carousel-studio` Supabase project — fixed 2026-09-17, see `DECISIONS.md`.
