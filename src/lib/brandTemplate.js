@@ -102,12 +102,12 @@ export function buildBrandSlides({ brand, slides, profileUrl, coverImageUrl, cta
   });
 }
 
-// Which slides must carry a photo (auto-filled from the library on create).
+// Which slides must carry a photo from the library (auto-filled on create).
+// Clean Pro's cover is not filled from the library: it gets an AI photo
+// unless you picked one yourself.
 export function slideNeedsImage(template, idx, slide) {
   if (slide?.isCta) return false;
-  if (template === "raw") return true;
-  if (template === "clean-pro") return idx === 0;
-  return false; // bold: cover photo is optional
+  return template === "raw";
 }
 
 // Which slides may carry a photo.

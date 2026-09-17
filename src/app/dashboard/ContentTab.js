@@ -20,7 +20,7 @@ function NewContent({ api, brand, onCreated }) {
   const [mediaId, setMediaId] = useState(null);
   const [ideas, setIdeas] = useState([]);
   const [suggesting, setSuggesting] = useState(false);
-  const [phase, setPhase] = useState(null); // writing | rendering
+  const [phase, setPhase] = useState(null); // writing | photo | rendering
   const [err, setErr] = useState("");
   const pillars = splitPillars(brand.pillars);
   const [template, setTemplate] = useState(themeOf(brand).template);
@@ -44,6 +44,19 @@ function NewContent({ api, brand, onCreated }) {
     try {
       ({ item } = await api.post("/api/content", { brandId: brand.id, idea: idea.trim(), pillar: pillar || null, mediaId, slideCount, scheduledFor: date, template }));
     } catch (e) { setErr(e.message); setPhase(null); return; }
+    // Clean Pro: the cover gets a hyper-realistic AI photo unless you picked one.
+    if (template === "clean-pro" && !item.slides?.[0]?.image_media_id) {
+      setPhase("photo");
+      try {
+        const cover = item.slides[0];
+        const { media: m } = await api.post("/api/content/generate-image", { brandId: brand.id, slideText: [cover.headline, cover.subline].filter(Boolean).join(" — "), idea: idea.trim(), style: "editorial" });
+        const slides = item.slides.map((s, i) => (i === 0 ? { ...s, image_media_id: m.id, image_path: m.storage_path } : s));
+        ({ item } = await api.patch("/api/content", { id: item.id, slides }));
+      } catch (e) {
+        setErr("Slides and captions are done, but the AI cover photo failed: " + e.message + " — open the item and press Generate photo to retry.");
+        setPhase(null); setIdea(""); onCreated(item); return;
+      }
+    }
     setPhase("rendering");
     try {
       ({ item } = await api.post("/api/content/render", { id: item.id }));
@@ -104,7 +117,7 @@ function NewContent({ api, brand, onCreated }) {
 
       {media.length > 0 && (
         <div style={{ marginBottom: 12 }}>
-          <label style={lbl}>{template === "raw" ? "Photo for this set" : "Cover photo"} <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>({template === "raw" ? "goes on every slide — " : ""}optional, least used first{template === "clean-pro" ? ", or generate one with AI in the editor" : ""})</span></label>
+          <label style={lbl}>{template === "raw" ? "Photo for this set" : "Cover photo"} <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>({template === "raw" ? "goes on every slide — " : ""}optional, least used first{template === "clean-pro" ? " — leave empty and an AI photo is created for the cover" : ""})</span></label>
           <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
             {[...media].sort((a, b) => (a.use_count || 0) - (b.use_count || 0)).map((m) => (
               <div key={m.id} onClick={() => setMediaId(mediaId === m.id ? null : m.id)} style={{ flexShrink: 0, width: 72, height: 72, borderRadius: 8, overflow: "hidden", border: `2px solid ${mediaId === m.id ? C.gold : C.border}`, cursor: "pointer", position: "relative" }}>
@@ -120,7 +133,7 @@ function NewContent({ api, brand, onCreated }) {
       {err && <div style={{ color: C.danger, fontSize: 12, marginBottom: 10 }}>{err}</div>}
 
       <button onClick={generate} disabled={!!phase || !idea.trim()} style={btn("primary", { width: "100%", padding: 12, fontSize: 14, opacity: !idea.trim() ? 0.5 : 1 })}>
-        {phase === "writing" ? <><Spinner /> Writing slides + captions…</> : phase === "rendering" ? <><Spinner /> Rendering slide images…</> : "Generate carousel + captions"}
+        {phase === "writing" ? <><Spinner /> Writing slides + captions…</> : phase === "photo" ? <><Spinner /> Creating the AI cover photo…</> : phase === "rendering" ? <><Spinner /> Rendering slide images…</> : "Generate carousel + captions"}
       </button>
     </div>
   );
