@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 
 const C = {
-  bg: "#18191c",
-  surface: "#232429",
-  border: "#3d3f47",
-  text: "#f5f5f5",
-  muted: "#a3a5ad",
+  bg: "#f5f3ef",
+  surface: "#ffffff",
+  border: "#e0ddd8",
+  text: "#0a0a0a",
+  muted: "#82807c",
   gold: "#C9A84C",
+  accentText: "#ffffff",
 };
 
 const inp = {
@@ -256,7 +257,7 @@ function Dashboard({ dashKey, onLock }) {
           <div style={{ background: C.surface, border: `1.5px solid ${C.border}`, borderRadius: 12, padding: 20, marginTop: 20 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <label style={{ ...lbl, margin: 0 }}>Media library — {activeBrand.name}</label>
-              <label style={{ padding: "7px 16px", background: C.text, color: "#000", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: uploading ? 0.6 : 1 }}>
+              <label style={{ padding: "7px 16px", background: C.text, color: C.accentText, borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: uploading ? 0.6 : 1 }}>
                 {uploading ? "Uploading…" : "Upload photos/video"}
                 <input type="file" accept="image/*,video/*" multiple disabled={uploading} onChange={e => { const files = [...(e.target.files || [])]; e.target.value = ""; if (files.length) uploadFiles(files); }} style={{ display: "none" }} />
               </label>
@@ -295,7 +296,7 @@ function Dashboard({ dashKey, onLock }) {
                         {(m.use_count||0)>0 && <button onClick={() => setUsed(m.id, "unmark_used")} title="Undo last use" style={{ fontSize: 10, fontWeight: 700, padding: "5px 8px", background: "none", border: `1px solid ${C.border}`, color: C.muted, borderRadius: 6, cursor: "pointer" }}>↺</button>}
                       </div>
                       <div style={{ display: "flex", gap: 6 }}>
-                        {m.url && <a href={m.url} download target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", fontSize: 10, fontWeight: 700, padding: "5px 0", background: C.text, color: "#000", borderRadius: 6, textDecoration: "none" }}>Download</a>}
+                        {m.url && <a href={m.url} download target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", fontSize: 10, fontWeight: 700, padding: "5px 0", background: C.text, color: C.accentText, borderRadius: 6, textDecoration: "none" }}>Download</a>}
                         <button onClick={() => deleteMedia(m.id, m.storage_path)} style={{ flex: 1, fontSize: 10, fontWeight: 700, padding: "5px 0", background: "none", border: `1px solid ${C.border}`, color: "#e05252", borderRadius: 6, cursor: "pointer" }}>Delete</button>
                       </div>
                     </div>
