@@ -64,13 +64,13 @@ export async function POST(req) {
           '--disable-gpu',
           '--single-process',
         ],
-        defaultViewport: { width: width || 1080, height: height || 1350 },
+        defaultViewport: { width: width || 1080, height: height || 1350, deviceScaleFactor: 2 },
         executablePath,
         headless: true,
         ignoreHTTPSErrors: true,
       });
       const page = await browser.newPage();
-      await page.setViewport({ width: width || 1080, height: height || 1350 });
+      await page.setViewport({ width: width || 1080, height: height || 1350, deviceScaleFactor: 2 });
       await page.setContent(htmlWithFonts, { waitUntil: 'domcontentloaded', timeout: 25000 });
       await new Promise(r => setTimeout(r, 1500));
       const screenshot = await page.screenshot({

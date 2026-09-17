@@ -11,13 +11,13 @@ export async function POST(request) {
  
     browser = await puppeteer.launch({
       args: chromium.args,
-      defaultViewport: { width, height },
+      defaultViewport: { width, height, deviceScaleFactor: 2 },
       executablePath: await chromium.executablePath(),
       headless: chromium.headless,
     });
- 
+
     const page = await browser.newPage();
-    await page.setViewport({ width, height });
+    await page.setViewport({ width, height, deviceScaleFactor: 2 });
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
  
     // Wait for fonts to load

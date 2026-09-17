@@ -644,7 +644,7 @@ async function downloadSlideAsPNG(slide, idx, total, _c_opts, filename, isCover=
           const win = iframe.contentWindow;
           await new Promise(r => { const s=doc.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"; s.onload=r; s.onerror=r; doc.head.appendChild(s); setTimeout(r,4000); });
           if (!win.html2canvas) throw new Error("html2canvas not loaded");
-          const canvas = await win.html2canvas(doc.querySelector(".slide")||doc.body, {useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+          const canvas = await win.html2canvas(doc.querySelector(".slide")||doc.body, {useCORS:true,allowTaint:true,scale:2,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
           canvas.toBlob(b => { document.body.removeChild(iframe); resolve(b); }, "image/png", 1.0);
         } catch(e) { document.body.removeChild(iframe); reject(e); }
       }, 2500);
@@ -745,7 +745,6 @@ function ContactForm({ A, inp, GOLD, userEmail }) {
     </div>
   );
 }
-
 function HslColorPicker({value, onChange, onClose}) {
   const [h,setH] = useState(0);
   const [s,setS] = useState(100);
@@ -2375,7 +2374,7 @@ Return ONLY valid JSON, nothing else.` }
           const win=iframe.contentWindow;
           await new Promise(r=>{const s=doc.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=r;s.onerror=r;doc.head.appendChild(s);setTimeout(r,5000);});
           if(!win.html2canvas) throw new Error("no h2c");
-          const canvas=await win.html2canvas(doc.querySelector(".slide")||doc.body,{useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+          const canvas=await win.html2canvas(doc.querySelector(".slide")||doc.body,{useCORS:true,allowTaint:true,scale:2,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
           canvas.toBlob(b=>{document.body.removeChild(iframe);res(b);},"image/png",1.0);
         } catch(e){document.body.removeChild(iframe);rej(e);}
       },4000);
@@ -2395,7 +2394,7 @@ Return ONLY valid JSON, nothing else.` }
           const win=iframe.contentWindow;
           await new Promise(r=>{const s=doc.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=r;s.onerror=r;doc.head.appendChild(s);setTimeout(r,5000);});
           if(!win.html2canvas) throw new Error("no h2c");
-          const canvas=await win.html2canvas(doc.body,{useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+          const canvas=await win.html2canvas(doc.body,{useCORS:true,allowTaint:true,scale:2,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
           canvas.toBlob(b=>{document.body.removeChild(iframe);res(b);},"image/png",1.0);
         } catch(e){document.body.removeChild(iframe);rej(e);}
       },3000);
@@ -2758,7 +2757,7 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
           const win = iframe.contentWindow;
           await new Promise(r => { const s=doc.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"; s.onload=r; s.onerror=r; doc.head.appendChild(s); setTimeout(r,4000); });
           if (!win.html2canvas) throw new Error("no h2c");
-          const canvas = await win.html2canvas(doc.querySelector(".slide")||doc.body, {useCORS:true,allowTaint:true,scale:1,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
+          const canvas = await win.html2canvas(doc.querySelector(".slide")||doc.body, {useCORS:true,allowTaint:true,scale:2,width:W,height:H,windowWidth:W,windowHeight:H,backgroundColor:null,logging:false});
           canvas.toBlob(blob => { document.body.removeChild(iframe); resolve(blob); }, "image/png", 1.0);
         } catch(e) { document.body.removeChild(iframe); reject(e); }
       }, 2000);
