@@ -1,6 +1,6 @@
 import { dashboardAuthorized, unauthorized, supabaseAdmin, BUCKET, attachSlideUrls, attachSlideUrlsMany, brandPlatforms, postedColumn, PLATFORMS, bumpMediaUse, assignSlideImages } from "@/lib/dashboard";
 import { generatePackage } from "@/lib/contentAi";
-import { themeOf, slideNeedsImage, slideCanHaveImage } from "@/lib/brandTemplate";
+import { themeOf, slideNeedsImage, slideCanHaveImage, TEMPLATE_IDS } from "@/lib/brandTemplate";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -31,14 +31,14 @@ export async function GET(req) {
 
 export async function POST(req) {
   if (!dashboardAuthorized(req)) return unauthorized();
-  const { brandId, idea, pillar, mediaId, slideCount, scheduledFor, autoImages = true } = await req.json();
+  const { brandId, idea, pillar, mediaId, slideCount, scheduledFor, autoImages = true, template: wanted } = await req.json();
   if (!brandId || !idea?.trim()) return Response.json({ error: "brandId and idea are required" }, { status: 400 });
   const supabase = supabaseAdmin();
 
   const { data: brand, error: bErr } = await supabase.from("brands").select("*").eq("id", brandId).single();
   if (bErr || !brand) return Response.json({ error: "Brand not found" }, { status: 404 });
   const theme = themeOf(brand);
-  const template = theme.template || "bold";
+  const template = TEMPLATE_IDS.includes(wanted) ? wanted : theme.template || "bold";
 
   let pkg;
   try {
@@ -67,6 +67,7 @@ export async function POST(req) {
       status: brand.automation_mode === "auto_ready" ? "ready" : "draft",
       scheduled_for: scheduledFor || new Date().toISOString().slice(0, 10),
       media_id: mediaId || null,
+      template,
       ...pkg,
     })
     .select("*, brands(name, visual_theme, daily_target, automation_mode)")

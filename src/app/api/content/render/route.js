@@ -1,5 +1,5 @@
 import { dashboardAuthorized, unauthorized, supabaseAdmin, BUCKET, SIGNED_URL_TTL_SECONDS, attachSlideUrls } from "@/lib/dashboard";
-import { buildBrandSlides, themeOf } from "@/lib/brandTemplate";
+import { buildBrandSlides, themeOf, itemTemplate } from "@/lib/brandTemplate";
 import { renderSlides } from "@/lib/renderSlides";
 
 export const maxDuration = 60;
@@ -32,18 +32,19 @@ export async function POST(req) {
 
   const brand = item.brands;
   const theme = themeOf(brand);
+  const template = itemTemplate(item, brand);
   const urls = await signMedia(supabase, [item.media_id, theme.profile_media_id, ...slides.map((s) => s.image_media_id)]);
 
   const coverImageUrl = (item.media_id && urls[item.media_id]) || null;
   const profileUrl = (theme.profile_media_id && urls[theme.profile_media_id]) || null;
   const withImages = slides.map((s) => ({ ...s, image_url: (s.image_media_id && urls[s.image_media_id]) || null }));
 
-  if (theme.template === "raw") {
+  if (template === "raw") {
     const missing = withImages.filter((s) => !s.isCta && !s.image_url).length;
     if (missing) return Response.json({ error: `Raw needs a photo on every slide — ${missing} slide${missing === 1 ? "" : "s"} still ${missing === 1 ? "has" : "have"} none.` }, { status: 400 });
   }
 
-  const htmls = buildBrandSlides({ brand, slides: withImages, profileUrl, coverImageUrl });
+  const htmls = buildBrandSlides({ brand, slides: withImages, profileUrl, coverImageUrl, template });
 
   let pngs;
   try {
