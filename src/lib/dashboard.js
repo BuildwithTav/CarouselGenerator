@@ -52,3 +52,53 @@ export async function attachSlideUrlsMany(items) {
     return { ...i, slide_urls, thumb_url: slide_urls[0] || null };
   });
 }
+
+// Increments use_count / last_used_at on brand_media rows. Counts duplicates
+// (the same photo on two slides counts twice).
+export async function bumpMediaUse(ids) {
+  const counts = {};
+  for (const id of ids || []) if (id) counts[id] = (counts[id] || 0) + 1;
+  const entries = Object.entries(counts);
+  if (!entries.length) return;
+  const supabase = supabaseAdmin();
+  const { data: rows } = await supabase.from("brand_media").select("id, use_count").in("id", entries.map(([id]) => id));
+  const now = new Date().toISOString();
+  await Promise.all((rows || []).map((r) => supabase.from("brand_media").update({ use_count: (r.use_count || 0) + counts[r.id], last_used_at: now }).eq("id", r.id)));
+}
+
+// Picks photos for slides that need one but have none, least-used first,
+// never repeating a photo within the carousel while the library allows it.
+// Mutates and returns the slides array. `needs(idx, slide)` decides which
+// slides get a photo; `exclude` is a set of media ids to skip (profile photo).
+export async function assignSlideImages(brandId, slides, needs, exclude = []) {
+  const supabase = supabaseAdmin();
+  const { data: media } = await supabase
+    .from("brand_media")
+    .select("id, storage_path, use_count, last_used_at")
+    .eq("brand_id", brandId)
+    .eq("file_type", "image")
+    .order("use_count", { ascending: true })
+    .order("last_used_at", { ascending: true, nullsFirst: true })
+    .limit(500);
+  const skip = new Set(exclude.filter(Boolean));
+  const pool = (media || []).filter((m) => !skip.has(m.id));
+  if (!pool.length) return slides;
+  const usedHere = new Set(slides.map((s) => s.image_media_id).filter(Boolean));
+  let cursor = 0;
+  const next = () => {
+    for (let n = 0; n < pool.length; n++) {
+      const m = pool[(cursor + n) % pool.length];
+      if (!usedHere.has(m.id)) { cursor = (cursor + n + 1) % pool.length; usedHere.add(m.id); return m; }
+    }
+    const m = pool[cursor % pool.length]; // library smaller than the carousel: repeat
+    cursor = (cursor + 1) % pool.length;
+    return m;
+  };
+  slides.forEach((s, i) => {
+    if (s.image_media_id || !needs(i, s)) return;
+    const m = next();
+    s.image_media_id = m.id;
+    s.image_path = m.storage_path;
+  });
+  return slides;
+}
