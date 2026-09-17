@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 
 const C = {
-  bg: "#0a0a0a",
-  surface: "#141414",
-  border: "#262626",
+  bg: "#18191c",
+  surface: "#232429",
+  border: "#3d3f47",
   text: "#f5f5f5",
-  muted: "#8a8a8a",
-  gold: "#BB9900",
+  muted: "#a3a5ad",
+  gold: "#C9A84C",
 };
 
 const inp = {
