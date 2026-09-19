@@ -5,7 +5,7 @@ import { themeOf, slideNeedsImage, slideCanHaveImage, TEMPLATE_IDS, defaultPhoto
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-const EDITABLE = ["idea", "pillar", "status", "scheduled_for", "slides", "caption", "tt_caption", "hashtags", "yt_title", "yt_description", "yt_tags", "yt_pinned_comment", "yt_category", "media_id"];
+const EDITABLE = ["idea", "pillar", "status", "scheduled_for", "slides", "caption", "tt_caption", "hashtags", "yt_title", "yt_description", "yt_tags", "yt_pinned_comment", "yt_category", "media_id", "template"];
 
 export async function GET(req) {
   if (!dashboardAuthorized(req)) return unauthorized();

@@ -114,7 +114,12 @@ export function buildBrandSlides({ brand, slides, profileUrl, coverImageUrl, cta
       const line3 = (theme.cta?.line3 || "").trim() || s.line3 || cta.line3;
       return buildCtaHTML(opts, cta.type, cta.keyword, line1, s.line2 || cta.line2, line3, cta.bg, opts.nm, opts.hdl, opts.profUrl, opts.showTick, opts.font, total, opts.showCounter);
     }
-    const slide = { ...s, image: s.image_url || (i === 0 ? coverImageUrl : null) || null };
+    // The dashboard's photos have no manual crop/position UI (unlike Carousel
+    // Studio's own editor), so always show the whole photo rather than
+    // cover-cropping it — losing part of the actual subject to a fixed-shape
+    // crop isn't acceptable when there's no way to fix it afterward. The
+    // card's background is already black, so any letterboxing is invisible.
+    const slide = { ...s, image: s.image_url || (i === 0 ? coverImageUrl : null) || null, imageFit: "contain" };
     return buildTmplHTML(slide, i, total, tmpl, opts);
   });
 }
@@ -152,4 +157,31 @@ export function previewSlides(brand, imageUrl, profileUrl, template) {
   const body = { headline: "It starts small", bodyText: "One honest post a day beats a perfect one a month. Consistency compounds.", accentText: "Show up. Then show up again.", rawText: "Save this.\nYou'll want it later.", body: "One honest post a day beats a perfect one a month.", image_url: imageUrl };
   const cta = { isCta: true };
   return buildBrandSlides({ brand, slides: [cover, body, cta], profileUrl: profileUrl || null, coverImageUrl: imageUrl, template });
+}
+
+// Best-effort remap of a slide's text fields between template shapes, used
+// when switching an already-generated post's template — keeps the wording
+// and every slide's attached photo, just reshapes it for the new template.
+// The CTA slide's shape ({isCta, line1, line3}) is identical everywhere,
+// so it passes through unchanged.
+function slideParts(s) {
+  if (s.rawText != null) {
+    const [a, ...rest] = String(s.rawText).split("\n");
+    return { a: a || "", b: rest.join(" ").trim(), c: "" };
+  }
+  return { a: s.headline || "", b: s.subline || s.body || s.bodyText || "", c: s.accentText || "" };
+}
+
+export function remapSlidesForTemplate(slides, toTemplate) {
+  return (slides || []).map((s, i) => {
+    if (s.isCta) return { isCta: true, line1: s.line1 || "", line3: s.line3 || "" };
+    const { a, b, c } = slideParts(s);
+    const base = { image_media_id: s.image_media_id || null, image_path: s.image_path || null };
+    if (toTemplate === "raw") return { ...base, rawText: [a, b].filter(Boolean).join("\n") };
+    if (toTemplate === "clean-pro") return i === 0
+      ? { ...base, headline: a, subline: b || c }
+      : { ...base, headline: a, bodyText: b, accentText: c };
+    if (toTemplate === "dark-fade") return { ...base, headline: a, subline: [b, c].filter(Boolean).join(" ") };
+    return { ...base, headline: a, body: [b, c].filter(Boolean).join(" ") }; // bold
+  });
 }

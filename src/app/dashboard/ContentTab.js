@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { C, inp, lbl, card, btn, Chip, Badge, STATUS_COLOR, Spinner, CopyButton } from "./ui";
 import { PackageView, SlideStrip } from "./PackageView";
-import { themeOf, itemTemplate, slideCanHaveImage, templateAllowsAiImage, slideText, TEMPLATES, PHOTO_SOURCES, defaultPhotoSource } from "@/lib/brandTemplate";
+import { themeOf, itemTemplate, slideCanHaveImage, templateAllowsAiImage, slideText, remapSlidesForTemplate, TEMPLATES, PHOTO_SOURCES, defaultPhotoSource } from "@/lib/brandTemplate";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -208,7 +208,7 @@ function Editor({ api, itemId, onBack, onChanged }) {
   useEffect(() => { load(); }, [itemId]);
 
   function pick(i) {
-    return { idea: i.idea, scheduled_for: i.scheduled_for, slides: (i.slides || []).map((s) => ({ ...s })), caption: i.caption || "", tt_caption: i.tt_caption || "", yt_title: i.yt_title || "", yt_description: i.yt_description || "", yt_tags: (i.yt_tags || []).join(", "), yt_pinned_comment: i.yt_pinned_comment || "", yt_category: i.yt_category || "" };
+    return { idea: i.idea, scheduled_for: i.scheduled_for, template: itemTemplate(i, i.brands), slides: (i.slides || []).map((s) => ({ ...s })), caption: i.caption || "", tt_caption: i.tt_caption || "", yt_title: i.yt_title || "", yt_description: i.yt_description || "", yt_tags: (i.yt_tags || []).join(", "), yt_pinned_comment: i.yt_pinned_comment || "", yt_category: i.yt_category || "" };
   }
   const dirty = item && draft && JSON.stringify(pick(item)) !== JSON.stringify(draft);
 
@@ -219,7 +219,7 @@ function Editor({ api, itemId, onBack, onChanged }) {
   };
 
   const save = () => run("save", () => api.patch("/api/content", {
-    id: item.id, idea: draft.idea, scheduled_for: draft.scheduled_for, slides: draft.slides, caption: draft.caption, tt_caption: draft.tt_caption,
+    id: item.id, idea: draft.idea, scheduled_for: draft.scheduled_for, template: draft.template, slides: draft.slides, caption: draft.caption, tt_caption: draft.tt_caption,
     yt_title: draft.yt_title, yt_description: draft.yt_description,
     yt_tags: draft.yt_tags.split(",").map((t) => t.trim()).filter(Boolean), yt_pinned_comment: draft.yt_pinned_comment, yt_category: draft.yt_category,
     hashtags: (draft.caption.match(/#[\w\d_]+/g) || []).slice(0, 5),
@@ -246,13 +246,16 @@ function Editor({ api, itemId, onBack, onChanged }) {
   if (err && !item) return <div style={{ ...card, color: C.danger }}>{err}</div>;
   if (!item || !draft) return <div style={{ textAlign: "center", padding: 40, color: C.muted }}><Spinner /> Loading…</div>;
 
-  const template = itemTemplate(item, item.brands);
+  const template = draft.template;
   const setSlide = (i, k, v) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, [k]: v } : s)) }));
+  // Switching template keeps the wording (reshaped to fit) and every slide's
+  // photo — a re-render is needed afterward for the new look to take effect.
+  const switchTemplate = (t) => setDraft((d) => ({ ...d, template: t, slides: remapSlidesForTemplate(d.slides, t) }));
   const pickImage = (i, m) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, image_media_id: m.id, image_path: m.storage_path } : s)) }));
   // Raw is one photo set: the same photo goes on every slide.
   const pickSetImage = (m) => setDraft((d) => ({ ...d, slides: d.slides.map((s) => (s.isCta ? s : { ...s, image_media_id: m.id, image_path: m.storage_path })) }));
   const aiAllowed = templateAllowsAiImage(template);
-  const stale = item.slide_paths?.length && JSON.stringify(item.slides) !== JSON.stringify(draft.slides);
+  const stale = item.slide_paths?.length && (itemTemplate(item, item.brands) !== draft.template || JSON.stringify(item.slides) !== JSON.stringify(draft.slides));
   const platforms = item.brands?.visual_theme?.platforms?.length ? item.brands.visual_theme.platforms : ["instagram", "tiktok", "youtube"];
 
   const slideFields = (s, i) => {
@@ -313,6 +316,14 @@ function Editor({ api, itemId, onBack, onChanged }) {
             <label style={lbl}>Post on</label>
             <input type="date" value={draft.scheduled_for} onChange={(e) => setDraft((d) => ({ ...d, scheduled_for: e.target.value }))} style={inp} />
           </div>
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <label style={lbl}>Template</label>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {TEMPLATES.map((t) => <Chip key={t.id} active={template === t.id} onClick={() => switchTemplate(t.id)}>{t.label}</Chip>)}
+          </div>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>Switching keeps the wording and photos, reshaped for the new look — re-render after switching.</div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
