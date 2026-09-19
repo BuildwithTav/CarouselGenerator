@@ -83,9 +83,12 @@ function Dashboard({ dashKey, onLock }) {
             {brands.map((b) => <Chip key={b.id} active={activeId === b.id} onClick={() => setActiveId(b.id)}>{b.name}</Chip>)}
           </div>
         )}
-        {tab === "today" && <TodayTab api={api} onOpenItem={openItem} />}
-        {tab === "content" && <ContentTab api={api} brands={brands} activeId={activeId} setActiveId={setActiveId} openItemId={openItemId} setOpenItemId={setOpenItemId} />}
-        {tab === "brands" && <BrandsTab api={api} brands={brands} activeId={activeId} setActiveId={setActiveId} onBrandsChange={setBrands} />}
+        {/* All three tabs stay mounted so switching between them never loses
+            an unsaved idea, an open editor, or scroll position — only the
+            active one is visible. */}
+        <div style={{ display: tab === "today" ? "block" : "none" }}><TodayTab api={api} active={tab === "today"} onOpenItem={openItem} /></div>
+        <div style={{ display: tab === "content" ? "block" : "none" }}><ContentTab api={api} brands={brands} activeId={activeId} setActiveId={setActiveId} openItemId={openItemId} setOpenItemId={setOpenItemId} /></div>
+        <div style={{ display: tab === "brands" ? "block" : "none" }}><BrandsTab api={api} brands={brands} activeId={activeId} setActiveId={setActiveId} onBrandsChange={setBrands} /></div>
       </div>
     </div>
   );
