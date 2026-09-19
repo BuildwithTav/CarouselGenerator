@@ -105,6 +105,10 @@ ${CAROUSEL_PSYCHOLOGY(n)}`,
 Slide 1 is the cover: {"headline": "... max 10 words, short and bold", "subline": "one full sentence, up to about 22 words — real substance, not decoration"}.
 Slides 2-${n}: {"headline": "... max 8 words", "bodyText": "... max 25 words, the fact or insight", "accentText": "... max 10 words, the punchline"}.
 ${CAROUSEL_PSYCHOLOGY(n)}`,
+  elegant: (n) => `"slides": exactly ${n} content slides, then the CTA slide.
+Each slide: {"kicker": "... 2-4 words, all caps eyebrow label that sets the scene", "headline": "... one short line, max 9 words, the actual line of the story", "detail": "one full sentence, up to about 20 words — the substance the reader stays for"}. Every slide sits on its own full-bleed photo with a soft vignette and an italic serif headline.
+Voice: quiet, elegant, seductive, a slow reveal — like a short story, not a tutorial or a sales pitch. Write mood and sensation, not instructions. Unless the brand's voice explicitly asks for how-to steps, never use literal instructional phrasing.
+${CAROUSEL_PSYCHOLOGY(n)}`,
 };
 
 function normalizeSlides(out, template, n) {
@@ -113,6 +117,7 @@ function normalizeSlides(out, template, n) {
     if (template === "raw") return { rawText: String(s.rawText || s.headline || "").trim() };
     if (template === "dark-fade") return { headline: String(s.headline || "").trim(), subline: String(s.subline || s.body || s.bodyText || "").trim() };
     if (template === "clean-pro") return { headline: String(s.headline || "").trim(), subline: String(s.subline || "").trim(), bodyText: String(s.bodyText || s.body || "").trim(), accentText: String(s.accentText || "").trim() };
+    if (template === "elegant") return { kicker: String(s.kicker || "").trim(), headline: String(s.headline || "").trim(), detail: String(s.detail || "").trim() };
     return { headline: String(s.headline || "").trim(), body: String(s.body || s.bodyText || "").trim() };
   });
   const cta = raw.find((s) => s && s.isCta) || {};
@@ -181,7 +186,7 @@ ${CTA_BRIEF}`;
 
 export async function regenerateCopy(brand, item) {
   const system = `You write social captions and YouTube metadata for a brand. Reply with JSON only: {"caption": "...", "tt_caption": "...", "hashtags": [...], "yt_title": "...", "yt_description": "...", "yt_tags": [...], "yt_pinned_comment": "...", "yt_category": "..."}\n${HOUSE_RULES}`;
-  const slidesText = (item.slides || []).filter((s) => !s.isCta).map((s, i) => `${i + 1}. ${s.rawText || [s.headline, s.subline, s.bodyText || s.body, s.accentText].filter(Boolean).join(" — ")}`).join("\n");
+  const slidesText = (item.slides || []).filter((s) => !s.isCta).map((s, i) => `${i + 1}. ${s.rawText || [s.kicker, s.headline, s.subline, s.detail, s.bodyText || s.body, s.accentText].filter(Boolean).join(" — ")}`).join("\n");
   const user = `${brandContext(brand)}
 
 Idea: ${item.idea}
