@@ -81,6 +81,10 @@ const CAROUSEL_PSYCHOLOGY = (n) => `Carousel psychology — follow this shape ac
 3. Slides 3 to ${n - 1}, the build: one idea per slide — a fact, a step, a moment, a detail — each one raising the stakes or specificity, each one leaving something unresolved the next slide answers.
 4. Slide ${n}, the payoff: the single most concrete, most memorable line in the carousel — the one worth screenshotting. People remember the hook and the payoff most, so it has to land harder than anything before it.`;
 
+const ctaBrief = (ctaType = "follow") => `The CTA slide: {"isCta": true, "line1": "...", "line3": "..."}. The slide already shows one big action word ("${ctaType.toUpperCase()}"), so keep it restrained:
+- "line1": max 5 words, a calm lead-in above the action word (e.g. "Want more like this?").
+- "line3": max 8 words, one reason or one detail below it. Only ever the one action (${ctaType}) — never list other actions like "like, share, save, comment".`;
+
 const SLIDE_BRIEF = {
   bold: (n) => `"slides": exactly ${n} content slides, then the CTA slide.
 Each content slide: {"headline": "...", "body": "..."}. Slide 1: headline only (body empty), the hook. Slides 2-${n}: a headline under 9 words plus one or two tight sentences (under 40 words).
@@ -99,6 +103,42 @@ Slide 1 is the cover: {"headline": "... max 10 words", "subline": "... max 12 wo
 Slides 2-${n}: {"headline": "... max 8 words", "bodyText": "... max 25 words, the fact or insight", "accentText": "... max 10 words, the punchline"}.
 ${CAROUSEL_PSYCHOLOGY(n)}`,
 };
+
+function normalizeSlides(out, template, n) {
+  const raw = Array.isArray(out.slides) ? out.slides : [];
+  const content = raw.filter((s) => s && !s.isCta).slice(0, n).map((s) => {
+    if (template === "raw") return { rawText: String(s.rawText || s.headline || "").trim() };
+    if (template === "dark-fade") return { headline: String(s.headline || "").trim(), subline: String(s.subline || s.body || s.bodyText || "").trim() };
+    if (template === "clean-pro") return { headline: String(s.headline || "").trim(), subline: String(s.subline || "").trim(), bodyText: String(s.bodyText || s.body || "").trim(), accentText: String(s.accentText || "").trim() };
+    return { headline: String(s.headline || "").trim(), body: String(s.body || s.bodyText || "").trim() };
+  });
+  const cta = raw.find((s) => s && s.isCta) || {};
+  const clip = (t, words) => String(t || "").trim().split(/\s+/).filter(Boolean).slice(0, words).join(" ");
+  content.push({ isCta: true, line1: clip(cta.line1, 6), line3: clip(cta.line3, 9) });
+  return content;
+}
+
+function normalizeCopy(out) {
+  const hashtags = (Array.isArray(out.hashtags) ? out.hashtags : [])
+    .map((h) => String(h).trim()).filter(Boolean)
+    .map((h) => (h.startsWith("#") ? h : "#" + h.replace(/^#+/, "")))
+    .slice(0, 5);
+  const withTags = (text) => {
+    let t = String(text || "").trim();
+    if (hashtags.length && !hashtags.every((h) => t.includes(h))) t = t.replace(/\n?(#[^\n]*)$/m, "").trim() + "\n\n" + hashtags.join(" ");
+    return t;
+  };
+  return {
+    caption: withTags(out.caption),
+    tt_caption: withTags(out.tt_caption || out.caption),
+    yt_description: withTags(out.yt_description || out.caption),
+    hashtags,
+    yt_title: String(out.yt_title || "").trim().slice(0, 100),
+    yt_tags: (Array.isArray(out.yt_tags) ? out.yt_tags : []).map((t) => String(t).replace(/^#/, "").trim()).filter(Boolean).slice(0, 15),
+    yt_pinned_comment: String(out.yt_pinned_comment || "").trim(),
+    yt_category: String(out.yt_category || "").trim(),
+  };
+}
 
 export async function generatePackage(brand, { idea, pillar, slideCount = 7, template = "bold", ctaType = "follow" }) {
   const n = Math.max(2, slideCount - 1); // last slide is the CTA
