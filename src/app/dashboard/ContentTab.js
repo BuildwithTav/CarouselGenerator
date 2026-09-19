@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { C, inp, lbl, card, btn, Chip, Badge, STATUS_COLOR, Spinner, CopyButton } from "./ui";
 import { PackageView, SlideStrip } from "./PackageView";
-import { themeOf, itemTemplate, slideCanHaveImage, templateAllowsAiImage, TEMPLATES } from "@/lib/brandTemplate";
+import { themeOf, itemTemplate, slideCanHaveImage, templateAllowsAiImage, slideText, TEMPLATES, PHOTO_SOURCES, defaultPhotoSource } from "@/lib/brandTemplate";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -20,10 +20,13 @@ function NewContent({ api, brand, onCreated }) {
   const [mediaId, setMediaId] = useState(null);
   const [ideas, setIdeas] = useState([]);
   const [suggesting, setSuggesting] = useState(false);
-  const [phase, setPhase] = useState(null); // writing | rendering
+  const [phase, setPhase] = useState(null); // writing | photo | rendering
   const [err, setErr] = useState("");
   const pillars = splitPillars(brand.pillars);
-  const [template, setTemplate] = useState(themeOf(brand).template);
+  const [template, setTemplateRaw] = useState(themeOf(brand).template);
+  const [photoSource, setPhotoSource] = useState(defaultPhotoSource(themeOf(brand).template));
+  const setTemplate = (t) => { setTemplateRaw(t); setPhotoSource(defaultPhotoSource(t)); };
+  const [progress, setProgress] = useState("");
 
   useEffect(() => {
     setMediaId(null); setIdeas([]); setPillar(""); setTemplate(themeOf(brand).template);
@@ -42,8 +45,27 @@ function NewContent({ api, brand, onCreated }) {
     setPhase("writing");
     let item;
     try {
-      ({ item } = await api.post("/api/content", { brandId: brand.id, idea: idea.trim(), pillar: pillar || null, mediaId, slideCount, scheduledFor: date, template }));
+      ({ item } = await api.post("/api/content", { brandId: brand.id, idea: idea.trim(), pillar: pillar || null, mediaId, slideCount, scheduledFor: date, template, photoSource }));
     } catch (e) { setErr(e.message); setPhase(null); return; }
+    // AI photos: one per slide that needs a photo and doesn't have one yet.
+    if (photoSource === "ai") {
+      setPhase("photo");
+      const slides = item.slides.map((x) => ({ ...x }));
+      const todo = slides.map((x, i) => i).filter((i) => slideCanHaveImage(template, i, slides[i]) && !slides[i].image_media_id);
+      try {
+        for (let n = 0; n < todo.length; n++) {
+          const i = todo[n];
+          setProgress(`${n + 1} of ${todo.length}`);
+          const { media: m } = await api.post("/api/content/generate-image", { brandId: brand.id, slideText: slideText(slides[i]), idea: idea.trim(), style: "editorial", textZone: "bottom" });
+          slides[i] = { ...slides[i], image_media_id: m.id, image_path: m.storage_path };
+          ({ item } = await api.patch("/api/content", { id: item.id, slides }));
+        }
+      } catch (e) {
+        setErr("Slides and captions are done, but an AI photo failed: " + e.message + " — open the item and press Generate photo on the slides still missing one.");
+        setPhase(null); setProgress(""); setIdea(""); onCreated(item); return;
+      }
+      setProgress("");
+    }
     setPhase("rendering");
     try {
       ({ item } = await api.post("/api/content/render", { id: item.id }));
@@ -80,6 +102,18 @@ function NewContent({ api, brand, onCreated }) {
         <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>{TEMPLATES.find((t) => t.id === template)?.desc}</div>
       </div>
 
+      {template !== "bold" && (
+        <div style={{ marginBottom: 12 }}>
+          <label style={lbl}>Photos</label>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {PHOTO_SOURCES.filter(([id]) => id !== "ai" || templateAllowsAiImage(template)).map(([id, label]) => <Chip key={id} active={photoSource === id} onClick={() => setPhotoSource(id)}>{label}</Chip>)}
+          </div>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>
+            {photoSource === "ai" ? `AI creates a photo for ${template === "clean-pro" ? "the cover" : "every slide"}, following the brand's photo direction (set in Brands).` : photoSource === "same" ? "One photo from your library goes on every slide (pick it below, or the least-used one is chosen)." : "Photos come from your library, least-used first, no repeats."}
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10, marginBottom: 12 }}>
         {pillars.length > 0 && (
           <div>
@@ -102,9 +136,9 @@ function NewContent({ api, brand, onCreated }) {
         </div>
       </div>
 
-      {media.length > 0 && (
+      {media.length > 0 && photoSource !== "ai" && (
         <div style={{ marginBottom: 12 }}>
-          <label style={lbl}>{template === "raw" ? "Photo for this set" : "Cover photo"} <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>({template === "raw" ? "goes on every slide — " : ""}optional, least used first{template === "clean-pro" ? ", or generate one with AI in the editor" : ""})</span></label>
+          <label style={lbl}>{photoSource === "same" ? "Photo for this set" : "Cover photo"} <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(optional — least used first)</span></label>
           <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
             {[...media].sort((a, b) => (a.use_count || 0) - (b.use_count || 0)).map((m) => (
               <div key={m.id} onClick={() => setMediaId(mediaId === m.id ? null : m.id)} style={{ flexShrink: 0, width: 72, height: 72, borderRadius: 8, overflow: "hidden", border: `2px solid ${mediaId === m.id ? C.gold : C.border}`, cursor: "pointer", position: "relative" }}>
@@ -116,11 +150,11 @@ function NewContent({ api, brand, onCreated }) {
         </div>
       )}
 
-      {template === "raw" && media.length === 0 && <div style={{ fontSize: 12, color: C.danger, marginBottom: 10 }}>Raw needs one of your photos for the set — upload some to this brand's library first (Brands tab).</div>}
+      {photoSource !== "ai" && template !== "bold" && media.length === 0 && <div style={{ fontSize: 12, color: C.danger, marginBottom: 10 }}>This brand has no photos yet — upload some in the Brands tab{templateAllowsAiImage(template) ? ", or switch Photos to AI" : ""}.</div>}
       {err && <div style={{ color: C.danger, fontSize: 12, marginBottom: 10 }}>{err}</div>}
 
       <button onClick={generate} disabled={!!phase || !idea.trim()} style={btn("primary", { width: "100%", padding: 12, fontSize: 14, opacity: !idea.trim() ? 0.5 : 1 })}>
-        {phase === "writing" ? <><Spinner /> Writing slides + captions…</> : phase === "rendering" ? <><Spinner /> Rendering slide images…</> : "Generate carousel + captions"}
+        {phase === "writing" ? <><Spinner /> Writing slides + captions…</> : phase === "photo" ? <><Spinner /> Creating AI photos… {progress}</> : phase === "rendering" ? <><Spinner /> Rendering slide images…</> : "Generate carousel + captions"}
       </button>
     </div>
   );
@@ -138,7 +172,7 @@ function SlideImage({ slide, idx, media, busy, onPick, onGenerate, label }) {
         </div>
         {label && <span style={{ fontSize: 12, color: C.muted }}>{label}</span>}
         <button type="button" onClick={() => setPicking((p) => !p)} style={btn("small")}>{slide.image_media_id ? "Change photo" : "Pick photo"}</button>
-        {onGenerate && <button type="button" onClick={onGenerate} disabled={!!busy} style={btn("small", { color: C.gold, borderColor: C.gold + "88" })}>{busy === `image-${idx}` ? <><Spinner /> Generating…</> : "✨ Generate photo (AI)"}</button>}
+        {onGenerate && <button type="button" onClick={onGenerate} disabled={!!busy} style={btn("small", { color: C.gold, borderColor: C.gold + "88" })}>{busy === `image-${idx}` ? <><Spinner /> Generating…</> : slide.image_media_id ? "✨ Generate another (AI)" : "✨ Generate photo (AI)"}</button>}
       </div>
       {picking && (
         <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
@@ -153,10 +187,6 @@ function SlideImage({ slide, idx, media, busy, onPick, onGenerate, label }) {
       )}
     </div>
   );
-}
-
-function slideTextOf(s) {
-  return s.rawText || [s.headline, s.subline, s.bodyText || s.body, s.accentText].filter(Boolean).join(" — ");
 }
 
 function Editor({ api, itemId, onBack, onChanged }) {
@@ -204,7 +234,7 @@ function Editor({ api, itemId, onBack, onChanged }) {
     setBusy(`image-${i}`); setErr("");
     try {
       const s = draft.slides[i];
-      const { media: m } = await api.post("/api/content/generate-image", { brandId: item.brand_id, slideText: slideTextOf(s), idea: draft.idea, style: "editorial" });
+      const { media: m } = await api.post("/api/content/generate-image", { brandId: item.brand_id, slideText: slideText(s), idea: draft.idea, style: "editorial", textZone: "bottom" });
       setMedia((list) => [m, ...list]);
       setDraft((d) => ({ ...d, slides: d.slides.map((x, j) => (j === i ? { ...x, image_media_id: m.id, image_path: m.storage_path } : x)) }));
     } catch (e) { setErr(e.message); }
@@ -232,6 +262,12 @@ function Editor({ api, itemId, onBack, onChanged }) {
       </>
     );
     if (template === "raw") return <textarea value={s.rawText || ""} onChange={(e) => setSlide(i, "rawText", e.target.value)} placeholder={i === 0 ? "Scroll-stopper — 3 to 7 words" : "One or two short lines"} rows={2} style={{ ...inp, fontWeight: 700, resize: "vertical" }} />;
+    if (template === "dark-fade") return (
+      <>
+        <input value={s.headline || ""} onChange={(e) => setSlide(i, "headline", e.target.value)} placeholder={i === 0 ? "Hook headline (max 7 words)" : "Headline (max 7 words)"} style={{ ...inp, fontWeight: 700 }} />
+        <input value={s.subline || ""} onChange={(e) => setSlide(i, "subline", e.target.value)} placeholder="Subline" style={{ ...inp, fontSize: 13 }} />
+      </>
+    );
     if (template === "clean-pro") return (
       <>
         <input value={s.headline || ""} onChange={(e) => setSlide(i, "headline", e.target.value)} placeholder="Headline" style={{ ...inp, fontWeight: 700 }} />
@@ -297,7 +333,7 @@ function Editor({ api, itemId, onBack, onChanged }) {
               <div style={{ fontSize: 11, fontWeight: 800, color: C.muted, paddingTop: 12 }}>{i + 1}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 {slideFields(s, i)}
-                {template !== "raw" && slideCanHaveImage(template, i, s) && <SlideImage slide={s} idx={i} media={media} busy={busy} onPick={(m) => pickImage(i, m)} onGenerate={aiAllowed ? () => generateImage(i) : null} label={i === 0 ? "Cover photo" : null} />}
+                {template !== "raw" && slideCanHaveImage(template, i, s) && <SlideImage slide={s} idx={i} media={media} busy={busy} onPick={(m) => pickImage(i, m)} onGenerate={aiAllowed ? () => generateImage(i) : null} label={i === 0 ? "Cover photo" : template === "dark-fade" ? "Slide photo" : null} />}
               </div>
             </div>
           ))}

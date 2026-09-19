@@ -1,54 +1,75 @@
 import { dashboardAuthorized, unauthorized, supabaseAdmin, BUCKET, SIGNED_URL_TTL_SECONDS } from "@/lib/dashboard";
 import { imagePrompt } from "@/lib/contentAi";
+import { themeOf } from "@/lib/brandTemplate";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-// FLUX 1.1 Pro Ultra via fal.ai — photoreal, strong on anatomy, 4:5 output.
-const FAL_MODEL = "fal-ai/flux-pro/v1.1-ultra";
+// Image models on fal.ai, tried in order. Nano Banana Pro (Gemini 3 Pro Image)
+// is the strongest on anatomy and natural skin; FLUX 1.1 Pro Ultra is the
+// fallback if it errors or refuses. Override the first with FAL_IMAGE_MODEL.
+const MODELS = [
+  { id: "fal-ai/nano-banana-pro", body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) },
+  { id: "fal-ai/flux-pro/v1.1-ultra", body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, output_format: "jpeg", enable_safety_checker: true, safety_tolerance: "5", raw: true }) },
+];
+
+async function generateWith(model, prompt) {
+  const res = await fetch(`https://fal.run/${model.id}`, {
+    method: "POST",
+    headers: { Authorization: `Key ${process.env.FAL_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify(model.body(prompt)),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`${model.id} ${res.status}: ${text.slice(0, 300)}`);
+  }
+  const out = await res.json();
+  const url = out?.images?.[0]?.url || out?.image?.url;
+  if (!url) throw new Error(`${model.id} returned no image`);
+  return url;
+}
 
 // Generates one AI photo for a slide, saves it to the brand's media library
 // (so it gets use-count tracking like any upload) and returns the media row.
-// Body: { brandId, slideText, idea, style: "editorial"|"candid", prompt? }
+// Body: { brandId, slideText, idea, style: "editorial"|"candid", prompt?, textZone? }
 // Passing `prompt` skips the prompt-writing step and uses it verbatim.
 export async function POST(req) {
   if (!dashboardAuthorized(req)) return unauthorized();
   if (!process.env.FAL_API_KEY) return Response.json({ error: "FAL_API_KEY is not set" }, { status: 500 });
-  const { brandId, slideText, idea, style, prompt: customPrompt } = await req.json();
+  const { brandId, slideText, idea, style, prompt: customPrompt, textZone } = await req.json();
   if (!brandId) return Response.json({ error: "brandId is required" }, { status: 400 });
   const supabase = supabaseAdmin();
 
   const { data: brand, error: bErr } = await supabase.from("brands").select("*").eq("id", brandId).single();
   if (bErr || !brand) return Response.json({ error: "Brand not found" }, { status: 404 });
+  const theme = themeOf(brand);
 
   let prompt = String(customPrompt || "").trim();
   if (!prompt) {
     try {
-      ({ prompt } = await imagePrompt(brand, { slideText, idea, style }));
+      ({ prompt } = await imagePrompt(brand, { slideText, idea, style, direction: theme.ai_style, textZone: textZone || "bottom" }));
     } catch (e) {
       return Response.json({ error: e.message }, { status: 502 });
     }
   }
   if (!prompt) return Response.json({ error: "Could not write an image prompt" }, { status: 502 });
 
-  let imageUrl;
-  try {
-    const res = await fetch(`https://fal.run/${FAL_MODEL}`, {
-      method: "POST",
-      headers: { Authorization: `Key ${process.env.FAL_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, aspect_ratio: "4:5", output_format: "jpeg", num_images: 1, enable_safety_checker: true, safety_tolerance: "5" }),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`fal.ai ${res.status}: ${text.slice(0, 300)}`);
+  const models = process.env.FAL_IMAGE_MODEL
+    ? [{ id: process.env.FAL_IMAGE_MODEL, body: MODELS[0].body }, ...MODELS.filter((m) => m.id !== process.env.FAL_IMAGE_MODEL)]
+    : MODELS;
+  let imageUrl, usedModel;
+  const failures = [];
+  for (const model of models) {
+    try {
+      imageUrl = await generateWith(model, prompt);
+      usedModel = model.id;
+      break;
+    } catch (e) {
+      console.error("Image generation failed:", e.message);
+      failures.push(e.message);
     }
-    const out = await res.json();
-    imageUrl = out?.images?.[0]?.url;
-    if (!imageUrl) throw new Error("fal.ai returned no image");
-  } catch (e) {
-    console.error("Image generation failed:", e);
-    return Response.json({ error: "Image generation failed: " + e.message, prompt }, { status: 502 });
   }
+  if (!imageUrl) return Response.json({ error: "Image generation failed: " + failures.join(" | "), prompt }, { status: 502 });
 
   const imgRes = await fetch(imageUrl);
   if (!imgRes.ok) return Response.json({ error: "Could not download the generated image", prompt }, { status: 502 });
@@ -67,12 +88,12 @@ export async function POST(req) {
       original_filename: `ai-${Date.now()}.jpg`,
       mime_type: "image/jpeg",
       size_bytes: buffer.length,
-      note: `AI: ${prompt}`.slice(0, 1000),
+      note: `AI (${usedModel}): ${prompt}`.slice(0, 1000),
     })
     .select()
     .single();
   if (insErr) return Response.json({ error: insErr.message, prompt }, { status: 500 });
 
   const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrl(storagePath, SIGNED_URL_TTL_SECONDS);
-  return Response.json({ media: { ...row, url: signed?.signedUrl || null }, prompt });
+  return Response.json({ media: { ...row, url: signed?.signedUrl || null }, prompt, model: usedModel });
 }
