@@ -93,10 +93,10 @@ ${CAROUSEL_PSYCHOLOGY(n)}`,
 Each content slide: {"rawText": "..."}. This template shows the brand's own photo full-bleed with the text in a small box, so words are minimal:
 - Slide 1: 3 to 7 words, no explanation.
 - Slides 2-${n}: one or two short lines each (max 12 words total). Use a line break ("\n") between the two lines.
-- Never describe the photo. Speak to the viewer.
+- Never describe the photo. Speak to the viewer. Write mood and sensation, not instructions — this is a tease, not a tutorial. Unless the brand's voice explicitly asks for how-to steps, avoid literal instructional phrasing ("soak, buff, dry") in favour of what it feels like, sounds like, looks like.
 ${CAROUSEL_PSYCHOLOGY(n)}`,
   "dark-fade": (n) => `"slides": exactly ${n} content slides, then the CTA slide.
-Each slide: {"headline": "... max 7 words", "subline": "... max 12 words"}. Every slide sits on its own full-bleed photo with the text at the bottom, so headlines are short, bold statements.
+Each slide: {"headline": "... max 7 words", "subline": "... max 12 words"}. Every slide sits on its own full-bleed photo with the text at the bottom, so headlines are short, bold statements. Write mood and sensation, not instructions — this is a tease, not a tutorial. Unless the brand's voice explicitly asks for how-to steps, avoid literal instructional phrasing ("soak, buff, dry", "warm it in hands") in favour of what it feels like, sounds like, looks like — a slow reveal, not a recipe.
 ${CAROUSEL_PSYCHOLOGY(n)}`,
   "clean-pro": (n) => `"slides": exactly ${n} content slides, then the CTA slide.
 Slide 1 is the cover: {"headline": "... max 10 words", "subline": "... max 12 words"}.
@@ -210,11 +210,12 @@ Write the one-model description for this photo series.`;
 // every photo in the same carousel so the same person appears in every shot.
 export async function imagePrompt(brand, { slideText, idea, style, direction, textZone = "bottom", modelNote }) {
   const system = `You write prompts for a photorealistic image generator. Reply with JSON only: {"prompt": "...", "negative": "..."}.
-Write the prompt as a real photographer's shot brief for a natural, believable photograph — not a render. Include, in this order: the single subject and its exact pose/framing; the setting; the light (soft window light, golden hour, overcast daylight — never studio-perfect); camera and lens (e.g. "shot on a Sony A7 IV, 50mm f/2, shallow depth of field"); natural skin texture and true-to-life colour; a calm, uncluttered composition with one subject only. 70-120 words. Never include text, logos, watermarks, captions or hands holding signs. Keep it tasteful and non-explicit.
+Write the prompt as a real photographer's shot brief for a natural, believable photograph — not a render. Include, in this order: the single subject and its exact pose/framing; the setting; the light (soft, warm, intimate — low window light, candlelight, a single warm lamp, golden hour — never flat or studio-bright); camera and lens (e.g. "shot on a Sony A7 IV, 50mm f/1.8, shallow depth of field"); natural skin texture and true-to-life colour; a calm, uncluttered composition with one subject only. 70-120 words. Never include text, logos, watermarks, captions or hands holding signs.
+The mood is sensual and alluring: soft shadows, a slow, intimate feel, confident and inviting posing — think boudoir-style editorial photography, not a clinical product shot. Tasteful, not explicit: bare feet and legs, loungewear or bedsheets, nothing beyond that.
 The photo must show literally what the slide's text describes happening — if it names an action (pouring, a drop landing, oil spreading, a thumb pressing in), that exact action is the subject of the shot, not just a mood that evokes it.
 Anatomy is the priority: one pair of feet, exactly five toes on each foot, natural toe lengths, real skin creases and slight asymmetry, correct arches, heels and ankles in proportion. Prefer simple angles that models get right (soles-up from the front, side profile with arched foot, top-down on a sheet, feet crossed at the ankles) over twisted or overlapping poses. One pair of feet only, never several people.
 If a hand appears in the frame — applying, pouring, massaging, holding, pressing — it is always a woman's hand: slender fingers, feminine manicured nails, smooth skin, no masculine knuckles, wrist or forearm hair. Never a man's hand, arm or any other person in the shot.
-Leave the ${textZone} quarter of the frame quiet (plain sheet, floor, sky) because text will sit there.`;
+Framing is critical: the whole subject — every toe, the arch, the heel — must sit inside the TOP HALF of the frame. The bottom half is where a dark gradient and headline text get overlaid afterwards, so anything placed there gets visually covered or lost. Compose the shot high in the frame, with open, quiet space (plain sheet, floor, sky — nothing important) filling the bottom half.`;
   const user = `${brandContext(brand)}
 ${modelNote ? `This exact woman appears in every photo of this series — keep her consistent: ${modelNote}\n` : ""}${direction ? `Brand photo direction (always follow this): ${direction}\n` : ""}Post idea: ${idea || "(none)"}
 This slide's text — depict this exact moment: ${slideText || "(cover)"}
