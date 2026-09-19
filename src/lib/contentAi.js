@@ -17,6 +17,8 @@ Formatting rules (non-negotiable):
 - Write for a real person reading on a phone: short lines, no fluff, no filler intros like "In this post".
 - Match the brand voice exactly. If the brand's voice or CTA rules specify a sign-off, end the captions with it.
 - If the idea names a specific thing (a product, an object, a place, a method), say that thing by name, plainly, at least once — in the hook or the first two slides, and in the opening line of the caption. Mood and atmosphere are the style, not a substitute for saying what the post is actually about. A reader who only sees slide 1 and the caption's first line should know exactly what this is.
+- Never use an em dash (—) anywhere, in slides or captions. Use a comma, a full stop, or two short sentences instead.
+- Write like a real person typed it on their phone, not like an AI. Never use AI-coded words or phrases: elevate, unlock, unleash, delve, dive in, game-changer, seamless, leverage, utilize, robust, cutting-edge, tapestry, landscape, boundless, revolutionize, embark, navigate, furthermore, moreover, in today's world, in conclusion, it's important to note, whether you're... or..., not just X but Y. If a line reads like marketing copy or a LinkedIn post, rewrite it plainer.
 `;
 
 const PLATFORM_COPY = `
