@@ -95,6 +95,40 @@ export async function copyText(text) {
   }
 }
 
+// The HTML `download` attribute is silently ignored by browsers for
+// cross-origin URLs (Supabase's signed URLs are a different origin from the
+// dashboard), so a plain <a download> link just opens the image instead of
+// saving it. Fetching the bytes ourselves and downloading via a local blob
+// URL works regardless of origin.
+export async function downloadFile(url, filename) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Download failed");
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 4000);
+}
+
+export function DownloadButton({ url, filename, label = "Download", kind = "small", style }) {
+  const [state, setState] = useState("idle");
+  const click = async (e) => {
+    e.preventDefault();
+    setState("busy");
+    try { await downloadFile(url, filename); setState("done"); } catch { setState("fail"); }
+    setTimeout(() => setState("idle"), 1600);
+  };
+  return (
+    <button onClick={click} disabled={!url || state === "busy"} style={btn(kind, { opacity: url ? 1 : 0.4, ...style })}>
+      {state === "busy" ? "…" : state === "done" ? "Saved ✓" : state === "fail" ? "Failed" : label}
+    </button>
+  );
+}
+
 export function CopyButton({ text, label = "Copy", kind = "dark", style }) {
   const [state, setState] = useState("idle");
   const click = async () => {

@@ -1,20 +1,44 @@
 "use client";
 
-import { C, lbl, CopyButton, btn } from "./ui";
+import { C, lbl, CopyButton, DownloadButton, downloadFile, btn } from "./ui";
+import { useState } from "react";
 
 const PLATFORM_LABEL = { instagram: "Instagram", tiktok: "TikTok", youtube: "YouTube" };
 
 export function SlideStrip({ item, size = 96 }) {
   const urls = item.slide_urls || [];
+  const [savingAll, setSavingAll] = useState(false);
   if (!urls.length) return <div style={{ fontSize: 12, color: C.muted, padding: "8px 0" }}>Slides not rendered yet.</div>;
+
+  const downloadAll = async () => {
+    setSavingAll(true);
+    try {
+      for (let i = 0; i < urls.length; i++) {
+        await downloadFile(urls[i], `${(item.idea || "slide").slice(0, 40).replace(/[^a-z0-9]+/gi, "-")}-${String(i + 1).padStart(2, "0")}.png`);
+        // A short gap so the browser doesn't block a burst of downloads as a popup flood.
+        if (i < urls.length - 1) await new Promise((r) => setTimeout(r, 350));
+      }
+    } catch (e) { alert("Some slides didn't download: " + e.message); }
+    setSavingAll(false);
+  };
+
   return (
-    <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6 }}>
-      {urls.map((u, i) => (
-        <a key={i} href={u} target="_blank" rel="noreferrer" download={`slide-${i + 1}.png`} style={{ flexShrink: 0, width: size, aspectRatio: "1080/1350", borderRadius: 8, overflow: "hidden", border: `1px solid ${C.border}`, position: "relative", display: "block" }}>
-          <img src={u} alt={`Slide ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-          <span style={{ position: "absolute", bottom: 4, right: 6, fontSize: 10, fontWeight: 700, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>{i + 1}</span>
-        </a>
-      ))}
+    <div>
+      <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6 }}>
+        {urls.map((u, i) => (
+          <div key={i} style={{ flexShrink: 0, width: size, display: "flex", flexDirection: "column", gap: 4 }}>
+            <a href={u} target="_blank" rel="noreferrer" style={{ width: size, aspectRatio: "1080/1350", borderRadius: 8, overflow: "hidden", border: `1px solid ${C.border}`, position: "relative", display: "block" }}>
+              <img src={u} alt={`Slide ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              {/* Dashboard-only position label — never sits over a template's own
+                  text (which lives bottom-center on every template), and has its
+                  own background so it reads as UI chrome, not part of the photo. */}
+              <span style={{ position: "absolute", top: 4, left: 4, fontSize: 10, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.55)", borderRadius: 4, padding: "1px 5px", lineHeight: 1.4 }}>{i + 1}</span>
+            </a>
+            <DownloadButton url={u} filename={`slide-${String(i + 1).padStart(2, "0")}.png`} label="Save" style={{ width: "100%", padding: "3px 0", fontSize: 10 }} />
+          </div>
+        ))}
+      </div>
+      <button onClick={downloadAll} disabled={savingAll} style={btn("small", { marginTop: 6, opacity: savingAll ? 0.6 : 1 })}>{savingAll ? "Saving all…" : `⬇ Save all ${urls.length} slides`}</button>
     </div>
   );
 }
