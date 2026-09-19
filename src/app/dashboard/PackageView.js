@@ -34,11 +34,11 @@ export function SlideStrip({ item, size = 96 }) {
                   own background so it reads as UI chrome, not part of the photo. */}
               <span style={{ position: "absolute", top: 4, left: 4, fontSize: 10, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.55)", borderRadius: 4, padding: "1px 5px", lineHeight: 1.4 }}>{i + 1}</span>
             </a>
-            <DownloadButton url={u} filename={`slide-${String(i + 1).padStart(2, "0")}.png`} label="Save" style={{ width: "100%", padding: "3px 0", fontSize: 10 }} />
+            <DownloadButton url={u} filename={`slide-${String(i + 1).padStart(2, "0")}.png`} label="Download" style={{ width: "100%", padding: "3px 0", fontSize: 10 }} />
           </div>
         ))}
       </div>
-      <button onClick={downloadAll} disabled={savingAll} style={btn("small", { marginTop: 6, opacity: savingAll ? 0.6 : 1 })}>{savingAll ? "Saving all…" : `⬇ Save all ${urls.length} slides`}</button>
+      <button onClick={downloadAll} disabled={savingAll} style={btn("small", { marginTop: 6, opacity: savingAll ? 0.6 : 1 })}>{savingAll ? "Downloading…" : `⬇ Download all ${urls.length} slides`}</button>
     </div>
   );
 }
