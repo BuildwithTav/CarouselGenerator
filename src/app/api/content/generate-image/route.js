@@ -9,15 +9,15 @@ export const dynamic = "force-dynamic";
 // is the strongest on anatomy and natural skin; FLUX 1.1 Pro Ultra is the
 // fallback if it errors or refuses. Override the first with FAL_IMAGE_MODEL.
 const MODELS = [
-  { id: "fal-ai/nano-banana-pro", body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) },
-  { id: "fal-ai/flux-pro/v1.1-ultra", body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, output_format: "jpeg", enable_safety_checker: true, safety_tolerance: "5", raw: true }) },
+  { id: "fal-ai/nano-banana-pro", body: (prompt, negative) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) },
+  { id: "fal-ai/flux-pro/v1.1-ultra", body: (prompt, negative) => ({ prompt, aspect_ratio: "4:5", num_images: 1, output_format: "jpeg", enable_safety_checker: true, safety_tolerance: "5", raw: true, ...(negative ? { negative_prompt: negative } : {}) }) },
 ];
 
-async function generateWith(model, prompt) {
+async function generateWith(model, prompt, negative) {
   const res = await fetch(`https://fal.run/${model.id}`, {
     method: "POST",
     headers: { Authorization: `Key ${process.env.FAL_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify(model.body(prompt)),
+    body: JSON.stringify(model.body(prompt, negative)),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -50,17 +50,21 @@ export async function POST(req) {
   let modelNote = String(incomingModelNote || "").trim();
 
   let prompt = String(customPrompt || "").trim();
+  let negative = "";
   if (!prompt) {
     if (!modelNote) {
       try { modelNote = await lockModelDescription(brand); } catch (e) { console.error("Model description failed:", e.message); }
     }
     try {
-      ({ prompt } = await imagePrompt(brand, { slideText, idea, style, direction: theme.ai_style, textZone: textZone || "bottom", modelNote }));
+      ({ prompt, negative } = await imagePrompt(brand, { slideText, idea, style, direction: theme.ai_style, textZone: textZone || "bottom", modelNote }));
     } catch (e) {
       return Response.json({ error: e.message }, { status: 502 });
     }
   }
   if (!prompt) return Response.json({ error: "Could not write an image prompt" }, { status: 502 });
+  // Fold the negative list into the prompt itself too (not just the
+  // negative_prompt field some models ignore) so every model sees it.
+  const fullPrompt = negative ? `${prompt}\n\nAvoid: ${negative}` : prompt;
 
   const models = process.env.FAL_IMAGE_MODEL
     ? [{ id: process.env.FAL_IMAGE_MODEL, body: MODELS[0].body }, ...MODELS.filter((m) => m.id !== process.env.FAL_IMAGE_MODEL)]
@@ -69,7 +73,7 @@ export async function POST(req) {
   const failures = [];
   for (const model of models) {
     try {
-      imageUrl = await generateWith(model, prompt);
+      imageUrl = await generateWith(model, fullPrompt, negative);
       usedModel = model.id;
       break;
     } catch (e) {

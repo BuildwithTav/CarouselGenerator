@@ -17,6 +17,8 @@ Formatting rules (non-negotiable):
 - Write for a real person reading on a phone: short lines, no fluff, no filler intros like "In this post".
 - Match the brand voice exactly. If the brand's voice or CTA rules specify a sign-off, end the captions with it.
 - If the idea names a specific thing (a product, an object, a place, a method), say that thing by name, plainly, at least once — in the hook or the first two slides, and in the opening line of the caption. Mood and atmosphere are the style, not a substitute for saying what the post is actually about. A reader who only sees slide 1 and the caption's first line should know exactly what this is.
+- Never use an em dash (—) anywhere, in slides or captions. Use a comma, a full stop, or two short sentences instead.
+- Write like a real person typed it on their phone, not like an AI. Never use AI-coded words or phrases: elevate, unlock, unleash, delve, dive in, game-changer, seamless, leverage, utilize, robust, cutting-edge, tapestry, landscape, boundless, revolutionize, embark, navigate, furthermore, moreover, in today's world, in conclusion, it's important to note, whether you're... or..., not just X but Y. If a line reads like marketing copy or a LinkedIn post, rewrite it plainer.
 `;
 
 const PLATFORM_COPY = `
@@ -103,6 +105,10 @@ ${CAROUSEL_PSYCHOLOGY(n)}`,
 Slide 1 is the cover: {"headline": "... max 10 words, short and bold", "subline": "one full sentence, up to about 22 words — real substance, not decoration"}.
 Slides 2-${n}: {"headline": "... max 8 words", "bodyText": "... max 25 words, the fact or insight", "accentText": "... max 10 words, the punchline"}.
 ${CAROUSEL_PSYCHOLOGY(n)}`,
+  elegant: (n) => `"slides": exactly ${n} content slides, then the CTA slide.
+Each slide: {"kicker": "... 2-4 words, all caps eyebrow label that sets the scene", "headline": "... one short line, max 9 words, the actual line of the story", "detail": "one full sentence, up to about 20 words — the substance the reader stays for"}. Every slide sits on its own full-bleed photo with a soft vignette and an italic serif headline.
+Voice: quiet, elegant, seductive, a slow reveal — like a short story, not a tutorial or a sales pitch. Write mood and sensation, not instructions. Unless the brand's voice explicitly asks for how-to steps, never use literal instructional phrasing.
+${CAROUSEL_PSYCHOLOGY(n)}`,
 };
 
 function normalizeSlides(out, template, n) {
@@ -111,6 +117,7 @@ function normalizeSlides(out, template, n) {
     if (template === "raw") return { rawText: String(s.rawText || s.headline || "").trim() };
     if (template === "dark-fade") return { headline: String(s.headline || "").trim(), subline: String(s.subline || s.body || s.bodyText || "").trim() };
     if (template === "clean-pro") return { headline: String(s.headline || "").trim(), subline: String(s.subline || "").trim(), bodyText: String(s.bodyText || s.body || "").trim(), accentText: String(s.accentText || "").trim() };
+    if (template === "elegant") return { kicker: String(s.kicker || "").trim(), headline: String(s.headline || "").trim(), detail: String(s.detail || "").trim() };
     return { headline: String(s.headline || "").trim(), body: String(s.body || s.bodyText || "").trim() };
   });
   const cta = raw.find((s) => s && s.isCta) || {};
@@ -179,7 +186,7 @@ ${CTA_BRIEF}`;
 
 export async function regenerateCopy(brand, item) {
   const system = `You write social captions and YouTube metadata for a brand. Reply with JSON only: {"caption": "...", "tt_caption": "...", "hashtags": [...], "yt_title": "...", "yt_description": "...", "yt_tags": [...], "yt_pinned_comment": "...", "yt_category": "..."}\n${HOUSE_RULES}`;
-  const slidesText = (item.slides || []).filter((s) => !s.isCta).map((s, i) => `${i + 1}. ${s.rawText || [s.headline, s.subline, s.bodyText || s.body, s.accentText].filter(Boolean).join(" — ")}`).join("\n");
+  const slidesText = (item.slides || []).filter((s) => !s.isCta).map((s, i) => `${i + 1}. ${s.rawText || [s.kicker, s.headline, s.subline, s.detail, s.bodyText || s.body, s.accentText].filter(Boolean).join(" — ")}`).join("\n");
   const user = `${brandContext(brand)}
 
 Idea: ${item.idea}
@@ -218,7 +225,8 @@ Vary the shot distance too, across the set of photos this brand posts: some tigh
 The photo must show literally what the slide's text describes happening — if it names an action (pouring, a drop landing, oil spreading, a thumb pressing in), that exact action is the subject of the shot, not just a mood that evokes it.
 Anatomy is the priority whenever the feet are close enough to show detail: exactly five toes on each foot, natural toe lengths, real skin creases and slight asymmetry, correct arches, heels and ankles in proportion. Prefer simple angles that models get right (soles-up from the front, side profile with arched foot, top-down on a sheet, feet crossed at the ankles) over twisted or overlapping poses. One person in frame only, never several.
 If a hand appears in the frame — applying, pouring, massaging, holding, pressing — it is always a woman's hand: slender fingers, feminine manicured nails, smooth skin, no masculine knuckles, wrist or forearm hair. Never a man's hand, arm or any other person in the shot.
-Framing is critical: the whole subject — every toe, the arch, the heel — must sit inside the TOP HALF of the frame. The bottom half is where a dark gradient and headline text get overlaid afterwards, so anything placed there gets visually covered or lost. Compose the shot high in the frame, with open, quiet space (plain sheet, floor, sky — nothing important) filling the bottom half.`;
+Framing is critical: the whole subject — every toe, the arch, the heel — must sit inside the TOP HALF of the frame. The bottom half is where a dark gradient and headline text get overlaid afterwards, so anything placed there gets visually covered or lost. Compose the shot high in the frame, with open, quiet space (plain sheet, floor, sky — nothing important) filling the bottom half.
+The "negative" field always includes, word for word: "extra toes, missing toes, six toes, fused toes, extra fingers, missing fingers, deformed feet, deformed hands, mutated anatomy, malformed limbs, extra limbs, blurry, distorted proportions, watermark, text, logo" — plus anything else specific to this shot worth excluding.`;
   const user = `${brandContext(brand)}
 ${modelNote ? `This exact woman appears in every photo of this series — keep her consistent: ${modelNote}\n` : ""}${direction ? `Brand photo direction (always follow this): ${direction}\n` : ""}Post idea: ${idea || "(none)"}
 This slide's text — depict this exact moment: ${slideText || "(cover)"}

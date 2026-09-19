@@ -75,21 +75,47 @@ export async function renderSlides(htmls) {
     if (style) inlined.set(link, `<style>${style}</style>`);
   }
 
-  const browser = await launchBrowser();
-  try {
-    const out = [];
-    for (const html of htmls) {
-      let doc = html;
-      for (const [link, style] of inlined) doc = doc.replace(link, style);
-      const page = await browser.newPage();
+  // A valid 1080x1350 slide is always tens to hundreds of KB. Anything
+  // drastically smaller almost certainly means the page didn't finish
+  // loading (a slow image fetch, a font timeout) before the screenshot was
+  // taken — better to retry than silently ship a blank/broken image.
+  const MIN_BYTES = 8000;
+
+  async function renderOne(browser, doc, attempt) {
+    const page = await browser.newPage();
+    try {
       await page.setViewport({ width: SLIDE_W, height: SLIDE_H, deviceScaleFactor: 2 });
       await page.setContent(doc, { waitUntil: "networkidle0", timeout: 25000 });
       await page.evaluateHandle("document.fonts.ready");
       if (doc.includes("__TEXT_FIT_DONE__")) {
         await page.waitForFunction("window.__TEXT_FIT_DONE__ === true", { timeout: 4000 }).catch(() => {});
       }
-      out.push(await page.screenshot({ type: "png", clip: { x: 0, y: 0, width: SLIDE_W, height: SLIDE_H } }));
-      await page.close();
+      const png = await page.screenshot({ type: "png", clip: { x: 0, y: 0, width: SLIDE_W, height: SLIDE_H } });
+      if (png.length < MIN_BYTES) throw new Error(`slide rendered suspiciously small (${png.length} bytes)`);
+      return png;
+    } finally {
+      await page.close().catch(() => {});
+    }
+  }
+
+  const browser = await launchBrowser();
+  try {
+    const out = [];
+    for (let i = 0; i < htmls.length; i++) {
+      let doc = htmls[i];
+      for (const [link, style] of inlined) doc = doc.replace(link, style);
+      let png;
+      try {
+        png = await renderOne(browser, doc, 1);
+      } catch (e) {
+        console.error(`Slide ${i + 1} render failed, retrying once:`, e.message);
+        try {
+          png = await renderOne(browser, doc, 2);
+        } catch (e2) {
+          throw new Error(`Slide ${i + 1} failed to render after a retry: ${e2.message}`);
+        }
+      }
+      out.push(png);
     }
     return out;
   } finally {

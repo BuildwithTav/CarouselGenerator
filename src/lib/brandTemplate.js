@@ -1,11 +1,13 @@
 import { buildTmplHTML, buildCtaHTML } from "./carouselTemplates.js";
 import { buildSlideHTML } from "./slideTemplate.js";
+import { buildElegantHTML, buildElegantCtaHTML } from "./elegantTemplate.js";
 
 export const TEMPLATES = [
   { id: "raw", label: "Raw", desc: "One of your photos across every slide, a line of text in a tight box. Authentic, minimal." },
   { id: "dark-fade", label: "Classic", desc: "A photo on every slide with a dark fade, bold headline and subline. AI photos by default." },
   { id: "clean-pro", label: "Clean Pro", desc: "Photo cover with a dark fade, then clean fact or story slides. AI cover by default." },
   { id: "bold", label: "Bold", desc: "Big headline on a solid colour. Text-led, no photos needed." },
+  { id: "elegant", label: "Elegant", desc: "Full photo always shown in full, soft vignette, italic headline, quiet seductive flow. AI photos by default." },
 ];
 
 // Where the photos come from when a post is created.
@@ -16,7 +18,7 @@ export const PHOTO_SOURCES = [
 ];
 export function defaultPhotoSource(template) {
   if (template === "raw") return "same";
-  if (template === "dark-fade" || template === "clean-pro") return "ai";
+  if (template === "dark-fade" || template === "clean-pro" || template === "elegant") return "ai";
   return "library";
 }
 
@@ -105,6 +107,22 @@ export function buildBrandSlides({ brand, slides, profileUrl, coverImageUrl, cta
   if (tmpl === "bold") {
     return slides.map((s, i) => buildSlideHTML(s, i, total, theme, brand, i === 0 ? s.image_url || coverImageUrl || null : null));
   }
+  if (tmpl === "elegant") {
+    const cta = { ...ctaCopy(theme), ...(ctaOverride || {}) };
+    const eOpts = { name: theme.name || brand?.name || "", handle: theme.handle || "", profUrl: profileUrl || "" };
+    return slides.map((s, i) => {
+      if (s.isCta) {
+        // No slide of its own carries a photo for the CTA, so it keeps the
+        // last content slide's image rather than showing a blank frame.
+        const line1 = (theme.cta?.line1 || "").trim() || s.line1 || cta.line1;
+        const line3 = (theme.cta?.line3 || "").trim() || s.line3 || cta.line3;
+        const prevImage = slides[i - 1]?.image_url || coverImageUrl || null;
+        return buildElegantCtaHTML(eOpts, cta.type, cta.keyword, line1, line3, prevImage);
+      }
+      const image = s.image_url || (i === 0 ? coverImageUrl : null) || null;
+      return buildElegantHTML({ ...s, image }, i, total, eOpts);
+    });
+  }
   const opts = templateOpts(brand, theme, profileUrl);
   const cta = { ...ctaCopy(theme), ...(ctaOverride || {}) };
   return slides.map((s, i) => {
@@ -127,34 +145,34 @@ export function buildBrandSlides({ brand, slides, profileUrl, coverImageUrl, cta
 // Which slides must carry a photo for the template to render properly.
 export function slideNeedsImage(template, idx, slide) {
   if (slide?.isCta) return false;
-  if (template === "raw" || template === "dark-fade") return true;
+  if (template === "raw" || template === "dark-fade" || template === "elegant") return true;
   return template === "clean-pro" && idx === 0;
 }
 
 // Which slides may carry a photo.
 export function slideCanHaveImage(template, idx, slide) {
   if (slide?.isCta) return false;
-  return template === "raw" || template === "dark-fade" || idx === 0;
+  return template === "raw" || template === "dark-fade" || template === "elegant" || idx === 0;
 }
 
 // AI photo generation is offered for the photo-led templates that tell a
-// story or carry facts (Classic, Clean Pro). Raw is your own photos.
+// story or carry facts (Classic, Clean Pro, Elegant). Raw is your own photos.
 export function templateAllowsAiImage(template) {
-  return template === "clean-pro" || template === "dark-fade";
+  return template === "clean-pro" || template === "dark-fade" || template === "elegant";
 }
 
 // The text on a slide, for photo prompts and captions.
 export function slideText(s) {
   if (!s) return "";
   if (s.isCta) return "";
-  return s.rawText || [s.headline, s.subline, s.bodyText || s.body, s.accentText].filter(Boolean).join(" — ");
+  return s.rawText || [s.kicker, s.headline, s.detail, s.subline, s.bodyText || s.body, s.accentText].filter(Boolean).join(" — ");
 }
 
 // Sample slides for the live preview in the brand form. `imageUrl` is any
 // https photo from the library (or null for the template's placeholder).
 export function previewSlides(brand, imageUrl, profileUrl, template) {
-  const cover = { headline: "Five things nobody tells you", subline: "Number three changes everything", rawText: "Golden hour.\nNowhere to be.", body: "", image_url: imageUrl };
-  const body = { headline: "It starts small", bodyText: "One honest post a day beats a perfect one a month. Consistency compounds.", accentText: "Show up. Then show up again.", rawText: "Save this.\nYou'll want it later.", body: "One honest post a day beats a perfect one a month.", image_url: imageUrl };
+  const cover = { headline: "Five things nobody tells you", subline: "Number three changes everything", rawText: "Golden hour.\nNowhere to be.", body: "", kicker: "The Story", detail: "Number three changes everything.", image_url: imageUrl };
+  const body = { headline: "It starts small", bodyText: "One honest post a day beats a perfect one a month. Consistency compounds.", accentText: "Show up. Then show up again.", rawText: "Save this.\nYou'll want it later.", body: "One honest post a day beats a perfect one a month.", kicker: "The Detail", detail: "One honest post a day beats a perfect one a month.", image_url: imageUrl };
   const cta = { isCta: true };
   return buildBrandSlides({ brand, slides: [cover, body, cta], profileUrl: profileUrl || null, coverImageUrl: imageUrl, template });
 }
@@ -169,7 +187,7 @@ function slideParts(s) {
     const [a, ...rest] = String(s.rawText).split("\n");
     return { a: a || "", b: rest.join(" ").trim(), c: "" };
   }
-  return { a: s.headline || "", b: s.subline || s.body || s.bodyText || "", c: s.accentText || "" };
+  return { a: s.headline || "", b: s.subline || s.detail || s.body || s.bodyText || "", c: s.accentText || "" };
 }
 
 export function remapSlidesForTemplate(slides, toTemplate) {
@@ -182,6 +200,7 @@ export function remapSlidesForTemplate(slides, toTemplate) {
       ? { ...base, headline: a, subline: b || c }
       : { ...base, headline: a, bodyText: b, accentText: c };
     if (toTemplate === "dark-fade") return { ...base, headline: a, subline: [b, c].filter(Boolean).join(" ") };
+    if (toTemplate === "elegant") return { ...base, headline: a, detail: [b, c].filter(Boolean).join(" ") };
     return { ...base, headline: a, body: [b, c].filter(Boolean).join(" ") }; // bold
   });
 }
