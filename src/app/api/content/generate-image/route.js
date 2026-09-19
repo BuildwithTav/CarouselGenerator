@@ -1,5 +1,5 @@
 import { dashboardAuthorized, unauthorized, supabaseAdmin, BUCKET, SIGNED_URL_TTL_SECONDS } from "@/lib/dashboard";
-import { imagePrompt } from "@/lib/contentAi";
+import { imagePrompt, lockModelDescription } from "@/lib/contentAi";
 import { themeOf } from "@/lib/brandTemplate";
 
 export const maxDuration = 60;
@@ -36,7 +36,7 @@ async function generateWith(model, prompt) {
 export async function POST(req) {
   if (!dashboardAuthorized(req)) return unauthorized();
   if (!process.env.FAL_API_KEY) return Response.json({ error: "FAL_API_KEY is not set" }, { status: 500 });
-  const { brandId, slideText, idea, style, prompt: customPrompt, textZone } = await req.json();
+  const { brandId, slideText, idea, style, prompt: customPrompt, textZone, modelNote: incomingModelNote } = await req.json();
   if (!brandId) return Response.json({ error: "brandId is required" }, { status: 400 });
   const supabase = supabaseAdmin();
 
@@ -44,10 +44,18 @@ export async function POST(req) {
   if (bErr || !brand) return Response.json({ error: "Brand not found" }, { status: 404 });
   const theme = themeOf(brand);
 
+  // The locked model description keeps the same woman appearing across every
+  // photo of one carousel. The caller sends it back on later slides; the
+  // first call in a batch gets one generated and hands it back.
+  let modelNote = String(incomingModelNote || "").trim();
+
   let prompt = String(customPrompt || "").trim();
   if (!prompt) {
+    if (!modelNote) {
+      try { modelNote = await lockModelDescription(brand); } catch (e) { console.error("Model description failed:", e.message); }
+    }
     try {
-      ({ prompt } = await imagePrompt(brand, { slideText, idea, style, direction: theme.ai_style, textZone: textZone || "bottom" }));
+      ({ prompt } = await imagePrompt(brand, { slideText, idea, style, direction: theme.ai_style, textZone: textZone || "bottom", modelNote }));
     } catch (e) {
       return Response.json({ error: e.message }, { status: 502 });
     }
@@ -95,5 +103,5 @@ export async function POST(req) {
   if (insErr) return Response.json({ error: insErr.message, prompt }, { status: 500 });
 
   const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrl(storagePath, SIGNED_URL_TTL_SECONDS);
-  return Response.json({ media: { ...row, url: signed?.signedUrl || null }, prompt, model: usedModel });
+  return Response.json({ media: { ...row, url: signed?.signedUrl || null }, prompt, model: usedModel, modelNote });
 }

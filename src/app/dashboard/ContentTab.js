@@ -52,11 +52,13 @@ function NewContent({ api, brand, onCreated }) {
       setPhase("photo");
       const slides = item.slides.map((x) => ({ ...x }));
       const todo = slides.map((x, i) => i).filter((i) => slideCanHaveImage(template, i, slides[i]) && !slides[i].image_media_id);
+      let modelNote = null; // locked after the first photo, reused so every slide shows the same woman
       try {
         for (let n = 0; n < todo.length; n++) {
           const i = todo[n];
           setProgress(`${n + 1} of ${todo.length}`);
-          const { media: m } = await api.post("/api/content/generate-image", { brandId: brand.id, slideText: slideText(slides[i]), idea: idea.trim(), style: "editorial", textZone: "bottom" });
+          const { media: m, modelNote: mn } = await api.post("/api/content/generate-image", { brandId: brand.id, slideText: slideText(slides[i]), idea: idea.trim(), style: "editorial", textZone: "bottom", modelNote });
+          if (mn) modelNote = mn;
           slides[i] = { ...slides[i], image_media_id: m.id, image_path: m.storage_path };
           ({ item } = await api.patch("/api/content", { id: item.id, slides }));
         }
