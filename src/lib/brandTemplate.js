@@ -2,10 +2,23 @@ import { buildTmplHTML, buildCtaHTML } from "./carouselTemplates.js";
 import { buildSlideHTML } from "./slideTemplate.js";
 
 export const TEMPLATES = [
-  { id: "bold", label: "Bold", desc: "Big headline on a solid colour. Text-led, no photos needed." },
   { id: "raw", label: "Raw", desc: "One of your photos across every slide, a line of text in a tight box. Authentic, minimal." },
-  { id: "clean-pro", label: "Clean Pro", desc: "Photo cover (yours or AI-made) with a dark fade, then clean fact or story slides." },
+  { id: "dark-fade", label: "Classic", desc: "A photo on every slide with a dark fade, bold headline and subline. AI photos by default." },
+  { id: "clean-pro", label: "Clean Pro", desc: "Photo cover with a dark fade, then clean fact or story slides. AI cover by default." },
+  { id: "bold", label: "Bold", desc: "Big headline on a solid colour. Text-led, no photos needed." },
 ];
+
+// Where the photos come from when a post is created.
+export const PHOTO_SOURCES = [
+  ["ai", "AI photos"],
+  ["library", "From library"],
+  ["same", "One photo, every slide"],
+];
+export function defaultPhotoSource(template) {
+  if (template === "raw") return "same";
+  if (template === "dark-fade" || template === "clean-pro") return "ai";
+  return "library";
+}
 
 export const TEMPLATE_FONTS = [
   ["bebasneue", "Bebas Neue (loud)"], ["inter", "Inter (clean)"], ["montserrat", "Montserrat"], ["poppins", "Poppins"],
@@ -28,6 +41,7 @@ export const THEME_DEFAULTS = {
   primary: "#ffffff", secondary: "#ffffff",
   name: "", profile_media_id: null, showTick: false, showCounter: false,
   cta: { type: "follow", keyword: "", line1: "", line3: "", bg: "dark" },
+  ai_style: "",
   platforms: ["instagram", "tiktok", "youtube"],
 };
 
@@ -95,30 +109,40 @@ export function buildBrandSlides({ brand, slides, profileUrl, coverImageUrl, cta
   const cta = { ...ctaCopy(theme), ...(ctaOverride || {}) };
   return slides.map((s, i) => {
     if (s.isCta) {
-      return buildCtaHTML(opts, cta.type, cta.keyword, s.line1 || cta.line1, s.line2 || cta.line2, s.line3 || cta.line3, cta.bg, opts.nm, opts.hdl, opts.profUrl, opts.showTick, opts.font, total, opts.showCounter);
+      // The brand's own CTA lines win when set; the AI's lines only fill blanks.
+      const line1 = (theme.cta?.line1 || "").trim() || s.line1 || cta.line1;
+      const line3 = (theme.cta?.line3 || "").trim() || s.line3 || cta.line3;
+      return buildCtaHTML(opts, cta.type, cta.keyword, line1, s.line2 || cta.line2, line3, cta.bg, opts.nm, opts.hdl, opts.profUrl, opts.showTick, opts.font, total, opts.showCounter);
     }
     const slide = { ...s, image: s.image_url || (i === 0 ? coverImageUrl : null) || null };
     return buildTmplHTML(slide, i, total, tmpl, opts);
   });
 }
 
-// Which slides must carry a photo from the library (auto-filled on create).
-// Clean Pro's cover is not filled from the library: it gets an AI photo
-// unless you picked one yourself.
+// Which slides must carry a photo for the template to render properly.
 export function slideNeedsImage(template, idx, slide) {
   if (slide?.isCta) return false;
-  return template === "raw";
+  if (template === "raw" || template === "dark-fade") return true;
+  return template === "clean-pro" && idx === 0;
 }
 
 // Which slides may carry a photo.
 export function slideCanHaveImage(template, idx, slide) {
   if (slide?.isCta) return false;
-  return template === "raw" || idx === 0;
+  return template === "raw" || template === "dark-fade" || idx === 0;
 }
 
-// AI photo generation is offered for Clean Pro only (facts / story covers).
+// AI photo generation is offered for the photo-led templates that tell a
+// story or carry facts (Classic, Clean Pro). Raw is your own photos.
 export function templateAllowsAiImage(template) {
-  return template === "clean-pro";
+  return template === "clean-pro" || template === "dark-fade";
+}
+
+// The text on a slide, for photo prompts and captions.
+export function slideText(s) {
+  if (!s) return "";
+  if (s.isCta) return "";
+  return s.rawText || [s.headline, s.subline, s.bodyText || s.body, s.accentText].filter(Boolean).join(" — ");
 }
 
 // Sample slides for the live preview in the brand form. `imageUrl` is any

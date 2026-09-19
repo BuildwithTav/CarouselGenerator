@@ -175,6 +175,12 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
                 <div><label style={{ ...lbl, marginBottom: 4 }}>Body slides</label><Seg value={theme.tmplBg} options={[["dark", "Dark"], ["white", "White"]]} onChange={(v) => setT("tmplBg", v)} /></div>
               </div>
             )}
+            {(tmpl === "clean-pro" || tmpl === "dark-fade") && (
+              <div>
+                <label style={{ ...lbl, marginBottom: 4 }}>AI photo direction <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(followed on every AI photo for this brand)</span></label>
+                <textarea value={theme.ai_style || ""} onChange={(e) => setT("ai_style", e.target.value)} rows={3} placeholder="e.g. One woman's bare feet, size 5, soft natural skin, neat nude or pale pink pedicure, soles-up or side-on, soft bedroom window light, cream sheets, candid phone-photo feel. No faces, no other people, nothing explicit." style={{ ...inp, resize: "vertical", lineHeight: 1.6, fontSize: 13 }} />
+              </div>
+            )}
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8 }}>
               <ColorField label="Accent" value={theme.accent} onChange={(v) => setT("accent", v)} />
@@ -229,7 +235,7 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
                 <input value={theme.cta.line1} onChange={(e) => setCta("line1", e.target.value)} placeholder={`Line above — ${ctaCopy(theme).line1}`} style={inp} />
                 <input value={theme.cta.line3} onChange={(e) => setCta("line3", e.target.value)} placeholder={`Line below — ${ctaCopy(theme).line3}`} style={inp} />
               </div>
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>Leave the lines blank to let each post write its own CTA lines.</div>
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>Set these and every post uses exactly these lines. Leave blank and each post writes its own (short, one action only).</div>
             </div>
           </div>
         )}

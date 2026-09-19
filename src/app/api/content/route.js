@@ -1,6 +1,6 @@
 import { dashboardAuthorized, unauthorized, supabaseAdmin, BUCKET, attachSlideUrls, attachSlideUrlsMany, brandPlatforms, postedColumn, PLATFORMS, bumpMediaUse, assignSlideImages } from "@/lib/dashboard";
 import { generatePackage } from "@/lib/contentAi";
-import { themeOf, slideNeedsImage, slideCanHaveImage, TEMPLATE_IDS } from "@/lib/brandTemplate";
+import { themeOf, slideNeedsImage, slideCanHaveImage, TEMPLATE_IDS, defaultPhotoSource } from "@/lib/brandTemplate";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -31,7 +31,7 @@ export async function GET(req) {
 
 export async function POST(req) {
   if (!dashboardAuthorized(req)) return unauthorized();
-  const { brandId, idea, pillar, mediaId, slideCount, scheduledFor, autoImages = true, template: wanted } = await req.json();
+  const { brandId, idea, pillar, mediaId, slideCount, scheduledFor, template: wanted, photoSource: wantedSource } = await req.json();
   if (!brandId || !idea?.trim()) return Response.json({ error: "brandId and idea are required" }, { status: 400 });
   const supabase = supabaseAdmin();
 
@@ -42,20 +42,21 @@ export async function POST(req) {
 
   let pkg;
   try {
-    pkg = await generatePackage(brand, { idea: idea.trim(), pillar, slideCount: Math.min(Math.max(Number(slideCount) || 7, 3), 10), template });
+    pkg = await generatePackage(brand, { idea: idea.trim(), pillar, slideCount: Math.min(Math.max(Number(slideCount) || 7, 3), 10), template, ctaType: theme.cta?.type || "follow" });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 502 });
   }
 
-  // Photos: the chosen photo goes on slide 1 (Bold / Clean Pro cover) or on
-  // every slide (Raw — one photo set). Anything still missing comes from the
-  // library, least-used first.
+  // Photos. photoSource: "ai" (the dashboard generates them after this call),
+  // "library" (least-used first, no repeats), "same" (one photo on every slide).
+  // A chosen photo goes on the cover, or on every slide for "same".
+  const photoSource = ["ai", "library", "same"].includes(wantedSource) ? wantedSource : defaultPhotoSource(template);
   const slides = pkg.slides.map((s) => ({ ...s, image_media_id: null, image_path: null }));
   if (mediaId) {
     const { data: m } = await supabase.from("brand_media").select("id, storage_path, file_type").eq("id", mediaId).single();
-    if (m?.file_type === "image") slides.forEach((s, i) => { if (slideCanHaveImage(template, i, s)) { s.image_media_id = m.id; s.image_path = m.storage_path; } });
+    if (m?.file_type === "image") slides.forEach((s, i) => { if (slideCanHaveImage(template, i, s) && (i === 0 || photoSource === "same")) { s.image_media_id = m.id; s.image_path = m.storage_path; } });
   }
-  if (autoImages) await assignSlideImages(brandId, slides, (i, s) => slideNeedsImage(template, i, s), [theme.profile_media_id], { sameForAll: template === "raw" });
+  if (photoSource !== "ai") await assignSlideImages(brandId, slides, (i, s) => slideNeedsImage(template, i, s), [theme.profile_media_id], { sameForAll: photoSource === "same" });
   pkg.slides = slides;
 
   const { data: item, error } = await supabase

@@ -80,23 +80,32 @@ Each content slide: {"rawText": "..."}. This template shows the brand's own phot
 - Slide 1 is the scroll-stopper: 3 to 7 words, teasing, no explanation.
 - Slides 2-${n}: one or two short lines each (max 12 words total). Use a line break ("\\n") between the two lines. Build tension or delight slide by slide — a tease, a detail, a mood, a payoff.
 - Never describe the photo. Speak to the viewer.`,
+  "dark-fade": (n) => `"slides": exactly ${n} content slides, then the CTA slide.
+Each slide: {"headline": "... max 7 words", "subline": "... max 12 words"}. Every slide sits on its own full-bleed photo with the text at the bottom, so headlines are short, bold statements.
+- Slide 1 is the hook: the headline stops the scroll, the subline opens a curiosity gap.
+- Slides 2-${n}: one idea each — a fact, a moment, a feeling, a tease — headline as the statement, subline as the detail or payoff.
+Carousel structure: hook → build → reveal → the takeaway.`,
   "clean-pro": (n) => `"slides": exactly ${n} content slides, then the CTA slide.
 Slide 1 is the cover: {"headline": "... max 10 words", "subline": "... max 12 words"} — the attention-grabbing hook, the subline opens a curiosity gap.
 Slides 2-${n}: {"headline": "... max 8 words", "bodyText": "... max 25 words, the fact or insight", "accentText": "... max 10 words, the punchline"}.
 Carousel structure: hook → the surprising fact → why it matters → more facts, one per slide → the takeaway.`,
 };
 
-const CTA_BRIEF = `The CTA slide: {"isCta": true, "line1": "... a short line above the big action word (max 8 words)", "line3": "... a short line below it saying what they get or why (max 12 words)"}. Follow the brand's CTA rules for what the action is.`;
+const ctaBrief = (ctaType = "follow") => `The CTA slide: {"isCta": true, "line1": "...", "line3": "..."}. The slide already shows one big action word ("${ctaType.toUpperCase()}"), so keep it restrained:
+- "line1": max 5 words, a calm lead-in above the action word (e.g. "Want more like this?").
+- "line3": max 8 words, one reason or one detail below it. Only ever the one action (${ctaType}) — never list other actions like "like, share, save, comment".`;
 
 function normalizeSlides(out, template, n) {
   const raw = Array.isArray(out.slides) ? out.slides : [];
   const content = raw.filter((s) => s && !s.isCta).slice(0, n).map((s) => {
     if (template === "raw") return { rawText: String(s.rawText || s.headline || "").trim() };
+    if (template === "dark-fade") return { headline: String(s.headline || "").trim(), subline: String(s.subline || s.body || s.bodyText || "").trim() };
     if (template === "clean-pro") return { headline: String(s.headline || "").trim(), subline: String(s.subline || "").trim(), bodyText: String(s.bodyText || s.body || "").trim(), accentText: String(s.accentText || "").trim() };
     return { headline: String(s.headline || "").trim(), body: String(s.body || s.bodyText || "").trim() };
   });
   const cta = raw.find((s) => s && s.isCta) || {};
-  content.push({ isCta: true, line1: String(cta.line1 || "").trim(), line3: String(cta.line3 || "").trim() });
+  const clip = (t, words) => String(t || "").trim().split(/\s+/).filter(Boolean).slice(0, words).join(" ");
+  content.push({ isCta: true, line1: clip(cta.line1, 6), line3: clip(cta.line3, 9) });
   return content;
 }
 
@@ -122,9 +131,10 @@ function normalizeCopy(out) {
   };
 }
 
-export async function generatePackage(brand, { idea, pillar, slideCount = 7, template = "bold" }) {
+export async function generatePackage(brand, { idea, pillar, slideCount = 7, template = "bold", ctaType = "follow" }) {
   const n = Math.max(2, slideCount - 1); // last slide is the CTA
   const brief = (SLIDE_BRIEF[template] || SLIDE_BRIEF.bold)(n);
+  const CTA_BRIEF = ctaBrief(ctaType);
   const system = `You write complete social content packages (carousel slides + per-platform captions) for a brand. Reply with JSON only: {"slides": [...], "caption": "...", "tt_caption": "...", "hashtags": [...], "yt_title": "...", "yt_description": "...", "yt_tags": [...], "yt_pinned_comment": "...", "yt_category": "..."}\n${HOUSE_RULES}`;
   const user = `${brandContext(brand)}
 ${pillar ? `Pillar for this piece: ${pillar}\n` : ""}
@@ -138,10 +148,11 @@ ${CTA_BRIEF}
   return { slides: normalizeSlides(out, template, n), ...normalizeCopy(out) };
 }
 
-export async function regenerateSlides(brand, item, template = "bold") {
+export async function regenerateSlides(brand, item, template = "bold", ctaType = "follow") {
   const existing = Array.isArray(item.slides) ? item.slides.filter((s) => !s.isCta) : [];
   const n = existing.length || 6;
   const brief = (SLIDE_BRIEF[template] || SLIDE_BRIEF.bold)(n);
+  const CTA_BRIEF = ctaBrief(ctaType);
   const system = `You write carousel slide copy for a brand. Reply with JSON only: {"slides": [...]}.\n${HOUSE_RULES}`;
   const user = `${brandContext(brand)}
 
@@ -171,14 +182,18 @@ ${PLATFORM_COPY}`;
   return normalizeCopy(out);
 }
 
-// Turns a slide's text + brand into a detailed photographic prompt for the image model.
-export async function imagePrompt(brand, { slideText, idea, style }) {
+// Turns a slide's text + brand into a photographer's brief for the image model.
+// `direction` is the brand's own photo direction (subject, look, what to avoid).
+export async function imagePrompt(brand, { slideText, idea, style, direction, textZone = "bottom" }) {
   const system = `You write prompts for a photorealistic image generator. Reply with JSON only: {"prompt": "...", "negative": "..."}.
-The prompt must read like a professional photographer's shot brief for a hyper-realistic photograph: open with "hyper-realistic photograph, shot on a full-frame camera", then subject and pose, setting, lighting (golden hour, softbox, window light...), lens and depth of field, colour palette, mood, skin and surface detail (pores, fine texture, natural highlights). 70-120 words. Never include text, logos, watermarks or captions in the image. Keep it tasteful and non-explicit. If the brand is about feet, the feet are the subject: insist on anatomically perfect feet — exactly five toes per foot, natural proportions, smooth skin, neat pedicure, correct arches, no extra or merged toes — and name the exact framing (soles up, toes pointed, arch curve, heels together, close-up or three-quarter view). Make the image match the slide's text so it belongs on that slide.`;
+Write the prompt as a real photographer's shot brief for a natural, believable photograph — not a render. Include, in this order: the single subject and its exact pose/framing; the setting; the light (soft window light, golden hour, overcast daylight — never studio-perfect); camera and lens (e.g. "shot on a Sony A7 IV, 50mm f/2, shallow depth of field"); natural skin texture and true-to-life colour; a calm, uncluttered composition with one subject only. 70-120 words. Never include text, logos, watermarks, captions or hands holding signs. Keep it tasteful and non-explicit.
+Anatomy is the priority: if feet or hands appear, say "one pair of feet, exactly five toes on each foot, natural toe lengths, real skin creases and slight asymmetry, correct arches, heels and ankles in proportion". Prefer simple angles that models get right (soles-up from the front, side profile with arched foot, top-down on a sheet, feet crossed at the ankles) over twisted or overlapping poses. One pair of feet only, never several people.
+Leave the ${textZone} quarter of the frame quiet (plain sheet, floor, sky) because text will sit there.
+Match the photo to the slide's text so it belongs on that slide.`;
   const user = `${brandContext(brand)}
-Post idea: ${idea || "(none)"}
+${direction ? `Brand photo direction (always follow this): ${direction}\n` : ""}Post idea: ${idea || "(none)"}
 This slide's text: ${slideText || "(cover)"}
-Look: ${style === "candid" ? "candid, natural, phone-camera realism" : "polished, editorial, magazine quality"}
+Look: ${style === "candid" ? "candid, natural, phone-camera realism" : "polished editorial, magazine quality, still natural"}
 
 Write the image prompt for this slide.`;
   const out = await ask(system, user, 1500);
