@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { C, card, lbl, Badge, Spinner } from "./ui";
 import { PackageView, SlideStrip } from "./PackageView";
 
-export function TodayTab({ api, onOpenItem }) {
+export function TodayTab({ api, active, onOpenItem }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
   const [marking, setMarking] = useState(null);
@@ -13,7 +13,9 @@ export function TodayTab({ api, onOpenItem }) {
     setErr("");
     try { setData(await api.get("/api/content/today")); } catch (e) { setErr(e.message); }
   };
-  useEffect(() => { load(); }, []);
+  // Reload each time this tab becomes the visible one (it stays mounted in
+  // the background otherwise), so freshly-approved content shows up.
+  useEffect(() => { if (active) load(); }, [active]);
 
   const markPosted = async (item, platform) => {
     setMarking(item.id + platform);
