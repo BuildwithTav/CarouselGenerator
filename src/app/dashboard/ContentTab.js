@@ -79,10 +79,14 @@ function NewContent({ api, brand, onCreated }) {
     onCreated(item);
   };
 
+  const [advanced, setAdvanced] = useState(false);
+
   return (
     <div style={{ ...card, marginBottom: 20 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 10 }}>
-        <label style={{ ...lbl, margin: 0 }}>New content — {brand.name}</label>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+        <span style={{ width: 22, height: 22, borderRadius: "50%", background: C.gold, color: "#000", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>1</span>
+        <label style={{ ...lbl, margin: 0 }}>What's this about — {brand.name}</label>
+        <div style={{ flex: 1 }} />
         <button onClick={suggest} disabled={suggesting} style={btn("ghost", { opacity: suggesting ? 0.6 : 1 })}>{suggesting ? <><Spinner /> Thinking…</> : "✨ Suggest ideas"}</button>
       </div>
 
@@ -94,67 +98,81 @@ function NewContent({ api, brand, onCreated }) {
         </div>
       )}
 
-      <textarea value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="What's this post about? One line is enough — e.g. '3 mistakes people make when they start…'" rows={3} style={{ ...inp, resize: "vertical", lineHeight: 1.6, marginBottom: 12 }} />
+      <textarea value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="One line is enough — e.g. '3 mistakes people make when they start…'" rows={3} style={{ ...inp, resize: "vertical", lineHeight: 1.6, marginBottom: 16 }} />
 
-      <div style={{ marginBottom: 12 }}>
-        <label style={lbl}>Template <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(the look for each is set in Brands)</span></label>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {TEMPLATES.map((t) => <Chip key={t.id} active={template === t.id} onClick={() => setTemplate(t.id)}>{t.label}</Chip>)}
-        </div>
-        <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>{TEMPLATES.find((t) => t.id === template)?.desc}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <span style={{ width: 22, height: 22, borderRadius: "50%", background: C.gold, color: "#000", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>2</span>
+        <label style={{ ...lbl, margin: 0 }}>Pick a look</label>
       </div>
-
-      {template !== "bold" && (
-        <div style={{ marginBottom: 12 }}>
-          <label style={lbl}>Photos</label>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {PHOTO_SOURCES.filter(([id]) => id !== "ai" || templateAllowsAiImage(template)).map(([id, label]) => <Chip key={id} active={photoSource === id} onClick={() => setPhotoSource(id)}>{label}</Chip>)}
-          </div>
-          <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>
-            {photoSource === "ai" ? `AI creates a photo for ${template === "clean-pro" ? "the cover" : "every slide"}, following the brand's photo direction (set in Brands).` : photoSource === "same" ? "One photo from your library goes on every slide (pick it below, or the least-used one is chosen)." : "Photos come from your library, least-used first, no repeats."}
-          </div>
-        </div>
-      )}
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10, marginBottom: 12 }}>
-        {pillars.length > 0 && (
-          <div>
-            <label style={lbl}>Pillar</label>
-            <select value={pillar} onChange={(e) => setPillar(e.target.value)} style={inp}>
-              <option value="">Any</option>
-              {pillars.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
-          </div>
-        )}
-        <div>
-          <label style={lbl}>Slides</label>
-          <select value={slideCount} onChange={(e) => setSlideCount(Number(e.target.value))} style={inp}>
-            {[5, 6, 7, 8, 9, 10].map((n) => <option key={n} value={n}>{n}</option>)}
-          </select>
-        </div>
-        <div>
-          <label style={lbl}>Post on</label>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inp} />
-        </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
+        {TEMPLATES.map((t) => <Chip key={t.id} active={template === t.id} onClick={() => setTemplate(t.id)}>{t.label}</Chip>)}
       </div>
+      <div style={{ fontSize: 11, color: C.muted, marginBottom: 16 }}>{TEMPLATES.find((t) => t.id === template)?.desc}</div>
 
-      {media.length > 0 && photoSource !== "ai" && (
-        <div style={{ marginBottom: 12 }}>
-          <label style={lbl}>{photoSource === "same" ? "Photo for this set" : "Cover photo"} <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(optional — least used first)</span></label>
-          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
-            {[...media].sort((a, b) => (a.use_count || 0) - (b.use_count || 0)).map((m) => (
-              <div key={m.id} onClick={() => setMediaId(mediaId === m.id ? null : m.id)} style={{ flexShrink: 0, width: 72, height: 72, borderRadius: 8, overflow: "hidden", border: `2px solid ${mediaId === m.id ? C.gold : C.border}`, cursor: "pointer", position: "relative" }}>
-                <img src={m.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                <span style={{ position: "absolute", bottom: 2, right: 4, fontSize: 9, fontWeight: 700, color: "#fff", textShadow: "0 1px 3px #000" }}>{m.use_count || 0}×</span>
+      <button type="button" onClick={() => setAdvanced((a) => !a)} style={{ background: "none", border: "none", color: C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, marginBottom: advanced ? 12 : 16, display: "flex", alignItems: "center", gap: 4 }}>
+        {advanced ? "▾" : "▸"} Customize {photoSource !== defaultPhotoSource(template) || pillar || slideCount !== 7 || mediaId ? "(changed)" : "(photos, pillar, slide count, date, cover)"}
+      </button>
+
+      {advanced && (
+        <div style={{ background: C.bg, borderRadius: 10, padding: 14, marginBottom: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+          {template !== "bold" && (
+            <div>
+              <label style={lbl}>Photos</label>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {PHOTO_SOURCES.filter(([id]) => id !== "ai" || templateAllowsAiImage(template)).map(([id, label]) => <Chip key={id} active={photoSource === id} onClick={() => setPhotoSource(id)}>{label}</Chip>)}
               </div>
-            ))}
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>
+                {photoSource === "ai" ? `AI creates a photo for ${template === "clean-pro" ? "the cover" : "every slide"}, following the brand's photo direction (set in Brands).` : photoSource === "same" ? "One photo from your library goes on every slide (pick it below, or the least-used one is chosen)." : "Photos come from your library, least-used first, no repeats."}
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
+            {pillars.length > 0 && (
+              <div>
+                <label style={lbl}>Pillar</label>
+                <select value={pillar} onChange={(e) => setPillar(e.target.value)} style={inp}>
+                  <option value="">Any</option>
+                  {pillars.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+            )}
+            <div>
+              <label style={lbl}>Slides</label>
+              <select value={slideCount} onChange={(e) => setSlideCount(Number(e.target.value))} style={inp}>
+                {[5, 6, 7, 8, 9, 10].map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Post on</label>
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inp} />
+            </div>
           </div>
+
+          {media.length > 0 && photoSource !== "ai" && (
+            <div>
+              <label style={lbl}>{photoSource === "same" ? "Photo for this set" : "Cover photo"} <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(optional — least used first)</span></label>
+              <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
+                {[...media].sort((a, b) => (a.use_count || 0) - (b.use_count || 0)).map((m) => (
+                  <div key={m.id} onClick={() => setMediaId(mediaId === m.id ? null : m.id)} style={{ flexShrink: 0, width: 72, height: 72, borderRadius: 8, overflow: "hidden", border: `2px solid ${mediaId === m.id ? C.gold : C.border}`, cursor: "pointer", position: "relative" }}>
+                    <img src={m.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <span style={{ position: "absolute", bottom: 2, right: 4, fontSize: 9, fontWeight: 700, color: "#fff", textShadow: "0 1px 3px #000" }}>{m.use_count || 0}×</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {photoSource !== "ai" && template !== "bold" && media.length === 0 && <div style={{ fontSize: 12, color: C.danger }}>This brand has no photos yet — upload some in the Brands tab{templateAllowsAiImage(template) ? ", or switch Photos to AI" : ""}.</div>}
         </div>
       )}
 
-      {photoSource !== "ai" && template !== "bold" && media.length === 0 && <div style={{ fontSize: 12, color: C.danger, marginBottom: 10 }}>This brand has no photos yet — upload some in the Brands tab{templateAllowsAiImage(template) ? ", or switch Photos to AI" : ""}.</div>}
       {err && <div style={{ color: C.danger, fontSize: 12, marginBottom: 10 }}>{err}</div>}
 
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <span style={{ width: 22, height: 22, borderRadius: "50%", background: C.gold, color: "#000", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>3</span>
+        <label style={{ ...lbl, margin: 0 }}>Generate</label>
+      </div>
       <button onClick={generate} disabled={!!phase || !idea.trim()} style={btn("primary", { width: "100%", padding: 12, fontSize: 14, opacity: !idea.trim() ? 0.5 : 1 })}>
         {phase === "writing" ? <><Spinner /> Writing slides + captions…</> : phase === "photo" ? <><Spinner /> Creating AI photos… {progress}</> : phase === "rendering" ? <><Spinner /> Rendering slide images…</> : "Generate carousel + captions"}
       </button>
