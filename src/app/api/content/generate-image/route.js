@@ -10,7 +10,9 @@ export const dynamic = "force-dynamic";
 // fallback if it errors or refuses. Override the first with FAL_IMAGE_MODEL.
 const MODELS = [
   { id: "fal-ai/nano-banana-pro", body: (prompt, negative) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) },
-  { id: "fal-ai/flux-pro/v1.1-ultra", body: (prompt, negative) => ({ prompt, aspect_ratio: "4:5", num_images: 1, output_format: "jpeg", enable_safety_checker: true, safety_tolerance: "5", raw: true, ...(negative ? { negative_prompt: negative } : {}) }) },
+  // safety_tolerance is FLUX's own 1 (strictest) to 6 (most permissive) scale.
+  // Keep this at the strict end — this brand's photos must never be explicit.
+  { id: "fal-ai/flux-pro/v1.1-ultra", body: (prompt, negative) => ({ prompt, aspect_ratio: "4:5", num_images: 1, output_format: "jpeg", enable_safety_checker: true, safety_tolerance: "2", raw: true, ...(negative ? { negative_prompt: negative } : {}) }) },
 ];
 
 async function generateWith(model, prompt, negative) {
