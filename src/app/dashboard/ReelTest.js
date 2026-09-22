@@ -29,7 +29,7 @@ export function ReelTest({ api }) {
         One-off test of the open-source video + voice stack (LTX-2 for the visual, Kokoro for the voiceover) on a sample health/food clip — no pipeline, no stitching, just the raw output so you can judge quality before anything real gets built on it. Costs a few cents to run.
       </div>
       <button onClick={run} disabled={state === "busy"} style={btn("primary", { width: "100%", padding: 12, opacity: state === "busy" ? 0.6 : 1 })}>
-        {state === "busy" ? "Generating… (30-60s)" : "Generate test clip"}
+        {state === "busy" ? "Generating… (can take up to ~2 min)" : "Generate test clip"}
       </button>
       {err && <div style={{ color: C.danger, fontSize: 12, marginTop: 10 }}>{err}</div>}
       {result?.video && typeof result.video === "string" && (
