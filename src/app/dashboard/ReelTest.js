@@ -10,8 +10,16 @@ import { C, btn } from "./ui";
 // Video generation is polled from here (the browser) rather than the
 // server holding one request open for it — a serverless function sitting
 // on a single connection for 30-90s can get killed by the platform
-// mid-request, which just shows up as a bare "Failed to fetch" with no
+// mid-request, which just shows up as a bare "Failed to fetch"/504 with no
 // useful detail. Short, repeated status checks avoid that entirely.
+//
+// A candidate model can fail two ways: the submit call itself can error
+// (the server already falls back to the next candidate for that), or the
+// job gets accepted fine and then dies during actual processing — only
+// visible once polling reports status ERROR. This loop handles the second
+// case itself, by asking the server for the next untried model each time.
+const MAX_MODEL_ATTEMPTS = 3;
+
 export function ReelTest({ api }) {
   const [state, setState] = useState("idle"); // idle | busy | polling | done
   const [video, setVideo] = useState(null);
@@ -19,8 +27,20 @@ export function ReelTest({ api }) {
   const [model, setModel] = useState(null);
   const [err, setErr] = useState("");
 
+  const pollOne = async (statusUrl, responseUrl, timeoutMs = 120000) => {
+    const started = Date.now();
+    while (Date.now() - started < timeoutMs) {
+      await new Promise((r) => setTimeout(r, 3000));
+      const check = await api.post("/api/dev/test-reel/status", { statusUrl, responseUrl });
+      if (check.status === "COMPLETED") return { ok: true, video: check.video };
+      if (check.status === "ERROR") return { ok: false, error: check.error };
+    }
+    return { ok: false, error: "timed out waiting for it to finish" };
+  };
+
   const run = async () => {
     setState("busy"); setErr(""); setVideo(null); setAudio(null); setModel(null);
+
     let submitted;
     try {
       submitted = await api.post("/api/dev/test-reel", {});
@@ -28,35 +48,46 @@ export function ReelTest({ api }) {
       setErr(e.message); setState("done"); return;
     }
     if (submitted.audio && typeof submitted.audio === "string") setAudio(submitted.audio);
-    if (submitted.model) setModel(submitted.model);
     const errors = [...(submitted.errors || [])];
 
-    if (submitted.statusUrl && submitted.responseUrl) {
+    const triedModels = [];
+    let statusUrl = submitted.statusUrl, responseUrl = submitted.responseUrl, currentModel = submitted.model;
+    let gotVideo = false;
+
+    for (let attempt = 0; attempt < MAX_MODEL_ATTEMPTS && statusUrl && responseUrl; attempt++) {
+      triedModels.push(currentModel);
+      setModel(currentModel);
       setState("polling");
-      const started = Date.now();
-      const timeoutMs = 120000;
-      while (Date.now() - started < timeoutMs) {
-        await new Promise((r) => setTimeout(r, 3000));
-        let check;
-        try {
-          check = await api.post("/api/dev/test-reel/status", { statusUrl: submitted.statusUrl, responseUrl: submitted.responseUrl });
-        } catch (e) {
-          errors.push("video: " + e.message);
-          break;
-        }
-        if (check.status === "COMPLETED") {
-          if (typeof check.video === "string") setVideo(check.video);
-          else errors.push("video: unexpected response shape — " + JSON.stringify(check.video).slice(0, 200));
-          break;
-        }
-        if (check.status === "ERROR") { errors.push("video: " + check.error); break; }
-        // still IN_QUEUE / IN_PROGRESS — keep polling
-        if (Date.now() - started >= timeoutMs) errors.push("video: timed out waiting for it to finish");
+      let result;
+      try {
+        result = await pollOne(statusUrl, responseUrl);
+      } catch (e) {
+        result = { ok: false, error: e.message };
       }
-    } else {
-      errors.push(...(submitted.errors || []).filter((e) => e.startsWith("video")));
+      if (result.ok && typeof result.video === "string") {
+        setVideo(result.video);
+        gotVideo = true;
+        break;
+      }
+      errors.push(`video (${currentModel}): ${result.error || "unexpected response"}`);
+
+      // That model's job died mid-processing — ask the server for the next
+      // untried candidate rather than giving up on the first failure.
+      let next;
+      try {
+        next = await api.post("/api/dev/test-reel", { skipModels: triedModels });
+      } catch (e) {
+        errors.push("video: " + e.message);
+        break;
+      }
+      if (!next.statusUrl || !next.responseUrl) {
+        errors.push(...(next.errors || []));
+        break;
+      }
+      statusUrl = next.statusUrl; responseUrl = next.responseUrl; currentModel = next.model;
     }
 
+    if (!gotVideo && errors.every((e) => !e.startsWith("video"))) errors.push("video: no candidate models available");
     if (errors.length) setErr(errors.join(" | "));
     setState("done");
   };
@@ -69,7 +100,7 @@ export function ReelTest({ api }) {
         One-off test of the open-source video + voice stack (LTX-2 for the visual, Kokoro for the voiceover) on a sample health/food clip — no pipeline, no stitching, just the raw output so you can judge quality before anything real gets built on it. Costs a few cents to run.
       </div>
       <button onClick={run} disabled={busy} style={btn("primary", { width: "100%", padding: 12, opacity: busy ? 0.6 : 1 })}>
-        {state === "busy" ? "Starting…" : state === "polling" ? "Generating video… (can take up to ~2 min)" : "Generate test clip"}
+        {state === "busy" ? "Starting…" : state === "polling" ? `Generating video (${model})… up to ~2 min` : "Generate test clip"}
       </button>
       {err && <div style={{ color: C.danger, fontSize: 12, marginTop: 10 }}>{err}</div>}
       {audio && (
