@@ -12,13 +12,17 @@ export function SlideStrip({ item, size = 96 }) {
 
   const downloadAll = async () => {
     setSavingAll(true);
-    try {
-      for (let i = 0; i < urls.length; i++) {
+    const failed = [];
+    for (let i = 0; i < urls.length; i++) {
+      try {
         await downloadFile(urls[i], `${(item.idea || "slide").slice(0, 40).replace(/[^a-z0-9]+/gi, "-")}-${String(i + 1).padStart(2, "0")}.png`);
-        // A short gap so the browser doesn't block a burst of downloads as a popup flood.
-        if (i < urls.length - 1) await new Promise((r) => setTimeout(r, 350));
+      } catch (e) {
+        failed.push(`#${i + 1} (${e.message})`);
       }
-    } catch (e) { alert("Some slides didn't download: " + e.message); }
+      // A short gap so the browser doesn't block a burst of downloads as a popup flood.
+      if (i < urls.length - 1) await new Promise((r) => setTimeout(r, 350));
+    }
+    if (failed.length) alert(`${failed.length} slide${failed.length === 1 ? "" : "s"} didn't download: ${failed.join(", ")}`);
     setSavingAll(false);
   };
 
