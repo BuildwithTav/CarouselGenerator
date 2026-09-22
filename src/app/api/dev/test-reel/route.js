@@ -1,6 +1,6 @@
 import { dashboardAuthorized, unauthorized } from "@/lib/dashboard";
 
-export const maxDuration = 30;
+export const maxDuration = 45;
 export const dynamic = "force-dynamic";
 
 // Throwaway test route — proves out the open-source video + voice stack
@@ -11,13 +11,31 @@ export const dynamic = "force-dynamic";
 // Video generation is submitted here and polled from the browser (see
 // status/route.js) rather than held open on this connection — a serverless
 // function holding one request open for the 30-90s video generation can
-// take can get killed by the platform mid-request, which the browser just
-// sees as a bare "Failed to fetch" with no useful error.
+// get killed by the platform mid-request, which the browser just sees as
+// a bare "Failed to fetch" with no useful error.
+//
+// Every fal call below has an explicit timeout. Without one, a fal request
+// that hangs (rather than erroring) holds this function open until the
+// platform itself kills it — which surfaces to the browser as a bare 504
+// with zero detail, the same dead end as the "Failed to fetch" case.
 
 const FAL_HEADERS = { Authorization: `Key ${process.env.FAL_API_KEY}`, "Content-Type": "application/json" };
 
-async function callFalSync(model, body) {
-  const res = await fetch(`https://fal.run/${model}`, { method: "POST", headers: FAL_HEADERS, body: JSON.stringify(body) });
+async function fetchWithTimeout(url, opts, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { ...opts, signal: controller.signal });
+  } catch (e) {
+    if (e.name === "AbortError") throw new Error(`timed out after ${ms / 1000}s`);
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function callFalSync(model, body, timeoutMs = 15000) {
+  const res = await fetchWithTimeout(`https://fal.run/${model}`, { method: "POST", headers: FAL_HEADERS, body: JSON.stringify(body) }, timeoutMs);
   const text = await res.text();
   let out;
   try { out = JSON.parse(text); } catch { out = { raw: text }; }
@@ -41,7 +59,7 @@ async function submitVideo(prompt) {
   const failures = [];
   for (const model of VIDEO_MODELS) {
     try {
-      const submitRes = await fetch(`https://queue.fal.run/${model.id}`, { method: "POST", headers: FAL_HEADERS, body: JSON.stringify(model.body(prompt)) });
+      const submitRes = await fetchWithTimeout(`https://queue.fal.run/${model.id}`, { method: "POST", headers: FAL_HEADERS, body: JSON.stringify(model.body(prompt)) }, 15000);
       const submitText = await submitRes.text();
       let submitOut;
       try { submitOut = JSON.parse(submitText); } catch { submitOut = { raw: submitText }; }
