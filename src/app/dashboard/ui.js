@@ -100,18 +100,33 @@ export async function copyText(text) {
 // dashboard), so a plain <a download> link just opens the image instead of
 // saving it. Fetching the bytes ourselves and downloading via a local blob
 // URL works regardless of origin.
+//
+// A slide downloaded right after rendering can briefly 404/403 — it was
+// just uploaded to Storage and hasn't finished propagating through the CDN
+// edge yet. This shows up specifically on the last slides in a batch, since
+// they're the most recently uploaded and have had the least time to settle.
+// A short retry absorbs that instead of failing outright.
 export async function downloadFile(url, filename) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Download failed");
-  const blob = await res.blob();
-  const objectUrl = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = objectUrl;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(objectUrl), 4000);
+  if (!url) throw new Error("no URL");
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 500 * attempt));
+    try {
+      const res = await fetch(url);
+      if (!res.ok) { lastErr = new Error(`Download failed (${res.status})`); continue; }
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 4000);
+      return;
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error("Download failed");
 }
 
 export function DownloadButton({ url, filename, label = "Download", kind = "small", style }) {

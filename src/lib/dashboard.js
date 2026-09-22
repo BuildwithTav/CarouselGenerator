@@ -20,7 +20,7 @@ export async function signPaths(paths) {
   return (data || []).map((d) => d.signedUrl || null);
 }
 
-export const PLATFORMS = ["instagram", "tiktok", "youtube"];
+export const PLATFORMS = ["instagram", "tiktok", "youtube", "twitter"];
 
 export function brandPlatforms(brand) {
   const p = brand?.visual_theme?.platforms;

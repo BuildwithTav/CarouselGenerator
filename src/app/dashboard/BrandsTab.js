@@ -5,7 +5,7 @@ import { C, inp, lbl, card, btn, Toggle, Chip, fmtSize } from "./ui";
 import { TEMPLATES, TEMPLATE_FONTS, CTA_TYPES, THEME_DEFAULTS, themeOf, ctaCopy, previewSlides } from "@/lib/brandTemplate";
 
 const FONTS = ["Montserrat", "Inter", "Poppins", "Playfair Display", "Oswald", "Bebas Neue", "Cormorant Garamond"];
-const PLATFORMS = [["instagram", "Instagram"], ["tiktok", "TikTok"], ["youtube", "YouTube"]];
+const PLATFORMS = [["instagram", "Instagram"], ["tiktok", "TikTok"], ["youtube", "YouTube"], ["twitter", "X (Twitter)"]];
 
 function useGoogleFont(font) {
   useEffect(() => {

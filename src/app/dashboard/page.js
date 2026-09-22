@@ -5,6 +5,7 @@ import { C, FONT, inp, btn, Chip, createApi, GLOBAL_CSS } from "./ui";
 import { TodayTab } from "./TodayTab";
 import { ContentTab } from "./ContentTab";
 import { BrandsTab } from "./BrandsTab";
+import { ReelTest } from "./ReelTest";
 
 function PassGate({ onUnlock }) {
   const [pass, setPass] = useState("");
@@ -39,7 +40,7 @@ function PassGate({ onUnlock }) {
   );
 }
 
-const TABS = [["today", "Today"], ["content", "Content"], ["brands", "Brands"]];
+const TABS = [["today", "Today"], ["content", "Content"], ["brands", "Brands"], ["reeltest", "Reel Test"]];
 
 function Dashboard({ dashKey, onLock }) {
   const [api] = useState(() => createApi(dashKey, onLock));
@@ -89,6 +90,7 @@ function Dashboard({ dashKey, onLock }) {
         <div style={{ display: tab === "today" ? "block" : "none" }}><TodayTab api={api} active={tab === "today"} onOpenItem={openItem} /></div>
         <div style={{ display: tab === "content" ? "block" : "none" }}><ContentTab api={api} brands={brands} activeId={activeId} setActiveId={setActiveId} openItemId={openItemId} setOpenItemId={setOpenItemId} /></div>
         <div style={{ display: tab === "brands" ? "block" : "none" }}><BrandsTab api={api} brands={brands} activeId={activeId} setActiveId={setActiveId} onBrandsChange={setBrands} /></div>
+        <div style={{ display: tab === "reeltest" ? "block" : "none" }}><ReelTest api={api} /></div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { dashboardAuthorized, unauthorized, supabaseAdmin, attachSlideUrlsMany, brandPlatforms, postedColumn } from "@/lib/dashboard";
+import { dashboardAuthorized, unauthorized, supabaseAdmin, attachSlideUrlsMany, brandPlatforms, postedColumn, PLATFORMS } from "@/lib/dashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -10,8 +10,8 @@ export async function GET(req) {
   const [{ data: brands, error: bErr }, { data: due, error: dErr }, { data: postedToday }] = await Promise.all([
     supabase.from("brands").select("id, name, daily_target, visual_theme").order("created_at"),
     supabase.from("content_items").select("*, brands(name, visual_theme)").eq("status", "ready").lte("scheduled_for", today).order("scheduled_for").order("created_at"),
-    supabase.from("content_items").select("brand_id, posted_instagram_at, posted_tiktok_at, posted_youtube_at")
-      .or(`posted_instagram_at.gte.${today},posted_tiktok_at.gte.${today},posted_youtube_at.gte.${today}`),
+    supabase.from("content_items").select(["brand_id", ...PLATFORMS.map(postedColumn)].join(", "))
+      .or(PLATFORMS.map((p) => `${postedColumn(p)}.gte.${today}`).join(",")),
   ]);
   if (bErr) return Response.json({ error: bErr.message }, { status: 500 });
   if (dErr) return Response.json({ error: dErr.message }, { status: 500 });
@@ -24,7 +24,7 @@ export async function GET(req) {
 
   const counts = {};
   for (const row of postedToday || []) {
-    const n = ["instagram", "tiktok", "youtube"].filter((p) => row[postedColumn(p)] && row[postedColumn(p)] >= today).length;
+    const n = PLATFORMS.filter((p) => row[postedColumn(p)] && row[postedColumn(p)] >= today).length;
     counts[row.brand_id] = (counts[row.brand_id] || 0) + n;
   }
 
