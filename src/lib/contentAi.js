@@ -24,7 +24,8 @@ Formatting rules (non-negotiable):
 const PLATFORM_COPY = `
 Platform copy (each is its own field):
 - "caption": the Instagram caption. Hook line first, then the value, then the call to action, then up to 5 hashtags on the last line.
-- "tt_caption": the TikTok caption. Shorter and punchier than Instagram (under 150 characters before the hashtags), then exactly 5 hashtags on the last line.
+- "tt_caption": the TikTok caption. PG, never sensual or suggestive in the wording — TikTok is stricter and the account has already been warned. Write it like an everyday, wholesome caption about daily life (a moment, a routine, a small observation) that only reads as anything more to people already following for that reason — the hidden meaning is in what's implied, never in the words themselves. Under 150 characters before the hashtags, then exactly 5 hashtags on the last line.
+- "tw_caption": the X (Twitter) caption. A single short, punchy post — under 200 characters including the hashtags, since the hard limit is 280. No thread, one post only. Hashtags inline at the end, not a separate block.
 - "hashtags": the 5 hashtags used, with the # symbol.
 - "yt_title": a YouTube Shorts title under 70 characters.
 - "yt_description": the YouTube description — 2 to 4 short lines, then the hashtags on the last line.
@@ -136,9 +137,20 @@ function normalizeCopy(out) {
     if (hashtags.length && !hashtags.every((h) => t.includes(h))) t = t.replace(/\n?(#[^\n]*)$/m, "").trim() + "\n\n" + hashtags.join(" ");
     return t;
   };
+  // X's hard limit is 280 characters total, hashtags included — unlike the
+  // other captions this one gets truncated to actually fit the platform.
+  const tagStr = hashtags.join(" ");
+  const withTagsClipped = (text, maxLen) => {
+    const body = String(text || "").trim().replace(/\n?(#[^\n]*)$/m, "").trim();
+    const suffix = tagStr ? " " + tagStr : "";
+    const bodyMax = Math.max(0, maxLen - suffix.length);
+    const clippedBody = body.length > bodyMax ? body.slice(0, Math.max(0, bodyMax - 1)).trim() + "…" : body;
+    return (clippedBody + suffix).trim();
+  };
   return {
     caption: withTags(out.caption),
     tt_caption: withTags(out.tt_caption || out.caption),
+    tw_caption: withTagsClipped(out.tw_caption || out.caption, 280),
     yt_description: withTags(out.yt_description || out.caption),
     hashtags,
     yt_title: String(out.yt_title || "").trim().slice(0, 100),
@@ -152,7 +164,7 @@ export async function generatePackage(brand, { idea, pillar, slideCount = 7, tem
   const n = Math.max(2, slideCount - 1); // last slide is the CTA
   const brief = (SLIDE_BRIEF[template] || SLIDE_BRIEF.bold)(n);
   const CTA_BRIEF = ctaBrief(ctaType);
-  const system = `You write complete social content packages (carousel slides + per-platform captions) for a brand. Reply with JSON only: {"slides": [...], "caption": "...", "tt_caption": "...", "hashtags": [...], "yt_title": "...", "yt_description": "...", "yt_tags": [...], "yt_pinned_comment": "...", "yt_category": "..."}\n${HOUSE_RULES}`;
+  const system = `You write complete social content packages (carousel slides + per-platform captions) for a brand. Reply with JSON only: {"slides": [...], "caption": "...", "tt_caption": "...", "tw_caption": "...", "hashtags": [...], "yt_title": "...", "yt_description": "...", "yt_tags": [...], "yt_pinned_comment": "...", "yt_category": "..."}\n${HOUSE_RULES}`;
   const user = `${brandContext(brand)}
 ${pillar ? `Pillar for this piece: ${pillar}\n` : ""}
 Idea: ${idea}
@@ -185,7 +197,7 @@ ${CTA_BRIEF}`;
 }
 
 export async function regenerateCopy(brand, item) {
-  const system = `You write social captions and YouTube metadata for a brand. Reply with JSON only: {"caption": "...", "tt_caption": "...", "hashtags": [...], "yt_title": "...", "yt_description": "...", "yt_tags": [...], "yt_pinned_comment": "...", "yt_category": "..."}\n${HOUSE_RULES}`;
+  const system = `You write social captions and YouTube metadata for a brand. Reply with JSON only: {"caption": "...", "tt_caption": "...", "tw_caption": "...", "hashtags": [...], "yt_title": "...", "yt_description": "...", "yt_tags": [...], "yt_pinned_comment": "...", "yt_category": "..."}\n${HOUSE_RULES}`;
   const slidesText = (item.slides || []).filter((s) => !s.isCta).map((s, i) => `${i + 1}. ${s.rawText || [s.kicker, s.headline, s.subline, s.detail, s.bodyText || s.body, s.accentText].filter(Boolean).join(" — ")}`).join("\n");
   const user = `${brandContext(brand)}
 

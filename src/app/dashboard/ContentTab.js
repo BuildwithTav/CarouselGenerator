@@ -226,7 +226,7 @@ function Editor({ api, itemId, onBack, onChanged }) {
   useEffect(() => { load(); }, [itemId]);
 
   function pick(i) {
-    return { idea: i.idea, scheduled_for: i.scheduled_for, template: itemTemplate(i, i.brands), slides: (i.slides || []).map((s) => ({ ...s })), caption: i.caption || "", tt_caption: i.tt_caption || "", yt_title: i.yt_title || "", yt_description: i.yt_description || "", yt_tags: (i.yt_tags || []).join(", "), yt_pinned_comment: i.yt_pinned_comment || "", yt_category: i.yt_category || "" };
+    return { idea: i.idea, scheduled_for: i.scheduled_for, template: itemTemplate(i, i.brands), slides: (i.slides || []).map((s) => ({ ...s })), caption: i.caption || "", tt_caption: i.tt_caption || "", tw_caption: i.tw_caption || "", yt_title: i.yt_title || "", yt_description: i.yt_description || "", yt_tags: (i.yt_tags || []).join(", "), yt_pinned_comment: i.yt_pinned_comment || "", yt_category: i.yt_category || "" };
   }
   const dirty = item && draft && JSON.stringify(pick(item)) !== JSON.stringify(draft);
 
@@ -237,7 +237,7 @@ function Editor({ api, itemId, onBack, onChanged }) {
   };
 
   const save = () => run("save", () => api.patch("/api/content", {
-    id: item.id, idea: draft.idea, scheduled_for: draft.scheduled_for, template: draft.template, slides: draft.slides, caption: draft.caption, tt_caption: draft.tt_caption,
+    id: item.id, idea: draft.idea, scheduled_for: draft.scheduled_for, template: draft.template, slides: draft.slides, caption: draft.caption, tt_caption: draft.tt_caption, tw_caption: draft.tw_caption,
     yt_title: draft.yt_title, yt_description: draft.yt_description,
     yt_tags: draft.yt_tags.split(",").map((t) => t.trim()).filter(Boolean), yt_pinned_comment: draft.yt_pinned_comment, yt_category: draft.yt_category,
     hashtags: (draft.caption.match(/#[\w\d_]+/g) || []).slice(0, 5),
@@ -400,6 +400,18 @@ function Editor({ api, itemId, onBack, onChanged }) {
               <CopyButton text={draft.tt_caption} label="Copy" kind="small" />
             </div>
             <textarea value={draft.tt_caption} onChange={(e) => setDraft((d) => ({ ...d, tt_caption: e.target.value }))} rows={4} style={{ ...inp, resize: "vertical", lineHeight: 1.6 }} />
+          </div>
+        )}
+        {platforms.includes("twitter") && (
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+              <label style={{ ...lbl, margin: 0 }}>X (Twitter) post</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 11, color: draft.tw_caption.length > 280 ? C.danger : C.muted }}>{draft.tw_caption.length}/280</span>
+                <CopyButton text={draft.tw_caption} label="Copy" kind="small" />
+              </div>
+            </div>
+            <textarea value={draft.tw_caption} onChange={(e) => setDraft((d) => ({ ...d, tw_caption: e.target.value }))} rows={4} style={{ ...inp, resize: "vertical", lineHeight: 1.6 }} />
           </div>
         )}
         {platforms.includes("youtube") && (
