@@ -1,6 +1,6 @@
 import { dashboardAuthorized, unauthorized } from "@/lib/dashboard";
 
-export const maxDuration = 30;
+export const maxDuration = 40;
 export const dynamic = "force-dynamic";
 
 // Throwaway test route — proves out the open-source video + voice stack
@@ -83,31 +83,39 @@ export async function POST(req) {
 
   const out = { audio: null, statusUrl: null, responseUrl: null, model: null, errors: [] };
 
-  try {
-    const submitted = await submitVideo(
-      "Close-up of a wooden bowl being filled with fresh berries, oats, and a drizzle of honey on a rustic kitchen counter, soft morning window light, slow gentle camera pan, no people, no text, no logos, natural food photography",
-      skipModels
-    );
-    out.statusUrl = submitted.statusUrl;
-    out.responseUrl = submitted.responseUrl;
-    out.model = submitted.model;
-  } catch (e) {
-    out.errors.push("video: " + e.message);
-  }
-
+  // Video (up to 2 sequential model attempts, 15s each) and audio (15s) ran
+  // one after another before — worst case 45s against a 30s budget, which
+  // is exactly the kind of thing that gets a function killed mid-request
+  // with no response at all. Running them concurrently caps the worst case
+  // at whichever is slower, not the sum of both.
+  const videoPromise = submitVideo(
+    "Close-up of a wooden bowl being filled with fresh berries, oats, and a drizzle of honey on a rustic kitchen counter, soft morning window light, slow gentle camera pan, no people, no text, no logos, natural food photography",
+    skipModels
+  );
   // Only generate the voiceover on the first call — a retry-with-a-different-
   // model doesn't need it regenerated.
-  if (!isRetry) {
-    try {
-      const audioOut = await callFalSync("fal-ai/kokoro/british-english", {
+  const audioPromise = isRetry
+    ? Promise.resolve(null)
+    : callFalSync("fal-ai/kokoro/british-english", {
         prompt: "Here's a food swap that could change your mornings. Swap your sugary cereal for a bowl of oats, fresh berries, and a little honey.",
         voice: "bf_alice",
         speed: 1.0,
       });
-      out.audio = findUrl(audioOut) || audioOut;
-    } catch (e) {
-      out.errors.push("audio: " + e.message);
-    }
+
+  const [videoResult, audioResult] = await Promise.allSettled([videoPromise, audioPromise]);
+
+  if (videoResult.status === "fulfilled") {
+    out.statusUrl = videoResult.value.statusUrl;
+    out.responseUrl = videoResult.value.responseUrl;
+    out.model = videoResult.value.model;
+  } else {
+    out.errors.push("video: " + videoResult.reason.message);
+  }
+
+  if (audioResult.status === "fulfilled" && audioResult.value) {
+    out.audio = findUrl(audioResult.value) || audioResult.value;
+  } else if (audioResult.status === "rejected") {
+    out.errors.push("audio: " + audioResult.reason.message);
   }
 
   return Response.json(out);
