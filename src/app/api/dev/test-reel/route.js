@@ -1,6 +1,6 @@
 import { dashboardAuthorized, unauthorized } from "@/lib/dashboard";
 
-export const maxDuration = 45;
+export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
 // Throwaway test route — proves out the open-source video + voice stack
@@ -14,10 +14,11 @@ export const dynamic = "force-dynamic";
 // get killed by the platform mid-request, which the browser just sees as
 // a bare "Failed to fetch" with no useful error.
 //
-// Every fal call below has an explicit timeout. Without one, a fal request
-// that hangs (rather than erroring) holds this function open until the
-// platform itself kills it — which surfaces to the browser as a bare 504
-// with zero detail, the same dead end as the "Failed to fetch" case.
+// A model can fail two different ways: the submit call itself can error
+// (caught here), or the job can be accepted fine and then die during
+// actual processing (only visible once the browser polls status). The
+// client handles the second case by calling this route again with
+// `skipModels` set to try the next candidate — see ReelTest.js.
 
 const FAL_HEADERS = { Authorization: `Key ${process.env.FAL_API_KEY}`, "Content-Type": "application/json" };
 
@@ -47,17 +48,16 @@ function findUrl(out) {
   return out?.video?.url || out?.audio?.url || out?.image?.url || out?.url || out?.images?.[0]?.url || null;
 }
 
-// A downstream_service_error at submit time means that specific provider
-// is having a bad day right now, not that our request is wrong — worth
-// falling back to a different model/backend rather than just failing.
-const VIDEO_MODELS = [
+export const VIDEO_MODELS = [
   { id: "fal-ai/ltx-2/text-to-video/fast", body: (prompt) => ({ prompt }) },
   { id: "fal-ai/wan-25-preview/text-to-video", body: (prompt) => ({ prompt, resolution: "1080p", duration: "5" }) },
 ];
 
-async function submitVideo(prompt) {
+async function submitVideo(prompt, skip) {
+  const candidates = VIDEO_MODELS.filter((m) => !skip.includes(m.id));
+  if (!candidates.length) throw new Error("no video models left to try — every candidate has failed");
   const failures = [];
-  for (const model of VIDEO_MODELS) {
+  for (const model of candidates) {
     try {
       const submitRes = await fetchWithTimeout(`https://queue.fal.run/${model.id}`, { method: "POST", headers: FAL_HEADERS, body: JSON.stringify(model.body(prompt)) }, 15000);
       const submitText = await submitRes.text();
@@ -77,11 +77,16 @@ export async function POST(req) {
   if (!dashboardAuthorized(req)) return unauthorized();
   if (!process.env.FAL_API_KEY) return Response.json({ error: "FAL_API_KEY is not set" }, { status: 500 });
 
+  const body = await req.json().catch(() => ({}));
+  const skipModels = Array.isArray(body.skipModels) ? body.skipModels : [];
+  const isRetry = skipModels.length > 0;
+
   const out = { audio: null, statusUrl: null, responseUrl: null, model: null, errors: [] };
 
   try {
     const submitted = await submitVideo(
-      "Close-up of a wooden bowl being filled with fresh berries, oats, and a drizzle of honey on a rustic kitchen counter, soft morning window light, slow gentle camera pan, no people, no text, no logos, natural food photography"
+      "Close-up of a wooden bowl being filled with fresh berries, oats, and a drizzle of honey on a rustic kitchen counter, soft morning window light, slow gentle camera pan, no people, no text, no logos, natural food photography",
+      skipModels
     );
     out.statusUrl = submitted.statusUrl;
     out.responseUrl = submitted.responseUrl;
@@ -90,15 +95,19 @@ export async function POST(req) {
     out.errors.push("video: " + e.message);
   }
 
-  try {
-    const audioOut = await callFalSync("fal-ai/kokoro/british-english", {
-      prompt: "Here's a food swap that could change your mornings. Swap your sugary cereal for a bowl of oats, fresh berries, and a little honey.",
-      voice: "bf_alice",
-      speed: 1.0,
-    });
-    out.audio = findUrl(audioOut) || audioOut;
-  } catch (e) {
-    out.errors.push("audio: " + e.message);
+  // Only generate the voiceover on the first call — a retry-with-a-different-
+  // model doesn't need it regenerated.
+  if (!isRetry) {
+    try {
+      const audioOut = await callFalSync("fal-ai/kokoro/british-english", {
+        prompt: "Here's a food swap that could change your mornings. Swap your sugary cereal for a bowl of oats, fresh berries, and a little honey.",
+        voice: "bf_alice",
+        speed: 1.0,
+      });
+      out.audio = findUrl(audioOut) || audioOut;
+    } catch (e) {
+      out.errors.push("audio: " + e.message);
+    }
   }
 
   return Response.json(out);
