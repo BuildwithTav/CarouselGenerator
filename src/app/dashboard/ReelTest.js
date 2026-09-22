@@ -16,10 +16,11 @@ export function ReelTest({ api }) {
   const [state, setState] = useState("idle"); // idle | busy | polling | done
   const [video, setVideo] = useState(null);
   const [audio, setAudio] = useState(null);
+  const [model, setModel] = useState(null);
   const [err, setErr] = useState("");
 
   const run = async () => {
-    setState("busy"); setErr(""); setVideo(null); setAudio(null);
+    setState("busy"); setErr(""); setVideo(null); setAudio(null); setModel(null);
     let submitted;
     try {
       submitted = await api.post("/api/dev/test-reel", {});
@@ -27,6 +28,7 @@ export function ReelTest({ api }) {
       setErr(e.message); setState("done"); return;
     }
     if (submitted.audio && typeof submitted.audio === "string") setAudio(submitted.audio);
+    if (submitted.model) setModel(submitted.model);
     const errors = [...(submitted.errors || [])];
 
     if (submitted.statusUrl && submitted.responseUrl) {
@@ -78,7 +80,7 @@ export function ReelTest({ api }) {
       )}
       {video && (
         <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 6 }}>VIDEO</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 6 }}>VIDEO{model ? ` — ${model}` : ""}</div>
           <video src={video} controls style={{ width: "100%", borderRadius: 10, background: "#000" }} />
         </div>
       )}
