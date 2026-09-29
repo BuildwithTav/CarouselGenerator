@@ -44,12 +44,17 @@ const MORNING_RESET = "a bright home kitchen with light wood countertops, a larg
 const PROMPT = `${PERSON}, standing in ${MORNING_RESET}, slowly pouring hot coffee from a moka pot into a plain white mug, soft steam rising, unhurried natural movement, realistic photographic look, shallow depth of field, static or gentle handheld camera, no text, no logos, no other people, no dialogue`;
 
 // Veo first — quality is the priority now that the budget supports it at
-// this length. LTX-2/Wan stay as cheaper fallbacks if Veo's endpoint has
-// trouble, same resilience pattern as before.
+// this length. Wan stays as a fallback if Veo's endpoint has trouble.
+// LTX-2 fast is NOT in this list on purpose: its API rejects anything but
+// 16:9 (confirmed against fal's own schema, not a guess) — it can never
+// produce a usable vertical Reel, so it's not a fallback worth having here.
+//
+// Every field below is checked against fal's published schema for each
+// model, not guessed: Veo's duration is a string enum ('4s'/'6s'/'8s', no
+// 7s), Wan's is a plain number (5 or 10s).
 export const VIDEO_MODELS = [
-  { id: "fal-ai/veo3.1", body: (prompt) => ({ prompt, aspect_ratio: "9:16", duration: 7, generate_audio: false }) },
-  { id: "fal-ai/ltx-2/text-to-video/fast", body: (prompt) => ({ prompt, aspect_ratio: "9:16", duration: 7 }) },
-  { id: "fal-ai/wan-25-preview/text-to-video", body: (prompt) => ({ prompt, resolution: "1080p", duration: "5", aspect_ratio: "9:16" }) },
+  { id: "fal-ai/veo3.1", body: (prompt) => ({ prompt, aspect_ratio: "9:16", duration: "8s", generate_audio: false }) },
+  { id: "fal-ai/wan-25-preview/text-to-video", body: (prompt) => ({ prompt, resolution: "1080p", duration: 5, aspect_ratio: "9:16" }) },
 ];
 
 async function submitVideo(prompt, skip) {
