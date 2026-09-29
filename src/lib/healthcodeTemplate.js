@@ -76,7 +76,7 @@ export function buildHealthcodeCtaHTML(opts, ctaType, keyword, line1, line3, ima
     <div class="txt" style="font-family:Poppins,sans-serif;font-size:19px;font-weight:400;max-width:640px;margin:0 auto;">${esc(line3)}</div>
   </div>`;
   return `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${GFONTS}">${baseCss()}
-  <style>.wash-cta{background:radial-gradient(ellipse 340px 250px at 50% 50%,rgba(6,28,27,0.92) 0%,rgba(6,28,27,0.5) 35%,rgba(7,35,34,0.08) 55%,rgba(7,35,34,0) 65%);}</style>
+  <style>.wash-cta{background:radial-gradient(ellipse 650px 480px at 50% 50%,rgba(6,28,27,0.92) 0%,rgba(6,28,27,0.5) 35%,rgba(7,35,34,0.08) 55%,rgba(7,35,34,0) 65%);}</style>
   </head>
   <body style="margin:0;">
   <div style="position:relative;width:${W}px;height:${H}px;background:#0a0a0a;overflow:hidden;">
