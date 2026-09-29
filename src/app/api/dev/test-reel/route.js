@@ -3,22 +3,22 @@ import { dashboardAuthorized, unauthorized } from "@/lib/dashboard";
 export const maxDuration = 40;
 export const dynamic = "force-dynamic";
 
-// Throwaway test route — proves out the open-source video + voice stack
-// (LTX-2/Wan for visuals, Kokoro for voiceover, both via fal.ai) on one
-// short, cheap sample before any real pipeline gets built around them.
-// Delete this once the real Reels feature exists.
+// Throwaway test route — proves out a realistic-human, no-voiceover Reel
+// (music/overlay added afterward by hand) on one short, cheap sample before
+// any real pipeline gets built around it. Delete this once the real Reels
+// feature exists.
 //
 // Video generation is submitted here and polled from the browser (see
 // status/route.js) rather than held open on this connection — a serverless
-// function holding one request open for the 30-90s video generation can
-// get killed by the platform mid-request, which the browser just sees as
-// a bare "Failed to fetch" with no useful error.
+// function holding one request open for a 30-90s video generation can get
+// killed by the platform mid-request, which the browser just sees as a bare
+// "Failed to fetch" with no useful error.
 //
 // A model can fail two different ways: the submit call itself can error
-// (caught here), or the job can be accepted fine and then die during
-// actual processing (only visible once the browser polls status). The
-// client handles the second case by calling this route again with
-// `skipModels` set to try the next candidate — see ReelTest.js.
+// (caught here), or the job can be accepted fine and then die during actual
+// processing (only visible once the browser polls status). The client
+// handles the second case by calling this route again with `skipModels`
+// set to try the next candidate — see ReelTest.js.
 
 const FAL_HEADERS = { Authorization: `Key ${process.env.FAL_API_KEY}`, "Content-Type": "application/json" };
 
@@ -35,22 +35,21 @@ async function fetchWithTimeout(url, opts, ms) {
   }
 }
 
-async function callFalSync(model, body, timeoutMs = 15000) {
-  const res = await fetchWithTimeout(`https://fal.run/${model}`, { method: "POST", headers: FAL_HEADERS, body: JSON.stringify(body) }, timeoutMs);
-  const text = await res.text();
-  let out;
-  try { out = JSON.parse(text); } catch { out = { raw: text }; }
-  if (!res.ok) throw new Error(`${model} ${res.status}: ${text.slice(0, 500)}`);
-  return out;
-}
+// The locked "world" for Healthcode Performance's Reels — one consistent
+// person and a couple of recurring settings, reused word-for-word in every
+// prompt so the series reads as one channel, not random stock clips.
+const PERSON = "a woman in her late 20s, warm light-brown skin, dark hair in a loose low bun, wearing a soft cream knit jumper, natural and relaxed, no visible logos or text, no jewellery";
+const MORNING_RESET = "a bright home kitchen with light wood countertops, a large window letting in soft warm morning sunlight, a couple of green plants, minimal and clean but lived-in, not a sterile studio";
 
-function findUrl(out) {
-  return out?.video?.url || out?.audio?.url || out?.image?.url || out?.url || out?.images?.[0]?.url || null;
-}
+const PROMPT = `${PERSON}, standing in ${MORNING_RESET}, slowly pouring hot coffee from a moka pot into a plain white mug, soft steam rising, unhurried natural movement, realistic photographic look, shallow depth of field, static or gentle handheld camera, no text, no logos, no other people, no dialogue`;
 
+// Veo first — quality is the priority now that the budget supports it at
+// this length. LTX-2/Wan stay as cheaper fallbacks if Veo's endpoint has
+// trouble, same resilience pattern as before.
 export const VIDEO_MODELS = [
-  { id: "fal-ai/ltx-2/text-to-video/fast", body: (prompt) => ({ prompt }) },
-  { id: "fal-ai/wan-25-preview/text-to-video", body: (prompt) => ({ prompt, resolution: "1080p", duration: "5" }) },
+  { id: "fal-ai/veo3.1", body: (prompt) => ({ prompt, aspect_ratio: "9:16", duration: 7, generate_audio: false }) },
+  { id: "fal-ai/ltx-2/text-to-video/fast", body: (prompt) => ({ prompt, aspect_ratio: "9:16", duration: 7 }) },
+  { id: "fal-ai/wan-25-preview/text-to-video", body: (prompt) => ({ prompt, resolution: "1080p", duration: "5", aspect_ratio: "9:16" }) },
 ];
 
 async function submitVideo(prompt, skip) {
@@ -79,43 +78,16 @@ export async function POST(req) {
 
   const body = await req.json().catch(() => ({}));
   const skipModels = Array.isArray(body.skipModels) ? body.skipModels : [];
-  const isRetry = skipModels.length > 0;
 
-  const out = { audio: null, statusUrl: null, responseUrl: null, model: null, errors: [] };
+  const out = { statusUrl: null, responseUrl: null, model: null, errors: [] };
 
-  // Video (up to 2 sequential model attempts, 15s each) and audio (15s) ran
-  // one after another before — worst case 45s against a 30s budget, which
-  // is exactly the kind of thing that gets a function killed mid-request
-  // with no response at all. Running them concurrently caps the worst case
-  // at whichever is slower, not the sum of both.
-  const videoPromise = submitVideo(
-    "Close-up of a wooden bowl being filled with fresh berries, oats, and a drizzle of honey on a rustic kitchen counter, soft morning window light, slow gentle camera pan, no people, no text, no logos, natural food photography",
-    skipModels
-  );
-  // Only generate the voiceover on the first call — a retry-with-a-different-
-  // model doesn't need it regenerated.
-  const audioPromise = isRetry
-    ? Promise.resolve(null)
-    : callFalSync("fal-ai/kokoro/british-english", {
-        prompt: "Here's a food swap that could change your mornings. Swap your sugary cereal for a bowl of oats, fresh berries, and a little honey.",
-        voice: "bf_alice",
-        speed: 1.0,
-      });
-
-  const [videoResult, audioResult] = await Promise.allSettled([videoPromise, audioPromise]);
-
-  if (videoResult.status === "fulfilled") {
-    out.statusUrl = videoResult.value.statusUrl;
-    out.responseUrl = videoResult.value.responseUrl;
-    out.model = videoResult.value.model;
-  } else {
-    out.errors.push("video: " + videoResult.reason.message);
-  }
-
-  if (audioResult.status === "fulfilled" && audioResult.value) {
-    out.audio = findUrl(audioResult.value) || audioResult.value;
-  } else if (audioResult.status === "rejected") {
-    out.errors.push("audio: " + audioResult.reason.message);
+  try {
+    const submitted = await submitVideo(PROMPT, skipModels);
+    out.statusUrl = submitted.statusUrl;
+    out.responseUrl = submitted.responseUrl;
+    out.model = submitted.model;
+  } catch (e) {
+    out.errors.push("video: " + e.message);
   }
 
   return Response.json(out);

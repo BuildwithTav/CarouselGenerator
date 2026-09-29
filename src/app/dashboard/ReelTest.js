@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { C, btn } from "./ui";
 
-// Throwaway panel to test the open-source video + voice stack (LTX-2 +
-// Kokoro, both via fal.ai) on one cheap sample before building the real
-// Reels pipeline. Delete this tab once that decision is made either way.
+// Throwaway panel to test a realistic-human, no-voiceover Reel (music and
+// overlay text get added afterward by hand) on one cheap sample before
+// building the real Reels pipeline. Delete this tab once that decision is
+// made either way.
 //
 // Video generation is polled from here (the browser) rather than the
 // server holding one request open for it — a serverless function sitting
@@ -23,7 +24,6 @@ const MAX_MODEL_ATTEMPTS = 3;
 export function ReelTest({ api }) {
   const [state, setState] = useState("idle"); // idle | busy | polling | done
   const [video, setVideo] = useState(null);
-  const [audio, setAudio] = useState(null);
   const [model, setModel] = useState(null);
   const [err, setErr] = useState("");
 
@@ -39,7 +39,7 @@ export function ReelTest({ api }) {
   };
 
   const run = async () => {
-    setState("busy"); setErr(""); setVideo(null); setAudio(null); setModel(null);
+    setState("busy"); setErr(""); setVideo(null); setModel(null);
 
     let submitted;
     try {
@@ -47,7 +47,6 @@ export function ReelTest({ api }) {
     } catch (e) {
       setErr(e.message); setState("done"); return;
     }
-    if (submitted.audio && typeof submitted.audio === "string") setAudio(submitted.audio);
     const errors = [...(submitted.errors || [])];
 
     const triedModels = [];
@@ -97,22 +96,16 @@ export function ReelTest({ api }) {
   return (
     <div style={{ maxWidth: 480, margin: "0 auto" }}>
       <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6, marginBottom: 16 }}>
-        One-off test of the open-source video + voice stack (LTX-2 for the visual, Kokoro for the voiceover) on a sample health/food clip — no pipeline, no stitching, just the raw output so you can judge quality before anything real gets built on it. Costs a few cents to run.
+        One-off test of a realistic person in the locked "Morning Reset" kitchen setting, 7 seconds, vertical, no audio (music and captions go on afterward) — so you can judge realism and the environment before anything real gets built on it. Tries Veo first for quality; falls back to cheaper models only if Veo's own service has trouble. Costs roughly $0.35-0.50 to run.
       </div>
       <button onClick={run} disabled={busy} style={btn("primary", { width: "100%", padding: 12, opacity: busy ? 0.6 : 1 })}>
         {state === "busy" ? "Starting…" : state === "polling" ? `Generating video (${model})… up to ~2 min` : "Generate test clip"}
       </button>
       {err && <div style={{ color: C.danger, fontSize: 12, marginTop: 10 }}>{err}</div>}
-      {audio && (
-        <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 6 }}>VOICEOVER</div>
-          <audio src={audio} controls style={{ width: "100%" }} />
-        </div>
-      )}
       {video && (
         <div style={{ marginTop: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 6 }}>VIDEO{model ? ` — ${model}` : ""}</div>
-          <video src={video} controls style={{ width: "100%", borderRadius: 10, background: "#000" }} />
+          <video src={video} controls style={{ width: "100%", maxWidth: 280, aspectRatio: "9/16", borderRadius: 10, background: "#000", margin: "0 auto", display: "block" }} />
         </div>
       )}
     </div>
