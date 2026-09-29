@@ -1,6 +1,7 @@
 import { buildTmplHTML, buildCtaHTML } from "./carouselTemplates.js";
 import { buildSlideHTML } from "./slideTemplate.js";
 import { buildElegantHTML, buildElegantCtaHTML } from "./elegantTemplate.js";
+import { buildHealthcodeHTML, buildHealthcodeCtaHTML } from "./healthcodeTemplate.js";
 
 export const TEMPLATES = [
   { id: "raw", label: "Raw", desc: "One of your photos across every slide, a line of text in a tight box. Authentic, minimal." },
@@ -8,6 +9,7 @@ export const TEMPLATES = [
   { id: "clean-pro", label: "Clean Pro", desc: "Photo cover with a dark fade, then clean fact or story slides. AI cover by default." },
   { id: "bold", label: "Bold", desc: "Big headline on a solid colour. Text-led, no photos needed." },
   { id: "elegant", label: "Elegant", desc: "Full photo always shown in full, soft vignette, italic headline, quiet seductive flow. AI photos by default." },
+  { id: "healthcode", label: "HealthCode", desc: "Full photo always shown in full, teal branded wash, bold white shadowed headline. AI photos by default." },
 ];
 
 // Where the photos come from when a post is created.
@@ -18,7 +20,7 @@ export const PHOTO_SOURCES = [
 ];
 export function defaultPhotoSource(template) {
   if (template === "raw") return "same";
-  if (template === "dark-fade" || template === "clean-pro" || template === "elegant") return "ai";
+  if (template === "dark-fade" || template === "clean-pro" || template === "elegant" || template === "healthcode") return "ai";
   return "library";
 }
 
@@ -123,6 +125,22 @@ export function buildBrandSlides({ brand, slides, profileUrl, coverImageUrl, cta
       return buildElegantHTML({ ...s, image }, i, total, eOpts);
     });
   }
+  if (tmpl === "healthcode") {
+    const cta = { ...ctaCopy(theme), ...(ctaOverride || {}) };
+    const hOpts = { name: theme.name || brand?.name || "", handle: theme.handle || "", profUrl: profileUrl || "", accent: theme.accent };
+    return slides.map((s, i) => {
+      if (s.isCta) {
+        // No slide of its own carries a photo for the CTA, so it keeps the
+        // last content slide's image rather than showing a blank frame.
+        const line1 = (theme.cta?.line1 || "").trim() || s.line1 || cta.line1;
+        const line3 = (theme.cta?.line3 || "").trim() || s.line3 || cta.line3;
+        const prevImage = slides[i - 1]?.image_url || coverImageUrl || null;
+        return buildHealthcodeCtaHTML(hOpts, cta.type, cta.keyword, line1, line3, prevImage);
+      }
+      const image = s.image_url || (i === 0 ? coverImageUrl : null) || null;
+      return buildHealthcodeHTML({ ...s, image }, i, total, hOpts);
+    });
+  }
   const opts = templateOpts(brand, theme, profileUrl);
   const cta = { ...ctaCopy(theme), ...(ctaOverride || {}) };
   return slides.map((s, i) => {
@@ -145,20 +163,20 @@ export function buildBrandSlides({ brand, slides, profileUrl, coverImageUrl, cta
 // Which slides must carry a photo for the template to render properly.
 export function slideNeedsImage(template, idx, slide) {
   if (slide?.isCta) return false;
-  if (template === "raw" || template === "dark-fade" || template === "elegant") return true;
+  if (template === "raw" || template === "dark-fade" || template === "elegant" || template === "healthcode") return true;
   return template === "clean-pro" && idx === 0;
 }
 
 // Which slides may carry a photo.
 export function slideCanHaveImage(template, idx, slide) {
   if (slide?.isCta) return false;
-  return template === "raw" || template === "dark-fade" || template === "elegant" || idx === 0;
+  return template === "raw" || template === "dark-fade" || template === "elegant" || template === "healthcode" || idx === 0;
 }
 
 // AI photo generation is offered for the photo-led templates that tell a
-// story or carry facts (Classic, Clean Pro, Elegant). Raw is your own photos.
+// story or carry facts (Classic, Clean Pro, Elegant, HealthCode). Raw is your own photos.
 export function templateAllowsAiImage(template) {
-  return template === "clean-pro" || template === "dark-fade" || template === "elegant";
+  return template === "clean-pro" || template === "dark-fade" || template === "elegant" || template === "healthcode";
 }
 
 // The text on a slide, for photo prompts and captions.
@@ -200,7 +218,7 @@ export function remapSlidesForTemplate(slides, toTemplate) {
       ? { ...base, headline: a, subline: b || c }
       : { ...base, headline: a, bodyText: b, accentText: c };
     if (toTemplate === "dark-fade") return { ...base, headline: a, subline: [b, c].filter(Boolean).join(" ") };
-    if (toTemplate === "elegant") return { ...base, headline: a, detail: [b, c].filter(Boolean).join(" ") };
+    if (toTemplate === "elegant" || toTemplate === "healthcode") return { ...base, headline: a, detail: [b, c].filter(Boolean).join(" ") };
     return { ...base, headline: a, body: [b, c].filter(Boolean).join(" ") }; // bold
   });
 }

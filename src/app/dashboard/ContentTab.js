@@ -302,7 +302,7 @@ function Editor({ api, itemId, onBack, onChanged }) {
             </>}
       </>
     );
-    if (template === "elegant") return (
+    if (template === "elegant" || template === "healthcode") return (
       <>
         <input value={s.kicker || ""} onChange={(e) => setSlide(i, "kicker", e.target.value)} placeholder="Kicker (small eyebrow label)" style={{ ...inp, fontSize: 12 }} />
         <input value={s.headline || ""} onChange={(e) => setSlide(i, "headline", e.target.value)} placeholder="Headline" style={{ ...inp, fontWeight: 700 }} />
@@ -371,7 +371,7 @@ function Editor({ api, itemId, onBack, onChanged }) {
               <div style={{ fontSize: 11, fontWeight: 800, color: C.muted, paddingTop: 12 }}>{i + 1}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 {slideFields(s, i)}
-                {template !== "raw" && slideCanHaveImage(template, i, s) && <SlideImage slide={s} idx={i} media={media} busy={busy} onPick={(m) => pickImage(i, m)} onGenerate={aiAllowed ? () => generateImage(i) : null} label={i === 0 ? "Cover photo" : (template === "dark-fade" || template === "elegant") ? "Slide photo" : null} />}
+                {template !== "raw" && slideCanHaveImage(template, i, s) && <SlideImage slide={s} idx={i} media={media} busy={busy} onPick={(m) => pickImage(i, m)} onGenerate={aiAllowed ? () => generateImage(i) : null} label={i === 0 ? "Cover photo" : (template === "dark-fade" || template === "elegant" || template === "healthcode") ? "Slide photo" : null} />}
               </div>
             </div>
           ))}

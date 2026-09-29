@@ -39,7 +39,7 @@ export async function POST(req) {
   const profileUrl = (theme.profile_media_id && urls[theme.profile_media_id]) || null;
   const withImages = slides.map((s) => ({ ...s, image_url: (s.image_media_id && urls[s.image_media_id]) || null }));
 
-  if (template === "raw" || template === "elegant") {
+  if (template === "raw" || template === "elegant" || template === "healthcode") {
     const missing = withImages.filter((s) => !s.isCta && !s.image_url).length;
     if (missing) return Response.json({ error: `This template needs a photo on every slide — ${missing} slide${missing === 1 ? "" : "s"} still ${missing === 1 ? "has" : "have"} none.` }, { status: 400 });
   }

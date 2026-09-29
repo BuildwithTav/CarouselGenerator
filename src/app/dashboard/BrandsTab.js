@@ -144,8 +144,9 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
             {images.length === 0 && <div style={{ fontSize: 11, color: C.muted }}>Upload a photo to the library below to see it in the preview.</div>}
 
             {tmpl === "elegant" && <div style={{ fontSize: 11, color: C.muted }}>Elegant's font and colours are fixed (italic serif headline, gold accent, white text) so it always stays legible over a photo.</div>}
+            {tmpl === "healthcode" && <div style={{ fontSize: 11, color: C.muted }}>HealthCode's font is fixed (Poppins, bold white headline with a heavy shadow) so it always stays legible over a photo — the accent colour below is still yours to set.</div>}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
-              {tmpl !== "elegant" && (
+              {tmpl !== "elegant" && tmpl !== "healthcode" && (
                 <div>
                   <label style={{ ...lbl, marginBottom: 4 }}>Font</label>
                   <select value={theme.tmplFont} onChange={(e) => setT("tmplFont", e.target.value)} style={inp}>
@@ -153,7 +154,7 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
                   </select>
                 </div>
               )}
-              {tmpl !== "elegant" && (
+              {tmpl !== "elegant" && tmpl !== "healthcode" && (
                 <div>
                   <label style={{ ...lbl, marginBottom: 4 }}>Text size {tmpl === "raw" ? "(raw box)" : "(body slides)"}</label>
                   <input type="number" min={28} max={120} value={theme.fontSize} onChange={(e) => setT("fontSize", Number(e.target.value) || 46)} style={inp} />
@@ -180,14 +181,19 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
                 <div><label style={{ ...lbl, marginBottom: 4 }}>Body slides</label><Seg value={theme.tmplBg} options={[["dark", "Dark"], ["white", "White"]]} onChange={(v) => setT("tmplBg", v)} /></div>
               </div>
             )}
-            {(tmpl === "clean-pro" || tmpl === "dark-fade" || tmpl === "elegant") && (
+            {(tmpl === "clean-pro" || tmpl === "dark-fade" || tmpl === "elegant" || tmpl === "healthcode") && (
               <div>
                 <label style={{ ...lbl, marginBottom: 4 }}>AI photo direction <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(followed on every AI photo for this brand)</span></label>
                 <textarea value={theme.ai_style || ""} onChange={(e) => setT("ai_style", e.target.value)} rows={3} placeholder="e.g. One woman's bare feet, size 5, soft natural skin, neat nude or pale pink pedicure, soles-up or side-on, soft bedroom window light, cream sheets, candid phone-photo feel. No faces, no other people, nothing explicit." style={{ ...inp, resize: "vertical", lineHeight: 1.6, fontSize: 13 }} />
               </div>
             )}
 
-            {tmpl !== "elegant" && (
+            {tmpl === "healthcode" && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8 }}>
+                <ColorField label="Accent" value={theme.accent} onChange={(v) => setT("accent", v)} />
+              </div>
+            )}
+            {tmpl !== "elegant" && tmpl !== "healthcode" && (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8 }}>
                 <ColorField label="Accent" value={theme.accent} onChange={(v) => setT("accent", v)} />
                 <ColorField label="Headline colour" value={theme.primary} onChange={(v) => setT("primary", v)} />
@@ -233,7 +239,7 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
                   <label style={{ ...lbl, marginBottom: 4 }}>Big word</label>
                   <input value={theme.cta.keyword} onChange={(e) => setCta("keyword", e.target.value)} placeholder={ctaCopy(theme).keyword} style={inp} />
                 </div>
-                {tmpl !== "elegant" && (
+                {tmpl !== "elegant" && tmpl !== "healthcode" && (
                   <div>
                     <label style={{ ...lbl, marginBottom: 4 }}>Background</label>
                     <Seg value={theme.cta.bg} options={[["dark", "Dark"], ["white", "White"]]} onChange={(v) => setCta("bg", v)} />
