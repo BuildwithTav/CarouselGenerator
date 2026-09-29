@@ -75,14 +75,27 @@ Give me ${count} distinct carousel ideas for this brand, each one line, drawn fr
 // Every template gets a CTA slide last: {"isCta": true, "line1": "...", "line3": "..."}
 // line1 sits above the big keyword, line3 below it.
 
+// Named, proven hook shapes — without these the model defaults to generic
+// "bold claim" phrasing that doesn't actually stop a scroll. Pick whichever
+// fits the idea; don't use the same one every time.
+const HOOK_PATTERNS = `Hook patterns for slide 1 — pick whichever genuinely fits this idea, vary which one gets used across different posts:
+- Curiosity gap: state an outcome without the mechanism ("This one swap fixed my 3pm crash") — the reader has to keep going to find out how.
+- Contrarian claim: challenge something the reader currently believes is true or healthy ("Your 'healthy' breakfast is a sugar bomb").
+- Credibility borrow: reference a real kind of expert, professional, or finding without inventing a fake specific study or name ("A cardiologist told me to stop doing this").
+- Specific number: a precise, surprising number beats a vague one ("3 grams a day" beats "a little of this").
+- Personal stakes: a real consequence, not just a tip ("This is what stopped my dad's blood pressure meds").
+Never open with a question, a greeting, or "Did you know" — those are the generic default and they don't stop a scroll.`;
+
 // The psychology every carousel follows, whatever the template. Slide 1 and
 // slide 2 are both hooks — most scroll-away happens right after slide 1, so
 // slide 2 has to earn the next swipe on its own, not just explain slide 1.
 const CAROUSEL_PSYCHOLOGY = (n) => `Carousel psychology — follow this shape across the ${n} content slides, whatever their exact wording:
 1. Slide 1, the hook: a pattern interrupt — a bold claim, a surprising number, or a curiosity gap the headline alone can't answer. No setup, no context. It has to stop a thumb mid-scroll in under a second.
+${HOOK_PATTERNS}
 2. Slide 2, the second hook: most people who stop on slide 1 still leave before slide 3 — this slide's only job is to earn the next swipe, not to explain slide 1. Open a second, sharper loop: a reason, a stake, a "here's the thing" turn, or a tease of what's coming. Never a recap of slide 1.
 3. Slides 3 to ${n - 1}, the build: one idea per slide — a fact, a step, a moment, a detail — each one raising the stakes or specificity, each one leaving something unresolved the next slide answers.
-4. Slide ${n}, the payoff: the single most concrete, most memorable line in the carousel — the one worth screenshotting. People remember the hook and the payoff most, so it has to land harder than anything before it.`;
+4. Slide ${n}, the payoff: the single most concrete, most memorable line in the carousel — the one worth screenshotting. People remember the hook and the payoff most, so it has to land harder than anything before it.
+Before finalizing, check your own work: would slide 1 alone stop a thumb mid-scroll in under a second, with zero context needed? Does slide 2 open a genuinely different loop rather than restate slide 1 in other words? If either is weak or generic, rewrite it before answering — don't ship the first draft if it reads like an AI's first guess.`;
 
 const ctaBrief = (ctaType = "follow") => `The CTA slide: {"isCta": true, "line1": "...", "line3": "..."}. The slide already shows one big action word ("${ctaType.toUpperCase()}"), so keep it restrained:
 - "line1": max 5 words, a calm lead-in above the action word (e.g. "Want more like this?").
