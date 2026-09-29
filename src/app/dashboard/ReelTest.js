@@ -96,7 +96,7 @@ export function ReelTest({ api }) {
   return (
     <div style={{ maxWidth: 480, margin: "0 auto" }}>
       <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6, marginBottom: 16 }}>
-        One-off test of a realistic person in the locked "Morning Reset" kitchen setting, 7 seconds, vertical, no audio (music and captions go on afterward) — so you can judge realism and the environment before anything real gets built on it. Tries Veo first for quality; falls back to cheaper models only if Veo's own service has trouble. Costs roughly $0.35-0.50 to run.
+        One-off test of a realistic person in the locked "Morning Reset" kitchen setting, 8 seconds, vertical, no audio (music and captions go on afterward) — so you can judge realism and the environment before anything real gets built on it. Tries Veo first for quality; falls back to a cheaper model only if Veo's own service has trouble. Costs roughly $0.40-0.55 to run.
       </div>
       <button onClick={run} disabled={busy} style={btn("primary", { width: "100%", padding: 12, opacity: busy ? 0.6 : 1 })}>
         {state === "busy" ? "Starting…" : state === "polling" ? `Generating video (${model})… up to ~2 min` : "Generate test clip"}
