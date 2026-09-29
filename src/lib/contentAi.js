@@ -125,8 +125,10 @@ Voice: quiet, elegant, seductive, a slow reveal — like a short story, not a tu
 ${CAROUSEL_PSYCHOLOGY(n)}`,
   healthcode: (n) => `"slides": exactly ${n} content slides, then the CTA slide.
 Each slide: {"kicker": "... 2-4 words, all caps eyebrow label naming the specific topic (e.g. FASTING WINDOW, PROTEIN TIMING, KNEE HEALTH)", "headline": "... one short line, max 9 words, the actual claim or fact", "detail": "one full sentence, up to about 20 words — the mechanism, the number, or the reason it's true"}. Every slide sits on its own full-bleed photo.
-Voice: direct, evidence-led, motivational without hype — a coach explaining the real reason behind something, not a wellness influencer. Concrete numbers and mechanisms beat vague encouragement. The topic can be anything in health/fitness/nutrition (fasting, keto, calorie comparisons, training, recovery) — treat each post as its own subject, don't force a single recurring theme.
-${CAROUSEL_PSYCHOLOGY(n)}`,
+This is an informative, advice-style carousel, not a vibes-only tease: hook, hook, then the supporting information that actually delivers on what the hook promised. Pick ONE specific claim for the whole post, name it in slide 1's headline, and make every slide from 2 onward build on that exact same claim: why it's true, what actually matters instead, the concrete number, what to do about it. Never introduce a second, unrelated fact or number that doesn't connect back to slide 1's claim, and never contradict an earlier slide later in the same carousel — a reader should be able to follow one continuous argument from slide 1 to the payoff, not a string of disconnected facts that happen to share a broad topic.
+Voice: direct, evidence-led, motivational without hype — a coach explaining the real reason behind something, not a wellness influencer. Concrete numbers and mechanisms beat vague encouragement. The topic can be anything in health/fitness/nutrition (fasting, keto, calorie comparisons, training, recovery) — treat each post as its own subject, don't force a single recurring theme across different posts.
+${CAROUSEL_PSYCHOLOGY(n)}
+Note: for this advice-style template, slide 2's "second hook" should still be about the exact same claim as slide 1, for example a sharper detail, a stat, or the mechanism behind it, not a new unrelated angle. Staying on one coherent argument matters more than novelty per slide.`,
 };
 
 function normalizeSlides(out, template, n) {

@@ -52,13 +52,18 @@ function NewContent({ api, brand, onCreated }) {
       setPhase("photo");
       const slides = item.slides.map((x) => ({ ...x }));
       const todo = slides.map((x, i) => i).filter((i) => slideCanHaveImage(template, i, slides[i]) && !slides[i].image_media_id);
-      let modelNote = null; // locked after the first photo, reused so every slide shows the same woman
+      // Locked after the first photo and reused so every slide shows the same
+      // recurring person — skipped for HealthCode, whose slides each suit a
+      // different subject (food, an object, a person) rather than one
+      // consistent model appearing throughout the set.
+      const lockModel = template !== "healthcode";
+      let modelNote = null;
       try {
         for (let n = 0; n < todo.length; n++) {
           const i = todo[n];
           setProgress(`${n + 1} of ${todo.length}`);
-          const { media: m, modelNote: mn } = await api.post("/api/content/generate-image", { brandId: brand.id, slideText: slideText(slides[i]), idea: idea.trim(), style: "editorial", textZone: "bottom", modelNote });
-          if (mn) modelNote = mn;
+          const { media: m, modelNote: mn } = await api.post("/api/content/generate-image", { brandId: brand.id, slideText: slideText(slides[i]), idea: idea.trim(), style: "editorial", textZone: "bottom", modelNote: lockModel ? modelNote : null });
+          if (mn && lockModel) modelNote = mn;
           slides[i] = { ...slides[i], image_media_id: m.id, image_path: m.storage_path };
           ({ item } = await api.patch("/api/content", { id: item.id, slides }));
         }
