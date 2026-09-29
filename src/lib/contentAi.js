@@ -230,35 +230,42 @@ ${PLATFORM_COPY}`;
 
 // A short, locked physical description of the one model used across a
 // carousel's AI photos, so every slide shows a consistent person instead of
-// drifting between different feet, skin tones or hands.
+// drifting between different faces, builds or skin tones.
+//
+// This is brand-agnostic on purpose: whether a person appears at all, how
+// much of them is shown, and any anatomy focus (feet, hands, face) all come
+// from the brand's own ai_style direction, never assumed here. Every brand
+// shares this codepath, so nothing brand-specific belongs in the system
+// prompt itself — it goes in that brand's own ai_style field instead.
 export async function lockModelDescription(brand) {
-  const system = `You write a short, consistent model description for a photo series. Reply with JSON only: {"model": "..."}.
-Her face is never shown in these photos, so describe only what's actually visible across the set: hair colour and length, body build (e.g. slim, athletic, curvy) and height impression, skin tone, foot shape and size impression, nail colour and finish, and — since hands may appear touching or massaging the feet in some shots — her hands too: slender, feminine, manicured, no rings or tattoos unless told otherwise. 30-70 words. This description gets reused, word for word, in the prompt for every photo in the series, so be concrete and repeatable, not vague — it's the only thing keeping her looking like the same person from slide to slide.`;
+  const system = `You write a short, consistent physical description of the one person who appears across a photo series, so every photo shows the same person instead of drifting between different faces, builds or skin tones. Reply with JSON only: {"model": "..."}.
+Follow the brand's photo direction below for whether a person appears at all, and if so how much of them is shown (full figure, face included or not, hands only, feet only, etc). Describe only what that direction implies will actually be visible: hair, build, skin tone, and whichever specific features it calls for. 30-70 words. This gets reused word for word in every photo's prompt, so be concrete and repeatable, not vague.
+If the brand's photo direction doesn't call for a person at all (e.g. it's food, product or environment photography), reply with an empty string for "model".`;
   const user = `${brandContext(brand)}
-${brand?.visual_theme?.ai_style ? `Brand photo direction (make this description consistent with it): ${brand.visual_theme.ai_style}\n` : ""}
-Write the one-model description for this photo series.`;
+${brand?.visual_theme?.ai_style ? `Brand photo direction: ${brand.visual_theme.ai_style}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic, and don't invent a recurring person unless the topic clearly calls for one.)\n"}
+Write the one-person description for this photo series, or leave it empty if the direction doesn't call for a person.`;
   const out = await ask(system, user, 500);
   return String(out.model || "").trim();
 }
 
 // Turns a slide's text + brand into a photographer's brief for the image model.
-// `direction` is the brand's own photo direction (subject, look, what to avoid).
+// `direction` is the brand's own photo direction (subject, look, what to avoid)
+// and is the source of truth for what this brand's photos look like — this
+// function stays brand-agnostic and never assumes a subject (person, body
+// part, mood) that isn't in that direction.
 // `modelNote` is a locked description (from lockModelDescription) reused across
 // every photo in the same carousel so the same person appears in every shot.
 export async function imagePrompt(brand, { slideText, idea, style, direction, textZone = "bottom", modelNote }) {
   const system = `You write prompts for a photorealistic image generator. Reply with JSON only: {"prompt": "...", "negative": "..."}.
-Write the prompt as a real photographer's shot brief for a natural, believable photograph — not a render. Include, in this order: the single subject and its exact pose/framing; the setting; the light (soft, warm, intimate — low window light, candlelight, a single warm lamp, golden hour — never flat or studio-bright); camera and lens (e.g. "shot on a Sony A7 IV, 50mm f/1.8, shallow depth of field"); natural skin texture and true-to-life colour; a calm, uncluttered composition with one subject only. 70-120 words. Never include text, logos, watermarks, captions or hands holding signs.
-The mood is sensual and alluring: soft shadows, a slow, intimate feel, confident and inviting posing — think boudoir-style editorial photography, not a clinical product shot. Tasteful, not explicit, always fully clothed above the waist: bare feet and legs only, nothing beyond that. Never nudity, never a bare chest or exposed breasts, never lingerie or underwear shots — she is always wearing a top, dress, shirt or covered in some way from the waist up, whatever the scene calls for.
-The woman's face is never shown — compose every shot so the face is out of frame entirely (cropped above the chin, head turned away, or simply outside the frame), never blurred or obscured while still visible. This keeps her identity consistent across a set of photos that don't share a real face-generation model.
-This brand posts several times a day, so both the setting AND the framing must vary — never default to the same tight close-up in the same bedroom every time. Read what the slide is actually about and place it somewhere that fits: getting ready in front of a mirror, a bath or poolside, curled up on a sofa, fresh out of heels after a night out, bare feet on cool tile or warm sand, a pedicure chair, a car seat, silk sheets, a balcony at dusk — whatever the content calls for. Vary props, light and location; keep only the mood and the anatomy rules constant.
-Vary the shot distance too, across the set of photos this brand posts: some tight macro close-ups on the feet alone, but plenty pulled back further — the legs, the whole lower body, or the person seated or standing in the scene with the feet just part of a bigger, still-sensual picture. Don't make every single photo a foot-only crop; let the distance match the moment.
-The photo must show literally what the slide's text describes happening — if it names an action (pouring, a drop landing, oil spreading, a thumb pressing in), that exact action is the subject of the shot, not just a mood that evokes it.
-Anatomy is the priority whenever the feet are close enough to show detail: exactly five toes on each foot, natural toe lengths, real skin creases and slight asymmetry, correct arches, heels and ankles in proportion. When both feet are in frame they are a true mirrored pair — one left foot and one right foot, anatomically opposite, never two of the same foot repeated. Prefer simple angles that models get right (soles-up from the front, side profile with arched foot, top-down on a sheet, feet crossed at the ankles) over twisted or overlapping poses. One person in frame only, never several.
-If a hand appears in the frame — applying, pouring, massaging, holding, pressing — it is always a woman's hand: slender fingers, feminine manicured nails, smooth skin, no masculine knuckles, wrist or forearm hair. Never a man's hand, arm or any other person in the shot.
-Framing is critical: the whole subject — every toe, the arch, the heel — must sit inside the TOP HALF of the frame. The bottom half is where a dark gradient and headline text get overlaid afterwards, so anything placed there gets visually covered or lost. Compose the shot high in the frame, with open, quiet space (plain sheet, floor, sky — nothing important) filling the bottom half.
-The "negative" field always includes, word for word: "extra toes, missing toes, six toes, fused toes, two left feet, two right feet, mismatched feet, mirrored duplicate foot, extra fingers, missing fingers, deformed feet, deformed hands, mutated anatomy, malformed limbs, extra limbs, blurry, distorted proportions, watermark, text, logo, face, visible face, nudity, topless, nude, exposed breasts, bare chest, nipples, lingerie, underwear, nsfw" — plus anything else specific to this shot worth excluding.`;
+Write the prompt as a real photographer's shot brief for a natural, believable photograph — not a render. Include, in this order: the subject and its exact pose/framing (follow the brand's own photo direction below for who or what appears — a person, food, a product, an environment, hands only, whatever it specifies — never invent a person, or a body-part crop to avoid showing a face, if the direction doesn't call for one); the setting; the light (soft and natural unless the direction says otherwise — window light, golden hour, a single warm lamp — avoid flat studio lighting unless asked for); camera and lens (e.g. "shot on a Sony A7 IV, 50mm f/1.8, shallow depth of field"); natural texture and true-to-life colour; a calm, uncluttered composition with one clear subject. 70-120 words. Never include text, logos, watermarks, captions or hands holding signs.
+The brand's own photo direction below is the source of truth for mood, who or what appears, and any anatomy or framing rules specific to this brand — follow it exactly rather than falling back on a generic default.
+This brand posts often, so vary the setting and framing across a set rather than defaulting to the same shot every time — read what the slide is actually about and place it somewhere that fits.
+The photo must show literally what the slide's text describes happening — if it names a specific action or detail, that's the subject of the shot, not just a mood that evokes it.
+If a person appears and any part of them (hands, feet, face) is close enough to the camera to show real detail, get the anatomy right: correct number of fingers and toes, natural proportions, no fused or extra digits, no mismatched or duplicated limbs.
+Framing: leave the part of the frame where text gets overlaid afterwards (${textZone === "bottom" ? "the bottom of the frame" : textZone === "top" ? "the top of the frame" : "the " + textZone + " of the frame"}) relatively clear and uncluttered.
+The "negative" field always includes, word for word: "extra fingers, missing fingers, fused fingers, extra toes, missing toes, deformed hands, deformed feet, mutated anatomy, malformed limbs, extra limbs, blurry, distorted proportions, watermark, text, logo, nudity, topless, nude, exposed breasts, bare chest, nipples, lingerie, underwear, nsfw" — plus anything else specific to this shot worth excluding.`;
   const user = `${brandContext(brand)}
-${modelNote ? `This exact woman appears in every photo of this series — keep her consistent: ${modelNote}\n` : ""}${direction ? `Brand photo direction (always follow this): ${direction}\n` : ""}Post idea: ${idea || "(none)"}
+${modelNote ? `This exact person appears in every photo of this series — keep them consistent: ${modelNote}\n` : ""}${direction ? `Brand photo direction (always follow this): ${direction}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic.)\n"}Post idea: ${idea || "(none)"}
 This slide's text — depict this exact moment: ${slideText || "(cover)"}
 Look: ${style === "candid" ? "candid, natural, phone-camera realism" : "polished editorial, magazine quality, still natural"}
 
