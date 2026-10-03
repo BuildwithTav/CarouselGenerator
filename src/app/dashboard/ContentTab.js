@@ -456,7 +456,7 @@ function Editor({ api, itemId, onBack, onChanged }) {
   );
 }
 
-export function ContentTab({ api, brands, activeId, setActiveId, openItemId, setOpenItemId }) {
+export function ContentTab({ api, brands, activeId, setActiveId, openItemId, setOpenItemId, active }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("all");
@@ -468,7 +468,10 @@ export function ContentTab({ api, brands, activeId, setActiveId, openItemId, set
     try { const d = await api.get(`/api/content?brandId=${activeId}`); setItems(d.items || []); } catch (e) { console.error(e); }
     setLoading(false);
   };
-  useEffect(() => { load(); }, [activeId]);
+  // Reload each time this tab becomes the visible one (it stays mounted in
+  // the background otherwise), so a batch generated from the Today tab (or
+  // any other change made elsewhere) shows up without needing a brand switch.
+  useEffect(() => { if (active) load(); }, [activeId, active]);
 
   const onChanged = (next, deletedId) => {
     if (deletedId) return setItems((list) => list.filter((i) => i.id !== deletedId));

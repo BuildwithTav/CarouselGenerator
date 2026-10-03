@@ -87,7 +87,7 @@ function Dashboard({ dashKey, onLock }) {
             an unsaved idea, an open editor, or scroll position — only the
             active one is visible. */}
         <div style={{ display: tab === "today" ? "block" : "none" }}><TodayTab api={api} active={tab === "today"} onOpenItem={openItem} /></div>
-        <div style={{ display: tab === "content" ? "block" : "none" }}><ContentTab api={api} brands={brands} activeId={activeId} setActiveId={setActiveId} openItemId={openItemId} setOpenItemId={setOpenItemId} /></div>
+        <div style={{ display: tab === "content" ? "block" : "none" }}><ContentTab api={api} brands={brands} activeId={activeId} setActiveId={setActiveId} openItemId={openItemId} setOpenItemId={setOpenItemId} active={tab === "content"} /></div>
         <div style={{ display: tab === "brands" ? "block" : "none" }}><BrandsTab api={api} brands={brands} activeId={activeId} setActiveId={setActiveId} onBrandsChange={setBrands} /></div>
       </div>
     </div>
