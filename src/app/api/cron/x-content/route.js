@@ -1,4 +1,4 @@
-import { supabaseAdmin, brandPlatforms, assignSlideImages, bumpMediaUse } from "@/lib/dashboard";
+import { dashboardAuthorized, supabaseAdmin, brandPlatforms, assignSlideImages, bumpMediaUse } from "@/lib/dashboard";
 import { X_SLOTS, pickPillar, pickFormat, generateXPost } from "@/lib/xContent";
 
 export const maxDuration = 60;
@@ -14,18 +14,20 @@ export const dynamic = "force-dynamic";
 // ban history, so the first runs get a manual look before anything auto-
 // posts. Once the output's trusted, switch these to auto-ready the same way
 // any other content type is controlled.
+//
+// GET (CRON_SECRET) is the real daily cron. POST (dashboard passphrase) lets
+// a brand's batch be generated on demand from the dashboard — useful the
+// first few days, or any time a brand wants a fresh batch outside the
+// schedule, without needing the cron secret itself.
 const RECENT_DAYS = 30;
 const RECENT_LIMIT = 20;
 
-export async function GET(req) {
-  const authHeader = req.headers.get("authorization");
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+async function runXContentGeneration(brandIdFilter) {
   const supabase = supabaseAdmin();
 
   const { data: brands } = await supabase.from("brands").select("*");
-  const twitterBrands = (brands || []).filter((b) => brandPlatforms(b).includes("twitter"));
+  let twitterBrands = (brands || []).filter((b) => brandPlatforms(b).includes("twitter"));
+  if (brandIdFilter) twitterBrands = twitterBrands.filter((b) => b.id === brandIdFilter);
   const today = new Date().toISOString().slice(0, 10);
   const since = new Date(Date.now() - RECENT_DAYS * 86400000).toISOString().slice(0, 10);
 
@@ -80,5 +82,19 @@ export async function GET(req) {
     }
   }
 
-  return Response.json({ results });
+  return results;
+}
+
+export async function GET(req) {
+  const authHeader = req.headers.get("authorization");
+  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return Response.json({ results: await runXContentGeneration() });
+}
+
+export async function POST(req) {
+  if (!dashboardAuthorized(req)) return Response.json({ error: "Not authorized" }, { status: 403 });
+  const { brandId } = await req.json().catch(() => ({}));
+  return Response.json({ results: await runXContentGeneration(brandId || null) });
 }

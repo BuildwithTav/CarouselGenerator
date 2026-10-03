@@ -8,6 +8,7 @@ export function TodayTab({ api, active, onOpenItem }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
   const [marking, setMarking] = useState(null);
+  const [generating, setGenerating] = useState(null);
 
   const load = async () => {
     setErr("");
@@ -16,6 +17,20 @@ export function TodayTab({ api, active, onOpenItem }) {
   // Reload each time this tab becomes the visible one (it stays mounted in
   // the background otherwise), so freshly-approved content shows up.
   useEffect(() => { if (active) load(); }, [active]);
+
+  // Generates today's 3 X posts for a brand on demand, instead of waiting for
+  // the daily cron — new posts land as drafts in the Content tab, same as a
+  // cron-generated batch.
+  const generateXBatch = async (brandId) => {
+    setGenerating(brandId);
+    try {
+      const { results } = await api.post("/api/cron/x-content", { brandId });
+      const r = results?.[0];
+      if (r?.error) alert("Couldn't generate: " + r.error);
+      else alert(`Queued ${r?.queued ?? 0} X post${r?.queued === 1 ? "" : "s"} as drafts — check the Content tab to review and approve.`);
+    } catch (e) { alert(e.message); }
+    setGenerating(null);
+  };
 
   const markPosted = async (item, platform) => {
     setMarking(item.id + platform);
@@ -50,6 +65,11 @@ export function TodayTab({ api, active, onOpenItem }) {
             <div key={b.id} style={{ background: C.surface, border: `1.5px solid ${done ? C.ok : C.border}`, borderRadius: 20, padding: "6px 14px", fontSize: 12, fontWeight: 700, display: "flex", gap: 8, alignItems: "center" }}>
               {b.name}
               <span style={{ color: done ? C.ok : C.muted, fontWeight: 600 }}>{b.posted_today}/{(b.daily_target || 0) * b.platforms.length} posted today</span>
+              {b.platforms.includes("twitter") && (
+                <button onClick={() => generateXBatch(b.id)} disabled={generating === b.id} style={{ background: "none", border: "none", color: C.gold, fontSize: 11, fontWeight: 700, cursor: "pointer", padding: 0, opacity: generating === b.id ? 0.6 : 1 }}>
+                  {generating === b.id ? "Generating…" : "✨ Generate X posts"}
+                </button>
+              )}
             </div>
           );
         })}
