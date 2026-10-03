@@ -270,6 +270,11 @@ function Editor({ api, itemId, onBack, onChanged }) {
   if (!item || !draft) return <div style={{ textAlign: "center", padding: 40, color: C.muted }}><Spinner /> Loading…</div>;
 
   const template = draft.template;
+  // X content engine posts: raw photos attached as-is, no slide template to
+  // render or switch — the template chips and render button don't apply and
+  // would destroy the attached photos if used (rendering an empty slide set
+  // overwrites slide_paths with nothing).
+  const isXPost = template === "x-post";
   const setSlide = (i, k, v) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, [k]: v } : s)) }));
   // Switching template keeps the wording (reshaped to fit) and every slide's
   // photo — a re-render is needed afterward for the new look to take effect.
@@ -279,7 +284,7 @@ function Editor({ api, itemId, onBack, onChanged }) {
   const pickSetImage = (m) => setDraft((d) => ({ ...d, slides: d.slides.map((s) => (s.isCta ? s : { ...s, image_media_id: m.id, image_path: m.storage_path })) }));
   const aiAllowed = templateAllowsAiImage(template);
   const stale = item.slide_paths?.length && (itemTemplate(item, item.brands) !== draft.template || JSON.stringify(item.slides) !== JSON.stringify(draft.slides));
-  const platforms = item.brands?.visual_theme?.platforms?.length ? item.brands.visual_theme.platforms : ["instagram", "tiktok", "youtube"];
+  const platforms = item.platforms?.length ? item.platforms : item.brands?.visual_theme?.platforms?.length ? item.brands.visual_theme.platforms : ["instagram", "tiktok", "youtube"];
 
   const slideFields = (s, i) => {
     if (s.isCta) return (
@@ -348,21 +353,26 @@ function Editor({ api, itemId, onBack, onChanged }) {
           </div>
         </div>
 
-        <div style={{ marginBottom: 12 }}>
-          <label style={lbl}>Template</label>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {TEMPLATES.map((t) => <Chip key={t.id} active={template === t.id} onClick={() => switchTemplate(t.id)}>{t.label}</Chip>)}
+        {!isXPost && (
+          <div style={{ marginBottom: 12 }}>
+            <label style={lbl}>Template</label>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {TEMPLATES.map((t) => <Chip key={t.id} active={template === t.id} onClick={() => switchTemplate(t.id)}>{t.label}</Chip>)}
+            </div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>Switching keeps the wording and photos, reshaped for the new look — re-render after switching.</div>
           </div>
-          <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>Switching keeps the wording and photos, reshaped for the new look — re-render after switching.</div>
-        </div>
+        )}
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-          <label style={{ ...lbl, margin: 0 }}>Slides</label>
-          <div style={{ display: "flex", gap: 6 }}>
-            <button onClick={() => regen("slides")} disabled={!!busy} style={btn("small")}>{busy === "regen-slides" ? <><Spinner /> Rewriting…</> : "↻ Rewrite slides"}</button>
-            <button onClick={render} disabled={!!busy || dirty} title={dirty ? "Save first" : ""} style={btn("small", { background: C.gold, color: "#000", borderColor: C.gold, opacity: dirty ? 0.5 : 1 })}>{busy === "render" ? <><Spinner /> Rendering…</> : item.slide_paths?.length ? "Re-render images" : "Render images"}</button>
-          </div>
+          <label style={{ ...lbl, margin: 0 }}>{isXPost ? "Photos" : "Slides"}</label>
+          {!isXPost && (
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={() => regen("slides")} disabled={!!busy} style={btn("small")}>{busy === "regen-slides" ? <><Spinner /> Rewriting…</> : "↻ Rewrite slides"}</button>
+              <button onClick={render} disabled={!!busy || dirty} title={dirty ? "Save first" : ""} style={btn("small", { background: C.gold, color: "#000", borderColor: C.gold, opacity: dirty ? 0.5 : 1 })}>{busy === "render" ? <><Spinner /> Rendering…</> : item.slide_paths?.length ? "Re-render images" : "Render images"}</button>
+            </div>
+          )}
         </div>
+        {isXPost && <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>Posted to X as-is, no template or overlay — these are the raw photos attached to the post, if any. Edit the post text below.</div>}
         {stale ? <div style={{ fontSize: 11, color: C.gold, marginBottom: 6 }}>Slides changed — save, then re-render to update the images.</div> : null}
         <SlideStrip item={item} size={84} />
         {template === "raw" && draft.slides[0] && (

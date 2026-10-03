@@ -1,4 +1,4 @@
-import { dashboardAuthorized, unauthorized, supabaseAdmin, BUCKET, attachSlideUrls, attachSlideUrlsMany, brandPlatforms, postedColumn, PLATFORMS, bumpMediaUse, assignSlideImages } from "@/lib/dashboard";
+import { dashboardAuthorized, unauthorized, supabaseAdmin, BUCKET, attachSlideUrls, attachSlideUrlsMany, brandPlatforms, itemPlatforms, postedColumn, PLATFORMS, bumpMediaUse, assignSlideImages } from "@/lib/dashboard";
 import { generatePackage } from "@/lib/contentAi";
 import { themeOf, slideNeedsImage, slideCanHaveImage, TEMPLATE_IDS, defaultPhotoSource } from "@/lib/brandTemplate";
 
@@ -109,7 +109,7 @@ export async function PATCH(req) {
   await bumpMediaUse(newlyUsed);
 
   if (action) {
-    const platforms = brandPlatforms(item.brands);
+    const platforms = itemPlatforms(item, item.brands);
     const allPosted = platforms.every((p) => item[postedColumn(p)]);
     const nextStatus = allPosted ? "posted" : item.status === "posted" ? "ready" : item.status;
     if (nextStatus !== item.status) {

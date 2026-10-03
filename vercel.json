@@ -16,6 +16,10 @@
       "schedule": "0 9 * * *"
     },
     {
+      "path": "/api/cron/x-content",
+      "schedule": "0 7 * * *"
+    },
+    {
       "path": "/api/cron/post-twitter",
       "schedule": "0 9 * * *"
     },

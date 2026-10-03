@@ -1,4 +1,4 @@
-import { dashboardAuthorized, unauthorized, supabaseAdmin, attachSlideUrlsMany, brandPlatforms, postedColumn, PLATFORMS } from "@/lib/dashboard";
+import { dashboardAuthorized, unauthorized, supabaseAdmin, attachSlideUrlsMany, brandPlatforms, itemPlatforms, postedColumn, PLATFORMS } from "@/lib/dashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +17,7 @@ export async function GET(req) {
   if (dErr) return Response.json({ error: dErr.message }, { status: 500 });
 
   const items = (due || []).map((i) => {
-    const platforms = brandPlatforms(i.brands);
+    const platforms = itemPlatforms(i, i.brands);
     const remaining = platforms.filter((p) => !i[postedColumn(p)]);
     return { ...i, platforms, remaining };
   }).filter((i) => i.remaining.length);

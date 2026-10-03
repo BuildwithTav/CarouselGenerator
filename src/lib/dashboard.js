@@ -27,6 +27,16 @@ export function brandPlatforms(brand) {
   return Array.isArray(p) && p.length ? p.filter((x) => PLATFORMS.includes(x)) : PLATFORMS;
 }
 
+// The platforms one specific item is due on — its own override if set (e.g.
+// an X-engine post that only ever targets twitter), else the brand's default.
+// Without this, an item whose content only ever exists for one platform would
+// sit "remaining" on every other platform forever, since nothing ever posts
+// the version of it that was never generated.
+export function itemPlatforms(item, brand) {
+  const p = item?.platforms;
+  return Array.isArray(p) && p.length ? p.filter((x) => PLATFORMS.includes(x)) : brandPlatforms(brand);
+}
+
 export function postedColumn(platform) {
   return `posted_${platform}_at`;
 }

@@ -49,11 +49,14 @@ export async function uploadMedia(buffer, mimeType = "image/png") {
   return out.media_id_string;
 }
 
-// Posts one tweet, with an already-uploaded image attached if given.
-export async function postTweet(text, mediaId) {
+// Posts one tweet, with already-uploaded images attached if given (X allows
+// up to 4 per post — pass one media_id for a single image, several for a
+// carousel-style post, or none for a text-only post).
+export async function postTweet(text, mediaIds) {
   const url = "https://api.twitter.com/2/tweets";
+  const ids = (Array.isArray(mediaIds) ? mediaIds : [mediaIds]).filter(Boolean);
   const body = { text };
-  if (mediaId) body.media = { media_ids: [mediaId] };
+  if (ids.length) body.media = { media_ids: ids };
   const res = await fetch(url, {
     method: "POST",
     headers: { Authorization: oauthHeader("POST", url), "Content-Type": "application/json" },

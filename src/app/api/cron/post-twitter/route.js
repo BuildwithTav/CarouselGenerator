@@ -1,4 +1,4 @@
-import { supabaseAdmin, BUCKET, brandPlatforms, postedColumn } from "@/lib/dashboard";
+import { supabaseAdmin, BUCKET, brandPlatforms, itemPlatforms, postedColumn } from "@/lib/dashboard";
 import { uploadMedia, postTweet } from "@/lib/twitterApi";
 
 export const maxDuration = 30;
@@ -40,13 +40,17 @@ export async function GET(req) {
 
     try {
       const text = (item.tw_caption || item.caption || "").slice(0, 280);
-      let mediaId = null;
-      if (item.slide_paths?.[0]) {
-        const { data: file, error: dlErr } = await supabase.storage.from(BUCKET).download(item.slide_paths[0]);
+      // Up to 4 images (a carousel-style X post), one (a single-image post),
+      // or none at all (text-only) — the X content engine decides this by how
+      // many photos it attached, not by any separate "format" field.
+      const paths = (item.slide_paths || []).slice(0, 4);
+      const mediaIds = [];
+      for (const path of paths) {
+        const { data: file, error: dlErr } = await supabase.storage.from(BUCKET).download(path);
         if (dlErr) throw new Error("Could not download slide image: " + dlErr.message);
-        mediaId = await uploadMedia(Buffer.from(await file.arrayBuffer()), "image/png");
+        mediaIds.push(await uploadMedia(Buffer.from(await file.arrayBuffer()), "image/png"));
       }
-      await postTweet(text, mediaId);
+      await postTweet(text, mediaIds);
 
       const { data: updatedItem, error: upErr } = await supabase
         .from("content_items")
@@ -56,7 +60,7 @@ export async function GET(req) {
         .single();
       if (upErr) throw new Error("Posted to X but failed to record it: " + upErr.message);
 
-      const platforms = brandPlatforms(brand);
+      const platforms = itemPlatforms(updatedItem, brand);
       if (platforms.every((p) => updatedItem[postedColumn(p)])) {
         await supabase.from("content_items").update({ status: "posted" }).eq("id", item.id);
       }

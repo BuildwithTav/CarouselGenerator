@@ -33,7 +33,7 @@ Platform copy (each is its own field):
 - "yt_pinned_comment": one short pinned comment in the brand's voice that nudges engagement.
 - "yt_category": the best-fit YouTube category name (e.g. "Education", "People & Blogs", "Entertainment", "Howto & Style").`;
 
-function brandContext(brand) {
+export function brandContext(brand) {
   return `Brand: ${brand.name}
 Voice & tone: ${brand.voice || "(not set — use a clear, direct, human tone)"}
 Content pillars: ${brand.pillars || "(not set)"}
@@ -47,7 +47,7 @@ function extractJson(text) {
   return JSON.parse(text.slice(start, end + 1));
 }
 
-async function ask(system, user, maxTokens = 8000) {
+export async function ask(system, user, maxTokens = 8000) {
   const res = await anthropic().messages.create({
     model: MODEL,
     max_tokens: maxTokens,
