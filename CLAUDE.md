@@ -62,7 +62,7 @@ Passwordless, OTP-based (`src/app/api/auth/route.js`) — no passwords stored. N
 
 ## Environment variables
 
-Required at runtime (not present in this sandbox, hence the build caveat above): `ANTHROPIC_API_KEY`, `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL` / `SUPABASE_SERVICE_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` and the `NEXT_PUBLIC_STRIPE_*_PRICE_ID` vars (one per plan/licence/top-up tier), `RESEND_API_KEY`, `SYSTEME_API_KEY`, `PEXELS_API_KEY`, `UNSUBSCRIBE_SECRET`, `CRON_SECRET`, `FAL_API_KEY`.
+Required at runtime (not present in this sandbox, hence the build caveat above): `ANTHROPIC_API_KEY`, `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL` / `SUPABASE_SERVICE_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` and the `NEXT_PUBLIC_STRIPE_*_PRICE_ID` vars (one per plan/licence/top-up tier), `RESEND_API_KEY`, `SYSTEME_API_KEY`, `PEXELS_API_KEY`, `UNSUBSCRIBE_SECRET`, `CRON_SECRET`, `FAL_API_KEY`, `TWITTER_API_KEY` / `TWITTER_API_SECRET` / `TWITTER_ACCESS_TOKEN` / `TWITTER_ACCESS_TOKEN_SECRET` (OAuth 1.0a credentials for the one X account currently wired up, Sky High Soles' — see `src/lib/twitterApi.js` and `src/app/api/cron/post-twitter/route.js`).
 
 ## Workflow notes
 
