@@ -26,8 +26,9 @@ export function TodayTab({ api, active, onOpenItem }) {
     try {
       const { results } = await api.post("/api/cron/x-content", { brandId });
       const r = results?.[0];
-      if (r?.error) alert("Couldn't generate: " + r.error);
-      else alert(`Queued ${r?.queued ?? 0} X post${r?.queued === 1 ? "" : "s"} as drafts — check the Content tab to review and approve.`);
+      const queued = r?.queued ?? 0;
+      const base = queued ? `Queued ${queued} X post${queued === 1 ? "" : "s"} as drafts — check the Content tab to review and approve.` : "Nothing queued.";
+      alert(r?.error ? `${base}\n\nSome slots failed: ${r.error}` : base);
     } catch (e) { alert(e.message); }
     setGenerating(null);
   };

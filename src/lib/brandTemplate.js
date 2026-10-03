@@ -1,13 +1,16 @@
 import { buildTmplHTML, buildCtaHTML } from "./carouselTemplates.js";
-import { buildSlideHTML } from "./slideTemplate.js";
 import { buildElegantHTML, buildElegantCtaHTML } from "./elegantTemplate.js";
 import { buildHealthcodeHTML, buildHealthcodeCtaHTML } from "./healthcodeTemplate.js";
 
+// Every brand gets its own bespoke template built for its actual visual
+// identity (Elegant for Sky High Soles, HealthCode for HealthCode
+// Performance) — the earlier generic one-size-fits-all templates (Raw,
+// Classic, Clean Pro, Bold) were removed once neither brand's default
+// pointed at them any more. carouselTemplates.js/slideTemplate.js still
+// exist and are still imported below — they're shared with Carousel
+// Studio, the customer-facing product, so they're left in place — but
+// nothing in this dashboard can select or generate those four any more.
 export const TEMPLATES = [
-  { id: "raw", label: "Raw", desc: "One of your photos across every slide, a line of text in a tight box. Authentic, minimal." },
-  { id: "dark-fade", label: "Classic", desc: "A photo on every slide with a dark fade, bold headline and subline. AI photos by default." },
-  { id: "clean-pro", label: "Clean Pro", desc: "Photo cover with a dark fade, then clean fact or story slides. AI cover by default." },
-  { id: "bold", label: "Bold", desc: "Big headline on a solid colour. Text-led, no photos needed." },
   { id: "elegant", label: "Elegant", desc: "Full photo always shown in full, soft vignette, italic headline, quiet seductive flow. AI photos by default." },
   { id: "healthcode", label: "HealthCode", desc: "Full photo always shown in full, teal branded wash, bold white shadowed headline. AI photos by default." },
 ];
@@ -19,16 +22,8 @@ export const PHOTO_SOURCES = [
   ["same", "One photo, every slide"],
 ];
 export function defaultPhotoSource(template) {
-  if (template === "raw") return "same";
-  if (template === "dark-fade" || template === "clean-pro" || template === "elegant" || template === "healthcode") return "ai";
-  return "library";
+  return "ai";
 }
-
-export const TEMPLATE_FONTS = [
-  ["bebasneue", "Bebas Neue (loud)"], ["inter", "Inter (clean)"], ["montserrat", "Montserrat"], ["poppins", "Poppins"],
-  ["playfair", "Playfair Display (elegant)"], ["dancing", "Dancing Script (handwritten)"], ["pacifico", "Pacifico (casual script)"],
-  ["cormorant", "Cormorant Garamond (luxury)"], ["oswald", "Oswald"], ["raleway", "Raleway"], ["quicksand", "Quicksand (soft)"],
-];
 
 export const CTA_TYPES = [["comment", "Comment"], ["follow", "Follow"], ["save", "Save"], ["share", "Share"], ["like", "Like"]];
 
@@ -37,7 +32,7 @@ const CTA_DEFAULT_LINE1 = "If you want more like this";
 const CTA_DEFAULT_LINE3 = { comment: "and I'll send it straight to your DMs", follow: "so you don't miss the next one", save: "so you can find this again", share: "with someone who needs to see it", like: "if this one landed" };
 
 export const THEME_DEFAULTS = {
-  template: "bold",
+  template: "elegant",
   // bold
   bg: "#0a0a0a", accent: "#C9A84C", text: "#ffffff", font: "Montserrat", handle: "",
   // raw / clean-pro (Carousel Studio option names)
@@ -106,9 +101,6 @@ export function buildBrandSlides({ brand, slides, profileUrl, coverImageUrl, cta
   const theme = themeOf(brand);
   const tmpl = TEMPLATE_IDS.includes(template) ? template : theme.template;
   const total = slides.length;
-  if (tmpl === "bold") {
-    return slides.map((s, i) => buildSlideHTML(s, i, total, theme, brand, i === 0 ? s.image_url || coverImageUrl || null : null));
-  }
   if (tmpl === "elegant") {
     const cta = { ...ctaCopy(theme), ...(ctaOverride || {}) };
     const eOpts = { name: theme.name || brand?.name || "", handle: theme.handle || "", profUrl: profileUrl || "" };
