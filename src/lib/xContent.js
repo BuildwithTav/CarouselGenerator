@@ -1,10 +1,11 @@
-import { ask, brandContext } from "./contentAi";
+import { ask, brandContext, generatePackage } from "./contentAi";
 
 // The X content engine: a separate, lighter pipeline from the branded
-// carousel system. It writes short, native-feeling X posts (text-only,
-// single raw photo, or a 2-4 raw photo carousel) and deliberately skips the
-// slide-template renderer entirely — the photo is attached to the post
-// as-is, there's no headline/CTA overlay to build here.
+// carousel system. Three native formats skip the slide-template renderer
+// entirely (text-only, single AI photo, 2-4 photo carousel — the photo is
+// attached to the post as-is, no headline/CTA overlay); a fourth format
+// hands off to the real branded carousel system for a proper multi-slide
+// post, capped at 4 slides to match X's own image-per-post limit.
 //
 // This brand's X account has a real enforcement history (one ban, several
 // warnings, a pun video pulled down for being foot-suggestive even though it
@@ -16,22 +17,23 @@ import { ask, brandContext } from "./contentAi";
 
 // Three jobs, one per daily post. Format mix per slot is weighted so the
 // week averages out close to the brief's target (roughly 9 text / 7 single
-// image / 5 carousel posts over 7 days, i.e. about 43% / 33% / 24%).
+// image / 5 carousel posts over 7 days, i.e. about 43% / 33% / 24%), with a
+// small slice of the visual slot going to a full branded carousel instead.
 export const X_SLOTS = [
   {
     key: "personality",
     job: "Personality and relatability. A spontaneous-sounding thought or observation about cabin crew life, the kind of thing someone actually tweets without thinking too hard about it. Reach and replies, not a sales pitch.",
-    formatWeights: { text: 0.65, single: 0.2, carousel: 0.15 },
+    formatWeights: { text: 0.65, single: 0.2, carousel: 0.15, branded_carousel: 0 },
   },
   {
     key: "visual",
     job: "Visual identity. Let a photo (or a short sequence of photos) do most of the work. The copy is short and never just describes what's in the photo — it adds a line, a feeling, a moment, not a caption under a picture.",
-    formatWeights: { text: 0.05, single: 0.55, carousel: 0.4 },
+    formatWeights: { text: 0.05, single: 0.45, carousel: 0.35, branded_carousel: 0.15 },
   },
   {
     key: "conversation",
     job: "Conversation and engagement. A natural question or a statement people want to agree or disagree with. Not every conversation post is a question — mix genuine questions with opinions people react to.",
-    formatWeights: { text: 0.55, single: 0.3, carousel: 0.15 },
+    formatWeights: { text: 0.55, single: 0.3, carousel: 0.15, branded_carousel: 0 },
   },
 ];
 
@@ -63,18 +65,24 @@ export function pickPillar() {
   return weightedPick(X_PILLARS);
 }
 
-// Returns "text" | "single" | "carousel", and for carousel, how many photos (2-4).
+// Returns "text" | "single" | "carousel" | "branded_carousel", and for
+// carousel formats, how many photos/slides.
 export function pickFormat(slot) {
-  const r = Math.random();
   const w = slot.formatWeights;
-  const format = r < w.text ? "text" : r < w.text + w.single ? "single" : "carousel";
-  const photoCount = format === "single" ? 1 : format === "carousel" ? 2 + Math.floor(Math.random() * 3) : 0;
+  const items = [
+    { key: "text", weight: w.text },
+    { key: "single", weight: w.single },
+    { key: "carousel", weight: w.carousel },
+    { key: "branded_carousel", weight: w.branded_carousel || 0 },
+  ];
+  const format = weightedPick(items, "weight").key;
+  const photoCount = format === "single" ? 1 : format === "carousel" ? 2 + Math.floor(Math.random() * 3) : format === "branded_carousel" ? 4 : 0;
   return { format, photoCount };
 }
 
 const BANNED_PHRASES = `There's something about..., It's not just X, it's Y, Because sometimes..., A little reminder..., POV: when..., Tell me you're X without telling me..., Who else can relate?, Can we talk about..., Just another day..., Nothing beats..., If you know, you know`;
 
-const VOICE_RULES = `You write as a real woman who actually works cabin crew, posting on her own X account. Personality: playful, feminine, confident, slightly cheeky, observational, occasionally sarcastic, conversational, relatable, never desperate for engagement. British English, natural punctuation, sentence fragments are fine. Occasional emojis from this set only, used sparingly, never in every post: ✈️ 👠 😮‍💨 😂 🛫 ☕️ 🖤.
+const VOICE_RULES = `You write as a real woman who actually works cabin crew, posting on her own X account. Personality: playful, feminine, confident, slightly cheeky, observational, occasionally sarcastic, conversational, relatable, never desperate for engagement — and genuinely flirty: a sensual, alluring undertone that invites rather than announces, the same quiet seductiveness this brand already writes with elsewhere (think "a slow reveal", not a hard sell). British English, natural punctuation, sentence fragments are fine. Occasional emojis from this set only, used sparingly, never in every post: ✈️ 👠 😮‍💨 😂 🛫 ☕️ 🖤.
 
 Never sound like an automated account, a content farm, or an AI. Never use these phrases or anything that reads like them: ${BANNED_PHRASES}. If a line reads like marketing copy, a LinkedIn post, or a listicle, rewrite it plainer.
 
@@ -86,21 +94,30 @@ Never beg for engagement: no "like if you agree", "retweet if", "follow me for m
 
 For a single-image or carousel post, never just describe what's visible in the photo ("here's my feet after a long shift"). The copy adds a feeling, a moment, a number, a punchline the photo doesn't already say. Let the image do the work.
 
-Absolute rule, not a style preference: no wordplay, puns, or jokes about feet, toes, or soles, however mild. Never use the words "feet pics", "fetish", "worship", "soles", or "toes" as the subject of a joke. This account has already been banned once and warned multiple times for content that read as sexual or suggestive, including a pun that was never explicit in its wording. Feet can appear in photos and in genuine, factual, positive context (see the feet-facts pillar) but are never the punchline, never the explicit subject of a joke, and never described in explicit or crude language.`;
+Flirty and seductive is a tone, not a licence: still fully clothed above the waist always, nothing explicit, no crude language, nothing beyond what the brand's existing boudoir-style editorial photography already does. Absolute rule, not a style preference, and unrelated to the above: no wordplay, puns, or jokes about feet, toes, or soles, however mild. Never use the words "feet pics", "fetish", "worship", "soles", or "toes" as the subject of a joke. This account has already been banned once and warned multiple times for content that read as sexual or suggestive, including a pun that was never explicit in its wording. Feet can appear in photos and in genuine, factual, positive context (see the feet-facts pillar) but are never the punchline, never the explicit subject of a joke, and never described in explicit or crude language.`;
 
 // `recentPosts` is a short list of recent captions (already posted or
 // queued) for this brand, used purely to stop the model repeating a hook,
 // joke, question, or structure it's already used in roughly the last month.
+//
+// Text-first, not photo-first: for "single"/"carousel" this writes the post
+// AND a precise description of what each attached photo must show, in one
+// call — the caller then generates a photo FROM that description (see
+// imageGen.js), so a line like "slipped into the bath out of my tights"
+// gets a photo that actually shows that, not a vaguely-matching stock shot.
 export async function generateXPost(brand, { slot, pillar, format, recentPosts = [] }) {
-  const system = `You write one X (Twitter) post for a brand's account. Reply with JSON only: {"text": "..."}.
-${VOICE_RULES}`;
+  const needsPhotos = format === "single" || format === "carousel";
+
+  const system = `You write one X (Twitter) post for a brand's account. Reply with JSON only: ${needsPhotos ? `{"text": "...", "scenes": ["...", ...]}` : `{"text": "..."}`}.
+${VOICE_RULES}
+${needsPhotos ? `\nYou are also directing the photo(s) that go with this post — they don't exist yet, you're describing exactly what to generate. For each photo, write one vivid, concrete scene description (setting, pose, specific action, props — enough detail that a photographer could shoot exactly this): a precise physical scene, not a mood or a vibe. The post's words and the scene(s) must describe the same real moment — if the text says something specific happened ("slipped into the bath out of my tights"), the scene has to show exactly that, tights included. Always fully clothed above the waist, nothing explicit, no visible face (consistent with this brand's existing photo direction).` : ""}`;
 
   const formatBrief =
     format === "text"
       ? "This post is text-only, no image. The words alone have to carry it."
       : format === "single"
-      ? "This post has one photo attached already (you don't choose it). Write only the short accompanying text, 3 to 25 words — never a caption that just describes the photo."
-      : "This post has 2 to 4 photos attached already, in a short sequence that tells a tiny story or shows progression (e.g. getting ready, then heels, then aircraft, then shoes off). Write one short line of copy for the whole set, not per-photo captions.";
+      ? "This post gets one photo, generated to match. \"scenes\" is an array with exactly one entry. 3 to 25 words of post text — never a caption that just describes the photo, but it has to genuinely depict the same moment as the scene you describe, not a generic line."
+      : "This post gets 2 to 4 photos, generated to match, in a short sequence that tells a tiny story or shows real progression (e.g. getting ready, then heels, then aircraft, then shoes off). \"scenes\" is an array with one entry per photo, in order. Write one short line of post text for the whole set, not per-photo captions.";
 
   const recentBlock = recentPosts.length
     ? `Recent posts from this account (do not repeat their hook, joke, question, topic angle, or sentence structure — the execution must be noticeably different even if the broad topic recurs):\n${recentPosts.map((p) => `- ${p}`).join("\n")}`
@@ -114,10 +131,33 @@ ${formatBrief}
 
 ${recentBlock}
 
-Before answering, check: does this sound like a real person, not an automated account? Is it clearly different from the recent posts above? Is the language natural, not AI-coded? If this is a visual post, does the copy add something the photo doesn't already say? If this touches feet at all, is it handled through genuine lifestyle or fact framing, with zero wordplay or joking?
+Before answering, check: does this sound like a real person, not an automated account? Is it clearly different from the recent posts above? Is the language natural, not AI-coded? ${needsPhotos ? "Does each scene describe the exact same moment the text is about, specifically enough to actually shoot?" : ""} If this touches feet at all, is it handled through genuine lifestyle or fact framing, with zero wordplay or joking?
 
-Write the post.`;
+Write the post${needsPhotos ? " and its scene description(s)" : ""}.`;
 
-  const out = await ask(system, user, 600);
-  return { text: String(out.text || "").trim().slice(0, 280) };
+  const out = await ask(system, user, 800);
+  const text = String(out.text || "").trim().slice(0, 280);
+  const scenes = needsPhotos ? (Array.isArray(out.scenes) ? out.scenes.map((s) => String(s || "").trim()).filter(Boolean) : []) : [];
+  return { text, scenes };
 }
+
+// Hands off to the real branded carousel system (same one Instagram content
+// uses) for a short, proper multi-slide post — capped at 4 slides to match
+// X's own image-per-post limit. Reuses generatePackage as-is rather than
+// forking its slide-writing logic; the X pillar only seeds the one-line idea
+// it's built from, the slides themselves are written in the brand's own
+// template voice (SLIDE_BRIEF), not the X voice rules above.
+export async function generateBrandedCarouselIdea(brand, { pillar, recentPosts = [] }) {
+  const system = `You write a one-line content idea for a short branded carousel post. Reply with JSON only: {"idea": "..."}.`;
+  const recentBlock = recentPosts.length
+    ? `Avoid repeating the topic or angle of these recent posts:\n${recentPosts.slice(0, 10).map((p) => `- ${p}`).join("\n")}`
+    : "";
+  const user = `${brandContext(brand)}
+Content pillar: ${pillar.label}. ${pillar.guidance}
+${recentBlock}
+Write one specific, concrete content idea for a short carousel (3 content slides plus a closing slide) on this pillar.`;
+  const out = await ask(system, user, 300);
+  return String(out.idea || pillar.label).trim();
+}
+
+export { generatePackage };

@@ -2,35 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { C, inp, lbl, card, btn, Toggle, Chip, fmtSize } from "./ui";
-import { TEMPLATES, TEMPLATE_FONTS, CTA_TYPES, THEME_DEFAULTS, themeOf, ctaCopy, previewSlides } from "@/lib/brandTemplate";
+import { TEMPLATES, CTA_TYPES, THEME_DEFAULTS, themeOf, ctaCopy, previewSlides } from "@/lib/brandTemplate";
 
-const FONTS = ["Montserrat", "Inter", "Poppins", "Playfair Display", "Oswald", "Bebas Neue", "Cormorant Garamond"];
 const PLATFORMS = [["instagram", "Instagram"], ["tiktok", "TikTok"], ["youtube", "YouTube"], ["twitter", "X (Twitter)"]];
-
-function useGoogleFont(font) {
-  useEffect(() => {
-    if (!font) return;
-    const id = "dash-font-" + font.replace(/\s+/g, "-");
-    if (document.getElementById(id)) return;
-    const link = document.createElement("link");
-    link.id = id;
-    link.rel = "stylesheet";
-    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(font).replace(/%20/g, "+")}:wght@700;900&display=swap`;
-    document.head.appendChild(link);
-  }, [font]);
-}
-
-function SlidePreview({ theme, name }) {
-  useGoogleFont(theme.font);
-  return (
-    <div style={{ width: 180, aspectRatio: "1080/1350", background: theme.bg, color: theme.text, borderRadius: 10, overflow: "hidden", position: "relative", fontFamily: `'${theme.font}',sans-serif`, padding: "26px 16px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "flex-end", flexShrink: 0 }}>
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: theme.accent }} />
-      <div style={{ fontSize: 17, fontWeight: 900, lineHeight: 1.08, letterSpacing: -0.3 }}>Your hook headline goes here</div>
-      <div style={{ fontSize: 7, fontWeight: 700, color: theme.accent, letterSpacing: 1, textTransform: "uppercase", marginTop: 10 }}>Swipe →</div>
-      <div style={{ position: "absolute", left: 16, bottom: 10, fontSize: 7, fontWeight: 600, color: theme.accent }}>{theme.handle || name}</div>
-    </div>
-  );
-}
 
 function TemplatePreview({ brand, media, template }) {
   const photo = media.find((m) => m.file_type === "image" && m.url && m.id !== brand.visual_theme?.profile_media_id)?.url || null;
@@ -70,7 +44,9 @@ function Seg({ value, options, onChange }) {
   );
 }
 
-function BrandForm({ brand, media, saving, onSave, onDelete }) {
+const SECTIONS = [["voice", "Voice & Platforms"], ["look", "Template Look"], ["media", "Media Library"]];
+
+function BrandForm({ brand, media, saving, onSave, onDelete, section }) {
   const [voice, setVoice] = useState(brand.voice || "");
   const [pillars, setPillars] = useState(brand.pillars || "");
   const [ctaRules, setCtaRules] = useState(brand.cta_rules || "");
@@ -91,6 +67,7 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
 
   return (
     <div style={{ ...card, display: "flex", flexDirection: "column", gap: 14 }}>
+      {section === "voice" && <>
       <div>
         <label style={lbl}>Voice & tone</label>
         <textarea value={voice} onChange={(e) => setVoice(e.target.value)} placeholder="How this brand sounds — tone, audience, what to avoid, sign-off." rows={3} style={{ ...inp, resize: "vertical", lineHeight: 1.6 }} />
@@ -105,6 +82,26 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
       </div>
 
       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+        <label style={lbl}>Platforms you post this brand to</label>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {PLATFORMS.map(([id, label]) => <Chip key={id} active={theme.platforms.includes(id)} onClick={() => togglePlatform(id)}>{label}</Chip>)}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 14, alignItems: "flex-end", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+        <div style={{ flex: 1 }}>
+          <label style={lbl}>Daily target (posts per platform)</label>
+          <input type="number" min={0} value={dailyTarget} onChange={(e) => setDailyTarget(Number(e.target.value) || 0)} style={inp} />
+        </div>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 10 }}>
+          <div><div style={{ fontWeight: 600, fontSize: 13 }}>Auto-ready</div><div style={{ color: C.muted, fontSize: 11 }}>Generated content goes straight to Ready, no review</div></div>
+          <Toggle on={autoReady} onClick={() => setAutoReady((a) => !a)} />
+        </div>
+      </div>
+      </>}
+
+      {section === "look" && <>
+      <div>
         <label style={lbl}>Slide looks</label>
         <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>You pick the template for each post when you create it. Set how each one looks for this brand here.</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 8, marginBottom: 12 }}>
@@ -119,47 +116,13 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
           <button type="button" onClick={() => setT("template", tmpl)} style={btn("small", { marginBottom: 12 })}>Make {TEMPLATES.find((t) => t.id === tmpl)?.label} the default for new posts</button>
         )}
 
-        {tmpl === "bold" ? (
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-            <SlidePreview theme={theme} name={brand.name} />
-            <div style={{ flex: 1, minWidth: 220, display: "flex", flexDirection: "column", gap: 10 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                {[["bg", "Background"], ["accent", "Accent"], ["text", "Text"]].map(([k, label]) => <ColorField key={k} label={label} value={theme[k]} onChange={(v) => setT(k, v)} />)}
-              </div>
-              <div>
-                <label style={{ ...lbl, marginBottom: 4 }}>Font</label>
-                <select value={theme.font} onChange={(e) => setT("font", e.target.value)} style={inp}>
-                  {FONTS.map((f) => <option key={f} value={f}>{f}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ ...lbl, marginBottom: 4 }}>Handle on slides</label>
-                <input value={theme.handle} onChange={(e) => setT("handle", e.target.value)} placeholder="@yourhandle" style={inp} />
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <TemplatePreview brand={{ ...brand, visual_theme: theme }} media={media} template={tmpl} />
             {images.length === 0 && <div style={{ fontSize: 11, color: C.muted }}>Upload a photo to the library below to see it in the preview.</div>}
 
             {tmpl === "elegant" && <div style={{ fontSize: 11, color: C.muted }}>Elegant's font and colours are fixed (italic serif headline, gold accent, white text) so it always stays legible over a photo.</div>}
             {tmpl === "healthcode" && <div style={{ fontSize: 11, color: C.muted }}>HealthCode's font is fixed (Poppins, bold white headline with a heavy shadow) so it always stays legible over a photo — the accent colour below is still yours to set.</div>}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
-              {tmpl !== "elegant" && tmpl !== "healthcode" && (
-                <div>
-                  <label style={{ ...lbl, marginBottom: 4 }}>Font</label>
-                  <select value={theme.tmplFont} onChange={(e) => setT("tmplFont", e.target.value)} style={inp}>
-                    {TEMPLATE_FONTS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-                  </select>
-                </div>
-              )}
-              {tmpl !== "elegant" && tmpl !== "healthcode" && (
-                <div>
-                  <label style={{ ...lbl, marginBottom: 4 }}>Text size {tmpl === "raw" ? "(raw box)" : "(body slides)"}</label>
-                  <input type="number" min={28} max={120} value={theme.fontSize} onChange={(e) => setT("fontSize", Number(e.target.value) || 46)} style={inp} />
-                </div>
-              )}
               <div>
                 <label style={{ ...lbl, marginBottom: 4 }}>Name on slides</label>
                 <input value={theme.name} onChange={(e) => setT("name", e.target.value)} placeholder={brand.name} style={inp} />
@@ -170,34 +133,14 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
               </div>
             </div>
 
-            {tmpl === "raw" && (
-              <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-                <div><label style={{ ...lbl, marginBottom: 4 }}>Text box</label><Seg value={theme.rawBox} options={[["white", "White"], ["dark", "Dark"], ["none", "None"]]} onChange={(v) => setT("rawBox", v)} /></div>
-                <div><label style={{ ...lbl, marginBottom: 4 }}>Box position</label><Seg value={theme.rawPos} options={[["bottom", "Bottom"], ["center", "Centre"]]} onChange={(v) => setT("rawPos", v)} /></div>
-              </div>
-            )}
-            {tmpl === "clean-pro" && (
-              <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-                <div><label style={{ ...lbl, marginBottom: 4 }}>Body slides</label><Seg value={theme.tmplBg} options={[["dark", "Dark"], ["white", "White"]]} onChange={(v) => setT("tmplBg", v)} /></div>
-              </div>
-            )}
-            {(tmpl === "clean-pro" || tmpl === "dark-fade" || tmpl === "elegant" || tmpl === "healthcode") && (
-              <div>
+            <div>
                 <label style={{ ...lbl, marginBottom: 4 }}>AI photo direction <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(followed on every AI photo for this brand)</span></label>
                 <textarea value={theme.ai_style || ""} onChange={(e) => setT("ai_style", e.target.value)} rows={3} placeholder="e.g. One woman's bare feet, size 5, soft natural skin, neat nude or pale pink pedicure, soles-up or side-on, soft bedroom window light, cream sheets, candid phone-photo feel. No faces, no other people, nothing explicit." style={{ ...inp, resize: "vertical", lineHeight: 1.6, fontSize: 13 }} />
-              </div>
-            )}
+            </div>
 
             {tmpl === "healthcode" && (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8 }}>
                 <ColorField label="Accent" value={theme.accent} onChange={(v) => setT("accent", v)} />
-              </div>
-            )}
-            {tmpl !== "elegant" && tmpl !== "healthcode" && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8 }}>
-                <ColorField label="Accent" value={theme.accent} onChange={(v) => setT("accent", v)} />
-                <ColorField label="Headline colour" value={theme.primary} onChange={(v) => setT("primary", v)} />
-                {tmpl === "clean-pro" && <ColorField label="Subline colour" value={theme.secondary} onChange={(v) => setT("secondary", v)} />}
               </div>
             )}
 
@@ -252,27 +195,9 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
               </div>
               <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>Set these and every post uses exactly these lines. Leave blank and each post writes its own (short, one action only).</div>
             </div>
-          </div>
-        )}
-      </div>
-
-      <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
-        <label style={lbl}>Platforms you post this brand to</label>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {PLATFORMS.map(([id, label]) => <Chip key={id} active={theme.platforms.includes(id)} onClick={() => togglePlatform(id)}>{label}</Chip>)}
         </div>
       </div>
-
-      <div style={{ display: "flex", gap: 14, alignItems: "flex-end", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
-        <div style={{ flex: 1 }}>
-          <label style={lbl}>Daily target (posts per platform)</label>
-          <input type="number" min={0} value={dailyTarget} onChange={(e) => setDailyTarget(Number(e.target.value) || 0)} style={inp} />
-        </div>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 10 }}>
-          <div><div style={{ fontWeight: 600, fontSize: 13 }}>Auto-ready</div><div style={{ color: C.muted, fontSize: 11 }}>Generated content goes straight to Today, no review</div></div>
-          <Toggle on={autoReady} onClick={() => setAutoReady((a) => !a)} />
-        </div>
-      </div>
+      </>}
 
       <div style={{ display: "flex", gap: 8, borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
         <button onClick={() => onSave({ voice, pillars, cta_rules: ctaRules, daily_target: dailyTarget, automation_mode: autoReady ? "auto_ready" : "needs_review", visual_theme: theme })} disabled={saving || !dirty} style={btn("primary", { flex: 1, background: dirty ? C.gold : C.border, cursor: dirty ? "pointer" : "default", opacity: saving ? 0.6 : 1 })}>
@@ -292,6 +217,7 @@ export function BrandsTab({ api, brands, activeId, setActiveId, onBrandsChange }
   const [mediaLoading, setMediaLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [sortMode, setSortMode] = useState("least_used");
+  const [section, setSection] = useState("voice");
 
   const activeBrand = brands.find((b) => b.id === activeId);
 
@@ -372,10 +298,16 @@ export function BrandsTab({ api, brands, activeId, setActiveId, onBrandsChange }
         </div>
       </div>
 
-      {activeBrand && <BrandForm key={activeBrand.id} brand={activeBrand} media={media} saving={saving} onSave={(f) => saveBrand(activeBrand.id, f)} onDelete={() => deleteBrand(activeBrand.id)} />}
-
       {activeBrand && (
-        <div style={{ ...card, marginTop: 20 }}>
+        <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+          {SECTIONS.map(([id, label]) => <Chip key={id} active={section === id} onClick={() => setSection(id)}>{label}</Chip>)}
+        </div>
+      )}
+
+      {activeBrand && section !== "media" && <BrandForm key={activeBrand.id} brand={activeBrand} media={media} saving={saving} section={section} onSave={(f) => saveBrand(activeBrand.id, f)} onDelete={() => deleteBrand(activeBrand.id)} />}
+
+      {activeBrand && section === "media" && (
+        <div style={{ ...card }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 10 }}>
             <label style={{ ...lbl, margin: 0 }}>Media library — {activeBrand.name}</label>
             <label style={btn("dark", { opacity: uploading ? 0.6 : 1 })}>

@@ -47,13 +47,19 @@ function extractJson(text) {
   return JSON.parse(text.slice(start, end + 1));
 }
 
-export async function ask(system, user, maxTokens = 8000) {
+// `imageUrls`, when given, puts the actual photo(s) in front of the model
+// before the text prompt, so it writes about what's really in the shot
+// instead of guessing blind — see xContent.js for why this matters.
+export async function ask(system, user, maxTokens = 8000, imageUrls = []) {
+  const content = imageUrls.length
+    ? [...imageUrls.map((url) => ({ type: "image", source: { type: "url", url } })), { type: "text", text: user }]
+    : user;
   const res = await anthropic().messages.create({
     model: MODEL,
     max_tokens: maxTokens,
     output_config: { effort: "medium" },
     system,
-    messages: [{ role: "user", content: user }],
+    messages: [{ role: "user", content }],
   });
   if (res.stop_reason === "refusal") {
     throw new Error("The model declined to write this. Try a different idea or soften the brief.");
@@ -102,23 +108,6 @@ const ctaBrief = (ctaType = "follow") => `The CTA slide: {"isCta": true, "line1"
 - "line3": max 8 words, one reason or one detail below it. Only ever the one action (${ctaType}) — never list other actions like "like, share, save, comment".`;
 
 const SLIDE_BRIEF = {
-  bold: (n) => `"slides": exactly ${n} content slides, then the CTA slide.
-Each content slide: {"headline": "...", "body": "..."}. Slide 1: headline only (body empty), the hook. Slides 2-${n}: a headline under 9 words plus one or two tight sentences (under 40 words).
-${CAROUSEL_PSYCHOLOGY(n)}`,
-  raw: (n) => `"slides": exactly ${n} content slides, then the CTA slide.
-Each content slide: {"rawText": "..."}. This template shows the brand's own photo full-bleed with the text in a small box, so words are minimal:
-- Slide 1: 3 to 7 words, no explanation.
-- Slides 2-${n}: one or two short lines each (max 12 words total). Use a line break ("\n") between the two lines.
-- Never describe the photo. Speak to the viewer. Write mood and sensation, not instructions — this is a tease, not a tutorial. Unless the brand's voice explicitly asks for how-to steps, avoid literal instructional phrasing ("soak, buff, dry") in favour of what it feels like, sounds like, looks like.
-${CAROUSEL_PSYCHOLOGY(n)}`,
-  "dark-fade": (n) => `"slides": exactly ${n} content slides, then the CTA slide.
-Each slide: {"headline": "... max 7 words, short and bold", "subline": "one full sentence, up to about 22 words — give the reader something real: a detail, a feeling, a reason to keep going, not just a caption under a photo"}. Every slide sits on its own full-bleed photo with the text at the bottom.
-Write mood and sensation, not instructions — this is a tease, not a tutorial. Unless the brand's voice explicitly asks for how-to steps, avoid literal instructional phrasing ("soak, buff, dry", "warm it in hands") in favour of what it feels like, sounds like, looks like — a slow reveal, not a recipe. The subline is where the actual substance of the slide lives — make it worth reading, not decoration under the headline.
-${CAROUSEL_PSYCHOLOGY(n)}`,
-  "clean-pro": (n) => `"slides": exactly ${n} content slides, then the CTA slide.
-Slide 1 is the cover: {"headline": "... max 10 words, short and bold", "subline": "one full sentence, up to about 22 words — real substance, not decoration"}.
-Slides 2-${n}: {"headline": "... max 8 words", "bodyText": "... max 25 words, the fact or insight", "accentText": "... max 10 words, the punchline"}.
-${CAROUSEL_PSYCHOLOGY(n)}`,
   elegant: (n) => `"slides": exactly ${n} content slides, then the CTA slide.
 Each slide: {"kicker": "... 2-4 words, all caps eyebrow label that sets the scene", "headline": "... one short line, max 9 words, the actual line of the story", "detail": "one full sentence, up to about 20 words — the substance the reader stays for"}. Every slide sits on its own full-bleed photo with a soft vignette and an italic serif headline.
 Voice: quiet, elegant, seductive, a slow reveal — like a short story, not a tutorial or a sales pitch. Write mood and sensation, not instructions. Unless the brand's voice explicitly asks for how-to steps, never use literal instructional phrasing.
@@ -134,11 +123,7 @@ Note: for this advice-style template, slide 2's "second hook" should still be ab
 function normalizeSlides(out, template, n) {
   const raw = Array.isArray(out.slides) ? out.slides : [];
   const content = raw.filter((s) => s && !s.isCta).slice(0, n).map((s) => {
-    if (template === "raw") return { rawText: String(s.rawText || s.headline || "").trim() };
-    if (template === "dark-fade") return { headline: String(s.headline || "").trim(), subline: String(s.subline || s.body || s.bodyText || "").trim() };
-    if (template === "clean-pro") return { headline: String(s.headline || "").trim(), subline: String(s.subline || "").trim(), bodyText: String(s.bodyText || s.body || "").trim(), accentText: String(s.accentText || "").trim() };
-    if (template === "elegant" || template === "healthcode") return { kicker: String(s.kicker || "").trim(), headline: String(s.headline || "").trim(), detail: String(s.detail || "").trim() };
-    return { headline: String(s.headline || "").trim(), body: String(s.body || s.bodyText || "").trim() };
+    return { kicker: String(s.kicker || "").trim(), headline: String(s.headline || "").trim(), detail: String(s.detail || "").trim() };
   });
   const cta = raw.find((s) => s && s.isCta) || {};
   const clip = (t, words) => String(t || "").trim().split(/\s+/).filter(Boolean).slice(0, words).join(" ");
@@ -181,7 +166,7 @@ function normalizeCopy(out) {
 
 export async function generatePackage(brand, { idea, pillar, slideCount = 7, template = "bold", ctaType = "follow" }) {
   const n = Math.max(2, slideCount - 1); // last slide is the CTA
-  const brief = (SLIDE_BRIEF[template] || SLIDE_BRIEF.bold)(n);
+  const brief = (SLIDE_BRIEF[template] || SLIDE_BRIEF.elegant)(n);
   const CTA_BRIEF = ctaBrief(ctaType);
   const system = `You write complete social content packages (carousel slides + per-platform captions) for a brand. Reply with JSON only: {"slides": [...], "caption": "...", "tt_caption": "...", "tw_caption": "...", "hashtags": [...], "yt_title": "...", "yt_description": "...", "yt_tags": [...], "yt_pinned_comment": "...", "yt_category": "..."}\n${HOUSE_RULES}`;
   const user = `${brandContext(brand)}
@@ -199,7 +184,7 @@ ${CTA_BRIEF}
 export async function regenerateSlides(brand, item, template = "bold", ctaType = "follow") {
   const existing = Array.isArray(item.slides) ? item.slides.filter((s) => !s.isCta) : [];
   const n = existing.length || 6;
-  const brief = (SLIDE_BRIEF[template] || SLIDE_BRIEF.bold)(n);
+  const brief = (SLIDE_BRIEF[template] || SLIDE_BRIEF.elegant)(n);
   const CTA_BRIEF = ctaBrief(ctaType);
   const system = `You write carousel slide copy for a brand. Reply with JSON only: {"slides": [...]}.\n${HOUSE_RULES}`;
   const user = `${brandContext(brand)}

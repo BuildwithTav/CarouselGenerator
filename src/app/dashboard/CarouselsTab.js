@@ -3,9 +3,15 @@
 import { useEffect, useState } from "react";
 import { C, inp, lbl, card, btn, Chip, Badge, STATUS_COLOR, Spinner, CopyButton } from "./ui";
 import { PackageView, SlideStrip } from "./PackageView";
-import { themeOf, itemTemplate, slideCanHaveImage, templateAllowsAiImage, slideText, remapSlidesForTemplate, TEMPLATES, PHOTO_SOURCES, defaultPhotoSource } from "@/lib/brandTemplate";
+import { themeOf, itemTemplate, slideCanHaveImage, templateAllowsAiImage, slideText, remapSlidesForTemplate, TEMPLATES, PHOTO_SOURCES, defaultPhotoSource, itemPlatforms } from "@/lib/brandTemplate";
 
 const today = () => new Date().toISOString().slice(0, 10);
+const CAROUSEL_PLATFORMS = ["instagram", "tiktok", "youtube"];
+// An item belongs in the Carousels queue if it's destined for at least one
+// manual-post-elsewhere platform — a brand's regular carousel content still
+// shows its X caption box too if twitter's also enabled for that brand (see
+// itemPlatforms), it just isn't the X engine's own native post shape.
+const isCarouselItem = (item, brand) => itemPlatforms(item, brand).some((p) => CAROUSEL_PLATFORMS.includes(p));
 
 function splitPillars(s) {
   return String(s || "").split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
@@ -120,17 +126,15 @@ function NewContent({ api, brand, onCreated }) {
 
       {advanced && (
         <div style={{ background: C.bg, borderRadius: 10, padding: 14, marginBottom: 16, display: "flex", flexDirection: "column", gap: 14 }}>
-          {template !== "bold" && (
-            <div>
-              <label style={lbl}>Photos</label>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {PHOTO_SOURCES.filter(([id]) => id !== "ai" || templateAllowsAiImage(template)).map(([id, label]) => <Chip key={id} active={photoSource === id} onClick={() => setPhotoSource(id)}>{label}</Chip>)}
-              </div>
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>
-                {photoSource === "ai" ? `AI creates a photo for ${template === "clean-pro" ? "the cover" : "every slide"}, following the brand's photo direction (set in Brands).` : photoSource === "same" ? "One photo from your library goes on every slide (pick it below, or the least-used one is chosen)." : "Photos come from your library, least-used first, no repeats."}
-              </div>
+          <div>
+            <label style={lbl}>Photos</label>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {PHOTO_SOURCES.filter(([id]) => id !== "ai" || templateAllowsAiImage(template)).map(([id, label]) => <Chip key={id} active={photoSource === id} onClick={() => setPhotoSource(id)}>{label}</Chip>)}
             </div>
-          )}
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>
+              {photoSource === "ai" ? "AI creates a photo for every slide, following the brand's photo direction (set in Brand)." : photoSource === "same" ? "One photo from your library goes on every slide (pick it below, or the least-used one is chosen)." : "Photos come from your library, least-used first, no repeats."}
+            </div>
+          </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
             {pillars.length > 0 && (
@@ -168,7 +172,7 @@ function NewContent({ api, brand, onCreated }) {
             </div>
           )}
 
-          {photoSource !== "ai" && template !== "bold" && media.length === 0 && <div style={{ fontSize: 12, color: C.danger }}>This brand has no photos yet — upload some in the Brands tab{templateAllowsAiImage(template) ? ", or switch Photos to AI" : ""}.</div>}
+          {photoSource !== "ai" && media.length === 0 && <div style={{ fontSize: 12, color: C.danger }}>This brand has no photos yet — upload some in the Brand tab{templateAllowsAiImage(template) ? ", or switch Photos to AI" : ""}.</div>}
         </div>
       )}
 
@@ -214,7 +218,12 @@ function SlideImage({ slide, idx, media, busy, onPick, onGenerate, label }) {
   );
 }
 
-function Editor({ api, itemId, onBack, onChanged }) {
+// Branded template items only — raw/dark-fade/clean-pro/bold are gone,
+// elegant/healthcode are all that's left. An X-engine item never opens here:
+// the "x-post" shape (raw text + photos, no template) has its own XPostEditor
+// in XTab.js, and routing between the two is structural (which editor gets
+// mounted), not a flag threaded through this one.
+export function CarouselEditor({ api, itemId, onBack, onChanged }) {
   const [item, setItem] = useState(null);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(null);
@@ -231,7 +240,8 @@ function Editor({ api, itemId, onBack, onChanged }) {
   useEffect(() => { load(); }, [itemId]);
 
   function pick(i) {
-    return { idea: i.idea, scheduled_for: i.scheduled_for, template: itemTemplate(i, i.brands), slides: (i.slides || []).map((s) => ({ ...s })), caption: i.caption || "", tt_caption: i.tt_caption || "", tw_caption: i.tw_caption || "", yt_title: i.yt_title || "", yt_description: i.yt_description || "", yt_tags: (i.yt_tags || []).join(", "), yt_pinned_comment: i.yt_pinned_comment || "", yt_category: i.yt_category || "" };
+    const template = itemTemplate(i, i.brands);
+    return { idea: i.idea, scheduled_for: i.scheduled_for, template, slides: (i.slides || []).map((s) => ({ ...s })), caption: i.caption || "", tt_caption: i.tt_caption || "", tw_caption: i.tw_caption || "", yt_title: i.yt_title || "", yt_description: i.yt_description || "", yt_tags: (i.yt_tags || []).join(", "), yt_pinned_comment: i.yt_pinned_comment || "", yt_category: i.yt_category || "" };
   }
   const dirty = item && draft && JSON.stringify(pick(item)) !== JSON.stringify(draft);
 
@@ -270,21 +280,14 @@ function Editor({ api, itemId, onBack, onChanged }) {
   if (!item || !draft) return <div style={{ textAlign: "center", padding: 40, color: C.muted }}><Spinner /> Loading…</div>;
 
   const template = draft.template;
-  // X content engine posts: raw photos attached as-is, no slide template to
-  // render or switch — the template chips and render button don't apply and
-  // would destroy the attached photos if used (rendering an empty slide set
-  // overwrites slide_paths with nothing).
-  const isXPost = template === "x-post";
   const setSlide = (i, k, v) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, [k]: v } : s)) }));
   // Switching template keeps the wording (reshaped to fit) and every slide's
   // photo — a re-render is needed afterward for the new look to take effect.
   const switchTemplate = (t) => setDraft((d) => ({ ...d, template: t, slides: remapSlidesForTemplate(d.slides, t) }));
   const pickImage = (i, m) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, image_media_id: m.id, image_path: m.storage_path } : s)) }));
-  // Raw is one photo set: the same photo goes on every slide.
-  const pickSetImage = (m) => setDraft((d) => ({ ...d, slides: d.slides.map((s) => (s.isCta ? s : { ...s, image_media_id: m.id, image_path: m.storage_path })) }));
   const aiAllowed = templateAllowsAiImage(template);
   const stale = item.slide_paths?.length && (itemTemplate(item, item.brands) !== draft.template || JSON.stringify(item.slides) !== JSON.stringify(draft.slides));
-  const platforms = item.platforms?.length ? item.platforms : item.brands?.visual_theme?.platforms?.length ? item.brands.visual_theme.platforms : ["instagram", "tiktok", "youtube"];
+  const platforms = itemPlatforms(item, item.brands);
 
   const slideFields = (s, i) => {
     if (s.isCta) return (
@@ -294,35 +297,11 @@ function Editor({ api, itemId, onBack, onChanged }) {
         <input value={s.line3 || ""} onChange={(e) => setSlide(i, "line3", e.target.value)} placeholder="Line below it" style={inp} />
       </>
     );
-    if (template === "raw") return <textarea value={s.rawText || ""} onChange={(e) => setSlide(i, "rawText", e.target.value)} placeholder={i === 0 ? "Scroll-stopper — 3 to 7 words" : "One or two short lines"} rows={2} style={{ ...inp, fontWeight: 700, resize: "vertical" }} />;
-    if (template === "dark-fade") return (
-      <>
-        <input value={s.headline || ""} onChange={(e) => setSlide(i, "headline", e.target.value)} placeholder={i === 0 ? "Hook headline (max 7 words)" : "Headline (max 7 words)"} style={{ ...inp, fontWeight: 700 }} />
-        <input value={s.subline || ""} onChange={(e) => setSlide(i, "subline", e.target.value)} placeholder="Subline" style={{ ...inp, fontSize: 13 }} />
-      </>
-    );
-    if (template === "clean-pro") return (
-      <>
-        <input value={s.headline || ""} onChange={(e) => setSlide(i, "headline", e.target.value)} placeholder="Headline" style={{ ...inp, fontWeight: 700 }} />
-        {i === 0
-          ? <input value={s.subline || ""} onChange={(e) => setSlide(i, "subline", e.target.value)} placeholder="Subline" style={{ ...inp, fontSize: 13 }} />
-          : <>
-              <textarea value={s.bodyText || ""} onChange={(e) => setSlide(i, "bodyText", e.target.value)} placeholder="Body — the fact or insight" rows={2} style={{ ...inp, fontSize: 13, resize: "vertical" }} />
-              <input value={s.accentText || ""} onChange={(e) => setSlide(i, "accentText", e.target.value)} placeholder="Punchline (accent colour)" style={{ ...inp, fontSize: 13 }} />
-            </>}
-      </>
-    );
-    if (template === "elegant" || template === "healthcode") return (
+    return (
       <>
         <input value={s.kicker || ""} onChange={(e) => setSlide(i, "kicker", e.target.value)} placeholder="Kicker (small eyebrow label)" style={{ ...inp, fontSize: 12 }} />
         <input value={s.headline || ""} onChange={(e) => setSlide(i, "headline", e.target.value)} placeholder="Headline" style={{ ...inp, fontWeight: 700 }} />
         <textarea value={s.detail || ""} onChange={(e) => setSlide(i, "detail", e.target.value)} placeholder="Detail — the substance the reader stays for" rows={2} style={{ ...inp, fontSize: 13, resize: "vertical" }} />
-      </>
-    );
-    return (
-      <>
-        <input value={s.headline || ""} onChange={(e) => setSlide(i, "headline", e.target.value)} placeholder="Headline" style={{ ...inp, fontWeight: 700 }} />
-        {(i > 0) && <textarea value={s.body || ""} onChange={(e) => setSlide(i, "body", e.target.value)} placeholder="Body (optional)" rows={2} style={{ ...inp, fontSize: 13, resize: "vertical" }} />}
       </>
     );
   };
@@ -334,7 +313,7 @@ function Editor({ api, itemId, onBack, onChanged }) {
         <Badge color={STATUS_COLOR[item.status]}>{item.status}</Badge>
         <span style={{ fontSize: 12, color: C.muted }}>{item.brands?.name} · {TEMPLATES.find((t) => t.id === template)?.label || template}</span>
         <div style={{ flex: 1 }} />
-        {item.status === "draft" && <button onClick={() => setStatus("ready")} disabled={!!busy} style={btn("primary")}>{busy === "ready" ? "…" : "Approve → Today"}</button>}
+        {item.status === "draft" && <button onClick={() => setStatus("ready")} disabled={!!busy} style={btn("primary")}>{busy === "ready" ? "…" : "Approve → Ready"}</button>}
         {item.status === "ready" && <button onClick={() => setStatus("draft")} disabled={!!busy} style={btn("ghost")}>Back to draft</button>}
         {item.status === "posted" && <button onClick={() => setStatus("ready")} disabled={!!busy} style={btn("ghost")}>Re-queue</button>}
       </div>
@@ -353,40 +332,30 @@ function Editor({ api, itemId, onBack, onChanged }) {
           </div>
         </div>
 
-        {!isXPost && (
-          <div style={{ marginBottom: 12 }}>
-            <label style={lbl}>Template</label>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {TEMPLATES.map((t) => <Chip key={t.id} active={template === t.id} onClick={() => switchTemplate(t.id)}>{t.label}</Chip>)}
-            </div>
-            <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>Switching keeps the wording and photos, reshaped for the new look — re-render after switching.</div>
+        <div style={{ marginBottom: 12 }}>
+          <label style={lbl}>Template</label>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {TEMPLATES.map((t) => <Chip key={t.id} active={template === t.id} onClick={() => switchTemplate(t.id)}>{t.label}</Chip>)}
           </div>
-        )}
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>Switching keeps the wording and photos, reshaped for the new look — re-render after switching.</div>
+        </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-          <label style={{ ...lbl, margin: 0 }}>{isXPost ? "Photos" : "Slides"}</label>
-          {!isXPost && (
-            <div style={{ display: "flex", gap: 6 }}>
-              <button onClick={() => regen("slides")} disabled={!!busy} style={btn("small")}>{busy === "regen-slides" ? <><Spinner /> Rewriting…</> : "↻ Rewrite slides"}</button>
-              <button onClick={render} disabled={!!busy || dirty} title={dirty ? "Save first" : ""} style={btn("small", { background: C.gold, color: "#000", borderColor: C.gold, opacity: dirty ? 0.5 : 1 })}>{busy === "render" ? <><Spinner /> Rendering…</> : item.slide_paths?.length ? "Re-render images" : "Render images"}</button>
-            </div>
-          )}
+          <label style={{ ...lbl, margin: 0 }}>Slides</label>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button onClick={() => regen("slides")} disabled={!!busy} style={btn("small")}>{busy === "regen-slides" ? <><Spinner /> Rewriting…</> : "↻ Rewrite slides"}</button>
+            <button onClick={render} disabled={!!busy || dirty} title={dirty ? "Save first" : ""} style={btn("small", { background: C.gold, color: "#000", borderColor: C.gold, opacity: dirty ? 0.5 : 1 })}>{busy === "render" ? <><Spinner /> Rendering…</> : item.slide_paths?.length ? "Re-render images" : "Render images"}</button>
+          </div>
         </div>
-        {isXPost && <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>Posted to X as-is, no template or overlay — these are the raw photos attached to the post, if any. Edit the post text below.</div>}
         {stale ? <div style={{ fontSize: 11, color: C.gold, marginBottom: 6 }}>Slides changed — save, then re-render to update the images.</div> : null}
         <SlideStrip item={item} size={84} />
-        {template === "raw" && draft.slides[0] && (
-          <div style={{ marginTop: 10, padding: 10, background: C.bg, borderRadius: 8 }}>
-            <SlideImage slide={draft.slides[0]} idx={0} media={media} busy={busy} onPick={pickSetImage} label="Photo for this set (every slide)" />
-          </div>
-        )}
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 10 }}>
           {draft.slides.map((s, i) => (
             <div key={i} style={{ display: "grid", gridTemplateColumns: "28px 1fr", gap: 8, alignItems: "start" }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: C.muted, paddingTop: 12 }}>{i + 1}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 {slideFields(s, i)}
-                {template !== "raw" && slideCanHaveImage(template, i, s) && <SlideImage slide={s} idx={i} media={media} busy={busy} onPick={(m) => pickImage(i, m)} onGenerate={aiAllowed ? () => generateImage(i) : null} label={i === 0 ? "Cover photo" : (template === "dark-fade" || template === "elegant" || template === "healthcode") ? "Slide photo" : null} />}
+                {slideCanHaveImage(template, i, s) && <SlideImage slide={s} idx={i} media={media} busy={busy} onPick={(m) => pickImage(i, m)} onGenerate={aiAllowed ? () => generateImage(i) : null} label={i === 0 ? "Cover photo" : "Slide photo"} />}
               </div>
             </div>
           ))}
@@ -420,7 +389,7 @@ function Editor({ api, itemId, onBack, onChanged }) {
         {platforms.includes("twitter") && (
           <div style={{ marginBottom: 12 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-              <label style={{ ...lbl, margin: 0 }}>X (Twitter) post</label>
+              <label style={{ ...lbl, margin: 0 }}>X (Twitter) post <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500, color: C.muted }}>(this brand also auto-posts to X)</span></label>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 11, color: draft.tw_caption.length > 280 ? C.danger : C.muted }}>{draft.tw_caption.length}/280</span>
                 <CopyButton text={draft.tw_caption} label="Copy" kind="small" />
@@ -449,14 +418,66 @@ function Editor({ api, itemId, onBack, onChanged }) {
       </div>
 
       <div style={card}>
-        <label style={lbl}>Copy-paste package (as it'll appear in Today)</label>
+        <label style={lbl}>Copy-paste package</label>
         <PackageView item={{ ...item, ...draft, yt_tags: draft.yt_tags.split(",").map((t) => t.trim()).filter(Boolean) }} platforms={platforms} />
       </div>
     </div>
   );
 }
 
-export function ContentTab({ api, brands, activeId, setActiveId, openItemId, setOpenItemId }) {
+function QueueRow({ api, item, brand, onOpen, onChanged }) {
+  const [marking, setMarking] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const platforms = itemPlatforms(item, brand).filter((p) => CAROUSEL_PLATFORMS.includes(p));
+  const remaining = platforms.filter((p) => !item[`posted_${p}_at`]);
+
+  const setStatus = async (status) => {
+    setBusy(true);
+    try { const { item: next } = await api.patch("/api/content", { id: item.id, status }); onChanged(next); } catch (e) { alert(e.message); }
+    setBusy(false);
+  };
+  const markPosted = async (platform) => {
+    setMarking(platform);
+    try { const { item: next } = await api.patch("/api/content", { id: item.id, action: "mark_posted", platform }); onChanged(next); } catch (e) { alert(e.message); }
+    setMarking(null);
+  };
+
+  return (
+    <div style={{ ...card, padding: 14 }}>
+      <div style={{ display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }} onClick={onOpen}>
+        <div style={{ width: 52, aspectRatio: "1080/1350", borderRadius: 6, background: C.bg, border: `1px solid ${C.border}`, overflow: "hidden", flexShrink: 0 }}>
+          {item.thumb_url && <img src={item.thumb_url} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.idea}</div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+            <Badge color={STATUS_COLOR[item.status]}>{item.status}</Badge>
+            {item.pillar && <Badge>{item.pillar}</Badge>}
+            <span style={{ fontSize: 11, color: C.muted }}>{item.scheduled_for}</span>
+            {!item.slide_paths?.length && <span style={{ fontSize: 11, color: C.danger }}>images not rendered</span>}
+          </div>
+        </div>
+        <span style={{ color: C.muted }}>›</span>
+      </div>
+      {item.status === "draft" && (
+        <div style={{ display: "flex", gap: 8, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
+          <button onClick={(e) => { e.stopPropagation(); setStatus("ready"); }} disabled={busy} style={btn("primary", { flex: 1 })}>{busy ? "…" : "Approve → Ready"}</button>
+        </div>
+      )}
+      {item.status === "ready" && remaining.length > 0 && (
+        <div style={{ display: "flex", gap: 6, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}`, flexWrap: "wrap" }}>
+          {remaining.map((p) => (
+            <button key={p} onClick={(e) => { e.stopPropagation(); markPosted(p); }} disabled={marking === p} style={btn("ghost", { fontSize: 11, opacity: marking === p ? 0.5 : 1 })}>
+              {marking === p ? "Saving…" : `✓ Posted on ${p === "instagram" ? "Instagram" : p === "tiktok" ? "TikTok" : "YouTube"}`}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function CarouselsTab({ api, brands, activeId, setActiveId, openItemId, setOpenItemId, active }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("all");
@@ -468,17 +489,18 @@ export function ContentTab({ api, brands, activeId, setActiveId, openItemId, set
     try { const d = await api.get(`/api/content?brandId=${activeId}`); setItems(d.items || []); } catch (e) { console.error(e); }
     setLoading(false);
   };
-  useEffect(() => { load(); }, [activeId]);
+  useEffect(() => { if (active) load(); }, [activeId, active]);
 
   const onChanged = (next, deletedId) => {
     if (deletedId) return setItems((list) => list.filter((i) => i.id !== deletedId));
     if (next) setItems((list) => list.some((i) => i.id === next.id) ? list.map((i) => (i.id === next.id ? next : i)) : [next, ...list]);
   };
 
-  if (openItemId) return <Editor api={api} itemId={openItemId} onBack={() => setOpenItemId(null)} onChanged={onChanged} />;
-  if (!brand) return <div style={{ ...card, color: C.muted, textAlign: "center" }}>Create a brand first in the Brands tab.</div>;
+  if (openItemId) return <CarouselEditor api={api} itemId={openItemId} onBack={() => setOpenItemId(null)} onChanged={onChanged} />;
+  if (!brand) return <div style={{ ...card, color: C.muted, textAlign: "center" }}>Create a brand first in the Brand tab.</div>;
 
-  const visible = items.filter((i) => filter === "all" || i.status === filter);
+  const carouselItems = items.filter((i) => isCarouselItem(i, brand));
+  const visible = carouselItems.filter((i) => filter === "all" || i.status === filter);
 
   return (
     <div>
@@ -495,21 +517,7 @@ export function ContentTab({ api, brands, activeId, setActiveId, openItemId, set
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {visible.map((i) => (
-          <div key={i.id} onClick={() => setOpenItemId(i.id)} style={{ ...card, padding: 14, display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
-            <div style={{ width: 52, aspectRatio: "1080/1350", borderRadius: 6, background: C.bg, border: `1px solid ${C.border}`, overflow: "hidden", flexShrink: 0 }}>
-              {i.thumb_url && <img src={i.thumb_url} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i.idea}</div>
-              <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                <Badge color={STATUS_COLOR[i.status]}>{i.status}</Badge>
-                {i.pillar && <Badge>{i.pillar}</Badge>}
-                <span style={{ fontSize: 11, color: C.muted }}>{i.scheduled_for}</span>
-                {!i.slide_paths?.length && <span style={{ fontSize: 11, color: C.danger }}>images not rendered</span>}
-              </div>
-            </div>
-            <span style={{ color: C.muted }}>›</span>
-          </div>
+          <QueueRow key={i.id} api={api} item={i} brand={brand} onOpen={() => setOpenItemId(i.id)} onChanged={onChanged} />
         ))}
       </div>
     </div>

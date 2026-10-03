@@ -1,5 +1,5 @@
-import { supabaseAdmin, BUCKET, brandPlatforms, itemPlatforms, postedColumn } from "@/lib/dashboard";
-import { uploadMedia, postTweet } from "@/lib/twitterApi";
+import { supabaseAdmin, brandPlatforms } from "@/lib/dashboard";
+import { postItemToX } from "@/lib/twitterApi";
 
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
@@ -39,32 +39,7 @@ export async function GET(req) {
     if (!item) { results.push({ brand: brand.slug, posted: false, reason: "nothing ready" }); continue; }
 
     try {
-      const text = (item.tw_caption || item.caption || "").slice(0, 280);
-      // Up to 4 images (a carousel-style X post), one (a single-image post),
-      // or none at all (text-only) — the X content engine decides this by how
-      // many photos it attached, not by any separate "format" field.
-      const paths = (item.slide_paths || []).slice(0, 4);
-      const mediaIds = [];
-      for (const path of paths) {
-        const { data: file, error: dlErr } = await supabase.storage.from(BUCKET).download(path);
-        if (dlErr) throw new Error("Could not download slide image: " + dlErr.message);
-        mediaIds.push(await uploadMedia(Buffer.from(await file.arrayBuffer()), "image/png"));
-      }
-      await postTweet(text, mediaIds);
-
-      const { data: updatedItem, error: upErr } = await supabase
-        .from("content_items")
-        .update({ posted_twitter_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-        .eq("id", item.id)
-        .select("*")
-        .single();
-      if (upErr) throw new Error("Posted to X but failed to record it: " + upErr.message);
-
-      const platforms = itemPlatforms(updatedItem, brand);
-      if (platforms.every((p) => updatedItem[postedColumn(p)])) {
-        await supabase.from("content_items").update({ status: "posted" }).eq("id", item.id);
-      }
-
+      await postItemToX(supabase, item, brand);
       results.push({ brand: brand.slug, posted: true, itemId: item.id });
     } catch (e) {
       console.error(`Twitter post failed for ${brand.slug}:`, e.message);

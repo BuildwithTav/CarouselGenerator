@@ -1,5 +1,8 @@
-import { dashboardAuthorized, supabaseAdmin, brandPlatforms, assignSlideImages, bumpMediaUse } from "@/lib/dashboard";
-import { X_SLOTS, pickPillar, pickFormat, generateXPost } from "@/lib/xContent";
+import { dashboardAuthorized, supabaseAdmin, brandPlatforms, bumpMediaUse, BUCKET } from "@/lib/dashboard";
+import { X_SLOTS, pickPillar, pickFormat, generateXPost, generateBrandedCarouselIdea, generatePackage } from "@/lib/xContent";
+import { generateMatchingPhoto } from "@/lib/imageGen";
+import { buildBrandSlides, slideText } from "@/lib/brandTemplate";
+import { renderSlides } from "@/lib/renderSlides";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -22,6 +25,68 @@ export const dynamic = "force-dynamic";
 const RECENT_DAYS = 30;
 const RECENT_LIMIT = 20;
 
+// Generates one or more AI photos matching the given scene descriptions
+// (text-first: the scene already says exactly what the photo must show —
+// see xContent.js's generateXPost), keeping the same locked model
+// description across the set for a consistent-looking person. The first
+// photo runs alone to establish that description; the rest run in parallel
+// against it — sequential would risk this whole route running past its own
+// function timeout once a carousel needs 3-4 generated photos in one call.
+// Returns the storage paths (for posting) and media IDs (for use tracking).
+async function photosForScenes(brand, scenes) {
+  if (!scenes.length) return { paths: [], mediaIds: [] };
+  const first = await generateMatchingPhoto(brand, { slideText: scenes[0], style: "editorial", textZone: "bottom" });
+  const rest = await Promise.all(
+    scenes.slice(1).map((scene) => generateMatchingPhoto(brand, { slideText: scene, style: "editorial", textZone: "bottom", modelNote: first.modelNote }))
+  );
+  const all = [first, ...rest];
+  return { paths: all.map((r) => r.media.storage_path), mediaIds: all.map((r) => r.media.id) };
+}
+
+// The branded-carousel format: a short multi-slide post rendered through
+// the real template pipeline, same as any Instagram carousel, capped at 4
+// slides for X's own image-per-post limit. Returns the finished slide_paths
+// and the item's slide data (so it opens correctly in the carousel editor).
+async function buildBrandedCarousel(brand, { pillar, recentPosts }) {
+  const template = brand?.visual_theme?.template === "healthcode" ? "healthcode" : "elegant";
+  const idea = await generateBrandedCarouselIdea(brand, { pillar, recentPosts });
+  const pkg = await generatePackage(brand, { idea, pillar: pillar.label, slideCount: 4, template, ctaType: brand?.visual_theme?.cta?.type || "follow" });
+
+  const contentSlides = pkg.slides.filter((s) => !s.isCta);
+  const ctaSlide = pkg.slides.find((s) => s.isCta);
+  // First slide runs alone to establish the locked model description; the
+  // rest run in parallel against it (same reasoning as photosForScenes —
+  // sequential generation for 3+ slides risks the function's own timeout).
+  const first = await generateMatchingPhoto(brand, { slideText: slideText(contentSlides[0]), idea, style: "editorial", textZone: "bottom" });
+  const rest = await Promise.all(
+    contentSlides.slice(1).map((s) => generateMatchingPhoto(brand, { slideText: slideText(s), idea, style: "editorial", textZone: "bottom", modelNote: first.modelNote }))
+  );
+  const photos = [first, ...rest];
+  const mediaIds = photos.map((p) => p.media.id);
+  const slides = [
+    ...contentSlides.map((s, i) => ({ ...s, image_media_id: photos[i].media.id, image_path: photos[i].media.storage_path, image_url: photos[i].media.url })),
+    ...(ctaSlide ? [ctaSlide] : []),
+  ];
+
+  const htmls = buildBrandSlides({ brand, slides, profileUrl: null, coverImageUrl: null, template });
+  const pngs = await renderSlides(htmls);
+
+  const stamp = Date.now();
+  const supabase = supabaseAdmin();
+  const slidePaths = [];
+  for (let i = 0; i < pngs.length; i++) {
+    const path = `content/x-${brand.id}-${stamp}/slide-${String(i + 1).padStart(2, "0")}.png`;
+    const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, pngs[i], { contentType: "image/png", upsert: true });
+    if (upErr) throw new Error("Upload failed: " + upErr.message);
+    slidePaths.push(path);
+  }
+
+  // Strip the signed image_url before storing — slides are stored with
+  // image_media_id/image_path only, same as every other content item.
+  const storedSlides = slides.map(({ image_url, ...rest }) => rest);
+  return { idea, template, slidePaths, slides: storedSlides, caption: pkg.tw_caption || "", mediaIds };
+}
+
 async function runXContentGeneration(brandIdFilter) {
   const supabase = supabaseAdmin();
 
@@ -33,6 +98,9 @@ async function runXContentGeneration(brandIdFilter) {
 
   const results = [];
   for (const brand of twitterBrands) {
+    let queued = 0;
+    const errors = [];
+    let recentPosts = [];
     try {
       const { data: recent } = await supabase
         .from("content_items")
@@ -42,23 +110,49 @@ async function runXContentGeneration(brandIdFilter) {
         .gte("created_at", since)
         .order("created_at", { ascending: false })
         .limit(RECENT_LIMIT);
-      const recentPosts = (recent || []).map((r) => r.tw_caption).filter(Boolean);
+      recentPosts = (recent || []).map((r) => r.tw_caption).filter(Boolean);
+    } catch (e) {
+      results.push({ brand: brand.slug, queued: 0, error: "Couldn't load recent posts: " + e.message });
+      continue;
+    }
 
-      let posted = 0;
-      for (const slot of X_SLOTS) {
+    // Each slot fails on its own — a slow or broken branded carousel
+    // shouldn't cost the brand its other two posts for the day.
+    for (const slot of X_SLOTS) {
+      try {
         const pillar = pickPillar();
-        const { format, photoCount } = pickFormat(slot);
+        const { format } = pickFormat(slot);
 
-        const { text } = await generateXPost(brand, { slot, pillar, format, recentPosts: recentPosts.slice(0, RECENT_LIMIT) });
+        if (format === "branded_carousel") {
+          const built = await buildBrandedCarousel(brand, { pillar, recentPosts: recentPosts.slice(0, RECENT_LIMIT) });
+          recentPosts.unshift(built.caption);
+          await bumpMediaUse(built.mediaIds);
+          const { error: insErr } = await supabase.from("content_items").insert({
+            brand_id: brand.id,
+            idea: built.idea,
+            pillar: pillar.label,
+            status: "draft",
+            scheduled_for: today,
+            slides: built.slides,
+            slide_paths: built.slidePaths,
+            tw_caption: built.caption,
+            platforms: ["twitter"],
+            template: built.template,
+          });
+          if (insErr) throw new Error(`insert failed (${slot.key}): ${insErr.message}`);
+          queued++;
+          continue;
+        }
+
+        const { text, scenes } = await generateXPost(brand, { slot, pillar, format, recentPosts: recentPosts.slice(0, RECENT_LIMIT) });
         if (!text) continue;
-        recentPosts.unshift(text); // so the next slot today also avoids repeating this one
+        recentPosts.unshift(text);
 
         let slidePaths = [];
-        if (photoCount > 0) {
-          const slots = Array.from({ length: photoCount }, () => ({}));
-          await assignSlideImages(brand.id, slots, () => true, [brand.visual_theme?.profile_media_id], { sameForAll: false });
-          slidePaths = slots.map((s) => s.image_path).filter(Boolean);
-          await bumpMediaUse(slots.map((s) => s.image_media_id));
+        if (scenes.length) {
+          const photos = await photosForScenes(brand, scenes);
+          slidePaths = photos.paths;
+          await bumpMediaUse(photos.mediaIds);
         }
 
         const { error: insErr } = await supabase.from("content_items").insert({
@@ -73,13 +167,13 @@ async function runXContentGeneration(brandIdFilter) {
           template: "x-post",
         });
         if (insErr) throw new Error(`insert failed (${slot.key}): ${insErr.message}`);
-        posted++;
+        queued++;
+      } catch (e) {
+        console.error(`X content generation failed for ${brand.slug} (${slot.key}):`, e.message);
+        errors.push(`${slot.key}: ${e.message}`);
       }
-      results.push({ brand: brand.slug, queued: posted });
-    } catch (e) {
-      console.error(`X content generation failed for ${brand.slug}:`, e.message);
-      results.push({ brand: brand.slug, queued: 0, error: e.message });
     }
+    results.push(errors.length ? { brand: brand.slug, queued, error: errors.join(" | ") } : { brand: brand.slug, queued });
   }
 
   return results;
