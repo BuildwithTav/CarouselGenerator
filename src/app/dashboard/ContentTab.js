@@ -231,7 +231,11 @@ function Editor({ api, itemId, onBack, onChanged }) {
   useEffect(() => { load(); }, [itemId]);
 
   function pick(i) {
-    return { idea: i.idea, scheduled_for: i.scheduled_for, template: itemTemplate(i, i.brands), slides: (i.slides || []).map((s) => ({ ...s })), caption: i.caption || "", tt_caption: i.tt_caption || "", tw_caption: i.tw_caption || "", yt_title: i.yt_title || "", yt_description: i.yt_description || "", yt_tags: (i.yt_tags || []).join(", "), yt_pinned_comment: i.yt_pinned_comment || "", yt_category: i.yt_category || "" };
+    // X content engine posts carry no branded template at all — itemTemplate()
+    // doesn't know that and falls back to the brand's default (e.g. Elegant),
+    // which silently swapped every x-post into the branded carousel editor.
+    const template = i.template === "x-post" ? "x-post" : itemTemplate(i, i.brands);
+    return { idea: i.idea, scheduled_for: i.scheduled_for, template, slides: (i.slides || []).map((s) => ({ ...s })), caption: i.caption || "", tt_caption: i.tt_caption || "", tw_caption: i.tw_caption || "", yt_title: i.yt_title || "", yt_description: i.yt_description || "", yt_tags: (i.yt_tags || []).join(", "), yt_pinned_comment: i.yt_pinned_comment || "", yt_category: i.yt_category || "" };
   }
   const dirty = item && draft && JSON.stringify(pick(item)) !== JSON.stringify(draft);
 
@@ -283,7 +287,9 @@ function Editor({ api, itemId, onBack, onChanged }) {
   // Raw is one photo set: the same photo goes on every slide.
   const pickSetImage = (m) => setDraft((d) => ({ ...d, slides: d.slides.map((s) => (s.isCta ? s : { ...s, image_media_id: m.id, image_path: m.storage_path })) }));
   const aiAllowed = templateAllowsAiImage(template);
-  const stale = item.slide_paths?.length && (itemTemplate(item, item.brands) !== draft.template || JSON.stringify(item.slides) !== JSON.stringify(draft.slides));
+  // x-post items have no template to go stale against — the photos are the
+  // final asset, not a render input, so there's nothing to re-render.
+  const stale = template !== "x-post" && item.slide_paths?.length && (itemTemplate(item, item.brands) !== draft.template || JSON.stringify(item.slides) !== JSON.stringify(draft.slides));
   const platforms = item.platforms?.length ? item.platforms : item.brands?.visual_theme?.platforms?.length ? item.brands.visual_theme.platforms : ["instagram", "tiktok", "youtube"];
 
   const slideFields = (s, i) => {
@@ -508,7 +514,8 @@ export function ContentTab({ api, brands, activeId, setActiveId, openItemId, set
                 <Badge color={STATUS_COLOR[i.status]}>{i.status}</Badge>
                 {i.pillar && <Badge>{i.pillar}</Badge>}
                 <span style={{ fontSize: 11, color: C.muted }}>{i.scheduled_for}</span>
-                {!i.slide_paths?.length && <span style={{ fontSize: 11, color: C.danger }}>images not rendered</span>}
+                {i.template !== "x-post" && !i.slide_paths?.length && <span style={{ fontSize: 11, color: C.danger }}>images not rendered</span>}
+                {i.template === "x-post" && !i.slide_paths?.length && <span style={{ fontSize: 11, color: C.muted }}>text only</span>}
               </div>
             </div>
             <span style={{ color: C.muted }}>›</span>

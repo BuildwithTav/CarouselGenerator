@@ -47,13 +47,19 @@ function extractJson(text) {
   return JSON.parse(text.slice(start, end + 1));
 }
 
-export async function ask(system, user, maxTokens = 8000) {
+// `imageUrls`, when given, puts the actual photo(s) in front of the model
+// before the text prompt, so it writes about what's really in the shot
+// instead of guessing blind — see xContent.js for why this matters.
+export async function ask(system, user, maxTokens = 8000, imageUrls = []) {
+  const content = imageUrls.length
+    ? [...imageUrls.map((url) => ({ type: "image", source: { type: "url", url } })), { type: "text", text: user }]
+    : user;
   const res = await anthropic().messages.create({
     model: MODEL,
     max_tokens: maxTokens,
     output_config: { effort: "medium" },
     system,
-    messages: [{ role: "user", content: user }],
+    messages: [{ role: "user", content }],
   });
   if (res.stop_reason === "refusal") {
     throw new Error("The model declined to write this. Try a different idea or soften the brief.");

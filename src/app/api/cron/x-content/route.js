@@ -1,4 +1,4 @@
-import { dashboardAuthorized, supabaseAdmin, brandPlatforms, assignSlideImages, bumpMediaUse } from "@/lib/dashboard";
+import { dashboardAuthorized, supabaseAdmin, brandPlatforms, assignSlideImages, bumpMediaUse, signPaths } from "@/lib/dashboard";
 import { X_SLOTS, pickPillar, pickFormat, generateXPost } from "@/lib/xContent";
 
 export const maxDuration = 60;
@@ -49,17 +49,25 @@ async function runXContentGeneration(brandIdFilter) {
         const pillar = pickPillar();
         const { format, photoCount } = pickFormat(slot);
 
-        const { text } = await generateXPost(brand, { slot, pillar, format, recentPosts: recentPosts.slice(0, RECENT_LIMIT) });
-        if (!text) continue;
-        recentPosts.unshift(text); // so the next slot today also avoids repeating this one
-
+        // Photos are picked before the copy is written, not after — the
+        // caption is written looking at the actual photo(s), so it can
+        // genuinely respond to what's in them instead of being a generic
+        // line bolted onto whatever got picked.
         let slidePaths = [];
+        let mediaIds = [];
+        let imageUrls = [];
         if (photoCount > 0) {
           const slots = Array.from({ length: photoCount }, () => ({}));
           await assignSlideImages(brand.id, slots, () => true, [brand.visual_theme?.profile_media_id], { sameForAll: false });
           slidePaths = slots.map((s) => s.image_path).filter(Boolean);
-          await bumpMediaUse(slots.map((s) => s.image_media_id));
+          mediaIds = slots.map((s) => s.image_media_id).filter(Boolean);
+          imageUrls = await signPaths(slidePaths);
         }
+
+        const { text } = await generateXPost(brand, { slot, pillar, format, recentPosts: recentPosts.slice(0, RECENT_LIMIT), imageUrls });
+        if (!text) continue;
+        recentPosts.unshift(text); // so the next slot today also avoids repeating this one
+        await bumpMediaUse(mediaIds);
 
         const { error: insErr } = await supabase.from("content_items").insert({
           brand_id: brand.id,

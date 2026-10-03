@@ -91,7 +91,7 @@ Absolute rule, not a style preference: no wordplay, puns, or jokes about feet, t
 // `recentPosts` is a short list of recent captions (already posted or
 // queued) for this brand, used purely to stop the model repeating a hook,
 // joke, question, or structure it's already used in roughly the last month.
-export async function generateXPost(brand, { slot, pillar, format, recentPosts = [] }) {
+export async function generateXPost(brand, { slot, pillar, format, recentPosts = [], imageUrls = [] }) {
   const system = `You write one X (Twitter) post for a brand's account. Reply with JSON only: {"text": "..."}.
 ${VOICE_RULES}`;
 
@@ -99,8 +99,8 @@ ${VOICE_RULES}`;
     format === "text"
       ? "This post is text-only, no image. The words alone have to carry it."
       : format === "single"
-      ? "This post has one photo attached already (you don't choose it). Write only the short accompanying text, 3 to 25 words — never a caption that just describes the photo."
-      : "This post has 2 to 4 photos attached already, in a short sequence that tells a tiny story or shows progression (e.g. getting ready, then heels, then aircraft, then shoes off). Write one short line of copy for the whole set, not per-photo captions.";
+      ? "This post has one photo attached, shown to you above — look at what's actually in it (setting, pose, props, mood) before writing. 3 to 25 words. Never a caption that just describes the photo, but it has to genuinely fit this specific shot, not be a generic line that could sit under any photo."
+      : "This post has 2 to 4 photos attached, shown to you above in order — look at what's actually in each one. Write one short line of copy for the whole set that fits the actual sequence shown (not an invented progression), not per-photo captions.";
 
   const recentBlock = recentPosts.length
     ? `Recent posts from this account (do not repeat their hook, joke, question, topic angle, or sentence structure — the execution must be noticeably different even if the broad topic recurs):\n${recentPosts.map((p) => `- ${p}`).join("\n")}`
@@ -118,6 +118,6 @@ Before answering, check: does this sound like a real person, not an automated ac
 
 Write the post.`;
 
-  const out = await ask(system, user, 600);
+  const out = await ask(system, user, 600, imageUrls);
   return { text: String(out.text || "").trim().slice(0, 280) };
 }
