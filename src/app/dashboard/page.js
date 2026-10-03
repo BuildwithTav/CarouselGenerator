@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { C, FONT, inp, btn, Chip, createApi, GLOBAL_CSS } from "./ui";
-import { TodayTab } from "./TodayTab";
-import { ContentTab } from "./ContentTab";
+import { XTab } from "./XTab";
+import { CarouselsTab } from "./CarouselsTab";
 import { BrandsTab } from "./BrandsTab";
 
 function PassGate({ onUnlock }) {
@@ -39,11 +39,11 @@ function PassGate({ onUnlock }) {
   );
 }
 
-const TABS = [["today", "Today"], ["content", "Content"], ["brands", "Brands"]];
+const TABS = [["x", "X"], ["carousels", "Carousels"], ["brand", "Brand"]];
 
 function Dashboard({ dashKey, onLock }) {
   const [api] = useState(() => createApi(dashKey, onLock));
-  const [tab, setTab] = useState("today");
+  const [tab, setTab] = useState("x");
   const [brands, setBrands] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [openItemId, setOpenItemId] = useState(null);
@@ -54,8 +54,6 @@ function Dashboard({ dashKey, onLock }) {
       setActiveId((cur) => cur || d.brands?.[0]?.id || null);
     }).catch(() => {});
   }, []);
-
-  const openItem = (id) => { setOpenItemId(id); setTab("content"); };
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: FONT }}>
@@ -70,7 +68,7 @@ function Dashboard({ dashKey, onLock }) {
         </div>
         <div style={{ maxWidth: 900, margin: "0 auto", padding: "8px 20px 0", display: "flex", gap: 4 }}>
           {TABS.map(([id, label]) => (
-            <button key={id} onClick={() => { setTab(id); if (id !== "content") setOpenItemId(null); }} style={{ background: "none", border: "none", borderBottom: tab === id ? `3px solid ${C.gold}` : "3px solid transparent", color: tab === id ? C.text : C.muted, padding: "8px 14px", fontSize: 14, fontWeight: tab === id ? 800 : 600, cursor: "pointer", fontFamily: FONT }}>
+            <button key={id} onClick={() => { setTab(id); setOpenItemId(null); }} style={{ background: "none", border: "none", borderBottom: tab === id ? `3px solid ${C.gold}` : "3px solid transparent", color: tab === id ? C.text : C.muted, padding: "8px 14px", fontSize: 14, fontWeight: tab === id ? 800 : 600, cursor: "pointer", fontFamily: FONT }}>
               {label}
             </button>
           ))}
@@ -78,7 +76,7 @@ function Dashboard({ dashKey, onLock }) {
       </nav>
 
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "22px 16px 60px" }}>
-        {tab !== "today" && brands.length > 0 && !openItemId && (
+        {tab !== "brand" && brands.length > 0 && !openItemId && (
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
             {brands.map((b) => <Chip key={b.id} active={activeId === b.id} onClick={() => setActiveId(b.id)}>{b.name}</Chip>)}
           </div>
@@ -86,9 +84,9 @@ function Dashboard({ dashKey, onLock }) {
         {/* All three tabs stay mounted so switching between them never loses
             an unsaved idea, an open editor, or scroll position — only the
             active one is visible. */}
-        <div style={{ display: tab === "today" ? "block" : "none" }}><TodayTab api={api} active={tab === "today"} onOpenItem={openItem} /></div>
-        <div style={{ display: tab === "content" ? "block" : "none" }}><ContentTab api={api} brands={brands} activeId={activeId} setActiveId={setActiveId} openItemId={openItemId} setOpenItemId={setOpenItemId} active={tab === "content"} /></div>
-        <div style={{ display: tab === "brands" ? "block" : "none" }}><BrandsTab api={api} brands={brands} activeId={activeId} setActiveId={setActiveId} onBrandsChange={setBrands} /></div>
+        <div style={{ display: tab === "x" ? "block" : "none" }}><XTab api={api} brands={brands} activeId={activeId} setActiveId={setActiveId} openItemId={tab === "x" ? openItemId : null} setOpenItemId={setOpenItemId} active={tab === "x"} onBrandsChange={setBrands} /></div>
+        <div style={{ display: tab === "carousels" ? "block" : "none" }}><CarouselsTab api={api} brands={brands} activeId={activeId} setActiveId={setActiveId} openItemId={tab === "carousels" ? openItemId : null} setOpenItemId={setOpenItemId} active={tab === "carousels"} /></div>
+        <div style={{ display: tab === "brand" ? "block" : "none" }}><BrandsTab api={api} brands={brands} activeId={activeId} setActiveId={setActiveId} onBrandsChange={setBrands} /></div>
       </div>
     </div>
   );

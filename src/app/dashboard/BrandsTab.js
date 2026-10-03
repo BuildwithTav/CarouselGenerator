@@ -44,7 +44,9 @@ function Seg({ value, options, onChange }) {
   );
 }
 
-function BrandForm({ brand, media, saving, onSave, onDelete }) {
+const SECTIONS = [["voice", "Voice & Platforms"], ["look", "Template Look"], ["media", "Media Library"]];
+
+function BrandForm({ brand, media, saving, onSave, onDelete, section }) {
   const [voice, setVoice] = useState(brand.voice || "");
   const [pillars, setPillars] = useState(brand.pillars || "");
   const [ctaRules, setCtaRules] = useState(brand.cta_rules || "");
@@ -65,6 +67,7 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
 
   return (
     <div style={{ ...card, display: "flex", flexDirection: "column", gap: 14 }}>
+      {section === "voice" && <>
       <div>
         <label style={lbl}>Voice & tone</label>
         <textarea value={voice} onChange={(e) => setVoice(e.target.value)} placeholder="How this brand sounds — tone, audience, what to avoid, sign-off." rows={3} style={{ ...inp, resize: "vertical", lineHeight: 1.6 }} />
@@ -79,6 +82,26 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
       </div>
 
       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+        <label style={lbl}>Platforms you post this brand to</label>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {PLATFORMS.map(([id, label]) => <Chip key={id} active={theme.platforms.includes(id)} onClick={() => togglePlatform(id)}>{label}</Chip>)}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 14, alignItems: "flex-end", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+        <div style={{ flex: 1 }}>
+          <label style={lbl}>Daily target (posts per platform)</label>
+          <input type="number" min={0} value={dailyTarget} onChange={(e) => setDailyTarget(Number(e.target.value) || 0)} style={inp} />
+        </div>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 10 }}>
+          <div><div style={{ fontWeight: 600, fontSize: 13 }}>Auto-ready</div><div style={{ color: C.muted, fontSize: 11 }}>Generated content goes straight to Ready, no review</div></div>
+          <Toggle on={autoReady} onClick={() => setAutoReady((a) => !a)} />
+        </div>
+      </div>
+      </>}
+
+      {section === "look" && <>
+      <div>
         <label style={lbl}>Slide looks</label>
         <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px", lineHeight: 1.5 }}>You pick the template for each post when you create it. Set how each one looks for this brand here.</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 8, marginBottom: 12 }}>
@@ -174,24 +197,7 @@ function BrandForm({ brand, media, saving, onSave, onDelete }) {
             </div>
         </div>
       </div>
-
-      <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
-        <label style={lbl}>Platforms you post this brand to</label>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {PLATFORMS.map(([id, label]) => <Chip key={id} active={theme.platforms.includes(id)} onClick={() => togglePlatform(id)}>{label}</Chip>)}
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: 14, alignItems: "flex-end", borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
-        <div style={{ flex: 1 }}>
-          <label style={lbl}>Daily target (posts per platform)</label>
-          <input type="number" min={0} value={dailyTarget} onChange={(e) => setDailyTarget(Number(e.target.value) || 0)} style={inp} />
-        </div>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 10 }}>
-          <div><div style={{ fontWeight: 600, fontSize: 13 }}>Auto-ready</div><div style={{ color: C.muted, fontSize: 11 }}>Generated content goes straight to Today, no review</div></div>
-          <Toggle on={autoReady} onClick={() => setAutoReady((a) => !a)} />
-        </div>
-      </div>
+      </>}
 
       <div style={{ display: "flex", gap: 8, borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
         <button onClick={() => onSave({ voice, pillars, cta_rules: ctaRules, daily_target: dailyTarget, automation_mode: autoReady ? "auto_ready" : "needs_review", visual_theme: theme })} disabled={saving || !dirty} style={btn("primary", { flex: 1, background: dirty ? C.gold : C.border, cursor: dirty ? "pointer" : "default", opacity: saving ? 0.6 : 1 })}>
@@ -211,6 +217,7 @@ export function BrandsTab({ api, brands, activeId, setActiveId, onBrandsChange }
   const [mediaLoading, setMediaLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [sortMode, setSortMode] = useState("least_used");
+  const [section, setSection] = useState("voice");
 
   const activeBrand = brands.find((b) => b.id === activeId);
 
@@ -291,10 +298,16 @@ export function BrandsTab({ api, brands, activeId, setActiveId, onBrandsChange }
         </div>
       </div>
 
-      {activeBrand && <BrandForm key={activeBrand.id} brand={activeBrand} media={media} saving={saving} onSave={(f) => saveBrand(activeBrand.id, f)} onDelete={() => deleteBrand(activeBrand.id)} />}
-
       {activeBrand && (
-        <div style={{ ...card, marginTop: 20 }}>
+        <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+          {SECTIONS.map(([id, label]) => <Chip key={id} active={section === id} onClick={() => setSection(id)}>{label}</Chip>)}
+        </div>
+      )}
+
+      {activeBrand && section !== "media" && <BrandForm key={activeBrand.id} brand={activeBrand} media={media} saving={saving} section={section} onSave={(f) => saveBrand(activeBrand.id, f)} onDelete={() => deleteBrand(activeBrand.id)} />}
+
+      {activeBrand && section === "media" && (
+        <div style={{ ...card }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 10 }}>
             <label style={{ ...lbl, margin: 0 }}>Media library — {activeBrand.name}</label>
             <label style={btn("dark", { opacity: uploading ? 0.6 : 1 })}>

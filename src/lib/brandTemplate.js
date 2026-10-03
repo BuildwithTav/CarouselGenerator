@@ -52,6 +52,19 @@ export function themeOf(brand) {
 
 export const TEMPLATE_IDS = TEMPLATES.map((t) => t.id);
 
+// Client-side mirror of src/lib/dashboard.js's itemPlatforms() — kept here
+// (not imported from dashboard.js, which pulls in @supabase/supabase-js and
+// is server-only) so the dashboard's X and Carousels tabs can both filter a
+// list of items by which platforms they're actually destined for, without
+// an extra round-trip. Same precedence: the item's own override first, else
+// the brand's platforms, else the default new-brand set.
+export function itemPlatforms(item, brand) {
+  const p = item?.platforms;
+  if (Array.isArray(p) && p.length) return p;
+  const bp = brand?.visual_theme?.platforms;
+  return Array.isArray(bp) && bp.length ? bp : THEME_DEFAULTS.platforms;
+}
+
 // The template a content item renders with: its own choice, else the brand's default.
 export function itemTemplate(item, brand) {
   const t = item?.template;

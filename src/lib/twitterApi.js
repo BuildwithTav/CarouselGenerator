@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { BUCKET, itemPlatforms, postedColumn } from "./dashboard";
 
 // X's API (both the v1.1 media endpoint and v2 tweet creation) authenticates
 // writes with OAuth 1.0a user-context signing — there's no simpler bearer-token
@@ -65,4 +66,65 @@ export async function postTweet(text, mediaIds) {
   const out = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(`Twitter post ${res.status}: ${JSON.stringify(out).slice(0, 400)}`);
   return out?.data?.id || null;
+}
+
+// Posts one content item to X right now: uploads its slide photos (if any,
+// up to X's 4-per-post limit) then the post text, records posted_twitter_at,
+// and flips status to "posted" once every platform this item targets has
+// been marked posted. Shared by the scheduled cron and the dashboard's
+// "Post now" button so both go through the exact same path.
+export async function postItemToX(supabase, item, brand) {
+  const text = (item.tw_caption || item.caption || "").slice(0, 280);
+  const paths = (item.slide_paths || []).slice(0, 4);
+  const mediaIds = [];
+  for (const path of paths) {
+    const { data: file, error: dlErr } = await supabase.storage.from(BUCKET).download(path);
+    if (dlErr) throw new Error("Could not download slide image: " + dlErr.message);
+    mediaIds.push(await uploadMedia(Buffer.from(await file.arrayBuffer()), "image/png"));
+  }
+  const tweetId = await postTweet(text, mediaIds);
+
+  const { data: updatedItem, error: upErr } = await supabase
+    .from("content_items")
+    .update({ posted_twitter_at: new Date().toISOString(), twitter_post_id: tweetId, updated_at: new Date().toISOString() })
+    .eq("id", item.id)
+    .select("*")
+    .single();
+  if (upErr) throw new Error("Posted to X but failed to record it: " + upErr.message);
+
+  const platforms = itemPlatforms(updatedItem, brand);
+  if (platforms.every((p) => updatedItem[postedColumn(p)])) {
+    const { data: final } = await supabase.from("content_items").update({ status: "posted" }).eq("id", item.id).select("*").single();
+    return final || updatedItem;
+  }
+  return updatedItem;
+}
+
+// Reads public engagement metrics for up to 100 already-posted tweets in one
+// call, keyed by tweet ID. On-demand only (a "Refresh stats" button) rather
+// than polled automatically — each read is a small but real per-call cost on
+// X's pay-per-use API.
+export async function fetchTweetMetrics(tweetIds) {
+  const ids = [...new Set((tweetIds || []).filter(Boolean))].slice(0, 100);
+  if (!ids.length) return {};
+  const baseUrl = "https://api.twitter.com/2/tweets";
+  const params = { ids: ids.join(","), "tweet.fields": "public_metrics" };
+  const qs = Object.keys(params).map((k) => `${pct(k)}=${pct(params[k])}`).join("&");
+  const res = await fetch(`${baseUrl}?${qs}`, { headers: { Authorization: oauthHeader("GET", baseUrl, params) } });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`Twitter metrics ${res.status}: ${JSON.stringify(out).slice(0, 400)}`);
+  const byId = {};
+  for (const t of out.data || []) byId[t.id] = t.public_metrics;
+  return byId;
+}
+
+// The authenticated account's current follower count.
+export async function fetchFollowerCount() {
+  const baseUrl = "https://api.twitter.com/2/users/me";
+  const params = { "user.fields": "public_metrics" };
+  const qs = Object.keys(params).map((k) => `${pct(k)}=${pct(params[k])}`).join("&");
+  const res = await fetch(`${baseUrl}?${qs}`, { headers: { Authorization: oauthHeader("GET", baseUrl, params) } });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`Twitter profile ${res.status}: ${JSON.stringify(out).slice(0, 400)}`);
+  return out?.data?.public_metrics?.followers_count ?? null;
 }
