@@ -370,7 +370,7 @@ export function CarouselEditor({ api, itemId, onBack, onChanged }) {
         {platforms.includes("twitter") && (
           <div style={{ marginBottom: 12 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-              <label style={{ ...lbl, margin: 0 }}>X (Twitter) post <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500, color: C.muted }}>(this brand also auto-posts to X)</span></label>
+              <label style={{ ...lbl, margin: 0 }}>X (Twitter) post <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500, color: C.muted }}>(copy-paste only — carousels don't auto-post to X, only the X tab's own posts do)</span></label>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 11, color: draft.tw_caption.length > 280 ? C.danger : C.muted }}>{draft.tw_caption.length}/280</span>
                 <CopyButton text={draft.tw_caption} label="Copy" kind="small" />

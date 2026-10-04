@@ -73,9 +73,14 @@ export async function postTweet(text, mediaIds) {
 // and flips status to "posted" once every platform this item targets has
 // been marked posted. Shared by the scheduled cron and the dashboard's
 // "Post now" button so both go through the exact same path.
+//
+// Refuses outright rather than silently posting the first 4 and dropping
+// the rest — a multi-slide story cut short with no warning is exactly what
+// happened the first time this ran against ordinary 5-7 slide carousels.
 export async function postItemToX(supabase, item, brand) {
   const text = (item.tw_caption || item.caption || "").slice(0, 280);
-  const paths = (item.slide_paths || []).slice(0, 4);
+  const paths = item.slide_paths || [];
+  if (paths.length > 4) throw new Error(`This item has ${paths.length} photos — X allows at most 4 per post. Trim it to 4 or fewer before posting.`);
   const mediaIds = [];
   for (const path of paths) {
     const { data: file, error: dlErr } = await supabase.storage.from(BUCKET).download(path);

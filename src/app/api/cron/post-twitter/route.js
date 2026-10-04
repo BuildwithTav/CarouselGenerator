@@ -8,6 +8,16 @@ export const dynamic = "force-dynamic";
 // platforms, posts the single oldest ready item due today or earlier that
 // hasn't gone out on X yet — so three firings a day post up to three times a
 // day per brand, spread across the schedule rather than all landing at once.
+//
+// Only items the X engine itself produced (always tagged with an explicit
+// platforms: ["twitter"] override) are eligible here — never a regular
+// Instagram/TikTok/YouTube carousel that merely inherits "twitter" from the
+// brand's general platform toggle. That toggle only controls whether the
+// carousel editor shows an X caption box for manual copy-paste; those
+// carousels can run 5-10 slides with no cap, while X allows at most 4
+// images per post, so auto-posting one meant silently cutting it to 4 and
+// dropping the rest with no warning — found after every auto-post since
+// this was built turned out to be exactly that.
 export async function GET(req) {
   const authHeader = req.headers.get("authorization");
   if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -35,6 +45,7 @@ export async function GET(req) {
       .eq("status", "ready")
       .lte("scheduled_for", today)
       .is("posted_twitter_at", null)
+      .contains("platforms", ["twitter"])
       .order("scheduled_for", { ascending: true })
       .order("created_at", { ascending: true })
       .limit(1)
