@@ -16,7 +16,7 @@ export async function GET(req) {
   const supabase = supabaseAdmin();
 
   if (id) {
-    const { data, error } = await supabase.from("content_items").select("*, brands(name, visual_theme, daily_target, automation_mode)").eq("id", id).single();
+    const { data, error } = await supabase.from("content_items").select("*, brands(name, visual_theme, daily_target, automation_mode, x_auto_post_paused)").eq("id", id).single();
     if (error) return Response.json({ error: error.message }, { status: 404 });
     return Response.json({ item: await attachSlideUrls(data) });
   }
@@ -71,7 +71,7 @@ export async function POST(req) {
       template,
       ...pkg,
     })
-    .select("*, brands(name, visual_theme, daily_target, automation_mode)")
+    .select("*, brands(name, visual_theme, daily_target, automation_mode, x_auto_post_paused)")
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
@@ -104,7 +104,7 @@ export async function PATCH(req) {
     newlyUsed = body.slides.map((s) => s?.image_media_id).filter((m) => m && !before.has(m));
   }
 
-  const { data: item, error } = await supabase.from("content_items").update(update).eq("id", id).select("*, brands(name, visual_theme, daily_target, automation_mode)").single();
+  const { data: item, error } = await supabase.from("content_items").update(update).eq("id", id).select("*, brands(name, visual_theme, daily_target, automation_mode, x_auto_post_paused)").single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
   await bumpMediaUse(newlyUsed);
 
@@ -113,7 +113,7 @@ export async function PATCH(req) {
     const allPosted = platforms.every((p) => item[postedColumn(p)]);
     const nextStatus = allPosted ? "posted" : item.status === "posted" ? "ready" : item.status;
     if (nextStatus !== item.status) {
-      const { data: updated } = await supabase.from("content_items").update({ status: nextStatus }).eq("id", id).select("*, brands(name, visual_theme, daily_target, automation_mode)").single();
+      const { data: updated } = await supabase.from("content_items").update({ status: nextStatus }).eq("id", id).select("*, brands(name, visual_theme, daily_target, automation_mode, x_auto_post_paused)").single();
       return Response.json({ item: await attachSlideUrls(updated || item) });
     }
   }

@@ -19,6 +19,8 @@ export async function POST(req) {
   const { data: item, error } = await supabase.from("content_items").select("*, brands(*)").eq("id", id).single();
   if (error || !item) return Response.json({ error: "Item not found" }, { status: 404 });
   if (item.posted_twitter_at) return Response.json({ error: "Already posted to X" }, { status: 400 });
+  // Same kill switch as the cron — no manual posting loophole while paused.
+  if (item.brands?.x_auto_post_paused) return Response.json({ error: "Auto-posting is paused for this brand — resume it from the X tab first." }, { status: 400 });
 
   try {
     const updated = await postItemToX(supabase, item, item.brands);

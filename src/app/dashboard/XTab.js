@@ -124,10 +124,12 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
         </div>
       )}
 
+      {item.brands?.x_auto_post_paused && !item.posted_twitter_at && <div style={{ fontSize: 12, color: C.danger, marginBottom: 10 }}>Auto-posting is paused for this brand — resume it from the X tab to post.</div>}
+
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={save} disabled={!dirty || !!busy} style={btn("primary", { flex: 1, background: dirty ? C.gold : C.border, cursor: dirty ? "pointer" : "default" })}>{busy === "save" ? "Saving…" : dirty ? "Save changes" : "Saved"}</button>
         {!item.posted_twitter_at && (
-          <button onClick={postNow} disabled={!!busy || dirty} title={dirty ? "Save first" : ""} style={btn("dark", { opacity: dirty ? 0.5 : 1 })}>{busy === "post" ? <><Spinner /> Posting…</> : "Post now →"}</button>
+          <button onClick={postNow} disabled={!!busy || dirty || item.brands?.x_auto_post_paused} title={dirty ? "Save first" : item.brands?.x_auto_post_paused ? "Auto-posting is paused" : ""} style={btn("dark", { opacity: dirty || item.brands?.x_auto_post_paused ? 0.5 : 1 })}>{busy === "post" ? <><Spinner /> Posting…</> : "Post now →"}</button>
         )}
         <button onClick={del} style={btn("danger")}>Delete</button>
       </div>
@@ -242,6 +244,13 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
     setRefreshing(false);
   };
 
+  const togglePause = async (paused) => {
+    try {
+      const { brand: next } = await api.patch("/api/brands", { id: activeId, x_auto_post_paused: paused });
+      onBrandsChange(brands.map((b) => (b.id === activeId ? next : b)));
+    } catch (e) { alert(e.message); }
+  };
+
   if (openItemId) {
     const openItem = items.find((i) => i.id === openItemId);
     // Falls back to the raw editor while the item is still loading (we don't
@@ -262,15 +271,29 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
   const queuedReady = xItems.filter((i) => i.status === "ready" && !i.posted_twitter_at).length;
   const followerDelta = brand.x_followers != null && brand.x_followers_prev != null ? brand.x_followers - brand.x_followers_prev : null;
 
+  const paused = !!brand.x_auto_post_paused;
+
   return (
     <div>
+      {paused && (
+        <div style={{ ...card, marginBottom: 14, background: C.danger + "14", borderColor: C.danger, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 13, color: C.danger }}>Auto-posting is paused</div>
+            <div style={{ fontSize: 12, color: C.muted }}>The posting cron and "Post now" are both off for {brand.name} — nothing goes out until you resume.</div>
+          </div>
+          <button onClick={() => togglePause(false)} style={btn("dark")}>Resume auto-posting</button>
+        </div>
+      )}
       <div style={{ ...card, marginBottom: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: C.muted, textTransform: "uppercase" }}>Automation</div>
-            <div style={{ fontSize: 13 }}>Next batch written <b>{BATCH_TIME_UTC} UTC</b> · next posting window <b>{nextWindow()}</b> · <b>{queuedReady}</b> queued and ready</div>
+            <div style={{ fontSize: 13 }}>Next batch written <b>{BATCH_TIME_UTC} UTC</b> · next posting window <b>{paused ? "paused" : nextWindow()}</b> · <b>{queuedReady}</b> queued and ready</div>
           </div>
-          <button onClick={generateBatch} disabled={generating} style={btn("primary", { opacity: generating ? 0.6 : 1 })}>{generating ? <><Spinner /> Generating…</> : "✨ Generate today's batch"}</button>
+          <div style={{ display: "flex", gap: 8 }}>
+            {!paused && <button onClick={() => togglePause(true)} style={btn("ghost", { color: C.danger, borderColor: C.danger + "88" })}>Pause auto-posting</button>}
+            <button onClick={generateBatch} disabled={generating} style={btn("primary", { opacity: generating ? 0.6 : 1 })}>{generating ? <><Spinner /> Generating…</> : "✨ Generate today's batch"}</button>
+          </div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
           <div style={{ fontSize: 13 }}>

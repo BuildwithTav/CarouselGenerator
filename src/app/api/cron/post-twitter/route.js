@@ -24,6 +24,10 @@ export async function GET(req) {
 
   const results = [];
   for (const brand of twitterBrands) {
+    // Kill switch, toggled from the X tab's automation panel — set after a
+    // batch went out with broken photos, so nothing more posts unattended
+    // until the generation pipeline's been verified again.
+    if (brand.x_auto_post_paused) { results.push({ brand: brand.slug, posted: false, reason: "auto-posting paused" }); continue; }
     const { data: item } = await supabase
       .from("content_items")
       .select("*")
