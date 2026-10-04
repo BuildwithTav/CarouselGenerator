@@ -24,6 +24,21 @@ function nextWindow() {
   return `${POST_WINDOWS_UTC[0]} UTC tomorrow`;
 }
 
+// What this tab shows has to be whether X itself has posted the item, not
+// its overall status — that only reaches "posted" once every platform the
+// item targets (Instagram/TikTok/YouTube included, for a brand's regular
+// carousel content that also goes to X) is separately marked done. A post
+// that's live on X but still waiting on Instagram is posted, as far as X
+// is concerned, and the X tab needs to say so.
+function xStatus(item) {
+  if (item.posted_twitter_at) return "posted";
+  return item.status === "ready" ? "ready" : "draft";
+}
+
+function tweetUrl(item) {
+  return item.twitter_post_id ? `https://x.com/i/status/${item.twitter_post_id}` : null;
+}
+
 // Raw X posts only: 0-4 photos attached as-is, no template, no slide fields —
 // the caption is the whole post. A full branded carousel going to X opens in
 // CarouselEditor instead (see XTab's open-item routing below).
@@ -66,7 +81,7 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
         <button onClick={onBack} style={btn("ghost")}>← Back</button>
-        <Badge color={STATUS_COLOR[item.status]}>{item.status}</Badge>
+        <Badge color={STATUS_COLOR[xStatus(item)]}>{xStatus(item)}</Badge>
         <span style={{ fontSize: 12, color: C.muted }}>{item.brands?.name} · {item.pillar || "X post"}</span>
         <div style={{ flex: 1 }} />
         {item.status === "draft" && <button onClick={() => setStatus("ready")} disabled={!!busy} style={btn("primary")}>{busy === "ready" ? "…" : "Approve → Ready"}</button>}
@@ -116,7 +131,12 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
         )}
         <button onClick={del} style={btn("danger")}>Delete</button>
       </div>
-      {item.posted_twitter_at && <div style={{ fontSize: 12, color: C.ok, marginTop: 10 }}>Posted to X {new Date(item.posted_twitter_at).toLocaleString()}</div>}
+      {item.posted_twitter_at && (
+        <div style={{ fontSize: 12, color: C.ok, marginTop: 10 }}>
+          Posted to X {new Date(item.posted_twitter_at).toLocaleString()}
+          {tweetUrl(item) && <> · <a href={tweetUrl(item)} target="_blank" rel="noreferrer" style={{ color: C.ok, fontWeight: 700 }}>View on X →</a></>}
+        </div>
+      )}
     </div>
   );
 }
@@ -156,11 +176,12 @@ function XRow({ api, item, onOpen, onChanged }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.tw_caption || item.idea}</div>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-            <Badge color={STATUS_COLOR[item.status]}>{item.status}</Badge>
+            <Badge color={STATUS_COLOR[xStatus(item)]}>{xStatus(item)}</Badge>
             <Badge color={item.template === "x-post" ? C.muted : C.gold}>{item.template === "x-post" ? (hasPhotos ? `${item.slide_paths.length} photo${item.slide_paths.length > 1 ? "s" : ""}` : "text") : "carousel"}</Badge>
             {photoBroken && <Badge color={C.danger}>photo missing</Badge>}
             <span style={{ fontSize: 11, color: C.muted }}>{item.scheduled_for}</span>
             {m && <span style={{ fontSize: 11, color: C.muted }}>❤ {m.like_count ?? 0} · 👁 {m.impression_count ?? 0}</span>}
+            {tweetUrl(item) && <a href={tweetUrl(item)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} style={{ fontSize: 11, color: C.ok, fontWeight: 700 }}>View on X →</a>}
           </div>
         </div>
         <span style={{ color: C.muted }}>›</span>
@@ -237,7 +258,7 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
   }
 
   const xItems = items.filter((i) => itemPlatforms(i, brand).includes("twitter"));
-  const visible = xItems.filter((i) => filter === "all" || i.status === filter);
+  const visible = xItems.filter((i) => filter === "all" || xStatus(i) === filter);
   const queuedReady = xItems.filter((i) => i.status === "ready" && !i.posted_twitter_at).length;
   const followerDelta = brand.x_followers != null && brand.x_followers_prev != null ? brand.x_followers - brand.x_followers_prev : null;
 
