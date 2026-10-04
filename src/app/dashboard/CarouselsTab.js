@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { C, inp, lbl, card, btn, Chip, Badge, STATUS_COLOR, Spinner, CopyButton } from "./ui";
 import { PackageView, SlideStrip } from "./PackageView";
-import { themeOf, itemTemplate, slideCanHaveImage, templateAllowsAiImage, slideText, remapSlidesForTemplate, TEMPLATES, PHOTO_SOURCES, defaultPhotoSource, itemPlatforms } from "@/lib/brandTemplate";
+import { themeOf, itemTemplate, slideCanHaveImage, templateAllowsAiImage, slideText, TEMPLATES, PHOTO_SOURCES, defaultPhotoSource, itemPlatforms } from "@/lib/brandTemplate";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const CAROUSEL_PLATFORMS = ["instagram", "tiktok", "youtube"];
@@ -29,13 +29,14 @@ function NewContent({ api, brand, onCreated }) {
   const [phase, setPhase] = useState(null); // writing | photo | rendering
   const [err, setErr] = useState("");
   const pillars = splitPillars(brand.pillars);
-  const [template, setTemplateRaw] = useState(themeOf(brand).template);
-  const [photoSource, setPhotoSource] = useState(defaultPhotoSource(themeOf(brand).template));
-  const setTemplate = (t) => { setTemplateRaw(t); setPhotoSource(defaultPhotoSource(t)); };
+  // Each brand has exactly one template — it's not a per-post choice (see
+  // brandTemplate.js's TEMPLATES comment), so this just reads the brand's own.
+  const template = themeOf(brand).template;
+  const [photoSource, setPhotoSource] = useState(defaultPhotoSource(template));
   const [progress, setProgress] = useState("");
 
   useEffect(() => {
-    setMediaId(null); setIdeas([]); setPillar(""); setTemplate(themeOf(brand).template);
+    setMediaId(null); setIdeas([]); setPillar(""); setPhotoSource(defaultPhotoSource(themeOf(brand).template));
     api.get(`/api/brand-media?brandId=${brand.id}`).then((d) => setMedia((d.media || []).filter((m) => m.file_type === "image"))).catch(() => setMedia([]));
   }, [brand.id]);
 
@@ -111,15 +112,6 @@ function NewContent({ api, brand, onCreated }) {
 
       <textarea value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="One line is enough — e.g. '3 mistakes people make when they start…'" rows={3} style={{ ...inp, resize: "vertical", lineHeight: 1.6, marginBottom: 16 }} />
 
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-        <span style={{ width: 22, height: 22, borderRadius: "50%", background: C.gold, color: "#000", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>2</span>
-        <label style={{ ...lbl, margin: 0 }}>Pick a look</label>
-      </div>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
-        {TEMPLATES.map((t) => <Chip key={t.id} active={template === t.id} onClick={() => setTemplate(t.id)}>{t.label}</Chip>)}
-      </div>
-      <div style={{ fontSize: 11, color: C.muted, marginBottom: 16 }}>{TEMPLATES.find((t) => t.id === template)?.desc}</div>
-
       <button type="button" onClick={() => setAdvanced((a) => !a)} style={{ background: "none", border: "none", color: C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, marginBottom: advanced ? 12 : 16, display: "flex", alignItems: "center", gap: 4 }}>
         {advanced ? "▾" : "▸"} Customize {photoSource !== defaultPhotoSource(template) || pillar || slideCount !== 7 || mediaId ? "(changed)" : "(photos, pillar, slide count, date, cover)"}
       </button>
@@ -179,8 +171,8 @@ function NewContent({ api, brand, onCreated }) {
       {err && <div style={{ color: C.danger, fontSize: 12, marginBottom: 10 }}>{err}</div>}
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-        <span style={{ width: 22, height: 22, borderRadius: "50%", background: C.gold, color: "#000", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>3</span>
-        <label style={{ ...lbl, margin: 0 }}>Generate</label>
+        <span style={{ width: 22, height: 22, borderRadius: "50%", background: C.gold, color: "#000", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>2</span>
+        <label style={{ ...lbl, margin: 0 }}>Generate — {TEMPLATES.find((t) => t.id === template)?.label}</label>
       </div>
       <button onClick={generate} disabled={!!phase || !idea.trim()} style={btn("primary", { width: "100%", padding: 12, fontSize: 14, opacity: !idea.trim() ? 0.5 : 1 })}>
         {phase === "writing" ? <><Spinner /> Writing slides + captions…</> : phase === "photo" ? <><Spinner /> Creating AI photos… {progress}</> : phase === "rendering" ? <><Spinner /> Rendering slide images…</> : "Generate carousel + captions"}
@@ -281,12 +273,9 @@ export function CarouselEditor({ api, itemId, onBack, onChanged }) {
 
   const template = draft.template;
   const setSlide = (i, k, v) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, [k]: v } : s)) }));
-  // Switching template keeps the wording (reshaped to fit) and every slide's
-  // photo — a re-render is needed afterward for the new look to take effect.
-  const switchTemplate = (t) => setDraft((d) => ({ ...d, template: t, slides: remapSlidesForTemplate(d.slides, t) }));
   const pickImage = (i, m) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, image_media_id: m.id, image_path: m.storage_path } : s)) }));
   const aiAllowed = templateAllowsAiImage(template);
-  const stale = item.slide_paths?.length && (itemTemplate(item, item.brands) !== draft.template || JSON.stringify(item.slides) !== JSON.stringify(draft.slides));
+  const stale = item.slide_paths?.length && JSON.stringify(item.slides) !== JSON.stringify(draft.slides);
   const platforms = itemPlatforms(item, item.brands);
 
   const slideFields = (s, i) => {
@@ -330,14 +319,6 @@ export function CarouselEditor({ api, itemId, onBack, onChanged }) {
             <label style={lbl}>Post on</label>
             <input type="date" value={draft.scheduled_for} onChange={(e) => setDraft((d) => ({ ...d, scheduled_for: e.target.value }))} style={inp} />
           </div>
-        </div>
-
-        <div style={{ marginBottom: 12 }}>
-          <label style={lbl}>Template</label>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {TEMPLATES.map((t) => <Chip key={t.id} active={template === t.id} onClick={() => switchTemplate(t.id)}>{t.label}</Chip>)}
-          </div>
-          <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>Switching keeps the wording and photos, reshaped for the new look — re-render after switching.</div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>

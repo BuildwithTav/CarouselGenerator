@@ -76,7 +76,7 @@ function Dashboard({ dashKey, onLock }) {
       </nav>
 
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "22px 16px 60px" }}>
-        {tab !== "brand" && brands.length > 0 && !openItemId && (
+        {brands.length > 0 && !openItemId && (
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
             {brands.map((b) => <Chip key={b.id} active={activeId === b.id} onClick={() => setActiveId(b.id)}>{b.name}</Chip>)}
           </div>

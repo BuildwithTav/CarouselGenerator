@@ -10,9 +10,14 @@ import { buildHealthcodeHTML, buildHealthcodeCtaHTML } from "./healthcodeTemplat
 // exist and are still imported below — they're shared with Carousel
 // Studio, the customer-facing product, so they're left in place — but
 // nothing in this dashboard can select or generate those four any more.
+// One template per brand, not a shared pick-list — Sky High Soles always
+// renders with its own template, HealthCode Performance with its own. A new
+// brand gets a new bespoke template built for it (a code change), not a
+// choice between these two, so nothing in the dashboard offers switching
+// between them.
 export const TEMPLATES = [
-  { id: "elegant", label: "Elegant", desc: "Full photo always shown in full, soft vignette, italic headline, quiet seductive flow. AI photos by default." },
-  { id: "healthcode", label: "HealthCode", desc: "Full photo always shown in full, teal branded wash, bold white shadowed headline. AI photos by default." },
+  { id: "elegant", label: "Sky High Soles Template", desc: "Full photo always shown in full, soft vignette, italic headline, quiet seductive flow. AI photos by default." },
+  { id: "healthcode", label: "HealthCode Template", desc: "Full photo always shown in full, teal branded wash, bold white shadowed headline. AI photos by default." },
 ];
 
 // Where the photos come from when a post is created.
@@ -200,30 +205,3 @@ export function previewSlides(brand, imageUrl, profileUrl, template) {
   return buildBrandSlides({ brand, slides: [cover, body, cta], profileUrl: profileUrl || null, coverImageUrl: imageUrl, template });
 }
 
-// Best-effort remap of a slide's text fields between template shapes, used
-// when switching an already-generated post's template — keeps the wording
-// and every slide's attached photo, just reshapes it for the new template.
-// The CTA slide's shape ({isCta, line1, line3}) is identical everywhere,
-// so it passes through unchanged.
-function slideParts(s) {
-  if (s.rawText != null) {
-    const [a, ...rest] = String(s.rawText).split("\n");
-    return { a: a || "", b: rest.join(" ").trim(), c: "" };
-  }
-  return { a: s.headline || "", b: s.subline || s.detail || s.body || s.bodyText || "", c: s.accentText || "" };
-}
-
-export function remapSlidesForTemplate(slides, toTemplate) {
-  return (slides || []).map((s, i) => {
-    if (s.isCta) return { isCta: true, line1: s.line1 || "", line3: s.line3 || "" };
-    const { a, b, c } = slideParts(s);
-    const base = { image_media_id: s.image_media_id || null, image_path: s.image_path || null };
-    if (toTemplate === "raw") return { ...base, rawText: [a, b].filter(Boolean).join("\n") };
-    if (toTemplate === "clean-pro") return i === 0
-      ? { ...base, headline: a, subline: b || c }
-      : { ...base, headline: a, bodyText: b, accentText: c };
-    if (toTemplate === "dark-fade") return { ...base, headline: a, subline: [b, c].filter(Boolean).join(" ") };
-    if (toTemplate === "elegant" || toTemplate === "healthcode") return { ...base, headline: a, detail: [b, c].filter(Boolean).join(" ") };
-    return { ...base, headline: a, body: [b, c].filter(Boolean).join(" ") }; // bold
-  });
-}
