@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { C, inp, lbl, card, btn, Toggle, Chip, fmtSize } from "./ui";
-import { TEMPLATES, CTA_TYPES, THEME_DEFAULTS, themeOf, ctaCopy, previewSlides } from "@/lib/brandTemplate";
+import { TEMPLATES, CTA_TYPES, THEME_DEFAULTS, themeOf, ctaCopy, previewSlides, aiStyleLocked } from "@/lib/brandTemplate";
 
 const PLATFORMS = [["instagram", "Instagram"], ["tiktok", "TikTok"], ["youtube", "YouTube"], ["twitter", "X (Twitter)"]];
 
@@ -124,8 +124,8 @@ function BrandForm({ brand, media, saving, onSave, onDelete, section }) {
             </div>
 
             <div>
-                <label style={{ ...lbl, marginBottom: 4 }}>AI photo direction <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(followed on every AI photo for this brand)</span></label>
-                <textarea value={theme.ai_style || ""} onChange={(e) => setT("ai_style", e.target.value)} rows={3} placeholder="e.g. One woman's bare feet, size 5, soft natural skin, neat nude or pale pink pedicure, soles-up or side-on, soft bedroom window light, cream sheets, candid phone-photo feel. No faces, no other people, nothing explicit." style={{ ...inp, resize: "vertical", lineHeight: 1.6, fontSize: 13 }} />
+                <label style={{ ...lbl, marginBottom: 4 }}>AI photo direction <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>{aiStyleLocked(brand) ? "(set in code for this brand — ask Claude to change it, editing here won't do anything)" : "(followed on every AI photo for this brand)"}</span></label>
+                <textarea value={theme.ai_style || ""} onChange={(e) => setT("ai_style", e.target.value)} readOnly={aiStyleLocked(brand)} rows={3} placeholder="e.g. One woman's bare feet, size 5, soft natural skin, neat nude or pale pink pedicure, soles-up or side-on, soft bedroom window light, cream sheets, candid phone-photo feel. No faces, no other people, nothing explicit." style={{ ...inp, resize: "vertical", lineHeight: 1.6, fontSize: 13, opacity: aiStyleLocked(brand) ? 0.7 : 1, cursor: aiStyleLocked(brand) ? "default" : "text" }} />
             </div>
 
             {tmpl === "healthcode" && (
@@ -190,7 +190,10 @@ function BrandForm({ brand, media, saving, onSave, onDelete, section }) {
       </>}
 
       <div style={{ display: "flex", gap: 8, borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
-        <button onClick={() => onSave({ voice, pillars, cta_rules: ctaRules, daily_target: dailyTarget, automation_mode: autoReady ? "auto_ready" : "needs_review", visual_theme: theme })} disabled={saving || !dirty} style={btn("primary", { flex: 1, background: dirty ? C.gold : C.border, cursor: dirty ? "pointer" : "default", opacity: saving ? 0.6 : 1 })}>
+        {/* A locked ai_style is injected into `theme` purely for prompts/preview to
+            read — it's never the DB's job to store it, and re-saving that much text
+            every time is exactly the kind of write that's been timing out. */}
+        <button onClick={() => onSave({ voice, pillars, cta_rules: ctaRules, daily_target: dailyTarget, automation_mode: autoReady ? "auto_ready" : "needs_review", visual_theme: aiStyleLocked(brand) ? { ...theme, ai_style: brand.visual_theme?.ai_style || "" } : theme })} disabled={saving || !dirty} style={btn("primary", { flex: 1, background: dirty ? C.gold : C.border, cursor: dirty ? "pointer" : "default", opacity: saving ? 0.6 : 1 })}>
           {saving ? "Saving…" : "Save changes"}
         </button>
         <button onClick={onDelete} style={btn("danger")}>Delete brand</button>

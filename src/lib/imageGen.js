@@ -11,7 +11,7 @@ import { themeOf } from "./brandTemplate";
 // Nano Banana Pro (Gemini 3 Pro Image) is strongest on anatomy and natural
 // skin; FLUX 1.1 Pro Ultra is the fallback if it errors or refuses.
 const MODELS = [
-  { id: "fal-ai/nano-banana-pro", body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) },
+  { id: "fal-ai/nano-banana-pro", body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "4K", output_format: "jpeg" }) },
   // safety_tolerance is FLUX's own 1 (strictest) to 6 (most permissive) scale.
   // Keep this at the strict end — brand photos must never be explicit.
   { id: "fal-ai/flux-pro/v1.1-ultra", body: (prompt, negative) => ({ prompt, aspect_ratio: "4:5", num_images: 1, output_format: "jpeg", enable_safety_checker: true, safety_tolerance: "2", raw: true, ...(negative ? { negative_prompt: negative } : {}) }) },

@@ -49,10 +49,27 @@ export const THEME_DEFAULTS = {
   platforms: ["instagram", "tiktok", "youtube"],
 };
 
+// AI photo direction, hard-coded per brand slug rather than stored in
+// visual_theme.ai_style — this project's Supabase has repeatedly failed to
+// write long text into that jsonb field (timeouts on the UPDATE, not on
+// SELECT, cause unknown), and this is content-safety-relevant text that
+// needs to change reliably via a normal code push, not a flaky DB write.
+// Set here, it overrides whatever's stored in the database for that brand;
+// BrandsTab's "AI photo direction" field becomes read-only when a brand has
+// one of these.
+const BRAND_AI_STYLE = {
+  "sky-high-soles": "The woman shown is always the same recurring look across every post: slim, slender build, blonde hair. Her face is never shown: crop above the chin, turn the head away, or place it out of frame entirely, never blurred while visible. The feet are always the clear visual focus of the shot, even in a pulled-back or full-body composition, never incidental, cut off, or lost in the background. Feet are always flawless: smooth skin, neat natural nails, perfect proportions, no awkward angles. What is on the feet varies by scene, not fixed to bare feet only: sheer tan/nude tights for work uniform looks, low work heels or flats on, being removed, or one shoe on and one off, or fully bare feet, picking whichever fits the moment and varying it across posts rather than defaulting to the same state every time. If the slide text specifically describes bare feet, show bare feet. Tights, when shown, are always sheer tan/nude, never black or patterned. Mood is sensual and alluring, boudoir-style editorial: soft warm intimate light, slow and confident posing. Tasteful, never explicit: always fully clothed above the waist, never nudity, a bare chest, lingerie or underwear. Vary the setting and framing across posts: a mirror, a bath or poolside, curled up on a sofa, fresh out of heels after a night out, cool tile or warm sand, a pedicure chair, a car seat, silk sheets, a balcony at dusk. Vary the shot distance too: some tight macro close-ups on the feet alone, but plenty pulled back to the legs, the whole lower body, or the person seated or standing with the feet part of a bigger scene. Anatomy: exactly five toes on each foot, natural toe lengths, real skin creases and slight asymmetry, correct arches, heels and ankles; when both feet are in frame they are a true mirrored pair, never two of the same foot. If a hand appears it is always a woman's hand: slender, feminine, manicured, never a man's hand or any other person in the shot. One person in frame only.",
+};
+
 export function themeOf(brand) {
   const t = { ...THEME_DEFAULTS, ...(brand?.visual_theme || {}) };
   t.cta = { ...THEME_DEFAULTS.cta, ...(brand?.visual_theme?.cta || {}) };
+  if (BRAND_AI_STYLE[brand?.slug]) t.ai_style = BRAND_AI_STYLE[brand.slug];
   return t;
+}
+
+export function aiStyleLocked(brand) {
+  return !!BRAND_AI_STYLE[brand?.slug];
 }
 
 export const TEMPLATE_IDS = TEMPLATES.map((t) => t.id);
