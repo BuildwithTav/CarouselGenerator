@@ -411,6 +411,7 @@ function QueueRow({ api, item, brand, onOpen, onChanged }) {
   const [busy, setBusy] = useState(false);
   const platforms = itemPlatforms(item, brand).filter((p) => CAROUSEL_PLATFORMS.includes(p));
   const remaining = platforms.filter((p) => !item[`posted_${p}_at`]);
+  const done = item.status === "posted";
 
   const setStatus = async (status) => {
     setBusy(true);
@@ -421,6 +422,19 @@ function QueueRow({ api, item, brand, onOpen, onChanged }) {
     setMarking(platform);
     try { const { item: next } = await api.patch("/api/content", { id: item.id, action: "mark_posted", platform }); onChanged(next); } catch (e) { alert(e.message); }
     setMarking(null);
+  };
+  const reschedule = async (e) => {
+    const v = e.target.value;
+    if (!v) return;
+    setBusy(true);
+    try { const { item: next } = await api.patch("/api/content", { id: item.id, scheduled_for: v }); onChanged(next); } catch (err) { alert(err.message); }
+    setBusy(false);
+  };
+  const del = async () => {
+    if (!window.confirm("Delete this content and its slide images?")) return;
+    setBusy(true);
+    try { await api.del("/api/content", { id: item.id }); onChanged(null, item.id); } catch (e) { alert(e.message); }
+    setBusy(false);
   };
 
   return (
@@ -454,6 +468,11 @@ function QueueRow({ api, item, brand, onOpen, onChanged }) {
           ))}
         </div>
       )}
+      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}` }} onClick={(e) => e.stopPropagation()}>
+        {!done && <input type="date" value={item.scheduled_for} onChange={reschedule} disabled={busy} style={{ ...inp, width: "auto", padding: "4px 8px", fontSize: 11 }} />}
+        <div style={{ flex: 1 }} />
+        <button onClick={del} disabled={busy} style={btn("danger", { fontSize: 11, padding: "5px 10px" })}>Delete</button>
+      </div>
     </div>
   );
 }

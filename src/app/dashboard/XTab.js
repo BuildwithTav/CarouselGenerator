@@ -121,23 +121,59 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
   );
 }
 
-function XRow({ item, onOpen }) {
+// A row that says "1 photo" or "4 photos" but has no thumb_url means the
+// slide_paths it's carrying don't actually resolve to a real file in storage
+// (a failed/partial generation that still got inserted) — show that clearly
+// rather than quietly falling back to a "text" label as if nothing's wrong.
+function XRow({ api, item, onOpen, onChanged }) {
   const m = item.x_metrics;
+  const [busy, setBusy] = useState(null);
+  const hasPhotos = (item.slide_paths?.length || 0) > 0;
+  const photoBroken = hasPhotos && !item.thumb_url;
+  const posted = !!item.posted_twitter_at;
+
+  const run = async (label, fn) => {
+    setBusy(label);
+    try { const { item: next } = await fn(); onChanged(next); } catch (e) { alert(e.message); }
+    setBusy(null);
+  };
+  const setStatus = (e, status) => { e.stopPropagation(); run(status, () => api.patch("/api/content", { id: item.id, status })); };
+  const reschedule = (e) => { e.stopPropagation(); const v = e.target.value; if (v) run("date", () => api.patch("/api/content", { id: item.id, scheduled_for: v })); };
+  const del = async (e) => {
+    e.stopPropagation();
+    if (!window.confirm("Delete this X post?")) return;
+    setBusy("delete");
+    try { await api.del("/api/content", { id: item.id }); onChanged(null, item.id); } catch (err) { alert(err.message); }
+    setBusy(null);
+  };
+
   return (
-    <div onClick={onOpen} style={{ ...card, padding: 14, display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
-      <div style={{ width: 52, aspectRatio: "1080/1350", borderRadius: 6, background: C.bg, border: `1px solid ${C.border}`, overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        {item.thumb_url ? <img src={item.thumb_url} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 9, color: C.muted }}>text</span>}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.tw_caption || item.idea}</div>
-        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-          <Badge color={STATUS_COLOR[item.status]}>{item.status}</Badge>
-          <Badge color={item.template === "x-post" ? C.muted : C.gold}>{item.template === "x-post" ? (item.slide_paths?.length ? `${item.slide_paths.length} photo${item.slide_paths.length > 1 ? "s" : ""}` : "text") : "carousel"}</Badge>
-          <span style={{ fontSize: 11, color: C.muted }}>{item.scheduled_for}</span>
-          {m && <span style={{ fontSize: 11, color: C.muted }}>❤ {m.like_count ?? 0} · 👁 {m.impression_count ?? 0}</span>}
+    <div style={{ ...card, padding: 14 }}>
+      <div onClick={onOpen} style={{ display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
+        <div style={{ width: 52, aspectRatio: "1080/1350", borderRadius: 6, background: C.bg, border: `1px solid ${photoBroken ? C.danger : C.border}`, overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {item.thumb_url ? <img src={item.thumb_url} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : photoBroken ? <span style={{ fontSize: 9, color: C.danger, textAlign: "center", padding: "0 2px" }}>photo missing</span> : <span style={{ fontSize: 9, color: C.muted }}>text</span>}
         </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.tw_caption || item.idea}</div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+            <Badge color={STATUS_COLOR[item.status]}>{item.status}</Badge>
+            <Badge color={item.template === "x-post" ? C.muted : C.gold}>{item.template === "x-post" ? (hasPhotos ? `${item.slide_paths.length} photo${item.slide_paths.length > 1 ? "s" : ""}` : "text") : "carousel"}</Badge>
+            {photoBroken && <Badge color={C.danger}>photo missing</Badge>}
+            <span style={{ fontSize: 11, color: C.muted }}>{item.scheduled_for}</span>
+            {m && <span style={{ fontSize: 11, color: C.muted }}>❤ {m.like_count ?? 0} · 👁 {m.impression_count ?? 0}</span>}
+          </div>
+        </div>
+        <span style={{ color: C.muted }}>›</span>
       </div>
-      <span style={{ color: C.muted }}>›</span>
+      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
+        {item.status === "draft" && <button onClick={(e) => setStatus(e, "ready")} disabled={!!busy} style={btn("primary", { fontSize: 11, padding: "5px 10px" })}>{busy === "ready" ? "…" : "Approve"}</button>}
+        {item.status === "ready" && !posted && <button onClick={(e) => setStatus(e, "draft")} disabled={!!busy} style={btn("ghost", { fontSize: 11, padding: "5px 10px" })}>{busy === "draft" ? "…" : "Pause — don't post"}</button>}
+        {!posted && (
+          <input type="date" value={item.scheduled_for} onClick={(e) => e.stopPropagation()} onChange={reschedule} disabled={!!busy} style={{ ...inp, width: "auto", padding: "4px 8px", fontSize: 11 }} />
+        )}
+        <div style={{ flex: 1 }} />
+        <button onClick={del} disabled={!!busy} style={btn("danger", { fontSize: 11, padding: "5px 10px" })}>{busy === "delete" ? "…" : "Delete"}</button>
+      </div>
     </div>
   );
 }
@@ -235,7 +271,7 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
       {visible.length === 0 && !loading && <div style={{ ...card, color: C.muted, textAlign: "center", fontSize: 13 }}>Nothing here yet — generate today's batch above.</div>}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {visible.map((i) => <XRow key={i.id} item={i} onOpen={() => setOpenItemId(i.id)} />)}
+        {visible.map((i) => <XRow key={i.id} api={api} item={i} onOpen={() => setOpenItemId(i.id)} onChanged={onChanged} />)}
       </div>
     </div>
   );
