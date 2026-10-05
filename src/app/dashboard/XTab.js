@@ -240,9 +240,16 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
         if (r?.error) errors.push(r.error);
       } catch (e) { errors.push(`${slotKey}: ${e.message}`); }
     }
-    alert(errors.length ? `Queued ${queued} as drafts. Some slots failed: ${errors.join(" | ")}` : queued ? `Queued ${queued} X post${queued === 1 ? "" : "s"} as drafts — review and approve below.` : "Nothing queued.");
+    // A "took too long" error here doesn't mean the slot's work was lost —
+    // the soft deadline in x-content/route.js only stops waiting on it, it
+    // doesn't cancel it, and the generation can keep running server-side
+    // and finish anyway a bit later (seen in practice: a "failed" carousel
+    // showed up after just refreshing, nothing re-run). So a timed-out slot
+    // gets a second, delayed reload instead of being treated as gone.
+    alert(errors.length ? `Queued ${queued} as drafts. Some slots are still finishing in the background: ${errors.join(" | ")} — give it a minute, this page will refresh itself, no need to regenerate.` : queued ? `Queued ${queued} X post${queued === 1 ? "" : "s"} as drafts — review and approve below.` : "Nothing queued.");
     load();
     setGenerating(false);
+    if (errors.length) setTimeout(load, 25000);
   };
 
   const refreshStats = async () => {
