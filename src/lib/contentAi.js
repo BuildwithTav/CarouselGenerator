@@ -269,3 +269,39 @@ Write the image prompt for this slide.`;
   const out = await ask(system, user, 1500);
   return { prompt: String(out.prompt || "").trim(), negative: String(out.negative || "").trim() };
 }
+
+// Same job as lockModelDescription() + imagePrompt() combined, for a whole
+// multi-photo set in one call instead of one call per photo plus a separate
+// model-locking call up front. A 4-photo X post was previously 1 call to
+// lock the model, then 4 more (one per photo) — 5 sequential-ish Claude
+// round-trips feeding into a slot that only has ~50s total to finish writing
+// the post, locking the model, generating every prompt, and generating every
+// image. This cuts that to exactly 1 call, same consistency guarantee (one
+// model description, reused word for word in every prompt), while the N
+// actual image generations afterward still run fully in parallel.
+export async function imagePromptsBatch(brand, { texts, idea, style, direction, textZone = "bottom" }) {
+  const system = `You write prompts for a photorealistic image generator, one per scene given, as a matched set that all show the same one consistent person (if the brand's direction calls for a person at all). Reply with JSON only: {"model": "...", "prompts": [{"prompt": "...", "negative": "..."}, ...]} — exactly one "prompts" entry per scene given, in the same order.
+First, "model": a short, consistent physical description of the one person who appears across every photo in this set (hair, build, skin tone, and whichever other features the brand's direction below calls for — only what that direction implies will actually be visible). 30-70 words, concrete and repeatable. Empty string if the brand's direction doesn't call for a person at all (food, product, environment photography).
+Then, for each scene, write its own prompt as a real photographer's shot brief for a natural, believable photograph — not a render. Include, in this order: the subject and its exact pose/framing (restating the "model" description above if a person appears, so every photo shows the same one); the setting; the light (soft and natural unless the direction says otherwise — window light, golden hour, a single warm lamp — avoid flat studio lighting unless asked for); camera and lens (e.g. "shot on a Sony A7 IV, 50mm f/1.8, shallow depth of field"); natural texture and true-to-life colour; a calm, uncluttered composition with one clear subject. 70-120 words per prompt. Never include text, logos, watermarks, captions or hands holding signs.
+The brand's own photo direction below is the source of truth for mood, who or what appears, and any anatomy or framing rules specific to this brand — follow it exactly.
+Vary the setting and framing across the set rather than repeating the same shot — each scene is its own moment.
+Each photo must show literally what its scene describes happening — if it names a specific action or detail, that's the subject of that shot, not just a mood that evokes it.
+If a person appears and any part of them (hands, feet, face) is close enough to the camera to show real detail, get the anatomy right: correct number of fingers and toes, natural proportions, no fused or extra digits, no mismatched or duplicated limbs.
+Framing: leave the part of the frame where text gets overlaid afterwards (${textZone === "bottom" ? "the bottom of the frame" : textZone === "top" ? "the top of the frame" : "the " + textZone + " of the frame"}) relatively clear and uncluttered.
+Each "negative" field always includes, word for word: "extra fingers, missing fingers, fused fingers, extra toes, missing toes, deformed hands, deformed feet, mutated anatomy, malformed limbs, extra limbs, blurry, distorted proportions, watermark, text, logo, nudity, topless, nude, exposed breasts, bare chest, nipples, lingerie, underwear, nsfw" — plus anything else specific to that shot worth excluding.`;
+  const user = `${brandContext(brand)}
+${direction ? `Brand photo direction (always follow this): ${direction}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic.)\n"}Post idea: ${idea || "(none)"}
+Look: ${style === "candid" ? "candid, natural, phone-camera realism" : "polished editorial, magazine quality, still natural"}
+
+Scenes — one photo per entry, in order, depict exactly what each one describes:
+${texts.map((t, i) => `${i + 1}. ${t || "(cover)"}`).join("\n")}
+
+Write "model" once, then one prompt per scene, ${texts.length} entries total, same order.`;
+  const out = await ask(system, user, 600 * texts.length + 500);
+  const modelNote = String(out.model || "").trim();
+  const prompts = Array.isArray(out.prompts) ? out.prompts : [];
+  return {
+    modelNote,
+    photos: texts.map((_, i) => ({ prompt: String(prompts[i]?.prompt || "").trim(), negative: String(prompts[i]?.negative || "").trim() })),
+  };
+}

@@ -1,9 +1,16 @@
 import { dashboardAuthorized, supabaseAdmin, brandPlatforms, bumpMediaUse, BUCKET } from "@/lib/dashboard";
 import { X_SLOTS, pickPillar, pickFormat, generateXPost, generateBrandedCarouselIdea, generatePackage } from "@/lib/xContent";
-import { lockModelDescription } from "@/lib/contentAi";
+import { imagePromptsBatch } from "@/lib/contentAi";
 import { generateMatchingPhoto } from "@/lib/imageGen";
-import { buildBrandSlides, slideText } from "@/lib/brandTemplate";
+import { buildBrandSlides, slideText, themeOf } from "@/lib/brandTemplate";
 import { renderSlides } from "@/lib/renderSlides";
+
+// Pre-written prompt + negative, folded together the same way imageGen.js
+// folds them internally for a freshly-written prompt — generateMatchingPhoto
+// only does that fold when it writes the prompt itself, not when handed one.
+function foldPrompt(p) {
+  return p.negative ? `${p.prompt}\n\nAvoid: ${p.negative}` : p.prompt;
+}
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -29,19 +36,24 @@ const RECENT_LIMIT = 20;
 // Generates one or more AI photos matching the given scene descriptions
 // (text-first: the scene already says exactly what the photo must show —
 // see xContent.js's generateXPost), keeping the same locked model
-// description across the set for a consistent-looking person. The model
-// description is written once up front, then every photo (including the
-// first) generates fully in parallel against it — an earlier version made
-// the first photo finish before starting the rest purely to get that same
-// description, which roughly doubled the critical path on a 3-4 photo
-// carousel for no real reason and was the actual cause of the 45s timeout
-// on the "visual" slot. Returns the storage paths (for posting) and media
-// IDs (for use tracking).
+// description across the set for a consistent-looking person.
+//
+// Every photo's prompt (and the one shared model description) is written in
+// a SINGLE Claude call via imagePromptsBatch, then all N photos generate
+// fully in parallel from those pre-written prompts. Two earlier versions of
+// this both still had real sequential Claude overhead on the critical path:
+// first doing the first photo alone before the rest, then (after that fix)
+// still doing 1 model-locking call plus N separate per-photo prompt calls
+// before any image generation could even start. A 4-photo carousel was
+// paying for 5 Claude round-trips before the "generate 4 images in
+// parallel" phase even began — now it's 1. Returns the storage paths (for
+// posting) and media IDs (for use tracking).
 async function photosForScenes(brand, scenes) {
   if (!scenes.length) return { paths: [], mediaIds: [] };
-  const modelNote = await lockModelDescription(brand).catch((e) => { console.error("Model description failed:", e.message); return ""; });
+  const theme = themeOf(brand);
+  const { modelNote, photos: written } = await imagePromptsBatch(brand, { texts: scenes, style: "editorial", direction: theme.ai_style, textZone: "bottom" });
   const all = await Promise.all(
-    scenes.map((scene) => generateMatchingPhoto(brand, { slideText: scene, style: "editorial", textZone: "bottom", modelNote }))
+    written.map((p) => generateMatchingPhoto(brand, { prompt: foldPrompt(p), modelNote }))
   );
   return { paths: all.map((r) => r.media.storage_path), mediaIds: all.map((r) => r.media.id) };
 }
@@ -57,12 +69,13 @@ async function buildBrandedCarousel(brand, { pillar, recentPosts }) {
 
   const contentSlides = pkg.slides.filter((s) => !s.isCta);
   const ctaSlide = pkg.slides.find((s) => s.isCta);
-  // Model description written once up front, every slide's photo generated
-  // fully in parallel against it (see photosForScenes above for why this
-  // isn't a first-then-rest chain any more).
-  const modelNote = await lockModelDescription(brand).catch((e) => { console.error("Model description failed:", e.message); return ""; });
+  // One batched call for every slide's prompt plus the shared model
+  // description (see photosForScenes above), then every photo generates
+  // fully in parallel from the pre-written prompts.
+  const theme = themeOf(brand);
+  const { modelNote, photos: written } = await imagePromptsBatch(brand, { texts: contentSlides.map((s) => slideText(s)), idea, style: "editorial", direction: theme.ai_style, textZone: "bottom" });
   const photos = await Promise.all(
-    contentSlides.map((s) => generateMatchingPhoto(brand, { slideText: slideText(s), idea, style: "editorial", textZone: "bottom", modelNote }))
+    written.map((p) => generateMatchingPhoto(brand, { prompt: foldPrompt(p), modelNote }))
   );
   const mediaIds = photos.map((p) => p.media.id);
   const slides = [
@@ -98,7 +111,7 @@ async function buildBrandedCarousel(brand, { pillar, recentPosts }) {
 // start until the text names the scenes) as a single deadline, not two
 // separate 45s budgets stacked one after another that could sum past the
 // 60s ceiling even when each individual step was itself within 45s.
-const SLOT_TIMEOUT_MS = 50000;
+const SLOT_TIMEOUT_MS = 55000;
 function withTimeout(promise, ms, label) {
   return Promise.race([
     promise,
