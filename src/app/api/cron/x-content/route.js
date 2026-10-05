@@ -87,6 +87,75 @@ async function buildBrandedCarousel(brand, { pillar, recentPosts }) {
   return { idea, template, slidePaths, slides: storedSlides, caption: pkg.tw_caption || "", mediaIds };
 }
 
+// Soft per-slot deadline, well under the route's own 60s maxDuration — a
+// stuck or slow slot (a hung fal.ai call, a slow render) reports as a timeout
+// for that one slot instead of taking the whole request past Vercel's hard
+// limit, which previously surfaced as a flat 504 with zero detail and no
+// partial results at all.
+const SLOT_TIMEOUT_MS = 45000;
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} took too long (over ${Math.round(ms / 1000)}s)`)), ms)),
+  ]);
+}
+
+// One slot end to end: pick pillar/format, write it, generate its photo(s),
+// insert the draft. Returns a result object rather than throwing, so slots
+// run concurrently via Promise.all without one failure rejecting the rest.
+async function runSlot(supabase, brand, slot, recentPosts, today) {
+  try {
+    const pillar = pickPillar();
+    const { format } = pickFormat(slot);
+
+    if (format === "branded_carousel") {
+      const built = await withTimeout(buildBrandedCarousel(brand, { pillar, recentPosts }), SLOT_TIMEOUT_MS, `${slot.key} (branded carousel)`);
+      await bumpMediaUse(built.mediaIds);
+      const { error: insErr } = await supabase.from("content_items").insert({
+        brand_id: brand.id,
+        idea: built.idea,
+        pillar: pillar.label,
+        status: "draft",
+        scheduled_for: today,
+        slides: built.slides,
+        slide_paths: built.slidePaths,
+        tw_caption: built.caption,
+        platforms: ["twitter"],
+        template: built.template,
+      });
+      if (insErr) throw new Error(`insert failed (${slot.key}): ${insErr.message}`);
+      return { queued: true };
+    }
+
+    const { text, scenes } = await withTimeout(generateXPost(brand, { slot, pillar, format, recentPosts }), SLOT_TIMEOUT_MS, `${slot.key} (writing)`);
+    if (!text) return { queued: false };
+
+    let slidePaths = [];
+    if (scenes.length) {
+      const photos = await withTimeout(photosForScenes(brand, scenes), SLOT_TIMEOUT_MS, `${slot.key} (photos)`);
+      slidePaths = photos.paths;
+      await bumpMediaUse(photos.mediaIds);
+    }
+
+    const { error: insErr } = await supabase.from("content_items").insert({
+      brand_id: brand.id,
+      idea: `X · ${slot.key} · ${pillar.label}`,
+      pillar: pillar.label,
+      status: "draft",
+      scheduled_for: today,
+      slide_paths: slidePaths,
+      tw_caption: text,
+      platforms: ["twitter"],
+      template: "x-post",
+    });
+    if (insErr) throw new Error(`insert failed (${slot.key}): ${insErr.message}`);
+    return { queued: true };
+  } catch (e) {
+    console.error(`X content generation failed for ${brand.slug} (${slot.key}):`, e.message);
+    return { queued: false, error: `${slot.key}: ${e.message}` };
+  }
+}
+
 async function runXContentGeneration(brandIdFilter) {
   const supabase = supabaseAdmin();
 
@@ -96,10 +165,12 @@ async function runXContentGeneration(brandIdFilter) {
   const today = new Date().toISOString().slice(0, 10);
   const since = new Date(Date.now() - RECENT_DAYS * 86400000).toISOString().slice(0, 10);
 
-  const results = [];
-  for (const brand of twitterBrands) {
-    let queued = 0;
-    const errors = [];
+  // Brands, and each brand's 3 slots, all run concurrently rather than one
+  // after another — the earlier sequential version could easily add up to
+  // well over the route's 60s ceiling (3 slots x a text call plus several
+  // image generations each) and Vercel kills it outright with a bare 504,
+  // no partial results, nothing queued even for the slots that finished.
+  const results = await Promise.all(twitterBrands.map(async (brand) => {
     let recentPosts = [];
     try {
       const { data: recent } = await supabase
@@ -110,71 +181,16 @@ async function runXContentGeneration(brandIdFilter) {
         .gte("created_at", since)
         .order("created_at", { ascending: false })
         .limit(RECENT_LIMIT);
-      recentPosts = (recent || []).map((r) => r.tw_caption).filter(Boolean);
+      recentPosts = (recent || []).map((r) => r.tw_caption).filter(Boolean).slice(0, RECENT_LIMIT);
     } catch (e) {
-      results.push({ brand: brand.slug, queued: 0, error: "Couldn't load recent posts: " + e.message });
-      continue;
+      return { brand: brand.slug, queued: 0, error: "Couldn't load recent posts: " + e.message };
     }
 
-    // Each slot fails on its own — a slow or broken branded carousel
-    // shouldn't cost the brand its other two posts for the day.
-    for (const slot of X_SLOTS) {
-      try {
-        const pillar = pickPillar();
-        const { format } = pickFormat(slot);
-
-        if (format === "branded_carousel") {
-          const built = await buildBrandedCarousel(brand, { pillar, recentPosts: recentPosts.slice(0, RECENT_LIMIT) });
-          recentPosts.unshift(built.caption);
-          await bumpMediaUse(built.mediaIds);
-          const { error: insErr } = await supabase.from("content_items").insert({
-            brand_id: brand.id,
-            idea: built.idea,
-            pillar: pillar.label,
-            status: "draft",
-            scheduled_for: today,
-            slides: built.slides,
-            slide_paths: built.slidePaths,
-            tw_caption: built.caption,
-            platforms: ["twitter"],
-            template: built.template,
-          });
-          if (insErr) throw new Error(`insert failed (${slot.key}): ${insErr.message}`);
-          queued++;
-          continue;
-        }
-
-        const { text, scenes } = await generateXPost(brand, { slot, pillar, format, recentPosts: recentPosts.slice(0, RECENT_LIMIT) });
-        if (!text) continue;
-        recentPosts.unshift(text);
-
-        let slidePaths = [];
-        if (scenes.length) {
-          const photos = await photosForScenes(brand, scenes);
-          slidePaths = photos.paths;
-          await bumpMediaUse(photos.mediaIds);
-        }
-
-        const { error: insErr } = await supabase.from("content_items").insert({
-          brand_id: brand.id,
-          idea: `X · ${slot.key} · ${pillar.label}`,
-          pillar: pillar.label,
-          status: "draft",
-          scheduled_for: today,
-          slide_paths: slidePaths,
-          tw_caption: text,
-          platforms: ["twitter"],
-          template: "x-post",
-        });
-        if (insErr) throw new Error(`insert failed (${slot.key}): ${insErr.message}`);
-        queued++;
-      } catch (e) {
-        console.error(`X content generation failed for ${brand.slug} (${slot.key}):`, e.message);
-        errors.push(`${slot.key}: ${e.message}`);
-      }
-    }
-    results.push(errors.length ? { brand: brand.slug, queued, error: errors.join(" | ") } : { brand: brand.slug, queued });
-  }
+    const slotResults = await Promise.all(X_SLOTS.map((slot) => runSlot(supabase, brand, slot, recentPosts, today)));
+    const queued = slotResults.filter((r) => r.queued).length;
+    const errors = slotResults.map((r) => r.error).filter(Boolean);
+    return errors.length ? { brand: brand.slug, queued, error: errors.join(" | ") } : { brand: brand.slug, queued };
+  }));
 
   return results;
 }
