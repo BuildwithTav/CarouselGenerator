@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { themeOf } from "./brandTemplate";
 
 const MODEL = "claude-opus-5";
 
@@ -225,11 +226,19 @@ ${PLATFORM_COPY}`;
 // shares this codepath, so nothing brand-specific belongs in the system
 // prompt itself — it goes in that brand's own ai_style field instead.
 export async function lockModelDescription(brand) {
+  // themeOf(brand), not brand.visual_theme directly — a brand's ai_style can
+  // be hard-coded in brandTemplate.js (BRAND_AI_STYLE) rather than stored in
+  // the database, and reading the raw column here meant that override was
+  // silently invisible to this one function even though every other caller
+  // of ai_style saw it correctly, which is exactly why "slim, blonde" wasn't
+  // showing up: this is what actually fixes the model's hair/build/skin
+  // tone for the series, and it was working from an empty direction.
+  const aiStyle = themeOf(brand).ai_style;
   const system = `You write a short, consistent physical description of the one person who appears across a photo series, so every photo shows the same person instead of drifting between different faces, builds or skin tones. Reply with JSON only: {"model": "..."}.
 Follow the brand's photo direction below for whether a person appears at all, and if so how much of them is shown (full figure, face included or not, hands only, feet only, etc). Describe only what that direction implies will actually be visible: hair, build, skin tone, and whichever specific features it calls for. 30-70 words. This gets reused word for word in every photo's prompt, so be concrete and repeatable, not vague.
 If the brand's photo direction doesn't call for a person at all (e.g. it's food, product or environment photography), reply with an empty string for "model".`;
   const user = `${brandContext(brand)}
-${brand?.visual_theme?.ai_style ? `Brand photo direction: ${brand.visual_theme.ai_style}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic, and don't invent a recurring person unless the topic clearly calls for one.)\n"}
+${aiStyle ? `Brand photo direction: ${aiStyle}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic, and don't invent a recurring person unless the topic clearly calls for one.)\n"}
 Write the one-person description for this photo series, or leave it empty if the direction doesn't call for a person.`;
   const out = await ask(system, user, 500);
   return String(out.model || "").trim();
