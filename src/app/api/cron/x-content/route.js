@@ -1,5 +1,6 @@
 import { dashboardAuthorized, supabaseAdmin, brandPlatforms, bumpMediaUse, BUCKET } from "@/lib/dashboard";
 import { X_SLOTS, pickPillar, pickFormat, generateXPost, generateBrandedCarouselIdea, generatePackage } from "@/lib/xContent";
+import { lockModelDescription } from "@/lib/contentAi";
 import { generateMatchingPhoto } from "@/lib/imageGen";
 import { buildBrandSlides, slideText } from "@/lib/brandTemplate";
 import { renderSlides } from "@/lib/renderSlides";
@@ -28,18 +29,20 @@ const RECENT_LIMIT = 20;
 // Generates one or more AI photos matching the given scene descriptions
 // (text-first: the scene already says exactly what the photo must show —
 // see xContent.js's generateXPost), keeping the same locked model
-// description across the set for a consistent-looking person. The first
-// photo runs alone to establish that description; the rest run in parallel
-// against it — sequential would risk this whole route running past its own
-// function timeout once a carousel needs 3-4 generated photos in one call.
-// Returns the storage paths (for posting) and media IDs (for use tracking).
+// description across the set for a consistent-looking person. The model
+// description is written once up front, then every photo (including the
+// first) generates fully in parallel against it — an earlier version made
+// the first photo finish before starting the rest purely to get that same
+// description, which roughly doubled the critical path on a 3-4 photo
+// carousel for no real reason and was the actual cause of the 45s timeout
+// on the "visual" slot. Returns the storage paths (for posting) and media
+// IDs (for use tracking).
 async function photosForScenes(brand, scenes) {
   if (!scenes.length) return { paths: [], mediaIds: [] };
-  const first = await generateMatchingPhoto(brand, { slideText: scenes[0], style: "editorial", textZone: "bottom" });
-  const rest = await Promise.all(
-    scenes.slice(1).map((scene) => generateMatchingPhoto(brand, { slideText: scene, style: "editorial", textZone: "bottom", modelNote: first.modelNote }))
+  const modelNote = await lockModelDescription(brand).catch((e) => { console.error("Model description failed:", e.message); return ""; });
+  const all = await Promise.all(
+    scenes.map((scene) => generateMatchingPhoto(brand, { slideText: scene, style: "editorial", textZone: "bottom", modelNote }))
   );
-  const all = [first, ...rest];
   return { paths: all.map((r) => r.media.storage_path), mediaIds: all.map((r) => r.media.id) };
 }
 
@@ -54,14 +57,13 @@ async function buildBrandedCarousel(brand, { pillar, recentPosts }) {
 
   const contentSlides = pkg.slides.filter((s) => !s.isCta);
   const ctaSlide = pkg.slides.find((s) => s.isCta);
-  // First slide runs alone to establish the locked model description; the
-  // rest run in parallel against it (same reasoning as photosForScenes —
-  // sequential generation for 3+ slides risks the function's own timeout).
-  const first = await generateMatchingPhoto(brand, { slideText: slideText(contentSlides[0]), idea, style: "editorial", textZone: "bottom" });
-  const rest = await Promise.all(
-    contentSlides.slice(1).map((s) => generateMatchingPhoto(brand, { slideText: slideText(s), idea, style: "editorial", textZone: "bottom", modelNote: first.modelNote }))
+  // Model description written once up front, every slide's photo generated
+  // fully in parallel against it (see photosForScenes above for why this
+  // isn't a first-then-rest chain any more).
+  const modelNote = await lockModelDescription(brand).catch((e) => { console.error("Model description failed:", e.message); return ""; });
+  const photos = await Promise.all(
+    contentSlides.map((s) => generateMatchingPhoto(brand, { slideText: slideText(s), idea, style: "editorial", textZone: "bottom", modelNote }))
   );
-  const photos = [first, ...rest];
   const mediaIds = photos.map((p) => p.media.id);
   const slides = [
     ...contentSlides.map((s, i) => ({ ...s, image_media_id: photos[i].media.id, image_path: photos[i].media.storage_path, image_url: photos[i].media.url })),
