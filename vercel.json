@@ -16,8 +16,16 @@
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/cron/x-content",
+      "path": "/api/cron/x-content?slot=personality",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/x-content?slot=visual",
+      "schedule": "3 7 * * *"
+    },
+    {
+      "path": "/api/cron/x-content?slot=conversation",
+      "schedule": "6 7 * * *"
     },
     {
       "path": "/api/cron/post-twitter",

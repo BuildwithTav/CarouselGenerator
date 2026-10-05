@@ -222,15 +222,26 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
     if (next) setItems((list) => list.some((i) => i.id === next.id) ? list.map((i) => (i.id === next.id ? next : i)) : [next, ...list]);
   };
 
+  // One request per slot rather than one request for all 3 — a single
+  // request covering all of them (text plus several AI photos each) was
+  // taking long enough to hit a flat 504 from the platform itself, with no
+  // partial results at all, even for slots that had actually finished.
+  // Splitting it keeps each request small regardless of exactly where that
+  // ceiling sits.
   const generateBatch = async () => {
     setGenerating(true);
-    try {
-      const { results } = await api.post("/api/cron/x-content", { brandId: activeId });
-      const r = results?.[0];
-      const queued = r?.queued ?? 0;
-      alert(r?.error ? `Queued ${queued} as drafts. Some slots failed: ${r.error}` : queued ? `Queued ${queued} X post${queued === 1 ? "" : "s"} as drafts — review and approve below.` : "Nothing queued.");
-      load();
-    } catch (e) { alert(e.message); }
+    let queued = 0;
+    const errors = [];
+    for (const slotKey of ["personality", "visual", "conversation"]) {
+      try {
+        const { results } = await api.post("/api/cron/x-content", { brandId: activeId, slotKey });
+        const r = results?.[0];
+        queued += r?.queued ?? 0;
+        if (r?.error) errors.push(r.error);
+      } catch (e) { errors.push(`${slotKey}: ${e.message}`); }
+    }
+    alert(errors.length ? `Queued ${queued} as drafts. Some slots failed: ${errors.join(" | ")}` : queued ? `Queued ${queued} X post${queued === 1 ? "" : "s"} as drafts — review and approve below.` : "Nothing queued.");
+    load();
     setGenerating(false);
   };
 

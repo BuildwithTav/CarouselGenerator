@@ -156,20 +156,25 @@ async function runSlot(supabase, brand, slot, recentPosts, today) {
   }
 }
 
-async function runXContentGeneration(brandIdFilter) {
+// `slotKeyFilter`, when given, generates only that one slot instead of all
+// 3 — even with slots run concurrently, the slowest single slot (a branded
+// carousel: a text call, several AI photos, a template render) can still eat
+// most of a 60s budget on its own, and this environment's actual enforced
+// function-duration ceiling isn't something this session can read back from
+// Vercel to confirm. Doing one slot per request is the one fix that doesn't
+// depend on knowing that number: the dashboard's "Generate today's batch"
+// now fires one request per slot instead of one request for all 3, and the
+// daily cron is split the same way in vercel.json.
+async function runXContentGeneration(brandIdFilter, slotKeyFilter) {
   const supabase = supabaseAdmin();
 
   const { data: brands } = await supabase.from("brands").select("*");
   let twitterBrands = (brands || []).filter((b) => brandPlatforms(b).includes("twitter"));
   if (brandIdFilter) twitterBrands = twitterBrands.filter((b) => b.id === brandIdFilter);
+  const slots = slotKeyFilter ? X_SLOTS.filter((s) => s.key === slotKeyFilter) : X_SLOTS;
   const today = new Date().toISOString().slice(0, 10);
   const since = new Date(Date.now() - RECENT_DAYS * 86400000).toISOString().slice(0, 10);
 
-  // Brands, and each brand's 3 slots, all run concurrently rather than one
-  // after another — the earlier sequential version could easily add up to
-  // well over the route's 60s ceiling (3 slots x a text call plus several
-  // image generations each) and Vercel kills it outright with a bare 504,
-  // no partial results, nothing queued even for the slots that finished.
   const results = await Promise.all(twitterBrands.map(async (brand) => {
     let recentPosts = [];
     try {
@@ -186,7 +191,7 @@ async function runXContentGeneration(brandIdFilter) {
       return { brand: brand.slug, queued: 0, error: "Couldn't load recent posts: " + e.message };
     }
 
-    const slotResults = await Promise.all(X_SLOTS.map((slot) => runSlot(supabase, brand, slot, recentPosts, today)));
+    const slotResults = await Promise.all(slots.map((slot) => runSlot(supabase, brand, slot, recentPosts, today)));
     const queued = slotResults.filter((r) => r.queued).length;
     const errors = slotResults.map((r) => r.error).filter(Boolean);
     return errors.length ? { brand: brand.slug, queued, error: errors.join(" | ") } : { brand: brand.slug, queued };
@@ -200,11 +205,12 @@ export async function GET(req) {
   if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
-  return Response.json({ results: await runXContentGeneration() });
+  const slot = new URL(req.url).searchParams.get("slot");
+  return Response.json({ results: await runXContentGeneration(null, slot || null) });
 }
 
 export async function POST(req) {
   if (!dashboardAuthorized(req)) return Response.json({ error: "Not authorized" }, { status: 403 });
-  const { brandId } = await req.json().catch(() => ({}));
-  return Response.json({ results: await runXContentGeneration(brandId || null) });
+  const { brandId, slotKey } = await req.json().catch(() => ({}));
+  return Response.json({ results: await runXContentGeneration(brandId || null, slotKey || null) });
 }
