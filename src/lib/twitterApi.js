@@ -77,8 +77,18 @@ export async function postTweet(text, mediaIds) {
 // Refuses outright rather than silently posting the first 4 and dropping
 // the rest — a multi-slide story cut short with no warning is exactly what
 // happened the first time this ran against ordinary 5-7 slide carousels.
+// Cuts at the last whole word rather than slicing mid-string — the same
+// bug fixed in xContent.js's generation step, applied here too since a
+// caption can be hand-edited past 280 chars in the dashboard before posting.
+function clampTweet(text) {
+  if (text.length <= 280) return text;
+  const cut = text.slice(0, 280);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim();
+}
+
 export async function postItemToX(supabase, item, brand) {
-  const text = (item.tw_caption || item.caption || "").slice(0, 280);
+  const text = clampTweet(item.tw_caption || item.caption || "");
   const paths = item.slide_paths || [];
   if (paths.length > 4) throw new Error(`This item has ${paths.length} photos — X allows at most 4 per post. Trim it to 4 or fewer before posting.`);
   const mediaIds = [];

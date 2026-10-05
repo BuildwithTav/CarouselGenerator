@@ -90,9 +90,9 @@ Never sound like an automated account, a content farm, or an AI. Never use these
 
 Never write a line that could be misread or land wrong, and never force a joke that isn't actually funny, shoehorned in because the post "needs" one — if there's no genuinely funny angle, don't make one up.
 
-Length: most posts are short, 5 to 30 words. Conversational posts can run 30 to 70 words. Never pad a short, punchy thought into a longer one just to fill space.
+Length: short and sweet, always. Most posts are 5 to 20 words. Conversational posts can run a little longer but 35 words is a hard ceiling, not a target to aim for — when in doubt, cut it shorter, never pad a short punchy thought out to fill space. This has to leave room for hashtags too (they count toward the same post), so write the line itself tight enough that adding them doesn't cut anything off. A post that reads as rambling or runs long is a failure here, full stop.
 
-Hashtags: almost every post carries 2 to 5, placed inside the post text itself (never as a separate trailing block, never generic filler like #love or #instagood). Pick only ones genuinely relevant to this specific post's actual content. Zero hashtags is a rare exception for a post where nothing genuinely fits, not the default.
+Hashtags: every post carries 2 to 5, placed inside the post text itself (never as a separate trailing block, never generic filler like #love or #instagood). Pick ones genuinely tied to this specific post's actual content — the pillar, the moment, the job it's doing. Treat zero hashtags as something to actively avoid, not a neutral default; only skip them if you genuinely cannot find any that fit this exact post.
 
 Never beg for engagement: no "like if you agree", "retweet if", "follow me for more", "drop a [emoji]", "comment YES", "tag someone", "let's get this to X likes". A genuine, natural question is fine. Never mention OnlyFans, never link to the website, never ask people to visit the profile — this is organic growth content, not a sales post.
 
@@ -104,6 +104,17 @@ Lean into suggestive and seductive, genuinely — a real physical, sensory momen
 // queued) for this brand, used purely to stop the model repeating a hook,
 // joke, question, or structure it's already used in roughly the last month.
 //
+// If the model ever runs over X's 280-char limit despite the length rules
+// in VOICE_RULES, cut at the last whole word rather than slicing mid-string
+// — a blind slice(0, 280) is exactly how a post ended mid-word ("...on a
+// sho") and read as obviously broken rather than just a bit long.
+function clampTweet(text) {
+  if (text.length <= 280) return text;
+  const cut = text.slice(0, 280);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim();
+}
+
 // Text-first, not photo-first: for "single"/"carousel" this writes the post
 // AND a precise description of what each attached photo must show, in one
 // call — the caller then generates a photo FROM that description (see
@@ -135,12 +146,12 @@ ${formatBrief}
 
 ${recentBlock}
 
-Before answering, check: does this sound like a real person, not an automated account? Is it clearly different from the recent posts above? Is the language natural, not AI-coded? ${needsPhotos ? "Does each scene describe the exact same moment the text is about, specifically enough to actually shoot?" : ""} If this touches feet at all, is it handled through genuine lifestyle or fact framing, with zero wordplay or joking?
+Before answering, check every one of these — this has to be a 10/10, not a rough draft: Is it short — genuinely short, not just under some technical limit? Does it have 2-5 hashtags that actually fit this specific post (and only skip them if truly nothing does)? Is it flirty, suggestive and alluring, not flat or purely observational? Does it sound like a real person, not an automated account? Is it clearly different from the recent posts above? Is the language natural, not AI-coded, no em dashes, no jargon? ${needsPhotos ? "Does each scene describe the exact same moment the text is about, specifically enough to actually shoot?" : ""} If this touches feet at all, is it handled through genuine lifestyle or fact framing, with zero wordplay or joking?
 
 Write the post${needsPhotos ? " and its scene description(s)" : ""}.`;
 
   const out = await ask(system, user, 800);
-  const text = String(out.text || "").trim().slice(0, 280);
+  const text = clampTweet(String(out.text || "").trim());
   const scenes = needsPhotos ? (Array.isArray(out.scenes) ? out.scenes.map((s) => String(s || "").trim()).filter(Boolean) : []) : [];
   return { text, scenes };
 }
