@@ -32,7 +32,7 @@ export const X_SLOTS = [
   },
   {
     key: "conversation",
-    job: "Conversation and engagement. A natural question or a statement people want to agree or disagree with. Not every conversation post is a question — mix genuine questions with opinions people react to.",
+    job: "Conversation and engagement. Mostly a statement, opinion, or relatable moment people want to agree or disagree with — a genuine question is the minority case here, not the default, and most other slots should basically never end on one.",
     formatWeights: { text: 0.55, single: 0.3, carousel: 0.15, branded_carousel: 0 },
   },
 ];
@@ -94,7 +94,9 @@ Length: short and sweet, always. Most posts are 5 to 20 words. Conversational po
 
 Hashtags: every post carries 2 to 5, placed inside the post text itself (never as a separate trailing block, never generic filler like #love or #instagood). Pick ones genuinely tied to this specific post's actual content — the pillar, the moment, the job it's doing. Treat zero hashtags as something to actively avoid, not a neutral default; only skip them if you genuinely cannot find any that fit this exact post.
 
-Never beg for engagement: no "like if you agree", "retweet if", "follow me for more", "drop a [emoji]", "comment YES", "tag someone", "let's get this to X likes". A genuine, natural question is fine. Never mention OnlyFans, never link to the website, never ask people to visit the profile — this is organic growth content, not a sales post.
+Never beg for engagement: no "like if you agree", "retweet if", "follow me for more", "drop a [emoji]", "comment YES", "tag someone", "let's get this to X likes". Never mention OnlyFans, never link to the website, never ask people to visit the profile — this is organic growth content, not a sales post.
+
+Don't default to ending a post on a question. A question is the exception, not the structure every post reaches for, most posts should be a flat statement, an observation, or a sensual little moment described plainly, full stop at the end. Only reach for a genuine question occasionally, and even then only when the conversation slot's job actually calls for one.
 
 For a single-image or carousel post, never just describe what's visible in the photo ("here's my feet after a long shift"). The copy adds a feeling, a moment, a number, a punchline the photo doesn't already say. Let the image do the work.
 
@@ -146,7 +148,7 @@ ${formatBrief}
 
 ${recentBlock}
 
-Before answering, check every one of these — this has to be a 10/10, not a rough draft: Is it short — genuinely short, not just under some technical limit? Does it have 2-5 hashtags that actually fit this specific post (and only skip them if truly nothing does)? Is it flirty, suggestive and alluring, not flat or purely observational? Does it sound like a real person, not an automated account? Is it clearly different from the recent posts above? Is the language natural, not AI-coded, no em dashes, no jargon? ${needsPhotos ? "Does each scene describe the exact same moment the text is about, specifically enough to actually shoot?" : ""} If this touches feet at all, is it handled through genuine lifestyle or fact framing, with zero wordplay or joking?
+Before answering, check every one of these — this has to be a 10/10, not a rough draft: Is it short — genuinely short, not just under some technical limit? Does it have 2-5 hashtags that actually fit this specific post (and only skip them if truly nothing does)? Is it flirty, suggestive and alluring, not flat or purely observational? Does it sound like a real person, not an automated account? Is it clearly different from the recent posts above? Is the language natural, not AI-coded, no em dashes, no jargon? Does it end on a statement rather than defaulting to a question? ${needsPhotos ? "Does each scene describe the exact same moment the text is about, specifically enough to actually shoot?" : ""} If this touches feet at all, is it handled through genuine lifestyle or fact framing, with zero wordplay or joking?
 
 Write the post${needsPhotos ? " and its scene description(s)" : ""}.`;
 

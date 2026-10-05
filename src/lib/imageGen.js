@@ -23,12 +23,29 @@ const MODELS = [
   { id: "fal-ai/flux-pro/v1.1-ultra", body: (prompt, negative) => ({ prompt, aspect_ratio: "4:5", num_images: 1, output_format: "jpeg", enable_safety_checker: true, safety_tolerance: "2", raw: true, ...(negative ? { negative_prompt: negative } : {}) }) },
 ];
 
+// Neither fal.ai call below had a timeout at all — a single slow provider
+// response (no error, just slow) could silently eat the entire per-slot
+// budget in x-content/route.js with nothing forcing a fast fallback to the
+// second model. These bound each call so a stuck request fails fast instead.
+async function fetchWithTimeout(url, opts, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { ...opts, signal: controller.signal });
+  } catch (e) {
+    if (e.name === "AbortError") throw new Error(`timed out after ${Math.round(ms / 1000)}s`);
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function generateWith(model, prompt, negative) {
-  const res = await fetch(`https://fal.run/${model.id}`, {
+  const res = await fetchWithTimeout(`https://fal.run/${model.id}`, {
     method: "POST",
     headers: { Authorization: `Key ${process.env.FAL_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify(model.body(prompt, negative)),
-  });
+  }, 20000);
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`${model.id} ${res.status}: ${text.slice(0, 300)}`);
@@ -80,7 +97,7 @@ export async function generateMatchingPhoto(brand, { slideText, idea, style, pro
   }
   if (!imageUrl) throw new Error("Image generation failed: " + failures.join(" | "));
 
-  const imgRes = await fetch(imageUrl);
+  const imgRes = await fetchWithTimeout(imageUrl, {}, 15000);
   if (!imgRes.ok) throw new Error("Could not download the generated image");
   const buffer = Buffer.from(await imgRes.arrayBuffer());
   const storagePath = `${brand.id}/gen-${Date.now()}.jpg`;
