@@ -16,25 +16,22 @@ import { themeOf } from "./brandTemplate";
 // past a safety filter at all: FLUX.2 Pro's own content checker hard-
 // rejects a large share of it outright ("Failed: material flagged by a
 // content checker"), worse than the FLUX 1.1 Ultra it replaced, not
-// better. So rather than falling through to a model that mostly won't
-// produce anything usable for this brand, a failed/timed-out nano-banana-
-// pro attempt gets ONE retry of itself first (image generation has real
-// run-to-run variance, so a second attempt is a genuinely different roll,
-// not a repeat of the same failure) — FLUX.2 Pro stays only as the very
-// last resort if both nano-banana-pro attempts fail.
+// better. It stays only as a single last-resort attempt if nano-banana-pro
+// itself fails or times out — no automatic retry of nano-banana-pro either,
+// cost adds up fast at two full attempts every time. The real fix for
+// reliability is getting the prompt right the first time (see imagePrompt's
+// final checklist in contentAi.js) and a QA check that only rejects a
+// genuine rule violation, not a stylistic nitpick (see reviewGeneratedImage)
+// — not paying for extra generations to average out a bad prompt or an
+// over-strict check.
 //
 // Back to 2K, not 4K: every real problem reported (face visible, wrong
 // anatomy, wrong gender on a background prop) was never a resolution
 // issue — it's exactly what the vision QA check above already catches.
 // 4K was the expensive, slow part with no real payoff for how these
-// actually get viewed (X doesn't display photos at print resolution), and
-// retrying a 4K generation on failure meant paying full price twice. 2K
-// is both cheaper per attempt and finishes faster, so a retry costs less
-// in money and in how long a slot takes.
-const NANO_BANANA_PRO = { id: "fal-ai/nano-banana-pro", timeoutMs: 35000, body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) };
+// actually get viewed (X doesn't display photos at print resolution).
 const MODELS = [
-  NANO_BANANA_PRO,
-  NANO_BANANA_PRO,
+  { id: "fal-ai/nano-banana-pro", timeoutMs: 35000, body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) },
   // image_size as explicit pixel dimensions (not a named preset) to match
   // the 4:5 aspect ratio used everywhere else. FLUX.2's exact safety-filter
   // field names aren't confirmed, so left out rather than guessed — the
