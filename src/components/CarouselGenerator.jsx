@@ -1618,10 +1618,11 @@ export default function App() {
   const addCoverPhoto = async (url) => {
     sampleImageBrightness(url).then(setBadgeArea);
     try {
+      const resized = await resizeForUpload(url);
       const res = await fetch('/api/upload-photo', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ imageData: url, filename: `cover-${Date.now()}.jpg` })
+        body: JSON.stringify({ imageData: resized, filename: `cover-${Date.now()}.jpg` })
       });
       const _c_data = await res.json();
       if (_c_data.url) {
@@ -2055,6 +2056,31 @@ Return ONLY valid JSON, nothing else.` }
     img.onerror = () => res(dataUrl);
     img.src = dataUrl.startsWith("_c_data:") ? dataUrl.replace(/^_c_data:/, "data:") : dataUrl;
   });
+  // Downscales + re-compresses a photo to JPEG before it goes to
+  // /api/upload-photo (Vercel Blob) — raw phone-camera uploads were going
+  // in at full original size (often several MB each) with nothing ever
+  // cleaning them up, which is what was actually driving Blob storage
+  // usage up. Works for both local data URLs and remote URLs (e.g. a
+  // Pexels pick); any failure (load error, CORS-tainted canvas) just
+  // resolves with the original source untouched, same fallback pattern as
+  // resizeImageTo1080/compressForLibrary above.
+  const resizeForUpload = (src, maxDim = 1600, quality = 0.82) => new Promise((res) => {
+    const img = new window.Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const ratio = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        res(canvas.toDataURL("image/jpeg", quality));
+      } catch (e) { res(src); }
+    };
+    img.onerror = () => res(src);
+    img.src = src;
+  });
+
   const isIosSafari = () => { try { const ua=navigator.userAgent; return /iP(ad|hone|od)/.test(ua)&&/WebKit/.test(ua)&&!/CriOS|FxiOS|EdgiOS/.test(ua); } catch { return false; } };
 
   const slideHasCustomImage = (_c_opts, isCover) => {
@@ -2074,11 +2100,16 @@ Return ONLY valid JSON, nothing else.` }
         continue;
       }
       try {
+        // Re-compress to JPEG before uploading — these often arrive as
+        // lossless PNG (from the template-library resize path) at full
+        // 1080px, which is far bigger than a JPEG needs to be for a
+        // photographic slide image. Falls back to the original on failure.
+        const resized = await resizeForUpload(dataUrl, 1600, 0.82);
         // Convert base64 to Blob and send as FormData — bypasses Vercel 4.5MB body limit
-        const mimeMatch = dataUrl.match(/^data:(image\/[^;]+);base64,/);
+        const mimeMatch = resized.match(/^data:(image\/[^;]+);base64,/);
         const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
         const ext = mime.split('/')[1] || 'jpg';
-        const b64 = dataUrl.replace(/^data:image\/[^;]+;base64,/, '');
+        const b64 = resized.replace(/^data:image\/[^;]+;base64,/, '');
         const byteChars = atob(b64);
         const byteArr = new Uint8Array(byteChars.length);
         for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
@@ -2941,10 +2972,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                         const base64 = ev.target.result;
                         setQuoteBgCustomUrl(base64);
                         try {
+                          const resized = await resizeForUpload(base64);
                           const res = await fetch('/api/upload-photo', {
                             method:'POST',
                             headers:{'Content-Type':'application/json'},
-                            body: JSON.stringify({ imageData: base64, filename: `quotebg-${Date.now()}.jpg` })
+                            body: JSON.stringify({ imageData: resized, filename: `quotebg-${Date.now()}.jpg` })
                           });
                           const _c_data = await res.json();
                           if (_c_data.url) {
@@ -4008,10 +4040,13 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
                       const base64 = ev.target.result;
                       setProfileUrl(base64); // show preview immediately (base64 not saved to localStorage yet)
                       try {
+                        // A small circular avatar, never shown larger than a
+                        // badge — no reason to store it at full camera size.
+                        const resized = await resizeForUpload(base64, 480, 0.85);
                         const res = await fetch('/api/upload-photo', {
                           method:'POST',
                           headers:{'Content-Type':'application/json'},
-                          body: JSON.stringify({ imageData: base64, filename: `profile-${Date.now()}.jpg` })
+                          body: JSON.stringify({ imageData: resized, filename: `profile-${Date.now()}.jpg` })
                         });
                         const _c_data = await res.json();
                         if (_c_data.url) setProfileUrl(_c_data.url); // replace with real Blob URL — this triggers localStorage save
@@ -5057,10 +5092,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         onSelect={async (url)=>{
           setTemplateBgUrl(url);
           try {
+            const resized = await resizeForUpload(url);
             const res = await fetch("/api/upload-photo", {
               method:"POST",
               headers:{"Content-Type":"application/json"},
-              body: JSON.stringify({ imageData: url, filename: `template-pexels-${Date.now()}.jpg` }),
+              body: JSON.stringify({ imageData: resized, filename: `template-pexels-${Date.now()}.jpg` }),
             });
             const _c_data = await res.json();
             if (_c_data.url) {
@@ -5086,10 +5122,11 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;background:${cardBg};}
         onSelect={async (url)=>{
           setQuoteBgCustomUrl(url);
           try {
+            const resized = await resizeForUpload(url);
             const res = await fetch("/api/upload-photo", {
               method:"POST",
               headers:{"Content-Type":"application/json"},
-              body: JSON.stringify({ imageData: url, filename: `quotebg-pexels-${Date.now()}.jpg` }),
+              body: JSON.stringify({ imageData: resized, filename: `quotebg-pexels-${Date.now()}.jpg` }),
             });
             const _c_data = await res.json();
             if (_c_data.url) {
