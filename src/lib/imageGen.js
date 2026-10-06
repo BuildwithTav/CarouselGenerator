@@ -11,18 +11,30 @@ import { themeOf } from "./brandTemplate";
 // Nano Banana Pro (Gemini 3 Pro Image) is strongest on anatomy, instruction-
 // following, and correctly placing/counting things (exactly 5 toes, a foot
 // actually seated in a shoe) — the category of mistake that's actually been
-// showing up. FLUX.2 Pro is the fallback: a newer generation than the FLUX
-// 1.1 Ultra this replaced, with the strongest raw photorealistic skin/
-// texture of anything on fal.ai, used if nano-banana-pro errors or refuses.
+// showing up. It's also, confirmed in production, the only one of the two
+// that reliably gets this brand's sensual/suggestive-but-tasteful content
+// past a safety filter at all: FLUX.2 Pro's own content checker hard-
+// rejects a large share of it outright ("Failed: material flagged by a
+// content checker"), worse than the FLUX 1.1 Ultra it replaced, not
+// better. So rather than falling through to a model that mostly won't
+// produce anything usable for this brand, a failed/timed-out nano-banana-
+// pro attempt gets ONE retry of itself first (image generation has real
+// run-to-run variance, so a second attempt is a genuinely different roll,
+// not a repeat of the same failure) — FLUX.2 Pro stays only as the very
+// last resort if both nano-banana-pro attempts fail.
 //
 // 4K: the X engine only ever generates at most one photo per post now (no
 // more carousel/branded-carousel formats — see X_SLOTS in xContent.js), so
 // there's no longer several images' worth of parallel generation competing
 // for the same per-slot time budget, and quality matters more than shaving
-// seconds. Revisit if this turns out to blow the slot budget too often in
-// practice (see runSlot's SLOT_TIMEOUT_MS in x-content/route.js).
+// seconds. Two attempts at up to 50s each does mean the slot's own 55s soft
+// deadline will trip more often now — that's an accepted tradeoff (Tav:
+// pay more, prioritize quality/reliability), and a tripped slot still
+// finishes in the background and lands on refresh, same as always.
+const NANO_BANANA_PRO = { id: "fal-ai/nano-banana-pro", timeoutMs: 50000, body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "4K", output_format: "jpeg" }) };
 const MODELS = [
-  { id: "fal-ai/nano-banana-pro", timeoutMs: 50000, body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "4K", output_format: "jpeg" }) },
+  NANO_BANANA_PRO,
+  NANO_BANANA_PRO,
   // image_size as explicit pixel dimensions (not a named preset) to match
   // the 4:5 aspect ratio used everywhere else. FLUX.2's exact safety-filter
   // field names aren't confirmed, so left out rather than guessed — the
