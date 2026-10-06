@@ -17,11 +17,26 @@ const MODELS = [
   // (see x-content/route.js), reliably finishing within budget matters more
   // than the resolution bump right now. Revisit if there's ever more time
   // to work with.
-  { id: "fal-ai/nano-banana-pro", body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) },
+  // timeoutMs: a real 2K generation from this model routinely runs well
+  // past 20s - an earlier, too-aggressive 20s cutoff here was silently
+  // killing every normal call and forcing every photo onto the Flux
+  // fallback below, whose strict safety filter then blocked this brand's
+  // sensual/suggestive content and returned a tiny near-blank placeholder
+  // instead of erroring - stored as if it had succeeded. 42s leaves it
+  // enough room to actually finish while still protecting the X engine's
+  // 55s per-slot budget (see x-content/route.js).
+  { id: "fal-ai/nano-banana-pro", timeoutMs: 42000, body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) },
   // safety_tolerance is FLUX's own 1 (strictest) to 6 (most permissive) scale.
   // Keep this at the strict end — brand photos must never be explicit.
-  { id: "fal-ai/flux-pro/v1.1-ultra", body: (prompt, negative) => ({ prompt, aspect_ratio: "4:5", num_images: 1, output_format: "jpeg", enable_safety_checker: true, safety_tolerance: "2", raw: true, ...(negative ? { negative_prompt: negative } : {}) }) },
+  { id: "fal-ai/flux-pro/v1.1-ultra", timeoutMs: 20000, body: (prompt, negative) => ({ prompt, aspect_ratio: "4:5", num_images: 1, output_format: "jpeg", enable_safety_checker: true, safety_tolerance: "2", raw: true, ...(negative ? { negative_prompt: negative } : {}) }) },
 ];
+
+// A real photo from either model is consistently hundreds of KB or more.
+// A safety-filter block (seen in production: Flux returning the exact same
+// 10372-byte file for three completely different prompts) comes back as a
+// normal 200 response with a real image URL, so nothing above catches it -
+// only the actual downloaded size gives it away.
+const MIN_IMAGE_BYTES = 50000;
 
 // Neither fal.ai call below had a timeout at all — a single slow provider
 // response (no error, just slow) could silently eat the entire per-slot
@@ -45,7 +60,7 @@ async function generateWith(model, prompt, negative) {
     method: "POST",
     headers: { Authorization: `Key ${process.env.FAL_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify(model.body(prompt, negative)),
-  }, 20000);
+  }, model.timeoutMs);
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`${model.id} ${res.status}: ${text.slice(0, 300)}`);
@@ -81,13 +96,21 @@ export async function generateMatchingPhoto(brand, { slideText, idea, style, pro
   const fullPrompt = negative ? `${prompt}\n\nAvoid: ${negative}` : prompt;
 
   const models = process.env.FAL_IMAGE_MODEL
-    ? [{ id: process.env.FAL_IMAGE_MODEL, body: MODELS[0].body }, ...MODELS.filter((m) => m.id !== process.env.FAL_IMAGE_MODEL)]
+    ? [{ ...MODELS[0], id: process.env.FAL_IMAGE_MODEL }, ...MODELS.filter((m) => m.id !== process.env.FAL_IMAGE_MODEL)]
     : MODELS;
-  let imageUrl, usedModel;
+  let buffer, usedModel;
   const failures = [];
   for (const model of models) {
     try {
-      imageUrl = await generateWith(model, fullPrompt, negative);
+      const imageUrl = await generateWith(model, fullPrompt, negative);
+      const imgRes = await fetchWithTimeout(imageUrl, {}, 15000);
+      if (!imgRes.ok) throw new Error("Could not download the generated image");
+      const candidate = Buffer.from(await imgRes.arrayBuffer());
+      // Catches a safety-filter block: the provider still returns a normal
+      // 200 with a real (but near-blank) image URL, so only the actual
+      // downloaded size exposes it - see MIN_IMAGE_BYTES above.
+      if (candidate.length < MIN_IMAGE_BYTES) throw new Error(`${model.id} returned a suspiciously small image (${candidate.length} bytes) - likely blocked by its safety filter`);
+      buffer = candidate;
       usedModel = model.id;
       break;
     } catch (e) {
@@ -95,11 +118,8 @@ export async function generateMatchingPhoto(brand, { slideText, idea, style, pro
       failures.push(e.message);
     }
   }
-  if (!imageUrl) throw new Error("Image generation failed: " + failures.join(" | "));
+  if (!buffer) throw new Error("Image generation failed: " + failures.join(" | "));
 
-  const imgRes = await fetchWithTimeout(imageUrl, {}, 15000);
-  if (!imgRes.ok) throw new Error("Could not download the generated image");
-  const buffer = Buffer.from(await imgRes.arrayBuffer());
   const storagePath = `${brand.id}/gen-${Date.now()}.jpg`;
 
   const { error: upErr } = await supabase.storage.from(BUCKET).upload(storagePath, buffer, { contentType: "image/jpeg", upsert: false });
