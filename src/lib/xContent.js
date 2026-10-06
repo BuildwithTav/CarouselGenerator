@@ -15,25 +15,28 @@ import { ask, brandContext, generatePackage } from "./contentAi";
 // all, ever, regardless of how mild. Feet stay visible in photos; they are
 // never the punchline or the subject of the copy.
 
-// Three jobs, one per daily post. Format mix per slot is weighted so the
-// week averages out close to the brief's target (roughly 9 text / 7 single
-// image / 5 carousel posts over 7 days, i.e. about 43% / 33% / 24%), with a
-// small slice of the visual slot going to a full branded carousel instead.
+// Three jobs, one per daily post. Carousel and branded-carousel formats are
+// deliberately gone from this mix (Tav's call: quality and reliability over
+// variety — a multi-photo post multiplies both the generation time, that
+// was pushing slots past their budget, and the fal.ai spend, for a format
+// this account wasn't using anyway). Every slot is now just text or exactly
+// one photo; each slot's old carousel/branded_carousel weight is folded
+// straight into "single".
 export const X_SLOTS = [
   {
     key: "personality",
     job: "Personality and relatability. A spontaneous-sounding thought or observation about cabin crew life, the kind of thing someone actually tweets without thinking too hard about it. Reach and replies, not a sales pitch.",
-    formatWeights: { text: 0.65, single: 0.2, carousel: 0.15, branded_carousel: 0 },
+    formatWeights: { text: 0.65, single: 0.35 },
   },
   {
     key: "visual",
-    job: "Visual identity. Let a photo (or a short sequence of photos) do most of the work. The copy is short and never just describes what's in the photo — it adds a line, a feeling, a moment, not a caption under a picture.",
-    formatWeights: { text: 0.05, single: 0.45, carousel: 0.35, branded_carousel: 0.15 },
+    job: "Visual identity. Let the photo do most of the work. The copy is short and never just describes what's in the photo — it adds a line, a feeling, a moment, not a caption under a picture.",
+    formatWeights: { text: 0.05, single: 0.95 },
   },
   {
     key: "conversation",
     job: "Conversation and engagement. Mostly a statement, opinion, or relatable moment people want to agree or disagree with — a genuine question is the minority case here, not the default, and most other slots should basically never end on one.",
-    formatWeights: { text: 0.55, single: 0.3, carousel: 0.15, branded_carousel: 0 },
+    formatWeights: { text: 0.55, single: 0.45 },
   },
 ];
 
@@ -65,18 +68,17 @@ export function pickPillar() {
   return weightedPick(X_PILLARS);
 }
 
-// Returns "text" | "single" | "carousel" | "branded_carousel", and for
-// carousel formats, how many photos/slides.
+// Returns "text" | "single" — only ever text or exactly one photo. Ignores
+// any carousel/branded_carousel weight a slot might still carry, so that
+// format can't come back by way of a stray config value.
 export function pickFormat(slot) {
   const w = slot.formatWeights;
   const items = [
     { key: "text", weight: w.text },
     { key: "single", weight: w.single },
-    { key: "carousel", weight: w.carousel },
-    { key: "branded_carousel", weight: w.branded_carousel || 0 },
   ];
   const format = weightedPick(items, "weight").key;
-  const photoCount = format === "single" ? 1 : format === "carousel" ? 2 + Math.floor(Math.random() * 3) : format === "branded_carousel" ? 4 : 0;
+  const photoCount = format === "single" ? 1 : 0;
   return { format, photoCount };
 }
 

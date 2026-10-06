@@ -8,27 +8,27 @@ import { themeOf } from "./brandTemplate";
 // same thing: write a prompt that matches a specific piece of text, generate
 // the photo, save it to the brand's media library like any other upload.
 
-// Nano Banana Pro (Gemini 3 Pro Image) is strongest on anatomy and natural
-// skin; FLUX 1.1 Pro Ultra is the fallback if it errors or refuses.
+// Nano Banana Pro (Gemini 3 Pro Image) is strongest on anatomy, instruction-
+// following, and correctly placing/counting things (exactly 5 toes, a foot
+// actually seated in a shoe) — the category of mistake that's actually been
+// showing up. FLUX.2 Pro is the fallback: a newer generation than the FLUX
+// 1.1 Ultra this replaced, with the strongest raw photorealistic skin/
+// texture of anything on fal.ai, used if nano-banana-pro errors or refuses.
+//
+// 4K: the X engine only ever generates at most one photo per post now (no
+// more carousel/branded-carousel formats — see X_SLOTS in xContent.js), so
+// there's no longer several images' worth of parallel generation competing
+// for the same per-slot time budget, and quality matters more than shaving
+// seconds. Revisit if this turns out to blow the slot budget too often in
+// practice (see runSlot's SLOT_TIMEOUT_MS in x-content/route.js).
 const MODELS = [
-  // 4K was tried for quality, but it pushed a single photo's generation
-  // time past this route's 45s soft deadline on its own — with a hard 60s
-  // ceiling on the whole request that can't be verified or raised from here
-  // (see x-content/route.js), reliably finishing within budget matters more
-  // than the resolution bump right now. Revisit if there's ever more time
-  // to work with.
-  // timeoutMs: a real 2K generation from this model routinely runs well
-  // past 20s - an earlier, too-aggressive 20s cutoff here was silently
-  // killing every normal call and forcing every photo onto the Flux
-  // fallback below, whose strict safety filter then blocked this brand's
-  // sensual/suggestive content and returned a tiny near-blank placeholder
-  // instead of erroring - stored as if it had succeeded. 42s leaves it
-  // enough room to actually finish while still protecting the X engine's
-  // 55s per-slot budget (see x-content/route.js).
-  { id: "fal-ai/nano-banana-pro", timeoutMs: 42000, body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) },
-  // safety_tolerance is FLUX's own 1 (strictest) to 6 (most permissive) scale.
-  // Keep this at the strict end — brand photos must never be explicit.
-  { id: "fal-ai/flux-pro/v1.1-ultra", timeoutMs: 20000, body: (prompt, negative) => ({ prompt, aspect_ratio: "4:5", num_images: 1, output_format: "jpeg", enable_safety_checker: true, safety_tolerance: "2", raw: true, ...(negative ? { negative_prompt: negative } : {}) }) },
+  { id: "fal-ai/nano-banana-pro", timeoutMs: 50000, body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "4K", output_format: "jpeg" }) },
+  // image_size as explicit pixel dimensions (not a named preset) to match
+  // the 4:5 aspect ratio used everywhere else. FLUX.2's exact safety-filter
+  // field names aren't confirmed, so left out rather than guessed — the
+  // "Avoid: ..." negative terms still reach it either way, folded into the
+  // main prompt text itself by fullPrompt below, not a dedicated field.
+  { id: "fal-ai/flux-2-pro", timeoutMs: 30000, body: (prompt) => ({ prompt, image_size: { width: 1080, height: 1350 }, output_format: "jpeg" }) },
 ];
 
 // A real photo from either model is consistently hundreds of KB or more.
