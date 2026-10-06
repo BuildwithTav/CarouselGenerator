@@ -23,15 +23,15 @@ import { themeOf } from "./brandTemplate";
 // not a repeat of the same failure) — FLUX.2 Pro stays only as the very
 // last resort if both nano-banana-pro attempts fail.
 //
-// 4K: the X engine only ever generates at most one photo per post now (no
-// more carousel/branded-carousel formats — see X_SLOTS in xContent.js), so
-// there's no longer several images' worth of parallel generation competing
-// for the same per-slot time budget, and quality matters more than shaving
-// seconds. Two attempts at up to 50s each does mean the slot's own 55s soft
-// deadline will trip more often now — that's an accepted tradeoff (Tav:
-// pay more, prioritize quality/reliability), and a tripped slot still
-// finishes in the background and lands on refresh, same as always.
-const NANO_BANANA_PRO = { id: "fal-ai/nano-banana-pro", timeoutMs: 50000, body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "4K", output_format: "jpeg" }) };
+// Back to 2K, not 4K: every real problem reported (face visible, wrong
+// anatomy, wrong gender on a background prop) was never a resolution
+// issue — it's exactly what the vision QA check above already catches.
+// 4K was the expensive, slow part with no real payoff for how these
+// actually get viewed (X doesn't display photos at print resolution), and
+// retrying a 4K generation on failure meant paying full price twice. 2K
+// is both cheaper per attempt and finishes faster, so a retry costs less
+// in money and in how long a slot takes.
+const NANO_BANANA_PRO = { id: "fal-ai/nano-banana-pro", timeoutMs: 35000, body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) };
 const MODELS = [
   NANO_BANANA_PRO,
   NANO_BANANA_PRO,
