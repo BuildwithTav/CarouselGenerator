@@ -5,6 +5,10 @@ import { themeOf, slideNeedsImage, slideCanHaveImage, TEMPLATE_IDS, defaultPhoto
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
+// "platforms" is deliberately not in EDITABLE's generic pass-through below
+// — it's validated separately (only known platform names, deduped) since
+// an explicit platforms array on the row is what the X posting cron keys
+// off of ("Send to X" in CarouselsTab.js), not something to trust raw.
 const EDITABLE = ["idea", "pillar", "status", "scheduled_for", "slides", "caption", "tt_caption", "tw_caption", "hashtags", "yt_title", "yt_description", "yt_tags", "yt_pinned_comment", "yt_category", "media_id", "template"];
 
 export async function GET(req) {
@@ -94,6 +98,7 @@ export async function PATCH(req) {
     update[postedColumn(platform)] = action === "mark_posted" ? new Date().toISOString() : null;
   } else {
     for (const k of EDITABLE) if (k in body) update[k] = body[k];
+    if (Array.isArray(body.platforms)) update.platforms = [...new Set(body.platforms.filter((p) => PLATFORMS.includes(p)))];
   }
 
   // Photos newly attached to slides count as a use.

@@ -250,6 +250,12 @@ export function CarouselEditor({ api, itemId, onBack, onChanged }) {
     hashtags: (draft.caption.match(/#[\w\d_]+/g) || []).slice(0, 5),
   }));
   const setStatus = (status) => run(status, () => api.patch("/api/content", { id: item.id, status }));
+  // Writes an explicit platforms list onto the item itself (not just the
+  // brand-inherited default itemPlatforms() computes for display) - the X
+  // posting cron only picks up items with "twitter" actually stored on the
+  // row, exactly the same tagging the X engine's own posts already carry.
+  // Keeps every platform the item already had, just adds twitter to it.
+  const sendToX = () => run("send-to-x", () => api.patch("/api/content", { id: item.id, platforms: Array.from(new Set([...itemPlatforms(item, item.brands), "twitter"])) }));
   const render = () => run("render", () => api.post("/api/content/render", { id: item.id }));
   const regen = (field) => run("regen-" + field, () => api.post("/api/content/regenerate", { id: item.id, field }));
   const del = async () => {
@@ -367,18 +373,27 @@ export function CarouselEditor({ api, itemId, onBack, onChanged }) {
             <textarea value={draft.tt_caption} onChange={(e) => setDraft((d) => ({ ...d, tt_caption: e.target.value }))} rows={4} style={{ ...inp, resize: "vertical", lineHeight: 1.6 }} />
           </div>
         )}
-        {platforms.includes("twitter") && (
+        {platforms.includes("twitter") && (() => {
+          const queuedForX = Array.isArray(item.platforms) && item.platforms.includes("twitter");
+          const tooManySlides = (item.slide_paths?.length || 0) > 4;
+          return (
           <div style={{ marginBottom: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-              <label style={{ ...lbl, margin: 0 }}>X (Twitter) post <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500, color: C.muted }}>(copy-paste only — carousels don't auto-post to X, only the X tab's own posts do)</span></label>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4, flexWrap: "wrap", gap: 6 }}>
+              <label style={{ ...lbl, margin: 0 }}>X (Twitter) post <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500, color: C.muted }}>{queuedForX ? "(queued for X — posts same as the X tab's own items, up to 4 photos)" : tooManySlides ? `(${item.slide_paths.length} photos — over X's 4-photo limit, trim slides first)` : "(copy-paste, or send it into the X auto-post queue)"}</span></label>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 11, color: draft.tw_caption.length > 280 ? C.danger : C.muted }}>{draft.tw_caption.length}/280</span>
                 <CopyButton text={draft.tw_caption} label="Copy" kind="small" />
+                {!queuedForX && (
+                  <button onClick={sendToX} disabled={!!busy || tooManySlides} title={tooManySlides ? "Trim to 4 slides or fewer first" : ""} style={btn("primary", { fontSize: 11, padding: "5px 10px", opacity: tooManySlides ? 0.5 : 1 })}>
+                    {busy === "send-to-x" ? "…" : "Send to X"}
+                  </button>
+                )}
               </div>
             </div>
             <textarea value={draft.tw_caption} onChange={(e) => setDraft((d) => ({ ...d, tw_caption: e.target.value }))} rows={4} style={{ ...inp, resize: "vertical", lineHeight: 1.6 }} />
           </div>
-        )}
+          );
+        })()}
         {platforms.includes("youtube") && (
           <div>
             <label style={lbl}>YouTube</label>
