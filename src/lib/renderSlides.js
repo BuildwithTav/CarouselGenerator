@@ -42,10 +42,17 @@ function familiesUsed(htmls, css) {
   return used;
 }
 
+// chromium-min doesn't bundle the actual browser binary into the deployed
+// function (that was pushing ~100MB+ of Function Storage per deployment,
+// per route, times every retained deployment) - it downloads this exact
+// matching pack to /tmp on cold start instead. Version must stay in lockstep
+// with the pinned @sparticuz/chromium-min version in package.json.
+const CHROMIUM_PACK_URL = "https://github.com/Sparticuz/chromium/releases/download/v123.0.1/chromium-v123.0.1-pack.tar";
+
 async function launchBrowser() {
-  const chromium = (await import("@sparticuz/chromium")).default;
+  const chromium = (await import("@sparticuz/chromium-min")).default;
   const puppeteer = (await import("puppeteer-core")).default;
-  const executablePath = process.env.CHROMIUM_PATH || (await chromium.executablePath());
+  const executablePath = process.env.CHROMIUM_PATH || (await chromium.executablePath(CHROMIUM_PACK_URL));
   if (!process.env.CHROMIUM_PATH) {
     process.env.LD_LIBRARY_PATH = [executablePath.replace("/chromium", ""), process.env.LD_LIBRARY_PATH].filter(Boolean).join(":");
   }

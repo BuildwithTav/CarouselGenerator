@@ -46,11 +46,13 @@ export async function POST(req) {
     const htmlWithFonts = await inlineFonts(html);
     let browser;
     try {
-      const chromiumModule = await import('@sparticuz/chromium');
+      // See renderSlides.js for why this is chromium-min + a remote pack
+      // URL instead of bundling the browser binary into the function itself.
+      const chromiumModule = await import('@sparticuz/chromium-min');
       const puppeteerModule = await import('puppeteer-core');
       const chromium = chromiumModule.default;
       const puppeteer = puppeteerModule.default;
-      const executablePath = await chromium.executablePath();
+      const executablePath = await chromium.executablePath("https://github.com/Sparticuz/chromium/releases/download/v123.0.1/chromium-v123.0.1-pack.tar");
       process.env.LD_LIBRARY_PATH = [
         executablePath.replace('/chromium', ''),
         process.env.LD_LIBRARY_PATH,
