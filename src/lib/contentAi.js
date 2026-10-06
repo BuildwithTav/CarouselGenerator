@@ -69,6 +69,44 @@ export async function ask(system, user, maxTokens = 8000, imageUrls = []) {
   return extractJson(text);
 }
 
+// Cheap, fast model for a bounded yes/no visual check — this is a
+// classification task, not creative writing, so it doesn't need the full
+// model `ask()` uses elsewhere. A single check is a few hundred tokens,
+// a small fraction of a cent, negligible next to the image generation
+// itself (a few cents via fal.ai).
+const QA_MODEL = "claude-haiku-4-5-20251001";
+
+// Checks one generated photo against the brand's own AI photo direction
+// (the same rules it was generated to follow) plus a fixed set of hard,
+// brand-agnostic failures — catches exactly the kind of thing that's
+// previously only been caught by eye: a visible face, the wrong gender on
+// a background prop, anatomy that's visibly wrong. Fails open (treated as
+// a pass) on its own errors or a timeout — a QA-infrastructure hiccup
+// should never block a real, good photo.
+export async function reviewGeneratedImage(imageUrl, rules) {
+  const system = `You are a strict visual QA checker for an AI-generated brand photo. Reply with JSON only: {"pass": true or false, "reason": "..."}.
+
+Check the image against this brand's own photo direction — fail if it clearly violates any part of it:
+${rules}
+
+Also always fail, regardless of the above, if: a human face is visible anywhere in the image (even partial, blurred, in profile, or reflected in a mirror/window/screen); the image shows nudity, exposed breasts, or anything sexually explicit; a hand or foot has a visibly wrong number of fingers/toes or is anatomically deformed; a background prop meant to show no face (an ID badge, lanyard, photo frame, phone screen) actually shows a clear human face; more than one person appears in frame.
+
+"reason" is one short sentence - which rule failed and what you saw, or "looks correct" if it passes.`;
+  try {
+    const res = await anthropic().messages.create({
+      model: QA_MODEL,
+      max_tokens: 200,
+      system,
+      messages: [{ role: "user", content: [{ type: "image", source: { type: "url", url: imageUrl } }, { type: "text", text: "Check this image against the rules above." }] }],
+    }, { timeout: 15000 });
+    const text = res.content.filter((b) => b.type === "text").map((b) => b.text).join("\n");
+    return extractJson(text);
+  } catch (e) {
+    console.error("Image QA check failed (treating as pass):", e.message);
+    return { pass: true, reason: "QA check itself failed: " + e.message };
+  }
+}
+
 export async function suggestIdeas(brand, count = 10) {
   const system = `You generate short-form social content ideas. Reply with JSON only: {"ideas": ["...", ...]}.\n${HOUSE_RULES}`;
   const user = `${brandContext(brand)}

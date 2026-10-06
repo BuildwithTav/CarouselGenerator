@@ -1,5 +1,5 @@
 import { supabaseAdmin, BUCKET, SIGNED_URL_TTL_SECONDS } from "./dashboard";
-import { imagePrompt, lockModelDescription } from "./contentAi";
+import { imagePrompt, lockModelDescription, reviewGeneratedImage } from "./contentAi";
 import { themeOf } from "./brandTemplate";
 
 // Shared AI photo generation — used by /api/content/generate-image (driven
@@ -110,6 +110,12 @@ export async function generateMatchingPhoto(brand, { slideText, idea, style, pro
       // 200 with a real (but near-blank) image URL, so only the actual
       // downloaded size exposes it - see MIN_IMAGE_BYTES above.
       if (candidate.length < MIN_IMAGE_BYTES) throw new Error(`${model.id} returned a suspiciously small image (${candidate.length} bytes) - likely blocked by its safety filter`);
+      // Vision QA pass: catches the specific things only ever caught by eye
+      // so far — a visible face, the wrong gender on a background prop,
+      // broken hand/foot anatomy. Checked against this exact photo's own
+      // generated URL, so it sees exactly what the image actually shows.
+      const qa = await reviewGeneratedImage(imageUrl, theme.ai_style || "(no brand-specific style set)");
+      if (!qa.pass) throw new Error(`${model.id} image failed visual QA: ${qa.reason}`);
       buffer = candidate;
       usedModel = model.id;
       break;
