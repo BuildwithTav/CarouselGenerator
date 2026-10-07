@@ -232,21 +232,23 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
     setGenerating(true);
     let queued = 0;
     const errors = [];
-    for (const slotKey of ["personality", "visual", "conversation"]) {
+    // One request per slot, all three at once — each is its own server run,
+    // so a slow photo slot doesn't hold up the others.
+    await Promise.all(["personality", "visual", "conversation"].map(async (slotKey) => {
       try {
         const { results } = await api.post("/api/cron/x-content", { brandId: activeId, slotKey });
         const r = results?.[0];
         queued += r?.queued ?? 0;
         if (r?.error) errors.push(r.error);
       } catch (e) { errors.push(`${slotKey}: ${e.message}`); }
-    }
+    }));
     // A "took too long" error here doesn't mean the slot's work was lost —
     // the soft deadline in x-content/route.js only stops waiting on it, it
     // doesn't cancel it, and the generation can keep running server-side
     // and finish anyway a bit later (seen in practice: a "failed" carousel
     // showed up after just refreshing, nothing re-run). So a timed-out slot
     // gets a second, delayed reload instead of being treated as gone.
-    alert(errors.length ? `Queued ${queued} as drafts. Some slots are still finishing in the background: ${errors.join(" | ")} — give it a minute, this page will refresh itself, no need to regenerate.` : queued ? `Queued ${queued} X post${queued === 1 ? "" : "s"} as drafts — review and approve below.` : "Nothing queued.");
+    alert(errors.length ? `Queued ${queued} as drafts. Some slots failed: ${errors.join(" | ")}` : queued ? `Queued ${queued} X post${queued === 1 ? "" : "s"} as drafts — review and approve below.` : "Nothing queued.");
     load();
     setGenerating(false);
     if (errors.length) setTimeout(load, 25000);

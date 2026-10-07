@@ -5,7 +5,7 @@ import { generateMatchingPhoto } from "@/lib/imageGen";
 import { buildBrandSlides, slideText, themeOf } from "@/lib/brandTemplate";
 import { renderSlides } from "@/lib/renderSlides";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 // Runs once a day, before the first posting window (see vercel.json), and
@@ -95,16 +95,13 @@ async function buildBrandedCarousel(brand, { pillar, recentPosts }) {
   return { idea, template, slidePaths, slides: storedSlides, caption: pkg.tw_caption || "", mediaIds };
 }
 
-// Soft per-slot deadline, under the route's own 60s maxDuration — a stuck or
-// slow slot (a hung fal.ai call, a slow render) reports as a timeout for
-// that one slot instead of taking the whole request past Vercel's hard
-// limit, which previously surfaced as a flat 504 with zero detail and no
-// partial results at all. This wraps the slot's ENTIRE pipeline (writing
-// the text, then generating its photos — they're sequential, photos can't
-// start until the text names the scenes) as a single deadline, not two
-// separate 45s budgets stacked one after another that could sum past the
-// 60s ceiling even when each individual step was itself within 45s.
-const SLOT_TIMEOUT_MS = 55000;
+// Soft per-slot deadline, comfortably under the route's 300s maxDuration
+// (the Hobby-plan ceiling with Fluid compute, which this project runs on).
+// This used to be 55s on the assumption the hard limit was 60s — a photo
+// post is three slow steps back to back (write the post, write the image
+// prompt, generate the image) and routinely needed more than that, so every
+// photo slot was being cut off while the quick text-only slots got through.
+const SLOT_TIMEOUT_MS = 270000;
 function withTimeout(promise, ms, label) {
   return Promise.race([
     promise,

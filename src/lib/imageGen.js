@@ -15,7 +15,7 @@ import { themeOf } from "./brandTemplate";
 // gets a manual look before it posts, which is the real quality gate.
 // FLUX models were also tried as fallbacks and their content checkers
 // reject this brand's style outright, so there's no fallback model.
-const MODEL = { id: "fal-ai/nano-banana-pro", timeoutMs: 40000, body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) };
+const MODEL = { id: "fal-ai/nano-banana-pro", timeoutMs: 110000, body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) };
 
 // One retry, only for a hard failure (API error, timeout, blank image) —
 // never because of how a good image looks.

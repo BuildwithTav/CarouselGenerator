@@ -2,7 +2,7 @@ import { dashboardAuthorized, unauthorized } from "@/lib/dashboard";
 import { supabaseAdmin } from "@/lib/dashboard";
 import { generateMatchingPhoto } from "@/lib/imageGen";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 // Generates one AI photo for a slide, saves it to the brand's media library
