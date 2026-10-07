@@ -286,7 +286,11 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
     return <div style={{ ...card, color: C.muted, textAlign: "center" }}>X isn't enabled for {brand.name} yet — turn it on in the Brand tab's Voice &amp; Platforms section.</div>;
   }
 
-  const xItems = items.filter((i) => itemPlatforms(i, brand).includes("twitter"));
+  // Only items actually queued for X (twitter stored on the row itself) —
+  // the same rule the posting cron uses. Regular carousels that just
+  // inherit twitter from the brand's platform list stay in the Carousels
+  // tab until "Send to X" is pressed on them.
+  const xItems = items.filter((i) => Array.isArray(i.platforms) && i.platforms.includes("twitter"));
   const visible = xItems.filter((i) => filter === "all" || xStatus(i) === filter);
   const queuedReady = xItems.filter((i) => i.status === "ready" && !i.posted_twitter_at).length;
   const followerDelta = brand.x_followers != null && brand.x_followers_prev != null ? brand.x_followers - brand.x_followers_prev : null;

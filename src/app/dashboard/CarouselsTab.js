@@ -141,7 +141,7 @@ function NewContent({ api, brand, onCreated }) {
             <div>
               <label style={lbl}>Slides</label>
               <select value={slideCount} onChange={(e) => setSlideCount(Number(e.target.value))} style={inp}>
-                {[5, 6, 7, 8, 9, 10].map((n) => <option key={n} value={n}>{n}</option>)}
+                {[3, 4, 5, 6, 7, 8, 9, 10].map((n) => <option key={n} value={n}>{n}{n <= 4 ? " (can go to X)" : ""}</option>)}
               </select>
             </div>
             <div>
@@ -451,6 +451,16 @@ function QueueRow({ api, item, brand, onOpen, onChanged }) {
     try { await api.del("/api/content", { id: item.id }); onChanged(null, item.id); } catch (e) { alert(e.message); }
     setBusy(false);
   };
+  // Same tagging as the editor's Send to X: an explicit platforms list with
+  // twitter on the row is what the X posting cron and the X tab look for.
+  const xEnabled = itemPlatforms(item, brand).includes("twitter");
+  const queuedForX = Array.isArray(item.platforms) && item.platforms.includes("twitter");
+  const photoCount = item.slide_paths?.length || 0;
+  const sendToX = async () => {
+    setBusy(true);
+    try { const { item: next } = await api.patch("/api/content", { id: item.id, platforms: Array.from(new Set([...itemPlatforms(item, brand), "twitter"])) }); onChanged(next); } catch (e) { alert(e.message); }
+    setBusy(false);
+  };
 
   return (
     <div style={{ ...card, padding: 14 }}>
@@ -485,6 +495,11 @@ function QueueRow({ api, item, brand, onOpen, onChanged }) {
       )}
       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}` }} onClick={(e) => e.stopPropagation()}>
         {!done && <input type="date" value={item.scheduled_for} onChange={reschedule} disabled={busy} style={{ ...inp, width: "auto", padding: "4px 8px", fontSize: 11 }} />}
+        {xEnabled && (queuedForX
+          ? <span style={{ fontSize: 11, color: C.gold, fontWeight: 700 }}>✓ In X queue</span>
+          : <button onClick={sendToX} disabled={busy || !photoCount || photoCount > 4} title={!photoCount ? "Render the images first" : photoCount > 4 ? `${photoCount} slides — X allows 4 max` : "Add to the X auto-post queue"} style={btn("primary", { fontSize: 11, padding: "5px 10px", opacity: !photoCount || photoCount > 4 ? 0.45 : 1 })}>
+              {!photoCount ? "Send to X (render first)" : photoCount > 4 ? `Send to X (${photoCount} slides, max 4)` : "Send to X"}
+            </button>)}
         <div style={{ flex: 1 }} />
         <button onClick={del} disabled={busy} style={btn("danger", { fontSize: 11, padding: "5px 10px" })}>Delete</button>
       </div>
