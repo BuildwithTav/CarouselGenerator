@@ -8,36 +8,25 @@ import { themeOf } from "./brandTemplate";
 // same thing: write a prompt that matches a specific piece of text, generate
 // the photo, save it to the brand's media library like any other upload.
 
-// Nano Banana Pro (Gemini 3 Pro Image) is strongest on anatomy, instruction-
-// following, and correctly placing/counting things (exactly 5 toes, a foot
-// actually seated in a shoe) — the category of mistake that's actually been
-// showing up. It's also, confirmed in production, the only one of the two
-// that reliably gets this brand's sensual/suggestive-but-tasteful content
-// past a safety filter at all: FLUX.2 Pro's own content checker hard-
-// rejects a large share of it outright ("Failed: material flagged by a
-// content checker"), worse than the FLUX 1.1 Ultra it replaced, not
-// better. It stays only as a single last-resort attempt if nano-banana-pro
-// itself fails or times out — no automatic retry of nano-banana-pro either,
-// cost adds up fast at two full attempts every time. The real fix for
-// reliability is getting the prompt right the first time (see imagePrompt's
-// final checklist in contentAi.js) and a QA check that only rejects a
-// genuine rule violation, not a stylistic nitpick (see reviewGeneratedImage)
-// — not paying for extra generations to average out a bad prompt or an
-// over-strict check.
+// Nano Banana Pro (Gemini 3 Pro Image) is the only model this brand's
+// content actually works with — confirmed three separate ways now: FLUX.2
+// Pro's own content checker has returned a silent blocked-black image, an
+// explicit "Failed" with no image at all, and a flat 422 rejecting the
+// *prompt text itself* before any generation even started. That's not
+// "sometimes unreliable", that's a model whose content policy this brand's
+// sensual/suggestive-but-tasteful style doesn't clear. Keeping it as a
+// fallback was pure dead weight: guaranteed to burn the time and cost of a
+// second attempt that was never going to succeed either. Removed — one
+// attempt, one model. If it fails, the slot fails cleanly and tries again
+// next time, same as it already handles any other failure.
 //
-// Back to 2K, not 4K: every real problem reported (face visible, wrong
-// anatomy, wrong gender on a background prop) was never a resolution
-// issue — it's exactly what the vision QA check above already catches.
+// 2K, not 4K: every real problem reported (face visible, wrong anatomy,
+// wrong gender on a background prop, feet not the focus) was never a
+// resolution issue — it's exactly what the vision QA check below catches.
 // 4K was the expensive, slow part with no real payoff for how these
 // actually get viewed (X doesn't display photos at print resolution).
 const MODELS = [
   { id: "fal-ai/nano-banana-pro", timeoutMs: 35000, body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) },
-  // image_size as explicit pixel dimensions (not a named preset) to match
-  // the 4:5 aspect ratio used everywhere else. FLUX.2's exact safety-filter
-  // field names aren't confirmed, so left out rather than guessed — the
-  // "Avoid: ..." negative terms still reach it either way, folded into the
-  // main prompt text itself by fullPrompt below, not a dedicated field.
-  { id: "fal-ai/flux-2-pro", timeoutMs: 30000, body: (prompt) => ({ prompt, image_size: { width: 1080, height: 1350 }, output_format: "jpeg" }) },
 ];
 
 // A real photo from either model is consistently hundreds of KB or more.
