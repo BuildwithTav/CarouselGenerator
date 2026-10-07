@@ -9,25 +9,29 @@ import { themeOf } from "./brandTemplate";
 // the photo, save it to the brand's media library like any other upload.
 
 // Nano Banana Pro (Gemini 3 Pro Image) is the only model this brand's
-// content actually works with — confirmed three separate ways now: FLUX.2
+// content actually works with — confirmed three separate ways: FLUX.2
 // Pro's own content checker has returned a silent blocked-black image, an
 // explicit "Failed" with no image at all, and a flat 422 rejecting the
 // *prompt text itself* before any generation even started. That's not
 // "sometimes unreliable", that's a model whose content policy this brand's
-// sensual/suggestive-but-tasteful style doesn't clear. Keeping it as a
-// fallback was pure dead weight: guaranteed to burn the time and cost of a
-// second attempt that was never going to succeed either. Removed — one
-// attempt, one model. If it fails, the slot fails cleanly and tries again
-// next time, same as it already handles any other failure.
+// sensual/suggestive-but-tasteful style doesn't clear, so it's gone
+// entirely rather than kept as a fallback that was never going to work.
+//
+// Three attempts, not one: this brand's spec is genuinely demanding (no
+// face ever, feet always the compositional focus, exact anatomy, a tight
+// crop on any implied second person) and a single roll against all of
+// that at once was landing basically nothing - not because the QA gate
+// was wrong (its catches have been correct), but because one failed
+// attempt meant the whole slot failed with no second chance. 2K keeps
+// three attempts cheap and fast enough that this is still worth it.
 //
 // 2K, not 4K: every real problem reported (face visible, wrong anatomy,
 // wrong gender on a background prop, feet not the focus) was never a
 // resolution issue — it's exactly what the vision QA check below catches.
 // 4K was the expensive, slow part with no real payoff for how these
 // actually get viewed (X doesn't display photos at print resolution).
-const MODELS = [
-  { id: "fal-ai/nano-banana-pro", timeoutMs: 35000, body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) },
-];
+const NANO_BANANA_PRO = { id: "fal-ai/nano-banana-pro", timeoutMs: 35000, body: (prompt) => ({ prompt, aspect_ratio: "4:5", num_images: 1, resolution: "2K", output_format: "jpeg" }) };
+const MODELS = [NANO_BANANA_PRO, NANO_BANANA_PRO, NANO_BANANA_PRO];
 
 // A real photo from either model is consistently hundreds of KB or more.
 // A safety-filter block (seen in production: Flux returning the exact same
