@@ -69,46 +69,6 @@ export async function ask(system, user, maxTokens = 8000, imageUrls = []) {
   return extractJson(text);
 }
 
-// Cheap, fast model for a bounded yes/no visual check — this is a
-// classification task, not creative writing, so it doesn't need the full
-// model `ask()` uses elsewhere. A single check is a few hundred tokens,
-// a small fraction of a cent, negligible next to the image generation
-// itself (a few cents via fal.ai).
-const QA_MODEL = "claude-haiku-4-5-20251001";
-
-// Checks one generated photo against the brand's own AI photo direction
-// (the same rules it was generated to follow) plus a fixed set of hard,
-// brand-agnostic failures — catches exactly the kind of thing that's
-// previously only been caught by eye: a visible face, the wrong gender on
-// a background prop, anatomy that's visibly wrong. Fails open (treated as
-// a pass) on its own errors or a timeout — a QA-infrastructure hiccup
-// should never block a real, good photo.
-export async function reviewGeneratedImage(imageUrl, rules) {
-  const system = `You are a visual QA checker for an AI-generated brand photo. Reply with JSON only: {"pass": true or false, "reason": "..."}.
-
-This is a binary safety/correctness check, not an art director's review. Only fail for a clear, unambiguous violation of one of the rules below — never for a stylistic or creative judgement call (which setting it's in, the exact mood or lighting, framing or shot distance, styling choices like clothing colour or accessories, how "editorial" or polished it looks). If a reasonable person would call the image usable, pass it — when genuinely unsure whether something crosses a line versus is just an artistic choice, pass it. The goal is to only catch real, binary mistakes, not to hold every image to a perfect match of the brief.
-
-The brand's own photo direction may contain some hard rules mixed in with its general creative/stylistic guidance — enforce only the clear-cut rule-like parts of it (an explicit instruction never to show something, a specific anatomical or framing requirement), not its general mood/setting/styling preferences:
-${rules}
-
-Also always fail, regardless of the above, if: an actual face is visible anywhere in the image — eyes, nose, mouth, or a recognizable profile showing those, even partial, blurred, or reflected in a mirror/window/screen. Hair, the back or side of a head with no facial features showing, an ear, or a jawline alone is NOT a face and is not a failure on its own — only fail this if real facial features are actually visible. Also fail if: the image shows nudity, exposed breasts, or anything sexually explicit; a hand or foot has a visibly wrong number of fingers/toes, an extra/missing limb, or is anatomically deformed, or a hand/limb reads as wrongly or impossibly attached to a body; a background prop meant to show no face (an ID badge, lanyard, photo frame, phone screen) actually shows a clear human face; a second person's face or full figure is in frame (an implied second person is fine — e.g. a hand resting on her leg — as long as no second face and no full second body is shown).
-
-"reason" is one short sentence - which rule failed and what you saw, or "looks correct" if it passes.`;
-  try {
-    const res = await anthropic().messages.create({
-      model: QA_MODEL,
-      max_tokens: 200,
-      system,
-      messages: [{ role: "user", content: [{ type: "image", source: { type: "url", url: imageUrl } }, { type: "text", text: "Check this image against the rules above." }] }],
-    }, { timeout: 15000 });
-    const text = res.content.filter((b) => b.type === "text").map((b) => b.text).join("\n");
-    return extractJson(text);
-  } catch (e) {
-    console.error("Image QA check failed (treating as pass):", e.message);
-    return { pass: true, reason: "QA check itself failed: " + e.message };
-  }
-}
-
 export async function suggestIdeas(brand, count = 10) {
   const system = `You generate short-form social content ideas. Reply with JSON only: {"ideas": ["...", ...]}.\n${HOUSE_RULES}`;
   const user = `${brandContext(brand)}
@@ -284,6 +244,22 @@ Write the one-person description for this photo series, or leave it empty if the
   return String(out.model || "").trim();
 }
 
+// Shared rules for writing a Nano Banana Pro prompt. That model has no
+// negative-prompt field: it reads every word as something to draw, and
+// Google's own guidance is to describe only what you want. This pipeline
+// used to append "Avoid: ... nudity, topless, nude, exposed breasts,
+// nipples, lingerie, underwear, nsfw" to every prompt — for a sensual brand
+// that both primed the model toward exactly those things and tripped its
+// safety filter. So: positive description only, exclusions handled through
+// framing and styling.
+const PROMPT_RULES = (textZone) => `You write prompts for Nano Banana Pro, a photorealistic image model.
+Write each prompt as one natural-language shot brief, 60-110 words, like a photographer briefing a real shoot. In this order: the subject and exact pose; framing and crop; the setting; the light (soft, natural — window light, golden hour, a warm lamp); camera and lens (e.g. "shot on a Sony A7 IV, 50mm f/1.8, shallow depth of field"); real skin and fabric texture, true-to-life colour.
+Describe only what IS in the photo, phrased positively. The model has no negative prompt and treats every word as something to include, so never write "no X", "without X", "avoid", or lists of things to exclude, and never mention nudity, explicit content, hidden faces, or anatomy mistakes — naming them puts them in the picture and can trip the model's safety filter.
+Handle every exclusion through framing and styling instead: if the brand keeps the face out of shot, state the crop ("framed from the shoulders down", "shot from behind", "cropped at the waist"); if clothing matters, say exactly what she's wearing.
+State the focal point plainly (e.g. "her feet in the foreground, sharp and central"). Keep scenes simple — one main subject, one clear action, a calm uncluttered background — simple scenes come out anatomically cleaner than busy ones.
+The photo shows literally what the text describes happening.
+Keep the ${textZone === "bottom" ? "bottom" : textZone === "top" ? "top" : textZone} of the frame calm and uncluttered (text gets overlaid there), and keep the surroundings plain and unbranded.`;
+
 // Turns a slide's text + brand into a photographer's brief for the image model.
 // `direction` is the brand's own photo direction (subject, look, what to avoid)
 // and is the source of truth for what this brand's photos look like — this
@@ -292,23 +268,16 @@ Write the one-person description for this photo series, or leave it empty if the
 // `modelNote` is a locked description (from lockModelDescription) reused across
 // every photo in the same carousel so the same person appears in every shot.
 export async function imagePrompt(brand, { slideText, idea, style, direction, textZone = "bottom", modelNote }) {
-  const system = `You write prompts for a photorealistic image generator. Reply with JSON only: {"prompt": "...", "negative": "..."}.
-Write the prompt as a real photographer's shot brief for a natural, believable photograph — not a render. Include, in this order: the subject and its exact pose/framing (follow the brand's own photo direction below for who or what appears — a person, food, a product, an environment, hands only, whatever it specifies — never invent a person, or a body-part crop to avoid showing a face, if the direction doesn't call for one); the setting; the light (soft and natural unless the direction says otherwise — window light, golden hour, a single warm lamp — avoid flat studio lighting unless asked for); camera and lens (e.g. "shot on a Sony A7 IV, 50mm f/1.8, shallow depth of field"); natural texture and true-to-life colour; a calm, uncluttered composition with one clear subject. 70-120 words. Never include text, logos, watermarks, captions or hands holding signs.
-The brand's own photo direction below is the source of truth for mood, who or what appears, and any anatomy or framing rules specific to this brand — follow it exactly rather than falling back on a generic default.
-This brand posts often, so vary the setting and framing across a set rather than defaulting to the same shot every time — read what the slide is actually about and place it somewhere that fits.
-The photo must show literally what the slide's text describes happening — if it names a specific action or detail, that's the subject of the shot, not just a mood that evokes it.
-If a person appears and any part of them (hands, feet, face) is close enough to the camera to show real detail, get the anatomy right: correct number of fingers and toes, exactly two legs and two arms, natural proportions, no fused, extra, or duplicated digits or limbs.
-Framing: leave the part of the frame where text gets overlaid afterwards (${textZone === "bottom" ? "the bottom of the frame" : textZone === "top" ? "the top of the frame" : "the " + textZone + " of the frame"}) relatively clear and uncluttered.
-Before answering, check against the brand's own direction one more time: is the face genuinely excluded the way it specifies, not just angled away? If a background prop could carry a photo of a person (an ID badge, a photo frame, a phone screen), does the prompt keep it face-down, out of focus, or out of shot entirely, rather than risk it showing a face at all? Is the anatomy described physically correct and unambiguous (exact digit and limb counts, a foot sitting in a shoe the way it actually would)? If the brand's direction says feet (or whatever body part it names) must be the clear visual focus, does the composition actually put them there — described as the nearest, sharpest, most central thing in frame, not just present somewhere in a wider shot of legs or the whole body? Fix the prompt now if any of these are vague or missed, rather than leaving it to chance.
-The "negative" field always includes, word for word: "extra fingers, missing fingers, fused fingers, extra toes, missing toes, deformed hands, deformed feet, mutated anatomy, malformed limbs, extra limbs, blurry, distorted proportions, watermark, text, logo, nudity, topless, nude, exposed breasts, bare chest, nipples, lingerie, underwear, nsfw" — plus anything else specific to this shot worth excluding.`;
+  const system = `${PROMPT_RULES(textZone)}
+Reply with JSON only: {"prompt": "..."}.`;
   const user = `${brandContext(brand)}
-${modelNote ? `This exact person appears in every photo of this series — keep them consistent: ${modelNote}\n` : ""}${direction ? `Brand photo direction (always follow this): ${direction}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic.)\n"}Post idea: ${idea || "(none)"}
-This slide's text — depict this exact moment: ${slideText || "(cover)"}
+${modelNote ? `This exact person appears in every photo of this series — describe them this way: ${modelNote}\n` : ""}${direction ? `Brand photo direction (translate into positive framing/styling choices): ${direction}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic.)\n"}Post idea: ${idea || "(none)"}
+Depict this exact moment: ${slideText || "(cover)"}
 Look: ${style === "candid" ? "candid, natural, phone-camera realism" : "polished editorial, magazine quality, still natural"}
 
-Write the image prompt for this slide.`;
-  const out = await ask(system, user, 1500);
-  return { prompt: String(out.prompt || "").trim(), negative: String(out.negative || "").trim() };
+Write the image prompt.`;
+  const out = await ask(system, user, 1000);
+  return { prompt: String(out.prompt || "").trim(), negative: "" };
 }
 
 // Same job as lockModelDescription() + imagePrompt() combined, for a whole
@@ -321,18 +290,11 @@ Write the image prompt for this slide.`;
 // model description, reused word for word in every prompt), while the N
 // actual image generations afterward still run fully in parallel.
 export async function imagePromptsBatch(brand, { texts, idea, style, direction, textZone = "bottom" }) {
-  const system = `You write prompts for a photorealistic image generator, one per scene given, as a matched set that all show the same one consistent person (if the brand's direction calls for a person at all). Reply with JSON only: {"model": "...", "prompts": [{"prompt": "...", "negative": "..."}, ...]} — exactly one "prompts" entry per scene given, in the same order.
-First, "model": a short, consistent physical description of the one person who appears across every photo in this set (hair, build, skin tone, and whichever other features the brand's direction below calls for — only what that direction implies will actually be visible). 30-70 words, concrete and repeatable. Empty string if the brand's direction doesn't call for a person at all (food, product, environment photography).
-Then, for each scene, write its own prompt as a real photographer's shot brief for a natural, believable photograph — not a render. Include, in this order: the subject and its exact pose/framing (restating the "model" description above if a person appears, so every photo shows the same one); the setting; the light (soft and natural unless the direction says otherwise — window light, golden hour, a single warm lamp — avoid flat studio lighting unless asked for); camera and lens (e.g. "shot on a Sony A7 IV, 50mm f/1.8, shallow depth of field"); natural texture and true-to-life colour; a calm, uncluttered composition with one clear subject. 70-120 words per prompt. Never include text, logos, watermarks, captions or hands holding signs.
-The brand's own photo direction below is the source of truth for mood, who or what appears, and any anatomy or framing rules specific to this brand — follow it exactly.
-Vary the setting and framing across the set rather than repeating the same shot — each scene is its own moment.
-Each photo must show literally what its scene describes happening — if it names a specific action or detail, that's the subject of that shot, not just a mood that evokes it.
-If a person appears and any part of them (hands, feet, face) is close enough to the camera to show real detail, get the anatomy right: correct number of fingers and toes, exactly two legs and two arms, natural proportions, no fused, extra, or duplicated digits or limbs.
-Framing: leave the part of the frame where text gets overlaid afterwards (${textZone === "bottom" ? "the bottom of the frame" : textZone === "top" ? "the top of the frame" : "the " + textZone + " of the frame"}) relatively clear and uncluttered.
-Before answering, check against the brand's own direction one more time: is the face genuinely excluded the way it specifies, not just angled away? If a background prop could carry a photo of a person (an ID badge, a photo frame, a phone screen), does the prompt keep it face-down, out of focus, or out of shot entirely, rather than risk it showing a face at all? Is the anatomy described physically correct and unambiguous (exact digit and limb counts, a foot sitting in a shoe the way it actually would)? If the brand's direction says feet (or whatever body part it names) must be the clear visual focus, does the composition actually put them there — described as the nearest, sharpest, most central thing in frame, not just present somewhere in a wider shot of legs or the whole body? Fix the prompt now if any of these are vague or missed, rather than leaving it to chance.
-Each "negative" field always includes, word for word: "extra fingers, missing fingers, fused fingers, extra toes, missing toes, deformed hands, deformed feet, mutated anatomy, malformed limbs, extra limbs, blurry, distorted proportions, watermark, text, logo, nudity, topless, nude, exposed breasts, bare chest, nipples, lingerie, underwear, nsfw" — plus anything else specific to that shot worth excluding.`;
+  const system = `${PROMPT_RULES(textZone)}
+You're writing one prompt per scene given, as a matched set showing the same one consistent person (if the brand's direction calls for a person at all). First, "model": a 30-70 word physical description of that person (hair, build, skin tone — only what will actually be visible), restated in every prompt so each photo shows the same person; empty string if no person appears.
+Reply with JSON only: {"model": "...", "prompts": [{"prompt": "..."}, ...]} — exactly one entry per scene, same order.`;
   const user = `${brandContext(brand)}
-${direction ? `Brand photo direction (always follow this): ${direction}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic.)\n"}Post idea: ${idea || "(none)"}
+${direction ? `Brand photo direction (translate into positive framing/styling choices): ${direction}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic.)\n"}Post idea: ${idea || "(none)"}
 Look: ${style === "candid" ? "candid, natural, phone-camera realism" : "polished editorial, magazine quality, still natural"}
 
 Scenes — one photo per entry, in order, depict exactly what each one describes:
@@ -344,6 +306,6 @@ Write "model" once, then one prompt per scene, ${texts.length} entries total, sa
   const prompts = Array.isArray(out.prompts) ? out.prompts : [];
   return {
     modelNote,
-    photos: texts.map((_, i) => ({ prompt: String(prompts[i]?.prompt || "").trim(), negative: String(prompts[i]?.negative || "").trim() })),
+    photos: texts.map((_, i) => ({ prompt: String(prompts[i]?.prompt || "").trim(), negative: "" })),
   };
 }

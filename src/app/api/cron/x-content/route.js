@@ -5,13 +5,6 @@ import { generateMatchingPhoto } from "@/lib/imageGen";
 import { buildBrandSlides, slideText, themeOf } from "@/lib/brandTemplate";
 import { renderSlides } from "@/lib/renderSlides";
 
-// Pre-written prompt + negative, folded together the same way imageGen.js
-// folds them internally for a freshly-written prompt — generateMatchingPhoto
-// only does that fold when it writes the prompt itself, not when handed one.
-function foldPrompt(p) {
-  return p.negative ? `${p.prompt}\n\nAvoid: ${p.negative}` : p.prompt;
-}
-
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
@@ -53,7 +46,7 @@ async function photosForScenes(brand, scenes) {
   const theme = themeOf(brand);
   const { modelNote, photos: written } = await imagePromptsBatch(brand, { texts: scenes, style: "editorial", direction: theme.ai_style, textZone: "bottom" });
   const all = await Promise.all(
-    written.map((p) => generateMatchingPhoto(brand, { prompt: foldPrompt(p), modelNote }))
+    written.map((p) => generateMatchingPhoto(brand, { prompt: p.prompt, modelNote }))
   );
   return { paths: all.map((r) => r.media.storage_path), mediaIds: all.map((r) => r.media.id) };
 }
@@ -75,7 +68,7 @@ async function buildBrandedCarousel(brand, { pillar, recentPosts }) {
   const theme = themeOf(brand);
   const { modelNote, photos: written } = await imagePromptsBatch(brand, { texts: contentSlides.map((s) => slideText(s)), idea, style: "editorial", direction: theme.ai_style, textZone: "bottom" });
   const photos = await Promise.all(
-    written.map((p) => generateMatchingPhoto(brand, { prompt: foldPrompt(p), modelNote }))
+    written.map((p) => generateMatchingPhoto(brand, { prompt: p.prompt, modelNote }))
   );
   const mediaIds = photos.map((p) => p.media.id);
   const slides = [
