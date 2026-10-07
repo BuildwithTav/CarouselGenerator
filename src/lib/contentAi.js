@@ -252,13 +252,21 @@ Write the one-person description for this photo series, or leave it empty if the
 // that both primed the model toward exactly those things and tripped its
 // safety filter. So: positive description only, exclusions handled through
 // framing and styling.
-const PROMPT_RULES = (textZone) => `You write prompts for Nano Banana Pro, a photorealistic image model.
-Write each prompt as one natural-language shot brief, 60-110 words, like a photographer briefing a real shoot. In this order: the subject and exact pose; framing and crop; the setting; the light (soft, natural — window light, golden hour, a warm lamp); camera and lens (e.g. "shot on a Sony A7 IV, 50mm f/1.8, shallow depth of field"); real skin and fabric texture, true-to-life colour.
+const PROMPT_RULES = (textZone, style) => {
+  const candid = style === "candid";
+  const look = candid
+    ? `the light (real available light with natural shadows — daylight, aircraft cabin lights, a hotel lamp); the camera ("shot on an iPhone, slightly wide lens, everything in focus, casual snapshot framing, like a friend took it"); real skin and fabric texture, true-to-life colour, a real everyday background (an airport, a cabin, a hotel room) that stays secondary to the subject.
+The look is an authentic candid phone photo of a real moment, the kind someone actually posts on Instagram — never a studio shoot, never glossy or retouched.`
+    : `the light (soft, natural — window light, golden hour, a warm lamp); camera and lens (e.g. "shot on a Sony A7 IV, 50mm f/1.8, shallow depth of field"); real skin and fabric texture, true-to-life colour.
+The look is polished editorial, magazine quality, still natural.`;
+  return `You write prompts for Nano Banana Pro, a photorealistic image model.
+Write each prompt as one natural-language shot brief, 60-110 words. In this order: the subject and exact pose; framing and crop; the setting; ${look}
 Describe only what IS in the photo, phrased positively. The model has no negative prompt and treats every word as something to include, so never write "no X", "without X", "avoid", or lists of things to exclude, and never mention nudity, explicit content, hidden faces, or anatomy mistakes — naming them puts them in the picture and can trip the model's safety filter.
 Handle every exclusion through framing and styling instead: if the brand keeps the face out of shot, state the crop ("framed from the shoulders down", "shot from behind", "cropped at the waist"); if clothing matters, say exactly what she's wearing.
-State the focal point plainly (e.g. "her feet in the foreground, sharp and central"). Keep scenes simple — one main subject, one clear action, a calm uncluttered background — simple scenes come out anatomically cleaner than busy ones.
-The photo shows literally what the text describes happening.
-Keep the ${textZone === "bottom" ? "bottom" : textZone === "top" ? "top" : textZone} of the frame calm and uncluttered (text gets overlaid there), and keep the surroundings plain and unbranded.`;
+State the focal point plainly (e.g. "her feet in the foreground, sharp and central"). One main subject, one clear action — simple scenes come out anatomically cleaner than busy ones.
+The photo shows literally what the text describes happening.${textZone ? `
+Keep the ${textZone} of the frame calm and uncluttered (text gets overlaid there).` : ""}`;
+};
 
 // Turns a slide's text + brand into a photographer's brief for the image model.
 // `direction` is the brand's own photo direction (subject, look, what to avoid)
@@ -268,12 +276,11 @@ Keep the ${textZone === "bottom" ? "bottom" : textZone === "top" ? "top" : textZ
 // `modelNote` is a locked description (from lockModelDescription) reused across
 // every photo in the same carousel so the same person appears in every shot.
 export async function imagePrompt(brand, { slideText, idea, style, direction, textZone = "bottom", modelNote }) {
-  const system = `${PROMPT_RULES(textZone)}
+  const system = `${PROMPT_RULES(textZone, style)}
 Reply with JSON only: {"prompt": "..."}.`;
   const user = `${brandContext(brand)}
 ${modelNote ? `This exact person appears in every photo of this series — describe them this way: ${modelNote}\n` : ""}${direction ? `Brand photo direction (translate into positive framing/styling choices): ${direction}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic.)\n"}Post idea: ${idea || "(none)"}
 Depict this exact moment: ${slideText || "(cover)"}
-Look: ${style === "candid" ? "candid, natural, phone-camera realism" : "polished editorial, magazine quality, still natural"}
 
 Write the image prompt.`;
   const out = await ask(system, user, 1000);
@@ -290,12 +297,11 @@ Write the image prompt.`;
 // model description, reused word for word in every prompt), while the N
 // actual image generations afterward still run fully in parallel.
 export async function imagePromptsBatch(brand, { texts, idea, style, direction, textZone = "bottom" }) {
-  const system = `${PROMPT_RULES(textZone)}
+  const system = `${PROMPT_RULES(textZone, style)}
 You're writing one prompt per scene given, as a matched set showing the same one consistent person (if the brand's direction calls for a person at all). First, "model": a 30-70 word physical description of that person (hair, build, skin tone — only what will actually be visible), restated in every prompt so each photo shows the same person; empty string if no person appears.
 Reply with JSON only: {"model": "...", "prompts": [{"prompt": "..."}, ...]} — exactly one entry per scene, same order.`;
   const user = `${brandContext(brand)}
 ${direction ? `Brand photo direction (translate into positive framing/styling choices): ${direction}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic.)\n"}Post idea: ${idea || "(none)"}
-Look: ${style === "candid" ? "candid, natural, phone-camera realism" : "polished editorial, magazine quality, still natural"}
 
 Scenes — one photo per entry, in order, depict exactly what each one describes:
 ${texts.map((t, i) => `${i + 1}. ${t || "(cover)"}`).join("\n")}

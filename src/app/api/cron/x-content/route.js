@@ -44,7 +44,7 @@ const RECENT_LIMIT = 20;
 async function photosForScenes(brand, scenes) {
   if (!scenes.length) return { paths: [], mediaIds: [] };
   const theme = themeOf(brand);
-  const { modelNote, photos: written } = await imagePromptsBatch(brand, { texts: scenes, style: "editorial", direction: theme.ai_style, textZone: "bottom" });
+  const { modelNote, photos: written } = await imagePromptsBatch(brand, { texts: scenes, style: "candid", direction: theme.ai_style, textZone: null });
   const all = await Promise.all(
     written.map((p) => generateMatchingPhoto(brand, { prompt: p.prompt, modelNote }))
   );
@@ -103,10 +103,11 @@ async function buildBrandedCarousel(brand, { pillar, recentPosts }) {
 // photo slot was being cut off while the quick text-only slots got through.
 const SLOT_TIMEOUT_MS = 270000;
 function withTimeout(promise, ms, label) {
+  let timer;
   return Promise.race([
     promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} took too long (over ${Math.round(ms / 1000)}s)`)), ms)),
-  ]);
+    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`${label} took too long (over ${Math.round(ms / 1000)}s)`)), ms); }),
+  ]).finally(() => clearTimeout(timer));
 }
 
 async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, today) {
