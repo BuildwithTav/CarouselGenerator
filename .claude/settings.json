@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(git push *)",
-      "Bash(git merge *)"
+      "Bash(git merge *)",
+      "Bash(npm run build*)",
+      "Bash(gh api *)",
+      "mcp__Supabase__execute_sql",
+      "mcp__Supabase__list_tables",
+      "mcp__Claude_Code_Remote__send_later"
     ]
   }
 }
