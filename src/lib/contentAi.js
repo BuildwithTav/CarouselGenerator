@@ -261,12 +261,12 @@ const PROMPT_RULES = (textZone, style) => {
   const look = candid
     ? `the light (real available light with natural shadows — daylight, aircraft cabin lights, a bedside lamp); the camera ("shot on an iPhone, slightly wide lens, everything in focus, casual phone snapshot"); real skin and fabric texture, true-to-life colour, a real background that stays secondary to the subject.
 The look is an authentic candid phone photo of a real moment, the kind someone actually posts on Instagram — never a studio shoot, never glossy or retouched.`
-    : `the light (soft, natural — window light, golden hour, a warm lamp); camera and lens (e.g. "shot on a Sony A7 IV, 50mm f/1.8, shallow depth of field"); real skin and fabric texture, true-to-life colour.
-The look is polished editorial, magazine quality, still natural.`;
+    : `the light (warm, low and directional — golden hour through a window, a warm lamp, soft evening cabin lighting — with soft shadows that shape her legs); camera and lens (e.g. "shot on a Sony A7 IV, 85mm f/1.8, shallow depth of field, creamy background blur"); real skin and fabric texture, a rich warm colour grade.
+The look is a luxury hosiery campaign: elegant, sensual through light, pose and styling, magazine quality, still natural. Never flat overhead light, never a plain stock-photo look.`;
   return `You write prompts for Nano Banana Pro, a photorealistic image model.
 Write each prompt as one natural-language shot brief, 60-110 words. In this order: the framing first (what the camera sees and exactly where the edges of the frame fall); then the subject and exact pose inside that frame; the setting; ${look}
 The prompt is purely visual. Never put the post's words, a caption, a quote, a question or any other lettering into it: this model renders quoted text straight into the image.
-Word it like a fashion catalogue or stock photo brief: plain, neutral, visual words only. Mood words (sensual, seductive, sexy, alluring, intimate, teasing, desire, fetish) never go in the prompt, because the model's safety filter reads them and blocks the image; the mood comes from the pose, light, clothing and setting instead.
+Word it like the brief for a luxury hosiery or shoe campaign: elegant and visual. The feeling comes from the light, the pose and the styling (warm low light, soft shadows shaping the legs, a slow graceful pose, the sheen of tights catching the light), described in concrete visual terms. Words like sexy, seductive, erotic, fetish or desire never go in the prompt; elegant, graceful, soft and intimate light are fine.
 Describe only what IS in the photo, phrased positively. The model has no negative prompt and treats every word as something to include, so never write "no X", "without X", "avoid", or lists of things to exclude, and never mention nudity, explicit content, hidden faces, or anatomy mistakes — naming them puts them in the picture and can trip the model's safety filter.
 Handle every exclusion through framing and styling instead: if the brand keeps the face out of shot, say where the top edge of the frame falls ("the top of the frame cuts across her hips") or that it's her own point of view looking down, and describe only the parts of the person that are inside that frame; if clothing matters, say exactly what she's wearing.
 State the focal point plainly (e.g. "her feet in the foreground, sharp and central"). One main subject, one clear action — simple scenes come out anatomically cleaner than busy ones.
@@ -288,6 +288,18 @@ export function feedbackBlock(feedback) {
     : "";
 }
 
+// One per slide, in order, so a carousel's photos don't all come out as the
+// same composition — each slide's prompt is written on its own, and without
+// this every slide of a story about one moment got the identical shot.
+export const SHOT_VARIETY = [
+  "a pulled-back shot of her legs and lower body in the setting, the place clearly readable",
+  "a tight close-up on her feet and ankles, the detail of this exact moment",
+  "her own point of view looking down at her legs and feet",
+  "a low angle at floor level from the side, her feet sharp in the foreground and the setting softly blurred behind",
+  "a detail shot of one foot and the shoe or tights: a heel half off, the sheen of the tights, her fingers at her ankle",
+  "shot from directly behind, the back of her blonde hair, her back and her legs",
+];
+
 // Turns a slide's text + brand into a photographer's brief for the image model.
 // `direction` is the brand's own photo direction (subject, look, what to avoid)
 // and is the source of truth for what this brand's photos look like — this
@@ -295,13 +307,13 @@ export function feedbackBlock(feedback) {
 // part, mood) that isn't in that direction.
 // `modelNote` is a locked description (from lockModelDescription) reused across
 // every photo in the same carousel so the same person appears in every shot.
-export async function imagePrompt(brand, { slideText, idea, style, direction, textZone = "bottom", modelNote, feedback = [] }) {
+export async function imagePrompt(brand, { slideText, idea, style, direction, textZone = "bottom", modelNote, feedback = [], shot }) {
   const system = `${PROMPT_RULES(textZone, style)}
 Reply with JSON only: {"prompt": "..."}.`;
   const user = `${brandContext(brand)}
 ${personBlock(characterText(brand) || modelNote)}${feedbackBlock(feedback)}${direction ? `Brand photo direction (translate into positive framing/styling choices): ${direction}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic.)\n"}Post idea: ${idea || "(none)"}
 Depict this exact moment: ${slideText || "(cover)"}
-
+${shot ? `Shot type for this photo (other photos in the set use different ones, so follow this): ${shot}\n` : ""}
 Write the image prompt.`;
   const out = await ask(system, user, 1000);
   return { prompt: String(out.prompt || "").trim(), negative: "" };
@@ -319,7 +331,7 @@ Write the image prompt.`;
 export async function imagePromptsBatch(brand, { texts, idea, style, direction, textZone = "bottom", feedback = [] }) {
   const character = characterText(brand);
   const system = `${PROMPT_RULES(textZone, style)}
-You're writing one prompt per scene given, as a matched set showing the same one consistent person (if the brand's direction calls for a person at all). ${character ? `That person is fixed (described below), so "model" is just an empty string.` : `First, "model": a 30-70 word physical description of that person (hair, build, skin tone — only what will actually be visible), restated in every prompt so each photo shows the same person; empty string if no person appears.`}
+You're writing one prompt per scene given, as a matched set showing the same one consistent person (if the brand's direction calls for a person at all). Give every photo in the set a different shot (framing, distance and angle), so no two look alike. ${character ? `That person is fixed (described below), so "model" is just an empty string.` : `First, "model": a 30-70 word physical description of that person (hair, build, skin tone — only what will actually be visible), restated in every prompt so each photo shows the same person; empty string if no person appears.`}
 Reply with JSON only: {"model": "...", "prompts": [{"prompt": "..."}, ...]} — exactly one entry per scene, same order.`;
   const user = `${brandContext(brand)}
 ${personBlock(character)}${feedbackBlock(feedback)}${direction ? `Brand photo direction (translate into positive framing/styling choices): ${direction}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic.)\n"}Post idea: ${idea || "(none)"}

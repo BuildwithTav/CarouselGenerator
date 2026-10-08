@@ -59,11 +59,14 @@ function NewContent({ api, brand, onCreated }) {
       // consistent model appearing throughout the set.
       const lockModel = template !== "healthcode";
       let modelNote = null;
+      // Each slide gets the next shot type from a random starting point, so
+      // the set varies inside itself and from one carousel to the next.
+      const shotStart = Math.floor(Math.random() * 6);
       try {
         for (let n = 0; n < todo.length; n++) {
           const i = todo[n];
           setProgress(`${n + 1} of ${todo.length}`);
-          const { media: m, modelNote: mn } = await api.post("/api/content/generate-image", { brandId: brand.id, slideText: slideText(slides[i]), idea: idea.trim(), style: "editorial", textZone: "bottom", modelNote: lockModel ? modelNote : null });
+          const { media: m, modelNote: mn } = await api.post("/api/content/generate-image", { brandId: brand.id, slideText: slideText(slides[i]), idea: idea.trim(), style: "editorial", textZone: "bottom", modelNote: lockModel ? modelNote : null, shotIndex: shotStart + n });
           if (mn && lockModel) modelNote = mn;
           slides[i] = { ...slides[i], image_media_id: m.id, image_path: m.storage_path };
           ({ item } = await api.patch("/api/content", { id: item.id, slides }));
@@ -295,7 +298,7 @@ export function CarouselEditor({ api, itemId, onBack, onChanged }) {
     setBusy(`image-${i}`); setErr("");
     try {
       const s = draft.slides[i];
-      const { media: m } = await api.post("/api/content/generate-image", { brandId: item.brand_id, slideText: slideText(s), idea: draft.idea, style: "editorial", textZone: "bottom" });
+      const { media: m } = await api.post("/api/content/generate-image", { brandId: item.brand_id, slideText: slideText(s), idea: draft.idea, style: "editorial", textZone: "bottom", shotIndex: i + Math.floor(Math.random() * 6) });
       setMedia((list) => [m, ...list]);
       setDraft((d) => ({ ...d, slides: d.slides.map((x, j) => (j === i ? { ...x, image_media_id: m.id, image_path: m.storage_path } : x)) }));
     } catch (e) { setErr(e.message); }

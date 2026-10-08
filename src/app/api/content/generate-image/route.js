@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 // content engine (which has no browser to call this route from).
 export async function POST(req) {
   if (!dashboardAuthorized(req)) return unauthorized();
-  const { brandId, slideText, idea, style, prompt, textZone, modelNote } = await req.json();
+  const { brandId, slideText, idea, style, prompt, textZone, modelNote, shotIndex } = await req.json();
   if (!brandId) return Response.json({ error: "brandId is required" }, { status: 400 });
   const supabase = supabaseAdmin();
 
@@ -22,7 +22,7 @@ export async function POST(req) {
   if (bErr || !brand) return Response.json({ error: "Brand not found" }, { status: 404 });
 
   try {
-    const result = await generateMatchingPhoto(brand, { slideText, idea, style, prompt, textZone, modelNote });
+    const result = await generateMatchingPhoto(brand, { slideText, idea, style, prompt, textZone, modelNote, shotIndex: Number.isInteger(shotIndex) ? shotIndex : undefined });
     return Response.json(result);
   } catch (e) {
     await logGenerationError(brand.id, "generate-image", null, e.message);

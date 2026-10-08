@@ -1,5 +1,5 @@
 import { supabaseAdmin, BUCKET, SIGNED_URL_TTL_SECONDS } from "./dashboard";
-import { imagePrompt, lockModelDescription } from "./contentAi";
+import { imagePrompt, lockModelDescription, SHOT_VARIETY } from "./contentAi";
 import { themeOf } from "./brandTemplate";
 import { recentFeedback } from "./feedback";
 
@@ -115,7 +115,7 @@ async function generateOnce(prompt, referenceUrls = []) {
 // `useReferences: false` skips the brand's reference photos — used when
 // generating new reference shots themselves, which must come from the
 // character description alone.
-export async function generateMatchingPhoto(brand, { slideText, idea, style, prompt: customPrompt, textZone, modelNote: incomingModelNote, useReferences = true, note: noteLabel } = {}) {
+export async function generateMatchingPhoto(brand, { slideText, idea, style, prompt: customPrompt, textZone, modelNote: incomingModelNote, useReferences = true, note: noteLabel, shotIndex } = {}) {
   if (!process.env.FAL_API_KEY) throw new Error("FAL_API_KEY is not set");
   const supabase = supabaseAdmin();
   const theme = themeOf(brand);
@@ -127,7 +127,8 @@ export async function generateMatchingPhoto(brand, { slideText, idea, style, pro
       try { modelNote = await lockModelDescription(brand); } catch (e) { console.error("Model description failed:", e.message); }
     }
     const feedback = await recentFeedback(brand.id);
-    ({ prompt } = await imagePrompt(brand, { slideText, idea, style, direction: theme.ai_style, textZone: textZone || "bottom", modelNote, feedback }));
+    const shot = Number.isInteger(shotIndex) ? SHOT_VARIETY[((shotIndex % SHOT_VARIETY.length) + SHOT_VARIETY.length) % SHOT_VARIETY.length] : null;
+    ({ prompt } = await imagePrompt(brand, { slideText, idea, style, direction: theme.ai_style, textZone: textZone || "bottom", modelNote, feedback, shot }));
   }
   if (!prompt) throw new Error("Could not write an image prompt");
 
