@@ -3,6 +3,7 @@ import { X_SLOTS, pickPillar, pickFormat, generateXPost, generateBrandedCarousel
 import { imagePromptsBatch } from "@/lib/contentAi";
 import { generateMatchingPhoto } from "@/lib/imageGen";
 import { recentFeedback } from "@/lib/feedback";
+import { logGenerationError, friendlyError } from "@/lib/genLog";
 import { buildBrandSlides, slideText, themeOf } from "@/lib/brandTemplate";
 import { renderSlides } from "@/lib/renderSlides";
 
@@ -166,7 +167,8 @@ async function runSlot(supabase, brand, slot, recentPosts, today, feedback) {
     return await withTimeout(generateSlot(supabase, brand, slot, pillar, format, recentPosts, today, feedback), SLOT_TIMEOUT_MS, `${slot.key} (${format})`);
   } catch (e) {
     console.error(`X content generation failed for ${brand.slug} (${slot.key}):`, e.message);
-    return { queued: false, error: `${slot.key}: ${e.message}` };
+    await logGenerationError(brand.id, "x-content", slot.key, e.message);
+    return { queued: false, error: `${slot.key}: ${friendlyError(e.message)}` };
   }
 }
 

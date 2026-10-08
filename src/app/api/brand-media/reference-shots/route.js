@@ -1,6 +1,7 @@
 import { dashboardAuthorized, unauthorized, supabaseAdmin } from "@/lib/dashboard";
 import { generateMatchingPhoto } from "@/lib/imageGen";
 import { characterOf } from "@/lib/brandTemplate";
+import { logGenerationError, friendlyError } from "@/lib/genLog";
 
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ export async function POST(req) {
   );
   const media = results.filter((r) => r.status === "fulfilled").map((r) => r.value.media);
   const errors = results.filter((r) => r.status === "rejected").map((r) => r.reason?.message || String(r.reason));
-  if (!media.length) return Response.json({ error: "No reference shots came back: " + errors.join(" | ") }, { status: 502 });
+  for (const e of errors) await logGenerationError(brand.id, "reference-shots", null, e);
+  if (!media.length) return Response.json({ error: "No reference shots came back: " + friendlyError(errors[0]) }, { status: 502 });
   return Response.json({ media, errors });
 }

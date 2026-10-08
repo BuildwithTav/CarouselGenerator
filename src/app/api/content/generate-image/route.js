@@ -1,6 +1,7 @@
 import { dashboardAuthorized, unauthorized } from "@/lib/dashboard";
 import { supabaseAdmin } from "@/lib/dashboard";
 import { generateMatchingPhoto } from "@/lib/imageGen";
+import { logGenerationError, friendlyError } from "@/lib/genLog";
 
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
@@ -24,6 +25,7 @@ export async function POST(req) {
     const result = await generateMatchingPhoto(brand, { slideText, idea, style, prompt, textZone, modelNote });
     return Response.json(result);
   } catch (e) {
-    return Response.json({ error: e.message }, { status: 502 });
+    await logGenerationError(brand.id, "generate-image", null, e.message);
+    return Response.json({ error: friendlyError(e.message) }, { status: 502 });
   }
 }

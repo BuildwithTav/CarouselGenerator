@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { C, inp, lbl, card, btn, Chip, Badge, STATUS_COLOR, Spinner, CopyButton } from "./ui";
 import { PackageView, SlideStrip } from "./PackageView";
-import { themeOf, itemTemplate, slideCanHaveImage, templateAllowsAiImage, slideText, TEMPLATES, PHOTO_SOURCES, defaultPhotoSource, itemPlatforms } from "@/lib/brandTemplate";
+import { themeOf, itemTemplate, slideCanHaveImage, templateAllowsAiImage, slideText, TEMPLATES, PHOTO_SOURCES, defaultPhotoSource, itemPlatforms, buildBrandSlides } from "@/lib/brandTemplate";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const CAROUSEL_PLATFORMS = ["instagram", "tiktok", "youtube"];
@@ -74,12 +74,8 @@ function NewContent({ api, brand, onCreated }) {
       }
       setProgress("");
     }
-    setPhase("rendering");
-    try {
-      ({ item } = await api.post("/api/content/render", { id: item.id }));
-    } catch (e) {
-      setErr("Copy is done but the slides didn't render: " + e.message + " — open the item and press Render slides to retry.");
-    }
+    // No auto-render: the editor opens on a full-size live preview, and the
+    // slide images are rendered only once Render images is pressed there.
     setPhase(null);
     setIdea(""); setMediaId(null);
     onCreated(item);
@@ -161,7 +157,7 @@ function NewContent({ api, brand, onCreated }) {
         <label style={{ ...lbl, margin: 0 }}>Generate — {TEMPLATES.find((t) => t.id === template)?.label}</label>
       </div>
       <button onClick={generate} disabled={!!phase || !idea.trim()} style={btn("primary", { width: "100%", padding: 12, fontSize: 14, opacity: !idea.trim() ? 0.5 : 1 })}>
-        {phase === "writing" ? <><Spinner /> Writing slides + captions…</> : phase === "photo" ? <><Spinner /> Creating AI photos… {progress}</> : phase === "rendering" ? <><Spinner /> Rendering slide images…</> : "Generate carousel + captions"}
+        {phase === "writing" ? <><Spinner /> Writing slides + captions…</> : phase === "photo" ? <><Spinner /> Creating AI photos… {progress}</> : "Generate carousel + captions"}
       </button>
     </div>
   );
@@ -190,6 +186,52 @@ function SlideImage({ slide, idx, media, busy, onPick, onGenerate, label }) {
               <span style={{ position: "absolute", bottom: 1, right: 3, fontSize: 9, fontWeight: 700, color: "#fff", textShadow: "0 1px 3px #000" }}>{m.use_count || 0}×</span>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// The slides exactly as they'll render (same HTML the render route turns
+// into PNGs), built in the browser from the unsaved draft, so every edit
+// shows up immediately and nothing has to be rendered to check it.
+function LivePreview({ brand, slides, media, template, coverMediaId }) {
+  const [open, setOpen] = useState(null);
+  const urlOf = useMemo(() => Object.fromEntries(media.map((m) => [m.id, m.url])), [media]);
+  const docs = useMemo(() => {
+    try {
+      const withImages = slides.map((s) => ({ ...s, image_url: (s.image_media_id && urlOf[s.image_media_id]) || null }));
+      return buildBrandSlides({ brand, slides: withImages, profileUrl: urlOf[brand?.visual_theme?.profile_media_id] || null, coverImageUrl: urlOf[coverMediaId] || null, template });
+    } catch (e) { console.error(e); return []; }
+  }, [JSON.stringify(slides), urlOf, template, coverMediaId, JSON.stringify(brand?.visual_theme)]);
+
+  const W = 240;
+  const frame = (doc, width, key) => (
+    <iframe key={key} title="slide preview" srcDoc={doc} scrolling="no" style={{ width: 1080, height: 1350, border: "none", transform: `scale(${width / 1080})`, transformOrigin: "top left", pointerEvents: "none", display: "block" }} />
+  );
+  const bigW = typeof window === "undefined" ? 480 : Math.min(window.innerWidth * 0.92, (window.innerHeight * 0.82) * 1080 / 1350, 720);
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 6 }}>
+        {docs.map((doc, i) => (
+          <div key={i} onClick={() => setOpen(i)} style={{ width: W, height: Math.round(1350 * W / 1080), flexShrink: 0, borderRadius: 10, overflow: "hidden", border: `1px solid ${C.border}`, background: "#000", position: "relative", cursor: "zoom-in" }}>
+            {frame(doc, W, i)}
+            <span style={{ position: "absolute", top: 6, left: 6, fontSize: 11, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.55)", borderRadius: 4, padding: "1px 6px" }}>{i + 1}</span>
+          </div>
+        ))}
+      </div>
+      {open !== null && docs[open] && (
+        <div onClick={() => setOpen(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 60, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: 12 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: bigW, height: Math.round(1350 * bigW / 1080), borderRadius: 12, overflow: "hidden", background: "#000" }}>
+            {frame(docs[open], bigW, `big-${open}`)}
+          </div>
+          <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <button onClick={() => setOpen((i) => Math.max(0, i - 1))} disabled={open === 0} style={btn("small", { opacity: open === 0 ? 0.4 : 1 })}>← Prev</button>
+            <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>{open + 1} / {docs.length}</span>
+            <button onClick={() => setOpen((i) => Math.min(docs.length - 1, i + 1))} disabled={open === docs.length - 1} style={btn("small", { opacity: open === docs.length - 1 ? 0.4 : 1 })}>Next →</button>
+            <button onClick={() => setOpen(null)} style={btn("small")}>Close</button>
+          </div>
         </div>
       )}
     </div>
@@ -320,8 +362,15 @@ export function CarouselEditor({ api, itemId, onBack, onChanged }) {
             <button onClick={render} disabled={!!busy || dirty} title={dirty ? "Save first" : ""} style={btn("small", { background: C.gold, color: "#000", borderColor: C.gold, opacity: dirty ? 0.5 : 1 })}>{busy === "render" ? <><Spinner /> Rendering…</> : item.slide_paths?.length ? "Re-render images" : "Render images"}</button>
           </div>
         </div>
-        {stale ? <div style={{ fontSize: 11, color: C.gold, marginBottom: 6 }}>Slides changed — save, then re-render to update the images.</div> : null}
-        <SlideStrip item={item} size={84} />
+        <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>Preview, exactly as it will look (tap a slide to see it full size). It updates as you edit.{item.slide_paths?.length ? "" : " Happy with it? Press Render images."}</div>
+        <LivePreview brand={item.brands} slides={draft.slides} media={media} template={template} coverMediaId={item.media_id} />
+        {item.slide_paths?.length ? (
+          <div style={{ marginTop: 10 }}>
+            <label style={{ ...lbl, marginBottom: 6 }}>Rendered images</label>
+            {stale ? <div style={{ fontSize: 11, color: C.gold, marginBottom: 6 }}>Slides changed — save, then re-render to update the images.</div> : null}
+            <SlideStrip item={item} size={84} />
+          </div>
+        ) : null}
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 10 }}>
           {draft.slides.map((s, i) => (
             <div key={i} style={{ display: "grid", gridTemplateColumns: "28px 1fr", gap: 8, alignItems: "start" }}>
