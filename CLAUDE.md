@@ -69,3 +69,26 @@ Required at runtime (not present in this sandbox, hence the build caveat above):
 - Production deploys from `main` on Vercel; other branches get their own Vercel preview URL.
 - For small, low-risk fixes, pushing straight to `main` is the established, accepted workflow here. For anything touching payments, user data, or larger structural changes, prefer a branch first so it can be checked via its Vercel preview before merging to `main`.
 - The repo owner is non-technical — prefer doing git operations (commit/push) directly rather than handing back diffs or patches to apply manually, and verify changes build successfully before considering a task done.
+
+## Content dashboard (`/dashboard`) — separate from Carousel Studio
+
+Tav's own internal tool at `studio.buildwithtav.co/dashboard`, passphrase-protected (`DASHBOARD_PASSPHRASE`, sent as `x-dashboard-key`). Tabs: **X**, **Carousels**, **Brand** (`src/app/dashboard/*`). Two brands: Sky High Soles (cabin crew feet/tights/heels, faceless slim blonde woman; brand id `cc388f8e-0903-4853-891f-f9a204660062`) and HealthCode Performance. Supabase project id `ixjyxfwjyksbqdymyany`.
+
+### X engine (Sky High Soles)
+- `/api/cron/x-content?slot=…` runs 07:00/07:03/07:06 UTC and writes 3 drafts a day: `personality` (text, scroll-stopper), `conversation` (text, reply magnet), `visual` (one AI photo). Each post picks a format brief from `POST_FORMATS` in `src/lib/xContent.js`; the format key is saved in the item's `idea` line.
+- Drafts always need Tav's approval (his decision — don't switch to auto-post). `/api/cron/post-twitter` posts one `ready` item per window at 09:00/13:00/18:00 UTC, oldest first. Hobby-plan crons fire anywhere within that hour.
+- Rejecting a draft asks why; reasons go in `content_feedback` and the latest 12 are fed into the post and image prompt writers (`src/lib/feedback.js`).
+
+### AI photos (`src/lib/imageGen.js`)
+- One model only: `fal-ai/nano-banana-pro`, 2K, 4:5. If any `brand_media` rows have `is_reference = true` (starred "Her look" photos), it calls `fal-ai/nano-banana-pro/edit` with up to 4 of them. Attempt 2 drops the references, so a post never loses its photo. FLUX models reject this brand's content, and a vision QA gate was tried and deleted (it rejected everything). Don't re-add either without asking.
+- Prompts are written by Claude (`imagePrompt` / `imagePromptsBatch` in `src/lib/contentAi.js`): positive-only (the model has no negative prompt), neutral catalogue wording (mood words trip the safety filter), and framing stated as where the frame's top edge falls (chin-level crops let the face in). Sky High's photo rules (`BRAND_AI_STYLE`) and fixed character (`BRAND_CHARACTER`) are hard-coded in `src/lib/brandTemplate.js`, because Supabase writes of long text to `visual_theme` have repeatedly timed out.
+- **When "images failed", check `generation_log` first.** Every failed generation is logged there with its raw error, and `src/lib/genLog.js` turns common ones into plain English (fal balance empty, safety block, timeout).
+
+### Other dashboard notes
+- The Brand "What the content should include" field (`brands.pillars`) is a free-text description the AI reads whole. It is not a pick-list.
+- Carousels open on a live full-size preview built in the browser (`buildBrandSlides`), and images are rendered only when Tav presses Render images.
+
+### Working in this sandbox
+- No egress to fal.ai, Supabase REST, or the live site. Use the Supabase MCP for data. The Vercel MCP has no team access, so check deploys with `gh api repos/BuildwithTav/CarouselGenerator/commits/<sha>/statuses`.
+- For pipeline changes, test by importing the route with a mocked `fetch` (Anthropic / fal / Supabase), then `npm run build`, push to `main`, and confirm the deploy status.
+- Tav wants changes agreed in chat and then done end to end (commit, push, deploy) with no manual steps for him. Keep replies short and plain.
