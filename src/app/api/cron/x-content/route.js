@@ -2,6 +2,7 @@ import { dashboardAuthorized, supabaseAdmin, brandPlatforms, bumpMediaUse, BUCKE
 import { X_SLOTS, pickPillar, pickFormat, generateXPost, generateBrandedCarouselIdea, generatePackage } from "@/lib/xContent";
 import { imagePromptsBatch } from "@/lib/contentAi";
 import { generateMatchingPhoto } from "@/lib/imageGen";
+import { recentFeedback } from "@/lib/feedback";
 import { buildBrandSlides, slideText, themeOf } from "@/lib/brandTemplate";
 import { renderSlides } from "@/lib/renderSlides";
 
@@ -41,10 +42,10 @@ const RECENT_LIMIT = 20;
 // paying for 5 Claude round-trips before the "generate 4 images in
 // parallel" phase even began — now it's 1. Returns the storage paths (for
 // posting) and media IDs (for use tracking).
-async function photosForScenes(brand, scenes) {
+async function photosForScenes(brand, scenes, feedback = []) {
   if (!scenes.length) return { paths: [], mediaIds: [] };
   const theme = themeOf(brand);
-  const { modelNote, photos: written } = await imagePromptsBatch(brand, { texts: scenes, style: "candid", direction: theme.ai_style, textZone: null });
+  const { modelNote, photos: written } = await imagePromptsBatch(brand, { texts: scenes, style: "candid", direction: theme.ai_style, textZone: null, feedback });
   const all = await Promise.all(
     written.map((p) => generateMatchingPhoto(brand, { prompt: p.prompt, modelNote }))
   );
@@ -110,7 +111,7 @@ function withTimeout(promise, ms, label) {
   ]).finally(() => clearTimeout(timer));
 }
 
-async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, today) {
+async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, today, feedback) {
   if (format === "branded_carousel") {
     const built = await buildBrandedCarousel(brand, { pillar, recentPosts });
     await bumpMediaUse(built.mediaIds);
@@ -130,12 +131,12 @@ async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, 
     return { queued: true };
   }
 
-  const { text, scenes } = await generateXPost(brand, { slot, pillar, format, recentPosts });
+  const { text, scenes } = await generateXPost(brand, { slot, pillar, format, recentPosts, feedback });
   if (!text) return { queued: false };
 
   let slidePaths = [];
   if (scenes.length) {
-    const photos = await photosForScenes(brand, scenes);
+    const photos = await photosForScenes(brand, scenes, feedback);
     slidePaths = photos.paths;
     await bumpMediaUse(photos.mediaIds);
   }
@@ -158,11 +159,11 @@ async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, 
 // One slot end to end: pick pillar/format, write it, generate its photo(s),
 // insert the draft. Returns a result object rather than throwing, so slots
 // run concurrently via Promise.all without one failure rejecting the rest.
-async function runSlot(supabase, brand, slot, recentPosts, today) {
+async function runSlot(supabase, brand, slot, recentPosts, today, feedback) {
   try {
     const pillar = pickPillar();
     const { format } = pickFormat(slot);
-    return await withTimeout(generateSlot(supabase, brand, slot, pillar, format, recentPosts, today), SLOT_TIMEOUT_MS, `${slot.key} (${format})`);
+    return await withTimeout(generateSlot(supabase, brand, slot, pillar, format, recentPosts, today, feedback), SLOT_TIMEOUT_MS, `${slot.key} (${format})`);
   } catch (e) {
     console.error(`X content generation failed for ${brand.slug} (${slot.key}):`, e.message);
     return { queued: false, error: `${slot.key}: ${e.message}` };
@@ -204,7 +205,10 @@ async function runXContentGeneration(brandIdFilter, slotKeyFilter) {
       return { brand: brand.slug, queued: 0, error: "Couldn't load recent posts: " + e.message };
     }
 
-    const slotResults = await Promise.all(slots.map((slot) => runSlot(supabase, brand, slot, recentPosts, today)));
+    // Why recent drafts were rejected in the X tab — fed to both the post
+    // writer and the photo prompt writer so the same miss doesn't repeat.
+    const feedback = await recentFeedback(brand.id);
+    const slotResults = await Promise.all(slots.map((slot) => runSlot(supabase, brand, slot, recentPosts, today, feedback)));
     const queued = slotResults.filter((r) => r.queued).length;
     const errors = slotResults.map((r) => r.error).filter(Boolean);
     return errors.length ? { brand: brand.slug, queued, error: errors.join(" | ") } : { brand: brand.slug, queued };

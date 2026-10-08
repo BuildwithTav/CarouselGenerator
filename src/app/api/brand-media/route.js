@@ -17,14 +17,18 @@ const SIGNED_URL_TTL_SECONDS = 60 * 60; // 1 hour
 
 export async function GET(req) {
   if (!authorized(req)) return Response.json({ error: "Not authorized" }, { status: 403 });
-  const brandId = new URL(req.url).searchParams.get("brandId");
+  const params = new URL(req.url).searchParams;
+  const brandId = params.get("brandId");
   if (!brandId) return Response.json({ error: "brandId is required" }, { status: 400 });
 
-  const { data, error } = await supabase
+  // ?references=1 → only the starred "this is her" reference photos.
+  let q = supabase
     .from("brand_media")
     .select("*")
     .eq("brand_id", brandId)
     .order("uploaded_at", { ascending: false });
+  if (params.get("references") === "1") q = q.eq("is_reference", true);
+  const { data, error } = await q;
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
   const withUrls = await Promise.all(
@@ -83,7 +87,19 @@ export async function POST(req) {
 
 export async function PATCH(req) {
   if (!authorized(req)) return Response.json({ error: "Not authorized" }, { status: 403 });
-  const { id, action } = await req.json();
+  const { id, storagePath, action, value } = await req.json();
+
+  // Star / unstar a photo as a character reference. Accepts the storage
+  // path too, since an X post only knows its photos by path.
+  if (action === "set_reference") {
+    if (!id && !storagePath) return Response.json({ error: "id or storagePath is required" }, { status: 400 });
+    let q = supabase.from("brand_media").update({ is_reference: !!value });
+    q = id ? q.eq("id", id) : q.eq("storage_path", storagePath);
+    const { data, error } = await q.select().single();
+    if (error) return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ media: data });
+  }
+
   if (!id) return Response.json({ error: "id is required" }, { status: 400 });
 
   const { data: current, error: fetchError } = await supabase

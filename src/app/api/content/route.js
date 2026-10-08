@@ -132,7 +132,15 @@ export async function DELETE(req) {
   const supabase = supabaseAdmin();
 
   const { data: item } = await supabase.from("content_items").select("slide_paths").eq("id", id).single();
-  if (item?.slide_paths?.length) await supabase.storage.from(BUCKET).remove(item.slide_paths);
+  let paths = item?.slide_paths || [];
+  // A photo starred as a character reference outlives the post it came
+  // from — deleting a rejected post must not delete her reference photo.
+  if (paths.length) {
+    const { data: refs } = await supabase.from("brand_media").select("storage_path").in("storage_path", paths).eq("is_reference", true);
+    const keep = new Set((refs || []).map((r) => r.storage_path));
+    paths = paths.filter((p) => !keep.has(p));
+  }
+  if (paths.length) await supabase.storage.from(BUCKET).remove(paths);
   const { error } = await supabase.from("content_items").delete().eq("id", id);
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });

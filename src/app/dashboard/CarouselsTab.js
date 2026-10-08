@@ -42,7 +42,7 @@ function NewContent({ api, brand, onCreated }) {
 
   const suggest = async () => {
     setSuggesting(true); setErr("");
-    try { const d = await api.post("/api/content/ideas", { brandId: brand.id, count: 10 }); setIdeas(d.ideas || []); } catch (e) { setErr(e.message); }
+    try { const d = await api.post("/api/content/ideas", { brandId: brand.id, count: 10, pillar: pillar || null }); setIdeas(d.ideas || []); } catch (e) { setErr(e.message); }
     setSuggesting(false);
   };
 
@@ -99,8 +99,17 @@ function NewContent({ api, brand, onCreated }) {
         <span style={{ width: 22, height: 22, borderRadius: "50%", background: C.gold, color: "#000", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>1</span>
         <label style={{ ...lbl, margin: 0 }}>What's this about — {brand.name}</label>
         <div style={{ flex: 1 }} />
-        <button onClick={suggest} disabled={suggesting} style={btn("ghost", { opacity: suggesting ? 0.6 : 1 })}>{suggesting ? <><Spinner /> Thinking…</> : "✨ Suggest ideas"}</button>
+        <button onClick={suggest} disabled={suggesting} style={btn("ghost", { opacity: suggesting ? 0.6 : 1 })}>{suggesting ? <><Spinner /> Thinking…</> : pillar ? `✨ Ideas for "${pillar}"` : "✨ Suggest ideas"}</button>
       </div>
+
+      {pillars.length > 0 && (
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>Pillar (optional): pick one and Suggest ideas gives you ideas for just that topic, and the carousel is written around it.</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {pillars.map((p) => <Chip key={p} active={pillar === p} onClick={() => { setPillar(pillar === p ? "" : p); setIdeas([]); }}>{p}</Chip>)}
+          </div>
+        </div>
+      )}
 
       {ideas.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
@@ -113,7 +122,7 @@ function NewContent({ api, brand, onCreated }) {
       <textarea value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="One line is enough — e.g. '3 mistakes people make when they start…'" rows={3} style={{ ...inp, resize: "vertical", lineHeight: 1.6, marginBottom: 16 }} />
 
       <button type="button" onClick={() => setAdvanced((a) => !a)} style={{ background: "none", border: "none", color: C.muted, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, marginBottom: advanced ? 12 : 16, display: "flex", alignItems: "center", gap: 4 }}>
-        {advanced ? "▾" : "▸"} Customize {photoSource !== defaultPhotoSource(template) || pillar || slideCount !== 7 || mediaId ? "(changed)" : "(photos, pillar, slide count, date, cover)"}
+        {advanced ? "▾" : "▸"} Customize {photoSource !== defaultPhotoSource(template) || slideCount !== 7 || mediaId ? "(changed)" : "(photos, slide count, date, cover)"}
       </button>
 
       {advanced && (
@@ -129,15 +138,6 @@ function NewContent({ api, brand, onCreated }) {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
-            {pillars.length > 0 && (
-              <div>
-                <label style={lbl}>Pillar</label>
-                <select value={pillar} onChange={(e) => setPillar(e.target.value)} style={inp}>
-                  <option value="">Any</option>
-                  {pillars.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-            )}
             <div>
               <label style={lbl}>Slides</label>
               <select value={slideCount} onChange={(e) => setSlideCount(Number(e.target.value))} style={inp}>

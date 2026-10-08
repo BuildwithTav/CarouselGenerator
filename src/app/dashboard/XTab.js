@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { C, inp, lbl, card, btn, Badge, STATUS_COLOR, Spinner, CopyButton } from "./ui";
 import { CarouselEditor } from "./CarouselsTab";
 import { itemPlatforms, THEME_DEFAULTS } from "@/lib/brandTemplate";
+import { RejectDialog, RefStar, TeachPanel } from "./TeachAi";
 
 // X posts itself (cron, 3x/day) or on a manual "Post now" click — nothing
 // about it is copy-paste-somewhere-else like Instagram/TikTok/YouTube, so it
@@ -47,12 +48,18 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(null);
   const [caption, setCaption] = useState("");
+  const [rejecting, setRejecting] = useState(false);
+  const [refPaths, setRefPaths] = useState(new Set());
 
   const load = async () => {
     try {
       const { item } = await api.get(`/api/content?id=${itemId}`);
       setItem(item);
       setCaption(item.tw_caption || "");
+      if (item.slide_paths?.length) {
+        const { media } = await api.get(`/api/brand-media?brandId=${item.brand_id}&references=1`);
+        setRefPaths(new Set((media || []).map((m) => m.storage_path)));
+      }
     } catch (e) { setErr(e.message); }
   };
   useEffect(() => { load(); }, [itemId]);
@@ -69,9 +76,13 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
   const save = () => run("save", () => api.patch("/api/content", { id: item.id, tw_caption: caption }));
   const setStatus = (status) => run(status, () => api.patch("/api/content", { id: item.id, status }));
   const postNow = () => run("post", () => api.post("/api/content/post-now", { id: item.id }));
-  const del = async () => {
-    if (!window.confirm("Delete this X post?")) return;
-    try { await api.del("/api/content", { id: item.id }); onChanged?.(null, item.id); onBack(); } catch (e) { setErr(e.message); }
+  const onStar = (media) => {
+    if (!media) return;
+    setRefPaths((set) => {
+      const next = new Set(set);
+      if (media.is_reference) next.add(media.storage_path); else next.delete(media.storage_path);
+      return next;
+    });
   };
 
   const photos = item.slide_urls || [];
@@ -95,13 +106,16 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
         {photos.length > 0 && (
           <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, marginBottom: 4 }}>
             {photos.map((u, i) => (
-              <a key={i} href={u} target="_blank" rel="noreferrer" style={{ flexShrink: 0, width: 110, aspectRatio: "1080/1350", borderRadius: 8, overflow: "hidden", border: `1px solid ${C.border}`, display: "block" }}>
-                <img src={u} alt={`Photo ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              </a>
+              <div key={i} style={{ flexShrink: 0, width: 110 }}>
+                <a href={u} target="_blank" rel="noreferrer" style={{ width: 110, aspectRatio: "1080/1350", borderRadius: 8, overflow: "hidden", border: `1px solid ${C.border}`, display: "block", marginBottom: 4 }}>
+                  <img src={u} alt={`Photo ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </a>
+                {item.slide_paths?.[i] && <RefStar api={api} storagePath={item.slide_paths[i]} isRef={refPaths.has(item.slide_paths[i])} onChange={onStar} compact />}
+              </div>
             ))}
           </div>
         )}
-        <div style={{ fontSize: 11, color: C.muted }}>Generated to match exactly what the post text describes — no swap-in picker here yet; delete and regenerate the batch if a photo's wrong.</div>
+        <div style={{ fontSize: 11, color: C.muted }}>Generated to match exactly what the post text describes. If she looks exactly right, star it (☆ Her look) and new photos will copy her from it. If it's wrong, Delete and say why.</div>
       </div>
 
       <div style={{ ...card, marginBottom: 14 }}>
@@ -131,8 +145,9 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
         {!item.posted_twitter_at && (
           <button onClick={postNow} disabled={!!busy || dirty || item.brands?.x_auto_post_paused} title={dirty ? "Save first" : item.brands?.x_auto_post_paused ? "Auto-posting is paused" : ""} style={btn("dark", { opacity: dirty || item.brands?.x_auto_post_paused ? 0.5 : 1 })}>{busy === "post" ? <><Spinner /> Posting…</> : "Post now →"}</button>
         )}
-        <button onClick={del} style={btn("danger")}>Delete</button>
+        <button onClick={() => setRejecting(true)} style={btn("danger")}>Delete</button>
       </div>
+      {rejecting && <RejectDialog api={api} item={item} onCancel={() => setRejecting(false)} onDone={(id) => { onChanged?.(null, id); onBack(); }} />}
       {item.posted_twitter_at && (
         <div style={{ fontSize: 12, color: C.ok, marginTop: 10 }}>
           Posted to X {new Date(item.posted_twitter_at).toLocaleString()}
@@ -150,6 +165,7 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
 function XRow({ api, item, onOpen, onChanged }) {
   const m = item.x_metrics;
   const [busy, setBusy] = useState(null);
+  const [rejecting, setRejecting] = useState(false);
   const hasPhotos = (item.slide_paths?.length || 0) > 0;
   const photoBroken = hasPhotos && !item.thumb_url;
   const posted = !!item.posted_twitter_at;
@@ -161,13 +177,7 @@ function XRow({ api, item, onOpen, onChanged }) {
   };
   const setStatus = (e, status) => { e.stopPropagation(); run(status, () => api.patch("/api/content", { id: item.id, status })); };
   const reschedule = (e) => { e.stopPropagation(); const v = e.target.value; if (v) run("date", () => api.patch("/api/content", { id: item.id, scheduled_for: v })); };
-  const del = async (e) => {
-    e.stopPropagation();
-    if (!window.confirm("Delete this X post?")) return;
-    setBusy("delete");
-    try { await api.del("/api/content", { id: item.id }); onChanged(null, item.id); } catch (err) { alert(err.message); }
-    setBusy(null);
-  };
+  const del = (e) => { e.stopPropagation(); setRejecting(true); };
 
   return (
     <div style={{ ...card, padding: 14 }}>
@@ -195,8 +205,9 @@ function XRow({ api, item, onOpen, onChanged }) {
           <input type="date" value={item.scheduled_for} onClick={(e) => e.stopPropagation()} onChange={reschedule} disabled={!!busy} style={{ ...inp, width: "auto", padding: "4px 8px", fontSize: 11 }} />
         )}
         <div style={{ flex: 1 }} />
-        <button onClick={del} disabled={!!busy} style={btn("danger", { fontSize: 11, padding: "5px 10px" })}>{busy === "delete" ? "…" : "Delete"}</button>
+        <button onClick={del} disabled={!!busy} style={btn("danger", { fontSize: 11, padding: "5px 10px" })}>Delete</button>
       </div>
+      {rejecting && <RejectDialog api={api} item={item} onCancel={() => setRejecting(false)} onDone={(id) => { setRejecting(false); onChanged(null, id); }} />}
     </div>
   );
 }
@@ -328,6 +339,8 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
           <button onClick={refreshStats} disabled={refreshing} style={btn("small", { opacity: refreshing ? 0.6 : 1 })}>{refreshing ? "Refreshing…" : "↻ Refresh stats"}</button>
         </div>
       </div>
+
+      <TeachPanel api={api} brand={brand} refreshKey={items.length} />
 
       <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
         {[["all", "All"], ["draft", "Drafts"], ["ready", "Ready"], ["posted", "Posted"]].map(([id, label]) => (

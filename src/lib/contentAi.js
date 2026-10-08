@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { themeOf } from "./brandTemplate";
+import { themeOf, characterText } from "./brandTemplate";
 
 const MODEL = "claude-opus-5";
 
@@ -69,11 +69,11 @@ export async function ask(system, user, maxTokens = 8000, imageUrls = []) {
   return extractJson(text);
 }
 
-export async function suggestIdeas(brand, count = 10) {
+export async function suggestIdeas(brand, count = 10, pillar = null) {
   const system = `You generate short-form social content ideas. Reply with JSON only: {"ideas": ["...", ...]}.\n${HOUSE_RULES}`;
   const user = `${brandContext(brand)}
 
-Give me ${count} distinct carousel ideas for this brand, each one line, drawn from the content pillars. Each idea should be specific enough to build a carousel from, and written in the brand's voice. Vary the angles: myths, mistakes, how-tos, hot takes, stories, lists, teases.`;
+Give me ${count} distinct carousel ideas for this brand, each one line, ${pillar ? `every one of them about this pillar: ${pillar}` : "drawn from the content pillars"}. Each idea should be specific enough to build a carousel from, and written in the brand's voice. Vary the angles: myths, mistakes, how-tos, hot takes, stories, lists, teases.`;
   const out = await ask(system, user, 3000);
   return (out.ideas || []).map((s) => String(s).trim()).filter(Boolean);
 }
@@ -226,6 +226,10 @@ ${PLATFORM_COPY}`;
 // shares this codepath, so nothing brand-specific belongs in the system
 // prompt itself — it goes in that brand's own ai_style field instead.
 export async function lockModelDescription(brand) {
+  // A brand with a fixed character (brandTemplate.js) always gets those
+  // exact words, never a freshly written description.
+  const fixed = characterText(brand);
+  if (fixed) return fixed;
   // themeOf(brand), not brand.visual_theme directly — a brand's ai_style can
   // be hard-coded in brandTemplate.js (BRAND_AI_STYLE) rather than stored in
   // the database, and reading the raw column here meant that override was
@@ -255,18 +259,33 @@ Write the one-person description for this photo series, or leave it empty if the
 const PROMPT_RULES = (textZone, style) => {
   const candid = style === "candid";
   const look = candid
-    ? `the light (real available light with natural shadows — daylight, aircraft cabin lights, a hotel lamp); the camera ("shot on an iPhone, slightly wide lens, everything in focus, casual snapshot framing, like a friend took it"); real skin and fabric texture, true-to-life colour, a real everyday background (an airport, a cabin, a hotel room) that stays secondary to the subject.
+    ? `the light (real available light with natural shadows — daylight, aircraft cabin lights, a hotel lamp); the camera ("shot on an iPhone, slightly wide lens, everything in focus, casual phone snapshot"); real skin and fabric texture, true-to-life colour, a real background that stays secondary to the subject.
 The look is an authentic candid phone photo of a real moment, the kind someone actually posts on Instagram — never a studio shoot, never glossy or retouched.`
     : `the light (soft, natural — window light, golden hour, a warm lamp); camera and lens (e.g. "shot on a Sony A7 IV, 50mm f/1.8, shallow depth of field"); real skin and fabric texture, true-to-life colour.
 The look is polished editorial, magazine quality, still natural.`;
   return `You write prompts for Nano Banana Pro, a photorealistic image model.
-Write each prompt as one natural-language shot brief, 60-110 words. In this order: the subject and exact pose; framing and crop; the setting; ${look}
+Write each prompt as one natural-language shot brief, 60-110 words. In this order: the framing first (what the camera sees and exactly where the edges of the frame fall); then the subject and exact pose inside that frame; the setting; ${look}
+The prompt is purely visual. Never put the post's words, a caption, a quote, a question or any other lettering into it: this model renders quoted text straight into the image.
 Describe only what IS in the photo, phrased positively. The model has no negative prompt and treats every word as something to include, so never write "no X", "without X", "avoid", or lists of things to exclude, and never mention nudity, explicit content, hidden faces, or anatomy mistakes — naming them puts them in the picture and can trip the model's safety filter.
-Handle every exclusion through framing and styling instead: if the brand keeps the face out of shot, state the crop ("framed from the shoulders down", "shot from behind", "cropped at the waist"); if clothing matters, say exactly what she's wearing.
+Handle every exclusion through framing and styling instead: if the brand keeps the face out of shot, say where the top edge of the frame falls ("the top of the frame cuts across her hips") or that it's her own point of view looking down, and describe only the parts of the person that are inside that frame; if clothing matters, say exactly what she's wearing.
 State the focal point plainly (e.g. "her feet in the foreground, sharp and central"). One main subject, one clear action — simple scenes come out anatomically cleaner than busy ones.
-The photo shows literally what the text describes happening.${textZone ? `
+The photo shows literally what the text describes happening, within the brand's photo direction.${textZone ? `
 Keep the ${textZone} of the frame calm and uncluttered (text gets overlaid there).` : ""}`;
 };
+
+// The fixed person (from brandTemplate.js's BRAND_CHARACTER) or a locked
+// description passed in, plus the reasons recent photos were rejected in
+// the X tab — both go to Claude as it writes the prompt, never straight to
+// the image model, so they get turned into positive framing and styling.
+function personBlock(character) {
+  return character ? `This exact person appears in every photo, always the same: ${character}. Use these exact words for whichever of these features are inside the frame, and leave out the ones that aren't (in a legs-and-feet shot, her legs, skin and feet, not her hair).\n` : "";
+}
+
+export function feedbackBlock(feedback) {
+  return feedback?.length
+    ? `Recent photos and posts for this brand were rejected for these reasons. Get every one of them right this time:\n${feedback.map((f) => `- ${f}`).join("\n")}\n`
+    : "";
+}
 
 // Turns a slide's text + brand into a photographer's brief for the image model.
 // `direction` is the brand's own photo direction (subject, look, what to avoid)
@@ -275,11 +294,11 @@ Keep the ${textZone} of the frame calm and uncluttered (text gets overlaid there
 // part, mood) that isn't in that direction.
 // `modelNote` is a locked description (from lockModelDescription) reused across
 // every photo in the same carousel so the same person appears in every shot.
-export async function imagePrompt(brand, { slideText, idea, style, direction, textZone = "bottom", modelNote }) {
+export async function imagePrompt(brand, { slideText, idea, style, direction, textZone = "bottom", modelNote, feedback = [] }) {
   const system = `${PROMPT_RULES(textZone, style)}
 Reply with JSON only: {"prompt": "..."}.`;
   const user = `${brandContext(brand)}
-${modelNote ? `This exact person appears in every photo of this series — describe them this way: ${modelNote}\n` : ""}${direction ? `Brand photo direction (translate into positive framing/styling choices): ${direction}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic.)\n"}Post idea: ${idea || "(none)"}
+${personBlock(characterText(brand) || modelNote)}${feedbackBlock(feedback)}${direction ? `Brand photo direction (translate into positive framing/styling choices): ${direction}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic.)\n"}Post idea: ${idea || "(none)"}
 Depict this exact moment: ${slideText || "(cover)"}
 
 Write the image prompt.`;
@@ -296,19 +315,20 @@ Write the image prompt.`;
 // image. This cuts that to exactly 1 call, same consistency guarantee (one
 // model description, reused word for word in every prompt), while the N
 // actual image generations afterward still run fully in parallel.
-export async function imagePromptsBatch(brand, { texts, idea, style, direction, textZone = "bottom" }) {
+export async function imagePromptsBatch(brand, { texts, idea, style, direction, textZone = "bottom", feedback = [] }) {
+  const character = characterText(brand);
   const system = `${PROMPT_RULES(textZone, style)}
-You're writing one prompt per scene given, as a matched set showing the same one consistent person (if the brand's direction calls for a person at all). First, "model": a 30-70 word physical description of that person (hair, build, skin tone — only what will actually be visible), restated in every prompt so each photo shows the same person; empty string if no person appears.
+You're writing one prompt per scene given, as a matched set showing the same one consistent person (if the brand's direction calls for a person at all). ${character ? `That person is fixed (described below), so "model" is just an empty string.` : `First, "model": a 30-70 word physical description of that person (hair, build, skin tone — only what will actually be visible), restated in every prompt so each photo shows the same person; empty string if no person appears.`}
 Reply with JSON only: {"model": "...", "prompts": [{"prompt": "..."}, ...]} — exactly one entry per scene, same order.`;
   const user = `${brandContext(brand)}
-${direction ? `Brand photo direction (translate into positive framing/styling choices): ${direction}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic.)\n"}Post idea: ${idea || "(none)"}
+${personBlock(character)}${feedbackBlock(feedback)}${direction ? `Brand photo direction (translate into positive framing/styling choices): ${direction}\n` : "(No specific photo direction set for this brand — use good editorial judgement for the topic.)\n"}Post idea: ${idea || "(none)"}
 
 Scenes — one photo per entry, in order, depict exactly what each one describes:
 ${texts.map((t, i) => `${i + 1}. ${t || "(cover)"}`).join("\n")}
 
 Write "model" once, then one prompt per scene, ${texts.length} entries total, same order.`;
   const out = await ask(system, user, 600 * texts.length + 500);
-  const modelNote = String(out.model || "").trim();
+  const modelNote = character || String(out.model || "").trim();
   const prompts = Array.isArray(out.prompts) ? out.prompts : [];
   return {
     modelNote,

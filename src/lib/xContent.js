@@ -1,4 +1,4 @@
-import { ask, brandContext, generatePackage } from "./contentAi";
+import { ask, brandContext, generatePackage, feedbackBlock } from "./contentAi";
 
 // The X content engine: a separate, lighter pipeline from the branded
 // carousel system. Three native formats skip the slide-template renderer
@@ -124,12 +124,13 @@ function clampTweet(text) {
 // call — the caller then generates a photo FROM that description (see
 // imageGen.js), so a line like "slipped into the bath out of my tights"
 // gets a photo that actually shows that, not a vaguely-matching stock shot.
-export async function generateXPost(brand, { slot, pillar, format, recentPosts = [] }) {
+export async function generateXPost(brand, { slot, pillar, format, recentPosts = [], feedback = [] }) {
   const needsPhotos = format === "single" || format === "carousel";
 
   const system = `You write one X (Twitter) post for a brand's account. Reply with JSON only: ${needsPhotos ? `{"text": "...", "scenes": ["...", ...]}` : `{"text": "..."}`}.
 ${VOICE_RULES}
-${needsPhotos ? `\nYou are also directing the photo(s) that go with this post — they don't exist yet, you're describing exactly what to generate. For each photo, write one vivid, concrete scene description (setting, pose, specific action, props — enough detail that a photographer could shoot exactly this): a precise physical scene, not a mood or a vibe. The post's words and the scene(s) must describe the same real moment — if the text says something specific happened ("slipped into the bath out of my tights"), the scene has to show exactly that, tights included. Always fully clothed above the waist, nothing explicit, no visible face (consistent with this brand's existing photo direction).` : ""}`;
+${needsPhotos ? `\nYou are also directing the photo(s) that go with this post — they don't exist yet, you're describing exactly what to generate. For each photo, write one vivid, concrete scene description (setting, pose, specific action, props — enough detail that a photographer could shoot exactly this): a precise physical scene, not a mood or a vibe. The post's words and the scene(s) must describe the same real moment — if the text says something specific happened ("slipped into the bath out of my tights"), the scene has to show exactly that, tights included. Always fully clothed above the waist, nothing explicit, her head out of the frame (consistent with this brand's existing photo direction).
+Every scene happens in a real cabin crew life place: on the aircraft (cabin aisle, jump seat, galley, crew rest), the crew room, the airport, the layover hotel, her own home, a layover pool or beach, or a pedicure chair. Pick a moment for the post that happens in one of those places, so the words and the photo match: never a bus, taxi, car, train, gym, street or shop.` : ""}`;
 
   const formatBrief =
     format === "text"
@@ -149,7 +150,7 @@ Content pillar: ${pillar.label}. ${pillar.guidance}
 ${formatBrief}
 
 ${recentBlock}
-
+${feedbackBlock(feedback)}
 Before answering, check every one of these — this has to be a 10/10, not a rough draft: Is it short — genuinely short, not just under some technical limit? Does it have 2-5 hashtags that actually fit this specific post (and only skip them if truly nothing does)? Is it flirty, suggestive and alluring, not flat or purely observational? Does it sound like a real person, not an automated account? Is it clearly different from the recent posts above? Is the language natural, not AI-coded, no em dashes, no jargon? Does it end on a statement rather than defaulting to a question? ${needsPhotos ? "Does each scene describe the exact same moment the text is about, specifically enough to actually shoot?" : ""} If this touches feet at all, is it handled through genuine lifestyle or fact framing, with zero wordplay or joking?
 
 Write the post${needsPhotos ? " and its scene description(s)" : ""}.`;

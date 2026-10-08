@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { C, inp, lbl, card, btn, Toggle, Chip, fmtSize } from "./ui";
+import { RefStar } from "./TeachAi";
 import { TEMPLATES, CTA_TYPES, THEME_DEFAULTS, themeOf, ctaCopy, previewSlides, aiStyleLocked } from "@/lib/brandTemplate";
 
 const PLATFORMS = [["instagram", "Instagram"], ["tiktok", "TikTok"], ["youtube", "YouTube"], ["twitter", "X (Twitter)"]];
@@ -74,7 +75,7 @@ function BrandForm({ brand, media, saving, onSave, onDelete, section }) {
         <textarea value={voice} onChange={(e) => setVoice(e.target.value)} placeholder="How this brand sounds — tone, audience, what to avoid, sign-off." rows={3} style={{ ...inp, resize: "vertical", lineHeight: 1.6 }} />
       </div>
       <div>
-        <label style={lbl}>Content pillars <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(comma-separated — used for idea suggestions)</span></label>
+        <label style={lbl}>Content pillars <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(comma-separated topics, each one becomes a pillar you can pick in Carousels. Rules like "always female" go in Voice)</span></label>
         <textarea value={pillars} onChange={(e) => setPillars(e.target.value)} placeholder="e.g. Training tips, client wins, myth-busting" rows={2} style={{ ...inp, resize: "vertical", lineHeight: 1.6 }} />
       </div>
       <div>
@@ -274,7 +275,7 @@ export function BrandsTab({ api, brands, activeId, setActiveId, onBrandsChange }
   };
 
   const setUsed = async (id, action) => {
-    try { const d = await api.patch("/api/brand-media", { id, action }); if (d.media) setMedia((m) => m.map((x) => (x.id === id ? d.media : x))); } catch (e) { alert(e.message); }
+    try { const d = await api.patch("/api/brand-media", { id, action }); if (d.media) setMedia((m) => m.map((x) => (x.id === id ? { ...x, ...d.media } : x))); } catch (e) { alert(e.message); }
   };
 
   const sortedMedia = [...media].sort((a, b) => sortMode === "least_used"
@@ -339,6 +340,11 @@ export function BrandsTab({ api, brands, activeId, setActiveId, onBrandsChange }
                       <button onClick={() => setUsed(m.id, "mark_used")} style={btn("primary", { flex: 1, fontSize: 10, padding: "5px 0", borderRadius: 6 })}>Mark used</button>
                       {(m.use_count || 0) > 0 && <button onClick={() => setUsed(m.id, "unmark_used")} title="Undo last use" style={btn("small", { padding: "5px 8px", fontSize: 10, borderRadius: 6 })}>↺</button>}
                     </div>
+                    {m.file_type === "image" && (
+                      <div style={{ marginBottom: 6 }}>
+                        <RefStar api={api} storagePath={m.storage_path} isRef={!!m.is_reference} onChange={(next) => next && setMedia((list) => list.map((x) => (x.id === next.id ? { ...x, ...next } : x)))} compact />
+                      </div>
+                    )}
                     <div style={{ display: "flex", gap: 6 }}>
                       {m.url && <a href={m.url} download target="_blank" rel="noreferrer" style={{ ...btn("dark", { flex: 1, fontSize: 10, padding: "5px 0", borderRadius: 6 }), textAlign: "center", textDecoration: "none" }}>Download</a>}
                       <button onClick={() => deleteMedia(m.id, m.storage_path)} style={btn("danger", { flex: 1, fontSize: 10, padding: "5px 0", borderRadius: 6, borderWidth: 1 })}>Delete</button>
