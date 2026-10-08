@@ -259,7 +259,7 @@ Write the one-person description for this photo series, or leave it empty if the
 const PROMPT_RULES = (textZone, style) => {
   const candid = style === "candid";
   const look = candid
-    ? `the light (real available light with natural shadows — daylight, aircraft cabin lights, a hotel lamp); the camera ("shot on an iPhone, slightly wide lens, everything in focus, casual phone snapshot"); real skin and fabric texture, true-to-life colour, a real background that stays secondary to the subject.
+    ? `the light (real available light with natural shadows — daylight, aircraft cabin lights, a bedside lamp); the camera ("shot on an iPhone, slightly wide lens, everything in focus, casual phone snapshot"); real skin and fabric texture, true-to-life colour, a real background that stays secondary to the subject.
 The look is an authentic candid phone photo of a real moment, the kind someone actually posts on Instagram — never a studio shoot, never glossy or retouched.`
     : `the light (soft, natural — window light, golden hour, a warm lamp); camera and lens (e.g. "shot on a Sony A7 IV, 50mm f/1.8, shallow depth of field"); real skin and fabric texture, true-to-life colour.
 The look is polished editorial, magazine quality, still natural.`;
