@@ -132,7 +132,7 @@ async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, 
     return { queued: true };
   }
 
-  const { text, scenes } = await generateXPost(brand, { slot, pillar, format, recentPosts, feedback });
+  const { text, scenes, postFormat } = await generateXPost(brand, { slot, pillar, format, recentPosts, feedback });
   if (!text) return { queued: false };
 
   let slidePaths = [];
@@ -144,7 +144,7 @@ async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, 
 
   const { error: insErr } = await supabase.from("content_items").insert({
     brand_id: brand.id,
-    idea: `X · ${slot.key} · ${pillar.label}`,
+    idea: `X · ${slot.key} · ${postFormat} · ${pillar.label}`,
     pillar: pillar.label,
     status: "draft",
     scheduled_for: today,

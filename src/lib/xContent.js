@@ -15,30 +15,67 @@ import { ask, brandContext, generatePackage, feedbackBlock } from "./contentAi";
 // all, ever, regardless of how mild. Feet stay visible in photos; they are
 // never the punchline or the subject of the copy.
 
-// Three jobs, one per daily post. Carousel and branded-carousel formats are
-// deliberately gone from this mix (Tav's call: quality and reliability over
-// variety — a multi-photo post multiplies both the generation time, that
-// was pushing slots past their budget, and the fal.ai spend, for a format
-// this account wasn't using anyway). Every slot is now just text or exactly
-// one photo; each slot's old carousel/branded_carousel weight is folded
-// straight into "single".
+// Three posts a day, fixed: two text posts and one photo post (Tav's call —
+// text is where replies come from and costs pennies; the photo is the
+// brand's visual hook and the expensive one, so one a day). Each slot has
+// its own job and a rotating set of proven X formats (POST_FORMATS below),
+// so the account doesn't post the same shape of thing every day.
+//
+// What X's ranking actually rewards (its open-sourced For You weights, Aug
+// 2026): a reply, quote or DM share counts ~10x a like, a copy-link share
+// ~40x; a report, mute, "not interested" or block counts hugely against.
+// So: posts people want to answer or send to someone, and nothing crude
+// enough to get muted or reported. Asking for likes/replies/follows is
+// demoted as engagement bait — the format has to make people WANT to reply.
 export const X_SLOTS = [
   {
     key: "personality",
-    job: "Personality and relatability. A spontaneous-sounding thought or observation about cabin crew life, the kind of thing someone actually tweets without thinking too hard about it. Reach and replies, not a sales pitch.",
-    formatWeights: { text: 0.65, single: 0.35 },
+    job: "Scroll-stopper. A flirty, quirky, slightly cheeky text post that makes someone stop, smile, and either reply with their own version or send it to a friend. A statement, not a question: a confession, a hot take, a little crew-life story with a punchline.",
+    formatWeights: { text: 1, single: 0 },
   },
   {
     key: "visual",
-    job: "Visual identity. Let the photo do most of the work. The copy is short and never just describes what's in the photo — it adds a line, a feeling, a moment, not a caption under a picture.",
-    formatWeights: { text: 0.05, single: 0.95 },
+    job: "Visual identity. Let the photo do most of the work. The copy is short and never just describes what's in the photo — it adds a flirty line, a feeling, a moment, or a this-or-that about what's in the shot.",
+    formatWeights: { text: 0, single: 1 },
   },
   {
     key: "conversation",
-    job: "Conversation and engagement. Mostly a statement, opinion, or relatable moment people want to agree or disagree with — a genuine question is the minority case here, not the default, and most other slots should basically never end on one.",
-    formatWeights: { text: 0.55, single: 0.45 },
+    job: "Reply magnet. A text post built so people genuinely want to answer it or argue with it: a this-or-that, an unpopular opinion, a specific question she answers first herself. Flirty and quirky, never a bland question.",
+    formatWeights: { text: 1, single: 0 },
   },
 ];
+
+// The formats that consistently drive replies and shares on X right now,
+// per slot. One is picked per post; `how` is the brief the writer follows.
+const POST_FORMATS = {
+  personality: [
+    { key: "confession", how: "A small, flirty personal confession from crew life, stated plainly as an admission (\"Confession:\" optional). Specific and a little cheeky, the kind of thing people reply \"same\" to or quote with their own." },
+    { key: "unpopular_opinion_flat", how: "An unpopular opinion stated flat as fact, no question: a defensible, mildly spicy take about heels, tights, feet care, travel, crew life or dating someone who's crew. Something people genuinely split on, so half want to agree and half want to argue." },
+    { key: "used_to_now", how: "Personal admission arc in two beats: what she used to think or do, then what changed. Cheeky, specific, ends on the turn." },
+    { key: "myth_reality", how: "Myth vs reality about cabin crew life, heels or feet: one line stating what people assume, one line with the real, slightly flirty truth. A genuine fact or a real crew experience, never a joke about feet." },
+    { key: "nobody_tells_you", how: "\"Nobody tells you\" about some part of the job: 1 to 3 very short specific lines, the kind of insider detail people screenshot or send to a friend who's crew." },
+    { key: "mini_story", how: "A tiny crew-life scene in two or three short lines (a passenger, the galley, the crew room, the hotel) with a real, concrete punchline at the end. Flirty undertone." },
+    { key: "curiosity_gap", how: "A hook that states an outcome without the explanation, then pays it off in the same post (never a cliffhanger that makes people click away): e.g. the one thing that gets her through a 12 hour shift in heels, then what it is." },
+  ],
+  conversation: [
+    { key: "this_or_that", how: "This or that: two specific options from her world (heels off in the galley or wait for the hotel; sheer tan or barely-there; aisle or window), she picks one with a short flirty reason, and the reader naturally wants to say theirs. No \"reply below\", the choice itself invites it." },
+    { key: "unpopular_opinion", how: "\"Unpopular opinion:\" followed by a defensible, flirty or cheeky take people will genuinely argue with: about heels, tights, feet, travel, passengers, or what men get wrong. One or two lines. It must be a real opinion, not a fake-controversial one." },
+    { key: "answer_first_question", how: "A specific question that can be answered in one sentence, with her own answer given first so people feel invited to add theirs (\"Mine's the 6am report with no coffee. What's yours?\" style). Never a broad \"thoughts?\"." },
+    { key: "green_red_flag", how: "Green flag or red flag post, flirty: \"Green flag: a man who knows what 15 denier means.\" One flag, specific and funny, the kind people reply to with their own." },
+    { key: "hot_take_agree", how: "A short hot take about crew life or travel that people can agree or disagree with in one word, stated confidently. No \"agree?\" tag needed, the take does the work." },
+    { key: "rank_it", how: "A quick ranking of 3 things from her world (worst moments of a long-haul, best feeling after a shift, things passengers do), numbered, cheeky, specific, so people reply with their own order." },
+  ],
+  visual: [
+    { key: "photo_line", how: "One short flirty line that adds a feeling or a moment to the photo, never a description of it." },
+    { key: "photo_this_or_that", how: "A short flirty this-or-that about something in the photo (heels on or off; tights or bare), she gives her answer." },
+    { key: "photo_moment", how: "A specific little moment the photo was taken in, told in one or two lines, sensual and real." },
+  ],
+};
+
+function pickPostFormat(slot) {
+  const list = POST_FORMATS[slot.key] || POST_FORMATS.personality;
+  return list[Math.floor(Math.random() * list.length)];
+}
 
 // Pillar 2 is deliberately reframed from the original "heels/feet/tights"
 // brief: its primary expression is now real, positive, interesting feet
@@ -98,7 +135,7 @@ Hashtags: every post carries 2 to 5, placed inside the post text itself (never a
 
 Never beg for engagement: no "like if you agree", "retweet if", "follow me for more", "drop a [emoji]", "comment YES", "tag someone", "let's get this to X likes". Never mention OnlyFans, never link to the website, never ask people to visit the profile — this is organic growth content, not a sales post.
 
-Don't default to ending a post on a question. A question is the exception, not the structure every post reaches for, most posts should be a flat statement, an observation, or a sensual little moment described plainly, full stop at the end. Only reach for a genuine question occasionally, and even then only when the conversation slot's job actually calls for one.
+Don't default to ending a post on a question. A question is the exception, not the structure every post reaches for, most posts should be a flat statement, an observation, or a sensual little moment described plainly, full stop at the end. Only end on a question when the post's format calls for one (a this-or-that, or a specific question she answers first herself).
 
 For a single-image or carousel post, never just describe what's visible in the photo ("here's my feet after a long shift"). The copy adds a feeling, a moment, a number, a punchline the photo doesn't already say. Let the image do the work.
 
@@ -126,6 +163,7 @@ function clampTweet(text) {
 // gets a photo that actually shows that, not a vaguely-matching stock shot.
 export async function generateXPost(brand, { slot, pillar, format, recentPosts = [], feedback = [] }) {
   const needsPhotos = format === "single" || format === "carousel";
+  const postFormat = pickPostFormat(slot);
 
   const system = `You write one X (Twitter) post for a brand's account. Reply with JSON only: ${needsPhotos ? `{"text": "...", "scenes": ["...", ...]}` : `{"text": "..."}`}.
 ${VOICE_RULES}
@@ -146,19 +184,21 @@ Every scene happens in a real cabin crew life place: on the aircraft (cabin aisl
   const user = `${brandContext(brand)}
 
 Today's post job: ${slot.job}
+Post format for this one (follow it): ${postFormat.how}
 Content pillar: ${pillar.label}. ${pillar.guidance}
 ${formatBrief}
+The first line is the hook: it has to stop a thumb on its own. Flirty, quirky and specific beats clever and vague. Never ask for likes, reposts, replies or follows, and nothing crude enough that someone would mute or report it.
 
 ${recentBlock}
 ${feedbackBlock(feedback)}
-Before answering, check every one of these — this has to be a 10/10, not a rough draft: Is it short — genuinely short, not just under some technical limit? Does it have 2-5 hashtags that actually fit this specific post (and only skip them if truly nothing does)? Is it flirty, suggestive and alluring, not flat or purely observational? Does it sound like a real person, not an automated account? Is it clearly different from the recent posts above? Is the language natural, not AI-coded, no em dashes, no jargon? Does it end on a statement rather than defaulting to a question? ${needsPhotos ? "Does each scene describe the exact same moment the text is about, specifically enough to actually shoot?" : ""} If this touches feet at all, is it handled through genuine lifestyle or fact framing, with zero wordplay or joking?
+Before answering, check every one of these — this has to be a 10/10, not a rough draft: Is it short — genuinely short, not just under some technical limit? Does it have 2-5 hashtags that actually fit this specific post (and only skip them if truly nothing does)? Is it flirty, suggestive and alluring, not flat or purely observational? Does it sound like a real person, not an automated account? Is it clearly different from the recent posts above? Is the language natural, not AI-coded, no em dashes, no jargon? Does it follow today's post format, and only end on a question if that format calls for one? ${needsPhotos ? "Does each scene describe the exact same moment the text is about, specifically enough to actually shoot?" : ""} If this touches feet at all, is it handled through genuine lifestyle or fact framing, with zero wordplay or joking?
 
 Write the post${needsPhotos ? " and its scene description(s)" : ""}.`;
 
   const out = await ask(system, user, 800);
   const text = clampTweet(String(out.text || "").trim());
   const scenes = needsPhotos ? (Array.isArray(out.scenes) ? out.scenes.map((s) => String(s || "").trim()).filter(Boolean) : []) : [];
-  return { text, scenes };
+  return { text, scenes, postFormat: postFormat.key };
 }
 
 // Hands off to the real branded carousel system (same one Instagram content
