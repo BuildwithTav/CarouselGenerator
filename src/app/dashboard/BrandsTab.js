@@ -75,8 +75,8 @@ function BrandForm({ brand, media, saving, onSave, onDelete, section }) {
         <textarea value={voice} onChange={(e) => setVoice(e.target.value)} placeholder="How this brand sounds — tone, audience, what to avoid, sign-off." rows={3} style={{ ...inp, resize: "vertical", lineHeight: 1.6 }} />
       </div>
       <div>
-        <label style={lbl}>Content pillars <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(comma-separated topics, each one becomes a pillar you can pick in Carousels. Rules like "always female" go in Voice)</span></label>
-        <textarea value={pillars} onChange={(e) => setPillars(e.target.value)} placeholder="e.g. Training tips, client wins, myth-busting" rows={2} style={{ ...inp, resize: "vertical", lineHeight: 1.6 }} />
+        <label style={lbl}>What the content should include <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(in your own words. The AI reads all of it for every post and every idea)</span></label>
+        <textarea value={pillars} onChange={(e) => setPillars(e.target.value)} placeholder="e.g. Training tips, client wins, myth-busting. Always practical, never preachy" rows={2} style={{ ...inp, resize: "vertical", lineHeight: 1.6 }} />
       </div>
       <div>
         <label style={lbl}>CTA rules</label>

@@ -37,7 +37,7 @@ Platform copy (each is its own field):
 export function brandContext(brand) {
   return `Brand: ${brand.name}
 Voice & tone: ${brand.voice || "(not set — use a clear, direct, human tone)"}
-Content pillars: ${brand.pillars || "(not set)"}
+What the content should include (cover all of it across posts): ${brand.pillars || "(not set)"}
 CTA rules: ${brand.cta_rules || "(not set — end with a light, natural call to action)"}`;
 }
 
@@ -69,11 +69,11 @@ export async function ask(system, user, maxTokens = 8000, imageUrls = []) {
   return extractJson(text);
 }
 
-export async function suggestIdeas(brand, count = 10, pillar = null) {
+export async function suggestIdeas(brand, count = 10) {
   const system = `You generate short-form social content ideas. Reply with JSON only: {"ideas": ["...", ...]}.\n${HOUSE_RULES}`;
   const user = `${brandContext(brand)}
 
-Give me ${count} distinct carousel ideas for this brand, each one line, ${pillar ? `every one of them about this pillar: ${pillar}` : "drawn from the content pillars"}. Each idea should be specific enough to build a carousel from, and written in the brand's voice. Vary the angles: myths, mistakes, how-tos, hot takes, stories, lists, teases.`;
+Give me ${count} distinct carousel ideas for this brand, each one line, drawn from what the content should include. Each idea should be specific enough to build a carousel from, and written in the brand's voice. Vary the angles: myths, mistakes, how-tos, hot takes, stories, lists, teases.`;
   const out = await ask(system, user, 3000);
   return (out.ideas || []).map((s) => String(s).trim()).filter(Boolean);
 }

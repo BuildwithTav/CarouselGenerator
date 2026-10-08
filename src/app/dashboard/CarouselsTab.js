@@ -13,13 +13,8 @@ const CAROUSEL_PLATFORMS = ["instagram", "tiktok", "youtube"];
 // itemPlatforms), it just isn't the X engine's own native post shape.
 const isCarouselItem = (item, brand) => itemPlatforms(item, brand).some((p) => CAROUSEL_PLATFORMS.includes(p));
 
-function splitPillars(s) {
-  return String(s || "").split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
-}
-
 function NewContent({ api, brand, onCreated }) {
   const [idea, setIdea] = useState("");
-  const [pillar, setPillar] = useState("");
   const [slideCount, setSlideCount] = useState(7);
   const [date, setDate] = useState(today());
   const [media, setMedia] = useState([]);
@@ -28,7 +23,6 @@ function NewContent({ api, brand, onCreated }) {
   const [suggesting, setSuggesting] = useState(false);
   const [phase, setPhase] = useState(null); // writing | photo | rendering
   const [err, setErr] = useState("");
-  const pillars = splitPillars(brand.pillars);
   // Each brand has exactly one template — it's not a per-post choice (see
   // brandTemplate.js's TEMPLATES comment), so this just reads the brand's own.
   const template = themeOf(brand).template;
@@ -36,13 +30,13 @@ function NewContent({ api, brand, onCreated }) {
   const [progress, setProgress] = useState("");
 
   useEffect(() => {
-    setMediaId(null); setIdeas([]); setPillar(""); setPhotoSource(defaultPhotoSource(themeOf(brand).template));
+    setMediaId(null); setIdeas([]); setPhotoSource(defaultPhotoSource(themeOf(brand).template));
     api.get(`/api/brand-media?brandId=${brand.id}`).then((d) => setMedia((d.media || []).filter((m) => m.file_type === "image"))).catch(() => setMedia([]));
   }, [brand.id]);
 
   const suggest = async () => {
     setSuggesting(true); setErr("");
-    try { const d = await api.post("/api/content/ideas", { brandId: brand.id, count: 10, pillar: pillar || null }); setIdeas(d.ideas || []); } catch (e) { setErr(e.message); }
+    try { const d = await api.post("/api/content/ideas", { brandId: brand.id, count: 10 }); setIdeas(d.ideas || []); } catch (e) { setErr(e.message); }
     setSuggesting(false);
   };
 
@@ -52,7 +46,7 @@ function NewContent({ api, brand, onCreated }) {
     setPhase("writing");
     let item;
     try {
-      ({ item } = await api.post("/api/content", { brandId: brand.id, idea: idea.trim(), pillar: pillar || null, mediaId, slideCount, scheduledFor: date, template, photoSource }));
+      ({ item } = await api.post("/api/content", { brandId: brand.id, idea: idea.trim(), mediaId, slideCount, scheduledFor: date, template, photoSource }));
     } catch (e) { setErr(e.message); setPhase(null); return; }
     // AI photos: one per slide that needs a photo and doesn't have one yet.
     if (photoSource === "ai") {
@@ -99,17 +93,9 @@ function NewContent({ api, brand, onCreated }) {
         <span style={{ width: 22, height: 22, borderRadius: "50%", background: C.gold, color: "#000", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>1</span>
         <label style={{ ...lbl, margin: 0 }}>What's this about — {brand.name}</label>
         <div style={{ flex: 1 }} />
-        <button onClick={suggest} disabled={suggesting} style={btn("ghost", { opacity: suggesting ? 0.6 : 1 })}>{suggesting ? <><Spinner /> Thinking…</> : pillar ? `✨ Ideas for "${pillar}"` : "✨ Suggest ideas"}</button>
+        <button onClick={suggest} disabled={suggesting} style={btn("ghost", { opacity: suggesting ? 0.6 : 1 })}>{suggesting ? <><Spinner /> Thinking…</> : "✨ Suggest ideas"}</button>
       </div>
 
-      {pillars.length > 0 && (
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>Pillar (optional): pick one and Suggest ideas gives you ideas for just that topic, and the carousel is written around it.</div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {pillars.map((p) => <Chip key={p} active={pillar === p} onClick={() => { setPillar(pillar === p ? "" : p); setIdeas([]); }}>{p}</Chip>)}
-          </div>
-        </div>
-      )}
 
       {ideas.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
