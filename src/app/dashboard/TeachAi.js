@@ -37,7 +37,7 @@ export function RejectDialog({ api, item, onDone, onCancel }) {
     <div onClick={(e) => { e.stopPropagation(); if (!busy) onCancel(); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ ...card, width: "100%", maxWidth: 440, cursor: "default" }}>
         <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>Why are you rejecting this?</div>
-        <div style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>The AI reads your latest reasons every time it writes a post or a photo.</div>
+        <div style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>Saved for reporting. Recurring reasons become permanent photo rules, and the post writer reads them.</div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
           {REJECT_REASONS.map((r) => <Chip key={r} active={reasons.includes(r)} onClick={() => toggle(r)}>{r}</Chip>)}
         </div>
@@ -70,6 +70,8 @@ export function RefStar({ api, storagePath, isRef, onChange, compact }) {
   );
 }
 
+const VIEW_LABEL = { A: "A · legs", B: "B · feet above", C: "C · feet side", D: "D · uniform", E: "E · hair/back" };
+
 function ago(ts) {
   const d = Math.floor((Date.now() - new Date(ts).getTime()) / 86400000);
   return d <= 0 ? "today" : d === 1 ? "yesterday" : `${d} days ago`;
@@ -81,16 +83,19 @@ export function TeachPanel({ api, brand, refreshKey }) {
   const [feedback, setFeedback] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [making, setMaking] = useState(false);
+  const [stats, setStats] = useState(null);
   const [err, setErr] = useState("");
 
   const load = async () => {
     try {
-      const [r, f] = await Promise.all([
+      const [r, f, st] = await Promise.all([
         api.get(`/api/brand-media?brandId=${brand.id}&references=1`),
         api.get(`/api/feedback?brandId=${brand.id}`),
+        api.get(`/api/image-stats?brandId=${brand.id}&days=7`).catch(() => null),
       ]);
       setRefs(r.media || []);
       setFeedback(f.feedback || []);
+      setStats(st);
     } catch (e) { setErr(e.message); }
   };
   useEffect(() => { if (open) load(); }, [open, brand.id, refreshKey]);
@@ -106,7 +111,7 @@ export function TeachPanel({ api, brand, refreshKey }) {
     try {
       const d = await api.post("/api/brand-media/reference-shots", { brandId: brand.id });
       setCandidates(d.media || []);
-      if (d.errors?.length) setErr(`${d.errors.length} of 3 didn't come back: ${d.errors.join(" | ")}`);
+      if (d.errors?.length) setErr(`${d.errors.length} of 4 didn't come back: ${d.errors.join(" | ")}`);
     } catch (e) { setErr(e.message); }
     setMaking(false);
   };
@@ -120,6 +125,7 @@ export function TeachPanel({ api, brand, refreshKey }) {
       <a href={m.url} target="_blank" rel="noreferrer" style={{ display: "block", width: 96, aspectRatio: "1080/1350", borderRadius: 8, overflow: "hidden", border: `2px solid ${isRef ? C.gold : C.border}`, marginBottom: 4 }}>
         {m.url && <img src={m.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
       </a>
+      <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, marginBottom: 3 }}>{VIEW_LABEL[m.reference_view] || "other"}</div>
       <RefStar api={api} storagePath={m.storage_path} isRef={isRef} onChange={onStar} compact />
     </div>
   );
@@ -128,7 +134,7 @@ export function TeachPanel({ api, brand, refreshKey }) {
     <div style={{ ...card, marginBottom: 20 }}>
       <button onClick={() => setOpen((o) => !o)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", width: "100%", display: "flex", alignItems: "center", gap: 8, textAlign: "left", fontFamily: "inherit" }}>
         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: C.muted, textTransform: "uppercase" }}>Teach the AI</span>
-        <span style={{ fontSize: 12, color: C.muted }}>{open ? "" : "her look · why you rejected posts"}</span>
+        <span style={{ fontSize: 12, color: C.muted }}>{open ? "" : "her look · photo check · why you rejected posts"}</span>
         <div style={{ flex: 1 }} />
         <span style={{ color: C.muted }}>{open ? "▾" : "▸"}</span>
       </button>
@@ -139,14 +145,14 @@ export function TeachPanel({ api, brand, refreshKey }) {
 
           <label style={lbl}>Her look</label>
           <div style={{ fontSize: 12, color: C.muted, marginBottom: 10, lineHeight: 1.5 }}>
-            Every new photo copies her hair, build, legs and feet from the starred photos below (up to 4, newest first). Star photos that look exactly like her: here, under any X post's photo, or in Brand → Media library.
+            Every new photo is made from 2 to 4 of the starred photos below, picked to suit the shot: A legs, B feet from above, C feet from the side, D uniform with tights and black heels. Aim for one good photo of each. Create the pack below and star the ones that look exactly like her (you can also star any X post photo or library photo).
           </div>
           <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 6, marginBottom: 10 }}>
             {refs.length === 0 && <div style={{ fontSize: 12, color: C.muted, padding: "8px 0" }}>No reference photos yet, so she's drawn from the written description only.</div>}
             {refs.map((m) => thumb(m, true))}
           </div>
           <button onClick={makeShots} disabled={making} style={btn("dark", { opacity: making ? 0.6 : 1, marginBottom: candidates.length ? 10 : 18 })}>
-            {making ? <><Spinner /> Creating 3 shots… (about a minute)</> : "Create 3 reference shots of her (~$0.45)"}
+            {making ? <><Spinner /> Creating her reference pack… (about a minute)</> : "Create her reference pack (4 shots, ~$0.60)"}
           </button>
           {candidates.length > 0 && (
             <>
@@ -157,8 +163,16 @@ export function TeachPanel({ api, brand, refreshKey }) {
             </>
           )}
 
+          <label style={lbl}>Photo check, last 7 days</label>
+          {stats ? (
+            <div style={{ fontSize: 12, marginBottom: 18, lineHeight: 1.6 }}>
+              <b>{stats.photos}</b> photos · <b>{stats.firstTryPassRate == null ? "–" : Math.round(stats.firstTryPassRate * 100) + "%"}</b> passed first time · <b>{stats.attempts}</b> attempts in total · <b>{stats.flagged}</b> flagged "check this" · cost <b>${(stats.costUsd.images + stats.costUsd.claude).toFixed(2)}</b> (images ${stats.costUsd.images.toFixed(2)}, AI ${stats.costUsd.claude.toFixed(2)})
+              {stats.topRejections?.length > 0 && <div style={{ color: C.muted }}>Most rejected for: {stats.topRejections.map(([r, n]) => `${r} (${n})`).join(", ")}</div>}
+            </div>
+          ) : <div style={{ fontSize: 12, color: C.muted, marginBottom: 18 }}>No photo checks yet.</div>}
+
           <label style={lbl}>Why you rejected posts</label>
-          <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>The latest 12 go to the AI every time it writes a post or a photo. Remove one once it's no longer a problem.</div>
+          <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>Kept for reporting. Recurring reasons get turned into permanent photo rules; the photo AI doesn't read this list, the post writer does. Remove one once it's no longer a problem.</div>
           {feedback.length === 0 && <div style={{ fontSize: 12, color: C.muted }}>Nothing yet. When you delete a draft you'll be asked why.</div>}
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {feedback.map((f, i) => (
@@ -167,7 +181,7 @@ export function TeachPanel({ api, brand, refreshKey }) {
                   <div style={{ fontSize: 13, fontWeight: 700 }}>{(f.reasons || []).join(" · ") || "Note"}</div>
                   {f.note && <div style={{ fontSize: 12, marginTop: 2 }}>{f.note}</div>}
                   {f.caption && <div style={{ fontSize: 11, color: C.muted, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Post: {f.caption}</div>}
-                  <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>{ago(f.created_at)}{i >= 12 ? " · older, no longer sent" : ""}</div>
+                  <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>{ago(f.created_at)}{i >= 12 ? " · older, no longer sent to the post writer" : ""}</div>
                 </div>
                 <button onClick={() => removeFeedback(f.id)} title="Remove" style={btn("small", { padding: "3px 8px", fontSize: 11 })}>×</button>
               </div>

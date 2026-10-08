@@ -1,10 +1,10 @@
 import { dashboardAuthorized, supabaseAdmin, brandPlatforms, bumpMediaUse, BUCKET } from "@/lib/dashboard";
 import { X_SLOTS, pickPillar, pickFormat, generateXPost, generateBrandedCarouselIdea, generatePackage } from "@/lib/xContent";
 import { imagePromptsBatch } from "@/lib/contentAi";
-import { generateMatchingPhoto } from "@/lib/imageGen";
+import { generateMatchingPhoto, planPhotos, generatePlannedPhoto } from "@/lib/imageGen";
 import { recentFeedback } from "@/lib/feedback";
 import { logGenerationError, friendlyError } from "@/lib/genLog";
-import { buildBrandSlides, slideText, themeOf } from "@/lib/brandTemplate";
+import { buildBrandSlides, slideText, themeOf, characterOf } from "@/lib/brandTemplate";
 import { renderSlides } from "@/lib/renderSlides";
 
 export const maxDuration = 300;
@@ -43,14 +43,26 @@ const RECENT_LIMIT = 20;
 // paying for 5 Claude round-trips before the "generate 4 images in
 // parallel" phase even began — now it's 1. Returns the storage paths (for
 // posting) and media IDs (for use tracking).
-async function photosForScenes(brand, scenes, feedback = []) {
-  if (!scenes.length) return { paths: [], mediaIds: [] };
+//
+// A brand with a fixed character goes through the staged visual pipeline
+// (director → references → prompt writer → generation with QA): the scene
+// text is the only copy it reads, never the post's caption. Photos the QA
+// couldn't get right within its retries come back flagged, and the reasons
+// land on the draft as check_notes.
+const X_PHOTO_BUDGET_MS = 100000;
+async function photosForScenes(brand, scenes) {
+  if (!scenes.length) return { paths: [], mediaIds: [], checkNotes: [] };
+  if (characterOf(brand)) {
+    const plan = await planPhotos(brand, { texts: scenes, source: "x-content" });
+    const all = await Promise.all(plan.items.map((item) => generatePlannedPhoto(brand, { item, continuity: plan.continuity, source: "x-content", budgetMs: X_PHOTO_BUDGET_MS })));
+    return { paths: all.map((r) => r.media.storage_path), mediaIds: all.map((r) => r.media.id), checkNotes: all.map((r) => r.checkReason).filter(Boolean) };
+  }
   const theme = themeOf(brand);
-  const { modelNote, photos: written } = await imagePromptsBatch(brand, { texts: scenes, style: "candid", direction: theme.ai_style, textZone: null, feedback });
+  const { modelNote, photos: written } = await imagePromptsBatch(brand, { texts: scenes, style: "candid", direction: theme.ai_style, textZone: null });
   const all = await Promise.all(
-    written.map((p) => generateMatchingPhoto(brand, { prompt: p.prompt, modelNote }))
+    written.map((p) => generateMatchingPhoto(brand, { prompt: p.prompt, modelNote, source: "x-content" }))
   );
-  return { paths: all.map((r) => r.media.storage_path), mediaIds: all.map((r) => r.media.id) };
+  return { paths: all.map((r) => r.media.storage_path), mediaIds: all.map((r) => r.media.id), checkNotes: [] };
 }
 
 // The branded-carousel format: a short multi-slide post rendered through
@@ -136,9 +148,11 @@ async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, 
   if (!text) return { queued: false };
 
   let slidePaths = [];
+  let checkNotes = [];
   if (scenes.length) {
-    const photos = await photosForScenes(brand, scenes, feedback);
+    const photos = await photosForScenes(brand, scenes);
     slidePaths = photos.paths;
+    checkNotes = photos.checkNotes;
     await bumpMediaUse(photos.mediaIds);
   }
 
@@ -152,6 +166,7 @@ async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, 
     tw_caption: text,
     platforms: ["twitter"],
     template: "x-post",
+    check_notes: checkNotes.length ? checkNotes : null,
   });
   if (insErr) throw new Error(`insert failed (${slot.key}): ${insErr.message}`);
   return { queued: true };
@@ -207,8 +222,9 @@ async function runXContentGeneration(brandIdFilter, slotKeyFilter) {
       return { brand: brand.slug, queued: 0, error: "Couldn't load recent posts: " + e.message };
     }
 
-    // Why recent drafts were rejected in the X tab — fed to both the post
-    // writer and the photo prompt writer so the same miss doesn't repeat.
+    // Why recent drafts were rejected in the X tab — fed to the post writer
+    // only. The photo pipeline works from permanent rules instead (see
+    // visualPipeline.js), not a growing list of past rejections.
     const feedback = await recentFeedback(brand.id);
     const slotResults = await Promise.all(slots.map((slot) => runSlot(supabase, brand, slot, recentPosts, today, feedback)));
     const queued = slotResults.filter((r) => r.queued).length;

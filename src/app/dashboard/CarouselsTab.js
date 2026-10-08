@@ -60,15 +60,21 @@ function NewContent({ api, brand, onCreated }) {
       const lockModel = template !== "healthcode";
       let modelNote = null;
       // Each slide gets the next shot type from a random starting point, so
-      // the set varies inside itself and from one carousel to the next.
+      // the set varies inside itself and from one carousel to the next
+      // (single-prompt brands only; character brands plan the whole set).
       const shotStart = Math.floor(Math.random() * 6);
       try {
+        // Character brands: plan every slide's photo in one go (one setting,
+        // outfit and light for the set, a different shot per slide). If this
+        // fails, generate-image plans each slide itself.
+        setProgress("planning shots");
+        try { await api.post("/api/content/plan-photos", { itemId: item.id }); } catch (e) { console.error("Photo plan failed:", e.message); }
         for (let n = 0; n < todo.length; n++) {
           const i = todo[n];
           setProgress(`${n + 1} of ${todo.length}`);
-          const { media: m, modelNote: mn } = await api.post("/api/content/generate-image", { brandId: brand.id, slideText: slideText(slides[i]), idea: idea.trim(), style: "editorial", textZone: "bottom", modelNote: lockModel ? modelNote : null, shotIndex: shotStart + n });
+          const { media: m, modelNote: mn, checkReason } = await api.post("/api/content/generate-image", { brandId: brand.id, itemId: item.id, slideIndex: i, slideText: slideText(slides[i]), idea: idea.trim(), style: "editorial", textZone: "bottom", modelNote: lockModel ? modelNote : null, shotIndex: shotStart + n });
           if (mn && lockModel) modelNote = mn;
-          slides[i] = { ...slides[i], image_media_id: m.id, image_path: m.storage_path };
+          slides[i] = { ...slides[i], image_media_id: m.id, image_path: m.storage_path, image_check: checkReason || null };
           ({ item } = await api.patch("/api/content", { id: item.id, slides }));
         }
       } catch (e) {
@@ -178,7 +184,8 @@ function SlideImage({ slide, idx, media, busy, onPick, onGenerate, label }) {
         </div>
         {label && <span style={{ fontSize: 12, color: C.muted }}>{label}</span>}
         <button type="button" onClick={() => setPicking((p) => !p)} style={btn("small")}>{slide.image_media_id ? "Change photo" : "Pick photo"}</button>
-        {onGenerate && <button type="button" onClick={onGenerate} disabled={!!busy} style={btn("small", { color: C.gold, borderColor: C.gold + "88" })}>{busy === `image-${idx}` ? <><Spinner /> Generating…</> : slide.image_media_id ? "✨ Generate another (AI)" : "✨ Generate photo (AI)"}</button>}
+        {onGenerate && <button type="button" onClick={onGenerate} disabled={!!busy} style={btn("small", { color: C.gold, borderColor: C.gold + "88" })}>{busy === `image-${idx}` ? <><Spinner /> Generating and checking…</> : slide.image_media_id ? "✨ Generate another (AI)" : "✨ Generate photo (AI)"}</button>}
+        {slide.image_check && <Badge color={C.danger}>{slide.image_check}</Badge>}
       </div>
       {picking && (
         <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
@@ -298,9 +305,9 @@ export function CarouselEditor({ api, itemId, onBack, onChanged }) {
     setBusy(`image-${i}`); setErr("");
     try {
       const s = draft.slides[i];
-      const { media: m } = await api.post("/api/content/generate-image", { brandId: item.brand_id, slideText: slideText(s), idea: draft.idea, style: "editorial", textZone: "bottom", shotIndex: i + Math.floor(Math.random() * 6) });
+      const { media: m, checkReason } = await api.post("/api/content/generate-image", { brandId: item.brand_id, itemId: item.id, slideIndex: i, replan: true, slideText: slideText(s), idea: draft.idea, style: "editorial", textZone: "bottom", shotIndex: i + Math.floor(Math.random() * 6) });
       setMedia((list) => [m, ...list]);
-      setDraft((d) => ({ ...d, slides: d.slides.map((x, j) => (j === i ? { ...x, image_media_id: m.id, image_path: m.storage_path } : x)) }));
+      setDraft((d) => ({ ...d, slides: d.slides.map((x, j) => (j === i ? { ...x, image_media_id: m.id, image_path: m.storage_path, image_check: checkReason || null } : x)) }));
     } catch (e) { setErr(e.message); }
     setBusy(null);
   };
@@ -310,7 +317,7 @@ export function CarouselEditor({ api, itemId, onBack, onChanged }) {
 
   const template = draft.template;
   const setSlide = (i, k, v) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, [k]: v } : s)) }));
-  const pickImage = (i, m) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, image_media_id: m.id, image_path: m.storage_path } : s)) }));
+  const pickImage = (i, m) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, image_media_id: m.id, image_path: m.storage_path, image_check: null } : s)) }));
   const aiAllowed = templateAllowsAiImage(template);
   const stale = item.slide_paths?.length && JSON.stringify(item.slides) !== JSON.stringify(draft.slides);
   const platforms = itemPlatforms(item, item.brands);

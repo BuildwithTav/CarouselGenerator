@@ -101,6 +101,13 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
 
       {err && <div style={{ color: C.danger, fontSize: 12, marginBottom: 10 }}>{err}</div>}
 
+      {item.check_notes?.length > 0 && (
+        <div style={{ ...card, marginBottom: 14, background: C.danger + "10", borderColor: C.danger + "66" }}>
+          <div style={{ fontWeight: 800, fontSize: 13, color: C.danger, marginBottom: 2 }}>Check this photo</div>
+          <div style={{ fontSize: 12 }}>The photo check couldn't get it right in 3 tries and kept the best one: {item.check_notes.join(" · ").replace(/Check this: /g, "")}.</div>
+        </div>
+      )}
+
       <div style={{ ...card, marginBottom: 14 }}>
         <label style={{ ...lbl, marginBottom: 8, display: "block" }}>Photos {photos.length ? `(${photos.length})` : "— none, text-only post"}</label>
         {photos.length > 0 && (
@@ -191,6 +198,7 @@ function XRow({ api, item, onOpen, onChanged }) {
             <Badge color={STATUS_COLOR[xStatus(item)]}>{xStatus(item)}</Badge>
             <Badge color={item.template === "x-post" ? C.muted : C.gold}>{item.template === "x-post" ? (hasPhotos ? `${item.slide_paths.length} photo${item.slide_paths.length > 1 ? "s" : ""}` : "text") : "carousel"}</Badge>
             {photoBroken && <Badge color={C.danger}>photo missing</Badge>}
+            {item.check_notes?.length > 0 && <Badge color={C.danger}>check this</Badge>}
             <span style={{ fontSize: 11, color: C.muted }}>{item.scheduled_for}</span>
             {m && <span style={{ fontSize: 11, color: C.muted }}>❤ {m.like_count ?? 0} · 👁 {m.impression_count ?? 0}</span>}
             {tweetUrl(item) && <a href={tweetUrl(item)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} style={{ fontSize: 11, color: C.ok, fontWeight: 700 }}>View on X →</a>}

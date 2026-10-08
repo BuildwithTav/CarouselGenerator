@@ -69,6 +69,45 @@ export async function ask(system, user, maxTokens = 8000, imageUrls = []) {
   return extractJson(text);
 }
 
+// Per-million-token prices (input, output) used to log what each visual
+// pipeline call cost, so QA thresholds can be tuned against real spend.
+const PRICE_PER_MTOK = { "claude-opus-5-5": [4, 20], "claude-opus-5": [5, 25], "claude-opus-4-8": [5, 25] };
+
+export function claudeCostUsd(model, usage) {
+  const [inP, outP] = PRICE_PER_MTOK[model] || PRICE_PER_MTOK["claude-opus-5-5"];
+  const input = (usage?.input_tokens || 0) + (usage?.cache_creation_input_tokens || 0) + (usage?.cache_read_input_tokens || 0);
+  return (input * inP + (usage?.output_tokens || 0) * outP) / 1e6;
+}
+
+// Same as ask(), but returns the usage and cost alongside the JSON and lets
+// the caller pick the model. Used by the visual pipeline (visualPipeline.js).
+// A safety decline on the requested model is retried server-side on a
+// fallback model ("default" routing); if this SDK/API combination rejects
+// that parameter, the call is repeated once without it.
+export async function askDetailed(system, user, { maxTokens = 8000, imageUrls = [], model = "claude-opus-5-5", effort = "medium" } = {}) {
+  const content = imageUrls.length
+    ? [...imageUrls.map((url) => ({ type: "image", source: { type: "url", url } })), { type: "text", text: user }]
+    : user;
+  const body = { model, max_tokens: maxTokens, output_config: { effort }, system, messages: [{ role: "user", content }] };
+  let res;
+  try {
+    res = await anthropic().messages.create({ ...body, fallbacks: "default" }, { headers: { "anthropic-beta": "server-side-fallback-2026-07-01" } });
+  } catch (e) {
+    if (e instanceof Anthropic.BadRequestError && /fallback/i.test(e.message || "")) res = await anthropic().messages.create(body);
+    else throw e;
+  }
+  const usedModel = res.model || model;
+  const cost = claudeCostUsd(usedModel, res.usage);
+  if (res.stop_reason === "refusal") {
+    const err = new Error("The model declined this request");
+    err.refusal = true;
+    err.costUsd = cost;
+    throw err;
+  }
+  const text = res.content.filter((b) => b.type === "text").map((b) => b.text).join("\n");
+  return { json: extractJson(text), usage: res.usage, model: usedModel, costUsd: cost };
+}
+
 export async function suggestIdeas(brand, count = 10) {
   const system = `You generate short-form social content ideas. Reply with JSON only: {"ideas": ["...", ...]}.\n${HOUSE_RULES}`;
   const user = `${brandContext(brand)}

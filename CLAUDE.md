@@ -9,7 +9,7 @@ Carousel Studio (package name `carousel-generator`) — a SaaS tool that generat
 ## Commands
 
 - `npm run dev` — local dev server
-- `npm run build` — production build (Next.js). **There is no lint or test script** — `npm run build` is the only automated correctness check available. A clean build (look for `✓ Compiled successfully` in the output) is the bar for "this doesn't have syntax/type errors."
+- `npm run build` — production build (Next.js). There is no lint script, and `npm test` only covers the dashboard's image pipeline (`test/*.test.mjs`, mocked fetch, no network or spend), so `npm run build` is the main correctness check. A clean build (look for `✓ Compiled successfully` in the output) is the bar for "this doesn't have syntax/type errors."
 - `npm run start` — run a production build locally
 
 ### Build caveat in sandboxed/CI environments without secrets
@@ -79,10 +79,14 @@ Tav's own internal tool at `studio.buildwithtav.co/dashboard`, passphrase-protec
 - Drafts always need Tav's approval (his decision — don't switch to auto-post). `/api/cron/post-twitter` posts one `ready` item per window at 09:00/13:00/18:00 UTC, oldest first. Hobby-plan crons fire anywhere within that hour.
 - Rejecting a draft asks why; reasons go in `content_feedback` and the latest 12 are fed into the post and image prompt writers (`src/lib/feedback.js`).
 
-### AI photos (`src/lib/imageGen.js`)
-- One model only: `fal-ai/nano-banana-pro`, 2K, 4:5. If any `brand_media` rows have `is_reference = true` (starred "Her look" photos), it calls `fal-ai/nano-banana-pro/edit` with up to 4 of them. Attempt 2 drops the references, so a post never loses its photo. FLUX models reject this brand's content, and a vision QA gate was tried and deleted (it rejected everything). Don't re-add either without asking.
-- Prompts are written by Claude (`imagePrompt` / `imagePromptsBatch` in `src/lib/contentAi.js`): positive-only (the model has no negative prompt), neutral catalogue wording (mood words trip the safety filter), and framing stated as where the frame's top edge falls (chin-level crops let the face in). Sky High's photo rules (`BRAND_AI_STYLE`) and fixed character (`BRAND_CHARACTER`) are hard-coded in `src/lib/brandTemplate.js`, because Supabase writes of long text to `visual_theme` have repeatedly timed out.
-- **When "images failed", check `generation_log` first.** Every failed generation is logged there with its raw error, and `src/lib/genLog.js` turns common ones into plain English (fal balance empty, safety block, timeout).
+### AI photos (`src/lib/imageGen.js` + `src/lib/visualPipeline.js`)
+- One image model only: `fal-ai/nano-banana-pro` (edit endpoint when references are attached), 2K, 4:5. FLUX models reject this brand's content, so there's no fallback model.
+- Sky High Soles (any brand with a `BRAND_CHARACTER` in `brandTemplate.js`) runs the staged pipeline in `visualPipeline.js`: a **director** turns slide/scene text into visual facts + a shot spec + carousel continuity (setting, wardrobe, light, one of three modes), a **reference selector** picks 2-4 starred photos by `brand_media.reference_view` (A legs, B feet from above, C feet side, D uniform, E hair/back), a **prompt writer** that only ever sees structured visual data (never captions, hashtags, brand voice or rejection history), then generation with an identity lock.
+- Every attempt uses the same references; the old text-only retry is gone. Vision QA (`qaImage`/`judgeQa`) hard-rejects only a visible face, wrong feet count, wrong shoe or tights colour, or text in the image. It retries at most twice with only the last attempt's corrections, then keeps the best attempt with `needs_check` ("Check this" in the dashboard). Every attempt and its cost is logged in `image_attempts`; the X tab's Teach the AI panel shows the 7-day pass rate and cost (`/api/image-stats`). Tav asked for this capped check after an earlier strict QA gate rejected everything, so loosen thresholds (`QA_THRESHOLDS`) rather than add hard rules.
+- Permanent photo rules live in `VISUAL_RULES` (versioned). Tav's recurring rejection reasons get folded in there; `content_feedback` is kept for reporting and fed to the X post writer only.
+- Carousels: `/api/content/plan-photos` plans the whole set into `content_items.photo_plan`, then `/api/content/generate-image` makes each slide from its plan entry (`replan: true` for Generate another).
+- HealthCode (no character) keeps the original single-prompt path (`imagePrompt` in `contentAi.js`).
+- **When "images failed", check `generation_log` first** (raw errors; `src/lib/genLog.js` explains common ones), then `image_attempts` for QA rejections.
 
 ### Other dashboard notes
 - The Brand "What the content should include" field (`brands.pillars`) is a free-text description the AI reads whole. It is not a pick-list.
