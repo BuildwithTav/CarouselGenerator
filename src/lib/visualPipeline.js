@@ -27,13 +27,14 @@ export const VISUAL_RULES_VERSION = "2.0";
 const VISUAL_RULES = {
   "sky-high-soles": [
     "Her face is never in the photo. Frame so her head is outside the frame: the top edge of the frame cuts across her waist or hips, her own point of view looking down, a close-up of feet and ankles, or directly behind where the back of her blonde head is the only part of her head in view.",
-    "Work uniform: fitted navy pencil skirt, white blouse, sheer tan tights and black patent court heels with a mid heel, or plain black flats. With the uniform, shoes are always black and tights always sheer tan.",
+    "Work uniform: fitted navy pencil skirt, white blouse, sheer tan tights and navy court heels with a mid heel (the same navy as the skirt), or plain navy flats. With the uniform, shoes are always that same navy and tights always sheer tan.",
     "Off duty, tights when worn are sheer tan or nude. Bare feet are fine.",
     "Settings: the aircraft (cabin aisle, jump seat, galley, crew rest), the crew room, the airport (gate, lounge, terminal floor), her home (mirror, bed, sofa, bath) or a pedicure chair. A hotel room or pool only occasionally. Never a bus, taxi, car, train, gym, street or shop.",
     "Her feet are the focal point, sharp and well lit.",
     "Fully clothed above the waist. Elegant and sensual through light, pose and styling, never explicit.",
     "Her own hands are slim and feminine with a French manicure. A partner appears only as a man's hand, at most up to the wrist or forearm, entering from the edge of the frame.",
     "Anything that could carry a photo of a person (ID badge, lanyard card, photo frame, phone screen) is face-down or angled away.",
+    "Shoes, insoles, clothing and props are plain and unbranded.",
   ],
 };
 
@@ -95,7 +96,7 @@ export function normalizePlan(raw, count, lockedContinuity = null) {
   const c = raw?.continuity || {};
   const continuity = lockedContinuity || {
     setting: str(c.setting, "aircraft cabin"),
-    wardrobe: str(c.wardrobe, "established uniform with sheer tan tights and black patent court heels"),
+    wardrobe: str(c.wardrobe, "established uniform with sheer tan tights and navy court heels"),
     lighting: str(c.lighting, "warm ambient light"),
     mode: MODES.includes(c.mode) ? c.mode : "cabin_candid",
   };
@@ -178,13 +179,13 @@ ${texts.map((t, i) => `${i + 1}. ${t || "(cover photo for the set)"}`).join("\n"
 
 // ── Reference selection ──────────────────────────────────────────────────
 // Reference pack views: A legs/lower body, B feet from above, C feet low
-// side, D uniform + tights + black heels, E hair/back. Untagged starred
+// side, D uniform + tights + navy heels, E hair/back. Untagged starred
 // photos count as general fillers.
 export const REFERENCE_VIEWS = {
   A: "Lower body, standing or three quarter",
   B: "Both feet from above",
   C: "Feet and ankles, low side view",
-  D: "Uniform, tights and black heels",
+  D: "Uniform, tights and navy heels",
   E: "Hair and back, from behind",
 };
 
@@ -235,7 +236,7 @@ Order: the framing first (where the frame's edges fall, camera height, view, dis
 Translate the facts into one plausible photograph. Don't add people, objects or details the facts don't contain.
 Phrase everything positively: describe what is in the photo. Never write "no X", "without X" or "avoid".
 Feet: include this sentence, then only the left/right relationship the pose needs (for example "her left ankle rests lightly across her right ankle"): ${ANATOMY_BASELINE}
-Name colours explicitly when the uniform is worn: "black patent court heels", "sheer tan tights".
+Name colours explicitly when the uniform is worn: "navy court heels matching her navy skirt" (or "navy flats"), "sheer tan tights".
 Use plain visual language. No mood or persuasion words, no captions, quotes or lettering.${textZone ? `\nKeep the ${textZone} of the frame calm and uncluttered.` : ""}
 Reply with JSON only: {"prompts": ["...", ...]}, one per item, same order.`;
 
@@ -311,9 +312,9 @@ Reply with strict JSON only, no prose:
 - identity_match and continuity_score are 0 to 1; anatomy_score and photorealism_score are 0 to 10.
 - face_visible: true only if her face (eyes, nose or mouth) is in the photo.
 - feet_count: the number of her feet visible in the photo.
-- wrong_shoe_colour: true if she wears her work uniform and her shoes are not black. wrong_tights_colour: true if her tights are anything other than sheer tan or nude.
-- text_or_lettering_present: true only for added or unintended words, captions, signs or logos.
-- corrections: at most 3 short, observable changes for the next attempt (for example "separate the feet so both silhouettes are readable"), empty if none.`;
+- wrong_shoe_colour: true if she wears her work uniform and her shoes are not navy blue (the same navy as the skirt). wrong_tights_colour: true if her tights are anything other than sheer tan or nude.
+- text_or_lettering_present: true only for prominent words that draw the eye: a caption, watermark, overlaid text, or a large readable sign or logo. Small brand marks on shoes, insoles, clothing or products, and the small placards and exit signs that belong in an aircraft cabin, do not count.
+- corrections: at most 3 short, observable changes for the next attempt (for example "separate the feet so both silhouettes are readable"). Fix the failures above first (face, number of feet, shoe or tights colour, prominent text); add style suggestions only if nothing failed. Empty if none.`;
   const user = `${n ? `Images 1 to ${n} are identity references for the same woman.` : "No identity references."}${previousUrl ? ` Image ${n + 1} is the previous accepted photo in this carousel (for continuity).` : ""} The last image is the candidate.
 Expected scene: ${JSON.stringify(scene)}
 Shot: ${JSON.stringify(shot)}

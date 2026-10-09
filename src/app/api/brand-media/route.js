@@ -100,6 +100,18 @@ export async function PATCH(req) {
     return Response.json({ media: data });
   }
 
+  // Tag a reference photo with the view it shows (A legs, B feet from
+  // above, C feet side, D uniform, E hair/back), or clear it with null.
+  if (action === "set_view") {
+    if (!id && !storagePath) return Response.json({ error: "id or storagePath is required" }, { status: 400 });
+    const view = ["A", "B", "C", "D", "E"].includes(value) ? value : null;
+    let q = supabase.from("brand_media").update({ reference_view: view });
+    q = id ? q.eq("id", id) : q.eq("storage_path", storagePath);
+    const { data, error } = await q.select().single();
+    if (error) return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ media: data });
+  }
+
   if (!id) return Response.json({ error: "id is required" }, { status: 400 });
 
   const { data: current, error: fetchError } = await supabase

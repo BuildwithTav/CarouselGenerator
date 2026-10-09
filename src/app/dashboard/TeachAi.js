@@ -71,6 +71,27 @@ export function RefStar({ api, storagePath, isRef, onChange, compact }) {
 }
 
 const VIEW_LABEL = { A: "A · legs", B: "B · feet above", C: "C · feet side", D: "D · uniform", E: "E · hair/back" };
+const PACK_VIEWS = ["A", "B", "C", "D"];
+
+// Which angle a starred reference shows, so each shot gets the references
+// that actually show what it needs (e.g. feet from above for a top-down
+// shot). Untagged references are only used to top up.
+export function ViewPicker({ api, media, onChange }) {
+  const [busy, setBusy] = useState(false);
+  const change = async (e) => {
+    e.stopPropagation();
+    const value = e.target.value || null;
+    setBusy(true);
+    try { const { media: next } = await api.patch("/api/brand-media", { id: media.id, action: "set_view", value }); onChange?.(next); } catch (err) { alert(err.message); }
+    setBusy(false);
+  };
+  return (
+    <select value={media.reference_view || ""} onChange={change} onClick={(e) => e.stopPropagation()} disabled={busy} title="What this photo shows" style={{ ...inp, padding: "3px 4px", fontSize: 10, marginBottom: 4, width: "100%" }}>
+      <option value="">other</option>
+      {Object.entries(VIEW_LABEL).map(([v, label]) => <option key={v} value={v}>{label}</option>)}
+    </select>
+  );
+}
 
 function ago(ts) {
   const d = Math.floor((Date.now() - new Date(ts).getTime()) / 86400000);
@@ -106,12 +127,15 @@ export function TeachPanel({ api, brand, refreshKey }) {
     load();
   };
 
+  // Only the views her pack is still missing; the full pack once it's complete.
+  const missing = PACK_VIEWS.filter((v) => !refs.some((r) => r.reference_view === v));
   const makeShots = async () => {
     setMaking(true); setErr("");
     try {
-      const d = await api.post("/api/brand-media/reference-shots", { brandId: brand.id });
+      const views = missing.length ? missing : PACK_VIEWS;
+      const d = await api.post("/api/brand-media/reference-shots", { brandId: brand.id, views });
       setCandidates(d.media || []);
-      if (d.errors?.length) setErr(`${d.errors.length} of 4 didn't come back: ${d.errors.join(" | ")}`);
+      if (d.errors?.length) setErr(`${d.errors.length} of ${views.length} didn't come back: ${d.errors.join(" | ")}`);
     } catch (e) { setErr(e.message); }
     setMaking(false);
   };
@@ -125,7 +149,7 @@ export function TeachPanel({ api, brand, refreshKey }) {
       <a href={m.url} target="_blank" rel="noreferrer" style={{ display: "block", width: 96, aspectRatio: "1080/1350", borderRadius: 8, overflow: "hidden", border: `2px solid ${isRef ? C.gold : C.border}`, marginBottom: 4 }}>
         {m.url && <img src={m.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
       </a>
-      <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, marginBottom: 3 }}>{VIEW_LABEL[m.reference_view] || "other"}</div>
+      {isRef ? <ViewPicker api={api} media={m} onChange={onStar} /> : <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, marginBottom: 3 }}>{VIEW_LABEL[m.reference_view] || "other"}</div>}
       <RefStar api={api} storagePath={m.storage_path} isRef={isRef} onChange={onStar} compact />
     </div>
   );
@@ -145,14 +169,14 @@ export function TeachPanel({ api, brand, refreshKey }) {
 
           <label style={lbl}>Her look</label>
           <div style={{ fontSize: 12, color: C.muted, marginBottom: 10, lineHeight: 1.5 }}>
-            Every new photo is made from 2 to 4 of the starred photos below, picked to suit the shot: A legs, B feet from above, C feet from the side, D uniform with tights and black heels. Aim for one good photo of each. Create the pack below and star the ones that look exactly like her (you can also star any X post photo or library photo).
+            Every new photo is made from 2 to 4 of the starred photos below, picked to suit the shot: A legs, B feet from above, C feet from the side, D uniform with tights and navy heels. Aim for one good photo of each. Real photos of her work best: upload them in Brand → Media library, star them, and set what each one shows. Or create the missing shots below and star the ones that look exactly like her.
           </div>
           <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 6, marginBottom: 10 }}>
             {refs.length === 0 && <div style={{ fontSize: 12, color: C.muted, padding: "8px 0" }}>No reference photos yet, so she's drawn from the written description only.</div>}
             {refs.map((m) => thumb(m, true))}
           </div>
           <button onClick={makeShots} disabled={making} style={btn("dark", { opacity: making ? 0.6 : 1, marginBottom: candidates.length ? 10 : 18 })}>
-            {making ? <><Spinner /> Creating her reference pack… (about a minute)</> : "Create her reference pack (4 shots, ~$0.60)"}
+            {making ? <><Spinner /> Creating reference shots… (about a minute)</> : missing.length ? `Create the missing shots (${missing.join(", ")}, ~$${(0.15 * missing.length).toFixed(2)})` : "Redo her reference pack (4 shots, ~$0.60)"}
           </button>
           {candidates.length > 0 && (
             <>

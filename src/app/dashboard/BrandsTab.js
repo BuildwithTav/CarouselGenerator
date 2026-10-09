@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { C, inp, lbl, card, btn, Toggle, Chip, fmtSize } from "./ui";
-import { RefStar } from "./TeachAi";
+import { RefStar, ViewPicker } from "./TeachAi";
 import { TEMPLATES, CTA_TYPES, THEME_DEFAULTS, themeOf, ctaCopy, previewSlides, aiStyleLocked } from "@/lib/brandTemplate";
 
 const PLATFORMS = [["instagram", "Instagram"], ["tiktok", "TikTok"], ["youtube", "YouTube"], ["twitter", "X (Twitter)"]];
@@ -343,6 +343,7 @@ export function BrandsTab({ api, brands, activeId, setActiveId, onBrandsChange }
                     {m.file_type === "image" && (
                       <div style={{ marginBottom: 6 }}>
                         <RefStar api={api} storagePath={m.storage_path} isRef={!!m.is_reference} onChange={(next) => next && setMedia((list) => list.map((x) => (x.id === next.id ? { ...x, ...next } : x)))} compact />
+                        {m.is_reference && <div style={{ marginTop: 4 }}><ViewPicker api={api} media={m} onChange={(next) => next && setMedia((list) => list.map((x) => (x.id === next.id ? { ...x, ...next } : x)))} /></div>}
                       </div>
                     )}
                     <div style={{ display: "flex", gap: 6 }}>

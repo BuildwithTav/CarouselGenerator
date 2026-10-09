@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 //   A lower body, standing      → leg shape, proportions, skin tone, ankles
 //   B both feet from above      → toe line, nail shape, left/right relationship
 //   C feet and ankles, low side → arch profile and side silhouette
-//   D uniform, tights, heels    → wardrobe, hosiery colour, black shoes
+//   D uniform, tights, heels    → wardrobe, hosiery colour, navy shoes
 // Each is generated from her already-starred photos (so the pack matches
 // her), lands in the library unstarred and tagged with its view; the ones
 // that look right get starred in the X tab's "Her look" panel.
@@ -21,13 +21,15 @@ function viewPrompts(c) {
     A: `The top of the frame cuts across her hips: her ${c.legs}, standing barefoot on a pale wooden floor in a fitted navy knee-length pencil skirt, feet flat and side by side, seen in a three quarter view at knee height. Her ${c.feet}; ${c.skin}. ${look}`,
     B: `Looking straight down from above at both of her bare feet resting side by side and slightly apart on a crisp white sheet, toes pointing up the frame, both complete feet clearly readable as a natural left and right pair. Her ${c.feet}; ${c.skin}. ${look}`,
     C: `A low side view at ankle height of her bare feet and ankles resting side by side on a pale wooden floor, the top of the frame at her mid-calf, the arch profile of the nearer foot clearly visible. Her ${c.feet}; ${c.skin}. ${look}`,
-    D: `The top of the frame cuts across her waist: she stands in her cabin crew uniform, a fitted navy pencil skirt, a white blouse tucked in, sheer tan tights and black patent court heels with a mid heel, feet side by side on a pale floor, seen in a three quarter view at knee height. Her ${c.legs}; ${c.hands}. ${look}`,
+    D: `The top of the frame cuts across her waist: she stands in her cabin crew uniform, a fitted navy pencil skirt, a white blouse tucked in, sheer tan tights and navy court heels with a mid heel in the same navy as the skirt, feet side by side on a pale floor, seen in a three quarter view at knee height. Her ${c.legs}; ${c.hands}. ${look}`,
   };
 }
 
 export async function POST(req) {
   if (!dashboardAuthorized(req)) return unauthorized();
-  const { brandId } = await req.json();
+  // `views` limits the run to the views still missing from her pack (the
+  // X tab sends those), so redoing one view doesn't pay for all four.
+  const { brandId, views } = await req.json();
   if (!brandId) return Response.json({ error: "brandId is required" }, { status: 400 });
   const supabase = supabaseAdmin();
   const { data: brand, error } = await supabase.from("brands").select("*").eq("id", brandId).single();
@@ -36,9 +38,10 @@ export async function POST(req) {
   if (!c) return Response.json({ error: "This brand has no fixed character set up yet" }, { status: 400 });
 
   const hasRefs = (await loadReferenceUrls(brand.id)).length > 0;
-  const prompts = viewPrompts(c);
+  const all = viewPrompts(c);
+  const wanted = Array.isArray(views) && views.length ? Object.entries(all).filter(([v]) => views.includes(v)) : Object.entries(all);
   const results = await Promise.allSettled(
-    Object.entries(prompts).map(async ([view, prompt]) => {
+    wanted.map(async ([view, prompt]) => {
       const r = await generateMatchingPhoto(brand, { prompt, useReferences: hasRefs, note: `Reference ${view}`, source: "reference-pack" });
       const { data: row } = await supabase.from("brand_media").update({ reference_view: view }).eq("id", r.media.id).select().single();
       return { ...r.media, ...(row || {}), url: r.media.url, reference_view: view };
