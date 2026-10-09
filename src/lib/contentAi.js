@@ -71,7 +71,7 @@ export async function ask(system, user, maxTokens = 8000, imageUrls = []) {
 
 // Per-million-token prices (input, output) used to log what each visual
 // pipeline call cost, so QA thresholds can be tuned against real spend.
-const PRICE_PER_MTOK = { "claude-opus-5-5": [4, 20], "claude-opus-5": [5, 25], "claude-opus-4-8": [5, 25] };
+const PRICE_PER_MTOK = { "claude-opus-5-5": [4, 20], "claude-opus-5": [5, 25], "claude-opus-4-8": [5, 25], "claude-sonnet-5-5": [2, 10] };
 
 export function claudeCostUsd(model, usage) {
   const [inP, outP] = PRICE_PER_MTOK[model] || PRICE_PER_MTOK["claude-opus-5-5"];

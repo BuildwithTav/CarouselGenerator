@@ -15,7 +15,7 @@ import { directShots, selectReferences, writeShotPrompts, assemblePrompt, qaImag
 // prompt writer → generation with the same 2-4 identity references on every
 // attempt → vision QA. QA hard-rejects only obvious failures (feet count,
 // shoe or tights colour, a visible face, text in the image), retries at most
-// twice with the last attempt's corrections, and otherwise keeps the best
+// once with the last attempt's corrections, and otherwise keeps the best
 // attempt flagged "Check this" so a post never loses its photo. Every
 // attempt is logged with its cost in image_attempts.
 //
@@ -25,7 +25,7 @@ const MODEL_ID = "fal-ai/nano-banana-pro";
 const EDIT_ID = "fal-ai/nano-banana-pro/edit";
 const TIMEOUT_MS = 110000;
 const FAL_COST_USD = 0.15; // per 2K image, edit or text-to-image
-const MAX_ATTEMPTS = 3; // the first try plus at most 2 retries
+const MAX_ATTEMPTS = 2; // the first try plus at most 1 retry (caps the worst case)
 const DEFAULT_BUDGET_MS = 170000; // no new attempt starts after this
 
 // A real 2K photo is consistently hundreds of KB. A safety-filter block

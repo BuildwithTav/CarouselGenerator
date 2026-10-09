@@ -90,14 +90,14 @@ test("captions, hashtags and brand voice never reach the prompt writer", async (
   assert.ok(plan.items[0].referenceIds.length >= 2);
 });
 
-test("a failed photo check retries with the same references, then keeps the best flagged", async () => {
+test("a failed photo check retries once with the same references, then keeps the best flagged", async () => {
   reset(); restore();
   handlers.qa = () => ({ ...defaults.qa(), face_visible: true, corrections: ["crop at the hips"] });
   const plan = await ig.planPhotos(BRAND, { texts: ["Heel slipping off on the jumpseat"] });
   reset();
   const result = await ig.generatePlannedPhoto(BRAND, { item: plan.items[0], continuity: plan.continuity });
   const falCalls = calls.filter((c) => c.kind === "fal");
-  assert.equal(falCalls.length, 3, "first try plus at most 2 retries");
+  assert.equal(falCalls.length, 2, "first try plus at most 1 retry");
   for (const c of falCalls) {
     assert.ok(c.url.endsWith("/edit"), "never text-only");
     assert.deepEqual(c.body.image_urls, falCalls[0].body.image_urls, "same references every attempt");
@@ -107,7 +107,7 @@ test("a failed photo check retries with the same references, then keeps the best
   assert.equal(result.needsCheck, true);
   assert.match(result.checkReason, /face visible/);
   const logged = calls.filter((c) => c.kind === "supabase" && c.method === "POST" && c.url.includes("image_attempts"));
-  assert.equal(logged.length, 3);
+  assert.equal(logged.length, 2);
   assert.ok(logged.every((c) => Number(c.body.fal_cost_usd) === 0.15));
   restore();
 });

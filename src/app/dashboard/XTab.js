@@ -104,7 +104,7 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
       {item.check_notes?.length > 0 && (
         <div style={{ ...card, marginBottom: 14, background: C.danger + "10", borderColor: C.danger + "66" }}>
           <div style={{ fontWeight: 800, fontSize: 13, color: C.danger, marginBottom: 2 }}>Check this photo</div>
-          <div style={{ fontSize: 12 }}>The photo check couldn't get it right in 3 tries and kept the best one: {item.check_notes.join(" · ").replace(/Check this: /g, "")}.</div>
+          <div style={{ fontSize: 12 }}>The photo check couldn't get it right in 2 tries and kept the better one: {item.check_notes.join(" · ").replace(/Check this: /g, "")}.</div>
         </div>
       )}
 

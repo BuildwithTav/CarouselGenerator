@@ -18,7 +18,10 @@ import { characterOf } from "./brandTemplate";
 // Brands without a fixed character (HealthCode) keep the original
 // imagePrompt() path in contentAi.js.
 
-export const PIPELINE_MODEL = "claude-opus-5-5";
+// Planning, prompt writing and the photo check run on Sonnet 5.5: half
+// Opus's price, still strong at vision and structured work (Tav's call: cut
+// cost, keep quality). The image model is unchanged.
+export const PIPELINE_MODEL = "claude-sonnet-5-5";
 export const VISUAL_RULES_VERSION = "2.0";
 
 // Permanent visual constraints (versioned config). Tav's recurring rejection
@@ -320,7 +323,7 @@ Expected scene: ${JSON.stringify(scene)}
 Shot: ${JSON.stringify(shot)}
 Continuity: ${JSON.stringify(continuity)}
 Permanent rules: ${visualRules(brand).join(" ")}`;
-  const { json, costUsd } = await askDetailed(system, user, { maxTokens: 1200, imageUrls: images, model: PIPELINE_MODEL, effort: "low" });
+  const { json, costUsd } = await askDetailed(system, user, { maxTokens: 1200, imageUrls: images, model: PIPELINE_MODEL, effort: "medium" });
   const corrections = (Array.isArray(json.corrections) ? json.corrections : []).map((c) => sanitizeVisual(String(c || ""))).filter(Boolean).slice(0, 3);
   return { qa: { ...json, corrections }, costUsd };
 }
