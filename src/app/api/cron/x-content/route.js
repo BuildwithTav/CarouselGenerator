@@ -50,6 +50,9 @@ const RECENT_LIMIT = 20;
 // couldn't get right within its retries come back flagged, and the reasons
 // land on the draft as check_notes.
 const X_PHOTO_BUDGET_MS = 100000;
+// A carousel also has to write its slides and render them inside the same
+// request, so its photos get less time for a retry.
+const X_CAROUSEL_PHOTO_BUDGET_MS = 60000;
 async function photosForScenes(brand, scenes) {
   if (!scenes.length) return { paths: [], mediaIds: [], checkNotes: [] };
   if (characterOf(brand)) {
@@ -76,17 +79,23 @@ async function buildBrandedCarousel(brand, { pillar, recentPosts }) {
 
   const contentSlides = pkg.slides.filter((s) => !s.isCta);
   const ctaSlide = pkg.slides.find((s) => s.isCta);
-  // One batched call for every slide's prompt plus the shared model
-  // description (see photosForScenes above), then every photo generates
-  // fully in parallel from the pre-written prompts.
-  const theme = themeOf(brand);
-  const { modelNote, photos: written } = await imagePromptsBatch(brand, { texts: contentSlides.map((s) => slideText(s)), idea, style: "editorial", direction: theme.ai_style, textZone: "bottom" });
-  const photos = await Promise.all(
-    written.map((p) => generateMatchingPhoto(brand, { prompt: p.prompt, modelNote }))
-  );
+  // Character brands: the whole set is planned in one go (one setting,
+  // outfit and light, a different shot per slide), then every photo is made
+  // in parallel with references and the photo check.
+  let photos, photoPlan = null;
+  if (characterOf(brand)) {
+    const plan = await planPhotos(brand, { texts: contentSlides.map((s) => slideText(s)), textZone: "bottom", source: "x-carousel" });
+    photos = await Promise.all(plan.items.map((item) => generatePlannedPhoto(brand, { item, continuity: plan.continuity, source: "x-carousel", budgetMs: X_CAROUSEL_PHOTO_BUDGET_MS })));
+    photoPlan = { continuity: plan.continuity, shots: plan.items.map((it, i) => ({ slideIndex: i, ...it })) };
+  } else {
+    const theme = themeOf(brand);
+    const { modelNote, photos: written } = await imagePromptsBatch(brand, { texts: contentSlides.map((s) => slideText(s)), idea, style: "editorial", direction: theme.ai_style, textZone: "bottom" });
+    photos = await Promise.all(written.map((p) => generateMatchingPhoto(brand, { prompt: p.prompt, modelNote })));
+  }
+  const checkNotes = photos.map((p, i) => (p.checkReason ? `slide ${i + 1}: ${p.checkReason}` : null)).filter(Boolean);
   const mediaIds = photos.map((p) => p.media.id);
   const slides = [
-    ...contentSlides.map((s, i) => ({ ...s, image_media_id: photos[i].media.id, image_path: photos[i].media.storage_path, image_url: photos[i].media.url })),
+    ...contentSlides.map((s, i) => ({ ...s, image_media_id: photos[i].media.id, image_path: photos[i].media.storage_path, image_url: photos[i].media.url, image_check: photos[i].checkReason || null })),
     ...(ctaSlide ? [ctaSlide] : []),
   ];
 
@@ -106,7 +115,7 @@ async function buildBrandedCarousel(brand, { pillar, recentPosts }) {
   // Strip the signed image_url before storing — slides are stored with
   // image_media_id/image_path only, same as every other content item.
   const storedSlides = slides.map(({ image_url, ...rest }) => rest);
-  return { idea, template, slidePaths, slides: storedSlides, caption: pkg.tw_caption || "", mediaIds };
+  return { idea, template, slidePaths, slides: storedSlides, caption: pkg.tw_caption || "", mediaIds, checkNotes, photoPlan };
 }
 
 // Soft per-slot deadline, comfortably under the route's 300s maxDuration
@@ -139,6 +148,8 @@ async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, 
       tw_caption: built.caption,
       platforms: ["twitter"],
       template: built.template,
+      check_notes: built.checkNotes.length ? built.checkNotes : null,
+      photo_plan: built.photoPlan,
     });
     if (insErr) throw new Error(`insert failed (${slot.key}): ${insErr.message}`);
     return { queued: true };
@@ -175,10 +186,10 @@ async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, 
 // One slot end to end: pick pillar/format, write it, generate its photo(s),
 // insert the draft. Returns a result object rather than throwing, so slots
 // run concurrently via Promise.all without one failure rejecting the rest.
-async function runSlot(supabase, brand, slot, recentPosts, today, feedback) {
+async function runSlot(supabase, brand, slot, recentPosts, today, feedback, formatOverride = null) {
   try {
     const pillar = pickPillar();
-    const { format } = pickFormat(slot);
+    const format = formatOverride || pickFormat(slot).format;
     return await withTimeout(generateSlot(supabase, brand, slot, pillar, format, recentPosts, today, feedback), SLOT_TIMEOUT_MS, `${slot.key} (${format})`);
   } catch (e) {
     console.error(`X content generation failed for ${brand.slug} (${slot.key}):`, e.message);
@@ -196,7 +207,7 @@ async function runSlot(supabase, brand, slot, recentPosts, today, feedback) {
 // depend on knowing that number: the dashboard's "Generate today's batch"
 // now fires one request per slot instead of one request for all 3, and the
 // daily cron is split the same way in vercel.json.
-async function runXContentGeneration(brandIdFilter, slotKeyFilter) {
+async function runXContentGeneration(brandIdFilter, slotKeyFilter, formatOverride = null) {
   const supabase = supabaseAdmin();
 
   const { data: brands } = await supabase.from("brands").select("*");
@@ -226,7 +237,7 @@ async function runXContentGeneration(brandIdFilter, slotKeyFilter) {
     // only. The photo pipeline works from permanent rules instead (see
     // visualPipeline.js), not a growing list of past rejections.
     const feedback = await recentFeedback(brand.id);
-    const slotResults = await Promise.all(slots.map((slot) => runSlot(supabase, brand, slot, recentPosts, today, feedback)));
+    const slotResults = await Promise.all(slots.map((slot) => runSlot(supabase, brand, slot, recentPosts, today, feedback, formatOverride)));
     const queued = slotResults.filter((r) => r.queued).length;
     const errors = slotResults.map((r) => r.error).filter(Boolean);
     return errors.length ? { brand: brand.slug, queued, error: errors.join(" | ") } : { brand: brand.slug, queued };
@@ -246,6 +257,9 @@ export async function GET(req) {
 
 export async function POST(req) {
   if (!dashboardAuthorized(req)) return Response.json({ error: "Not authorized" }, { status: 403 });
-  const { brandId, slotKey } = await req.json().catch(() => ({}));
-  return Response.json({ results: await runXContentGeneration(brandId || null, slotKey || null) });
+  // `format` lets the X tab make one specific kind of post on demand:
+  // "text", "single" (one photo) or "branded_carousel" (4 slides).
+  const { brandId, slotKey, format } = await req.json().catch(() => ({}));
+  const formatOverride = ["text", "single", "branded_carousel"].includes(format) ? format : null;
+  return Response.json({ results: await runXContentGeneration(brandId || null, slotKey || null, formatOverride) });
 }

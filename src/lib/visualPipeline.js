@@ -41,6 +41,20 @@ const VISUAL_RULES = {
   ],
 };
 
+// Work-shoe colour per brand. Enforced in code on the director's facts and
+// the written prompts, because reference photos and scene text kept
+// pulling the model back to black heels.
+const SHOE_COLOUR = { "sky-high-soles": "navy" };
+const BLACK_SHOES = /\bblack((?:[\s-]+(?:patent|leather|suede|glossy|shiny|low|mid|heeled|kitten|court|pointed|stiletto|block|work))*[\s-]+(?:court shoes?|heels?|shoes?|pumps?|flats?|stilettos?))/gi;
+
+export function enforceShoeColour(brand, value) {
+  const colour = SHOE_COLOUR[brand?.slug];
+  if (!colour) return value;
+  if (Array.isArray(value)) return value.map((v) => enforceShoeColour(brand, v));
+  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, enforceShoeColour(brand, v)]));
+  return typeof value === "string" ? value.replace(BLACK_SHOES, `${colour}$1`) : value;
+}
+
 export function visualRules(brand) {
   return VISUAL_RULES[brand?.slug] || [];
 }
@@ -66,6 +80,7 @@ const SHOT_DIMENSIONS = `Shot dimensions (pick one value for each, or a close na
 export const IDENTITY_LOCK = `IDENTITY LOCK
 Use the supplied reference images as the authoritative identity of the same established woman. Preserve her established body proportions, leg shape, ankle shape, foot shape, arch profile, toe proportions, skin tone, nail shape and nail colour.
 The references control identity. The scene brief controls pose, camera position, clothing, location and lighting. Do not blend identities, invent a different body type or reinterpret the referenced anatomy.
+Clothing, shoes and their colours come only from the scene brief, never from the reference images.
 Create one new photograph of this same established person.`;
 
 export const OUTPUT_LINE = "OUTPUT\nVertical 4 by 5 photograph. No words, captions, signs, logos or added typography.";
@@ -176,7 +191,7 @@ Scenes, in order:
 ${texts.map((t, i) => `${i + 1}. ${t || "(cover photo for the set)"}`).join("\n")}`;
 
   const { json, costUsd } = await askDetailed(system, user, { maxTokens: 800 * texts.length + 800, model: PIPELINE_MODEL });
-  const plan = normalizePlan(json, texts.length, lockedContinuity);
+  const plan = enforceShoeColour(brand, normalizePlan(json, texts.length, lockedContinuity));
   return { ...plan, costUsd };
 }
 
@@ -256,7 +271,7 @@ Items:
 ${items.map((it, i) => `${i + 1}. ${JSON.stringify({ scene: it.scene, shot: it.shot, ...(it.corrections?.length ? { corrections_from_last_attempt: it.corrections } : {}) })}`).join("\n")}`;
 
   const { json, costUsd } = await askDetailed(system, user, { maxTokens: 700 * items.length + 400, model: PIPELINE_MODEL });
-  const prompts = (Array.isArray(json.prompts) ? json.prompts : []).map((p) => sanitizeVisual(String(p || "")));
+  const prompts = (Array.isArray(json.prompts) ? json.prompts : []).map((p) => enforceShoeColour(brand, sanitizeVisual(String(p || ""))));
   if (prompts.length !== items.length || prompts.some((p) => !p)) throw new Error("Prompt writer returned an incomplete set");
   return { prompts, costUsd };
 }

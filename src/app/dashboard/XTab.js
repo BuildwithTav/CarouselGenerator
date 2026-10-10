@@ -224,7 +224,7 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("all");
-  const [generating, setGenerating] = useState(false);
+  const [generating, setGenerating] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const brand = brands.find((b) => b.id === activeId);
 
@@ -241,36 +241,28 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
     if (next) setItems((list) => list.some((i) => i.id === next.id) ? list.map((i) => (i.id === next.id ? next : i)) : [next, ...list]);
   };
 
-  // One request per slot rather than one request for all 3 — a single
-  // request covering all of them (text plus several AI photos each) was
-  // taking long enough to hit a flat 504 from the platform itself, with no
-  // partial results at all, even for slots that had actually finished.
-  // Splitting it keeps each request small regardless of exactly where that
-  // ceiling sits.
-  const generateBatch = async () => {
-    setGenerating(true);
-    let queued = 0;
-    const errors = [];
-    // One request per slot, all three at once — each is its own server run,
-    // so a slow photo slot doesn't hold up the others.
-    await Promise.all(["personality", "visual", "conversation"].map(async (slotKey) => {
-      try {
-        const { results } = await api.post("/api/cron/x-content", { brandId: activeId, slotKey });
-        const r = results?.[0];
-        queued += r?.queued ?? 0;
-        if (r?.error) errors.push(r.error);
-      } catch (e) { errors.push(`${slotKey}: ${e.message}`); }
-    }));
-    // A "took too long" error here doesn't mean the slot's work was lost —
-    // the soft deadline in x-content/route.js only stops waiting on it, it
-    // doesn't cancel it, and the generation can keep running server-side
-    // and finish anyway a bit later (seen in practice: a "failed" carousel
-    // showed up after just refreshing, nothing re-run). So a timed-out slot
-    // gets a second, delayed reload instead of being treated as gone.
-    alert(errors.length ? `Queued ${queued} as drafts. Some slots failed: ${errors.join(" | ")}` : queued ? `Queued ${queued} X post${queued === 1 ? "" : "s"} as drafts — review and approve below.` : "Nothing queued.");
+  // One post at a time, on demand: a text post (scroll-stopper or reply
+  // magnet, picked at random), one photo post, or a 4-slide carousel.
+  const KINDS = {
+    text: { label: "Text post", body: () => ({ slotKey: Math.random() < 0.5 ? "personality" : "conversation", format: "text" }) },
+    single: { label: "Image post", body: () => ({ slotKey: "visual", format: "single" }) },
+    carousel: { label: "4-slide carousel", body: () => ({ slotKey: "visual", format: "branded_carousel" }) },
+  };
+  const generate = async (kind) => {
+    setGenerating(kind);
+    try {
+      const { results } = await api.post("/api/cron/x-content", { brandId: activeId, ...KINDS[kind].body() });
+      const r = results?.[0];
+      if (r?.error) alert(`${KINDS[kind].label} failed: ${r.error}`);
+      else if (!r?.queued) alert("Nothing was made — try again.");
+    } catch (e) {
+      // The request can time out in the browser while the server finishes
+      // anyway, so check again shortly before calling it lost.
+      alert(`${KINDS[kind].label}: ${e.message}. It may still appear in a minute.`);
+      setTimeout(load, 30000);
+    }
     load();
-    setGenerating(false);
-    if (errors.length) setTimeout(load, 25000);
+    setGenerating(null);
   };
 
   const refreshStats = async () => {
@@ -333,9 +325,13 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: C.muted, textTransform: "uppercase" }}>Automation</div>
             <div style={{ fontSize: 13 }}>Next batch written <b>{BATCH_TIME_UTC} UTC</b> · next posting window <b>{paused ? "paused" : nextWindow()}</b> · <b>{queuedReady}</b> queued and ready</div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {!paused && <button onClick={() => togglePause(true)} style={btn("ghost", { color: C.danger, borderColor: C.danger + "88" })}>Pause auto-posting</button>}
-            <button onClick={generateBatch} disabled={generating} style={btn("primary", { opacity: generating ? 0.6 : 1 })}>{generating ? <><Spinner /> Generating…</> : "✨ Generate today's batch"}</button>
+            {Object.entries(KINDS).map(([kind, k]) => (
+              <button key={kind} onClick={() => generate(kind)} disabled={!!generating} style={btn(kind === "text" ? "ghost" : "primary", { opacity: generating && generating !== kind ? 0.5 : 1 })}>
+                {generating === kind ? <><Spinner /> {kind === "carousel" ? "Making carousel… (2-4 min)" : kind === "single" ? "Making photo… (1-2 min)" : "Writing…"}</> : `+ ${k.label}`}
+              </button>
+            ))}
           </div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
