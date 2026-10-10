@@ -1,12 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git push *)",
-      "Bash(git merge *)",
-      "Bash(npm run build*)",
-      "Bash(gh api *)",
-      "mcp__Supabase__execute_sql",
-      "mcp__Supabase__list_tables",
+      "Bash(git *)", "Bash(npm run build*)", "Bash(npm test*)", "Bash(node *)", "Bash(python3 *)",
+      "Bash(gh api *)", "Edit", "Write", "WebSearch", "WebFetch",
+      "mcp__Supabase__execute_sql", "mcp__Supabase__apply_migration", "mcp__Supabase__list_tables",
       "mcp__Claude_Code_Remote__send_later"
     ]
   }
