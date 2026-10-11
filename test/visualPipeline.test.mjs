@@ -55,11 +55,11 @@ test("selectReferences always picks at least 2 when 2 exist, at most 4", () => {
 test("judgeQa hard-fails only the obvious failures", () => {
   const good = handlers.qa();
   assert.equal(vp.judgeQa(good).pass, true);
-  for (const [field, value] of [["face_visible", true], ["feet_count", 3], ["wrong_shoe_colour", true], ["wrong_tights_colour", true], ["text_or_lettering_present", true]]) {
+  for (const [field, value] of [["face_visible", true], ["feet_count", 3], ["left_right_plausible", false], ["wrong_shoe_colour", true], ["wrong_tights_colour", true], ["text_or_lettering_present", true]]) {
     assert.equal(vp.judgeQa({ ...good, [field]: value }).pass, false, field);
   }
   // Soft problems are scored but never fail the photo on their own.
-  const soft = vp.judgeQa({ ...good, identity_match: 0.5, anatomy_score: 4, left_right_plausible: false, wrong_setting: true });
+  const soft = vp.judgeQa({ ...good, identity_match: 0.5, anatomy_score: 4, toes_plausible: false, wrong_setting: true });
   assert.equal(soft.pass, true);
   assert.ok(soft.soft.length >= 4);
   assert.ok(soft.score < vp.judgeQa(good).score);
