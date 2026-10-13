@@ -85,7 +85,7 @@ const SHOT_DIMENSIONS = `Shot dimensions (pick one value for each, or a close na
 - distance: extreme detail, tight, medium, wider environmental
 - camera_height: floor, ankle, knee, seated eye level, own point of view
 - view: top down, three quarter, side profile, straight on feet, directly behind, soles towards the camera
-- body_position: seated, standing, reclining, legs stretched out side by side, one foot slightly forward, one foot raised, kneeling (sitting back on her heels, both soles towards the camera, feet side by side and not overlapping) (legs always uncrossed)
+- body_position: seated, standing, reclining, legs stretched out side by side, one foot slightly forward, one foot raised, kneeling (sitting back on her heels, seen from directly behind her: the camera sees both soles, the backs of her calves and her skirt from behind, feet side by side and not overlapping) (legs always uncrossed)
 - footwear_state: both heels on, one loose, one removed, both beside her, flats, tights only, bare
 - emphasis: toe line, arch, soles, hosiery texture, heel slipping, shoe detail, full legs, cabin context`;
 
@@ -268,6 +268,7 @@ Write the shortest prompt that completely defines each shot, normally 70 to 140 
 Order: the framing first (where the frame's edges fall, camera height, view, distance); then her pose, body position and footwear; the setting and required objects; the light and camera feel of the mode.
 Translate the facts into one plausible photograph. Don't add people, objects or details the facts don't contain.
 Phrase everything positively: describe what is in the photo. Never write "no X", "without X" or "avoid".
+Make the framing physically possible for the pose. Her soles face the camera only when the camera is beyond her feet, looking at the bottoms of them. Kneeling with her soles to the camera means she faces away from it: the frame shows her from behind (soles, the backs of her calves, her skirt) and its top edge cuts across her waist, never her lap or chest.
 Feet: include this sentence, then only the left/right relationship the pose needs (for example "her left ankle rests lightly across her right ankle"): ${ANATOMY_BASELINE}
 Name colours explicitly when the uniform is worn: "rich mid navy court heels matching her navy skirt" (or "navy flats"), "sheer tan tights".
 Use plain visual language. No mood or persuasion words, no captions, quotes or lettering.${textZone ? `\nKeep the ${textZone} of the frame calm and uncluttered.` : ""}
@@ -322,6 +323,9 @@ export function judgeQa(qa, { expectedFeet = 2, faceAllowed = false, laterSlide 
   // hard failure like the wrong number of feet.
   if (qa?.left_right_plausible === false) hard.push("left/right feet wrong");
   if (qa?.extra_or_merged_items === true) hard.push("extra or merged shoe/foot/limb");
+  // The post text describes the pose, so the wrong one is a mismatch Tav
+  // has to reject (her sitting when the post says kneeling).
+  if (qa?.pose_matches === false) hard.push("pose doesn't match the post");
 
   const soft = [];
   const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
@@ -342,7 +346,7 @@ export function judgeQa(qa, { expectedFeet = 2, faceAllowed = false, laterSlide 
 // The only failures a paid retry reliably fixes. Feet problems (left/right,
 // count, extra shoe) came back on 5 of 6 retries, so those are flagged
 // "Check this" for Tav instead of paying for another try.
-export const RETRY_FIXES = ["face visible", "text in image", "wrong shoe colour", "wrong tights colour"];
+export const RETRY_FIXES = ["face visible", "text in image", "wrong shoe colour", "wrong tights colour", "pose doesn't match the post"];
 
 // The checker sees only the candidate (plus the previous slide in a
 // carousel). Every pass/fail check is answerable from the photo alone, and
@@ -351,11 +355,12 @@ export async function qaImage(brand, { candidateUrl, previousUrl = null, scene, 
   const images = [...(previousUrl ? [previousUrl] : []), candidateUrl];
   const system = `You are a careful photo checker for a faceless photo series. Inspect the candidate photo against the expected scene. Judge only what you can see.
 Reply with strict JSON only, no prose:
-{"decision": "pass|fail", "face_visible": false, "feet_count": 2, "toes_plausible": true, "left_right_plausible": true, "extra_or_merged_items": false, "feet_clear": true, "anatomy_score": 0, "photorealism_score": 0, "wrong_uniform": false, "wrong_shoe_colour": false, "wrong_tights_colour": false, "wrong_setting": false, "continuity_score": 0.0, "text_or_lettering_present": false, "corrections": ["..."]}
+{"decision": "pass|fail", "face_visible": false, "pose_matches": true, "feet_count": 2, "toes_plausible": true, "left_right_plausible": true, "extra_or_merged_items": false, "feet_clear": true, "anatomy_score": 0, "photorealism_score": 0, "wrong_uniform": false, "wrong_shoe_colour": false, "wrong_tights_colour": false, "wrong_setting": false, "continuity_score": 0.0, "text_or_lettering_present": false, "corrections": ["..."]}
 - continuity_score is 0 to 1; anatomy_score and photorealism_score are 0 to 10.
 - face_visible: true only if her face (eyes, nose or mouth) is in the photo.
 - feet_count: the number of her feet visible in the photo.
 - left_right_plausible: check this carefully, it is the most common failure. Trace each visible foot back up its own leg to the knee and hip, so you know which is her left foot and which is her right. On every real foot the big toe is on the inner edge, the side facing her other leg, and the toes get smaller towards the outer edge. False only when you can clearly see it: a foot with its big toe on the outer edge, both feet looking like the same foot (two left or two right), or a foot attached to the wrong leg. If the feet are partly hidden, overlapping, foreshortened or you can't tell, answer true.
+- pose_matches: false only when her body position is clearly different from the shot's body_position (for example sitting with her legs stretched out when the shot says kneeling, or standing when it says lying down). A different angle or crop of the right pose still matches.
 - extra_or_merged_items: true if anything is duplicated or impossible: an extra shoe (for example a shoe under a foot that is already in a shoe, or more shoes than she could be wearing plus one pair set down), an extra foot, toe, hand or leg, a shoe merged into a foot, or a hand that doesn't connect to an arm. Count the shoes and limbs before answering.
 - wrong_shoe_colour: true if she wears her work uniform and her shoes are not clearly navy blue (the same navy as the skirt). Shoes that look black, or so dark they could pass for black at a glance, count as wrong. wrong_tights_colour: true if her tights are anything other than sheer tan or nude.
 - text_or_lettering_present: true only for prominent words that draw the eye: a caption, watermark, overlaid text, or a large readable sign or logo. Small brand marks on shoes, insoles, clothing or products, and the small placards and exit signs that belong in an aircraft cabin, do not count.

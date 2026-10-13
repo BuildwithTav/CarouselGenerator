@@ -55,7 +55,7 @@ test("selectReferences always picks at least 2 when 2 exist, at most 4", () => {
 test("judgeQa hard-fails only the obvious failures", () => {
   const good = handlers.qa();
   assert.equal(vp.judgeQa(good).pass, true);
-  for (const [field, value] of [["face_visible", true], ["feet_count", 3], ["left_right_plausible", false], ["extra_or_merged_items", true], ["wrong_shoe_colour", true], ["wrong_tights_colour", true], ["text_or_lettering_present", true]]) {
+  for (const [field, value] of [["face_visible", true], ["feet_count", 3], ["left_right_plausible", false], ["extra_or_merged_items", true], ["pose_matches", false], ["wrong_shoe_colour", true], ["wrong_tights_colour", true], ["text_or_lettering_present", true]]) {
     assert.equal(vp.judgeQa({ ...good, [field]: value }).pass, false, field);
   }
   // Soft problems are scored but never fail the photo on their own.
@@ -114,6 +114,20 @@ test("a failed photo check retries once with the same references, then keeps the
   assert.equal(Number(logged[0].body.fal_cost_usd), ig.PHOTO_MODELS[ig.PHOTO_MODEL].cost(falCalls[0].body.image_urls.length));
   assert.equal(Number(logged[1].body.fal_cost_usd), ig.PHOTO_MODELS[ig.RETRY_MODEL].cost(falCalls[1].body.image_urls.length));
   assert.ok(logged.every((c) => Number(c.body.fal_cost_usd) < 0.1), "both cheaper than the old $0.15");
+  restore();
+});
+
+test("the wrong pose gets one retry on the other model", async () => {
+  reset(); restore();
+  let n = 0;
+  handlers.qa = () => ({ ...defaults.qa(), pose_matches: ++n > 1, corrections: ["kneel, seen from behind"] });
+  const plan = await ig.planPhotos(BRAND, { texts: ["Kneeling on the galley floor, soles to the camera"] });
+  reset();
+  const result = await ig.generatePlannedPhoto(BRAND, { item: plan.items[0], continuity: plan.continuity });
+  const fal = calls.filter((c) => c.kind === "fal");
+  assert.equal(fal.length, 2);
+  assert.ok(fal[1].body.prompt.includes("kneel, seen from behind"));
+  assert.equal(result.needsCheck, false);
   restore();
 });
 
@@ -229,5 +243,7 @@ test("the director is allowed a kneeling, soles-to-camera shot", async () => {
   reset(); restore();
   await ig.planPhotos(BRAND, { texts: ["Kneeling on the floor, soles in tights towards the camera"] });
   const director = calls.find((c) => c.kind === "anthropic" && c.stage === "director");
-  assert.match(String(director.req.system), /kneeling \(sitting back on her heels, both soles towards the camera/);
+  assert.match(String(director.req.system), /kneeling \(sitting back on her heels, seen from directly behind her/);
+  const writer = calls.find((c) => c.kind === "anthropic" && c.stage === "writer");
+  assert.match(String(writer.req.system), /Kneeling with her soles to the camera means she faces away from it/);
 });
