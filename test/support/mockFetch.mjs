@@ -26,7 +26,7 @@ export async function mockFetch(input, init = {}) {
     let stage, out;
     if (sys.includes("visual director")) { stage = "director"; out = handlers.director((userText.split("Scenes, in order")[1]?.match(/\\n\d+\. /g) || []).length || 1); }
     else if (sys.includes("You write image prompts")) { stage = "writer"; out = handlers.writer((userText.match(/\\n\d+\. \{/g) || []).length || 1); }
-    else if (sys.includes("strict photo checker")) { stage = "qa"; out = handlers.qa(); }
+    else if (sys.includes("photo checker")) { stage = "qa"; out = handlers.qa(); }
     else { stage = "other"; out = {}; }
     calls.push({ kind: "anthropic", stage, req });
     return json({ id: "m", type: "message", role: "assistant", model: req.model, stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify(out) }], usage: { input_tokens: 1000, output_tokens: 200 } });

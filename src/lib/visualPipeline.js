@@ -336,24 +336,31 @@ export function judgeQa(qa, { expectedFeet = 2, faceAllowed = false, laterSlide 
   if (qa?.wrong_uniform === true) soft.push("uniform");
 
   const score = (identity ?? 0.8) * 10 + (anatomy ?? 6) + (photo ?? 6) + (laterSlide ? (cont ?? 0.8) * 5 : 0) - soft.length - hard.length * 100;
-  return { pass: hard.length === 0, hard, soft, score };
+  return { pass: hard.length === 0, hard, soft, score, retry: hard.length > 0 && hard.every((h) => RETRY_FIXES.includes(h)) };
 }
 
-export async function qaImage(brand, { candidateUrl, referenceUrls = [], previousUrl = null, scene, shot, continuity }) {
-  const images = [...referenceUrls, ...(previousUrl ? [previousUrl] : []), candidateUrl];
-  const n = referenceUrls.length;
-  const system = `You are a strict photo checker for a faceless photo series. Inspect the candidate photo against the identity references and the expected scene. Judge only what you can see.
+// The only failures a paid retry reliably fixes. Feet problems (left/right,
+// count, extra shoe) came back on 5 of 6 retries, so those are flagged
+// "Check this" for Tav instead of paying for another try.
+export const RETRY_FIXES = ["face visible", "text in image", "wrong shoe colour", "wrong tights colour"];
+
+// The checker sees only the candidate (plus the previous slide in a
+// carousel). Every pass/fail check is answerable from the photo alone, and
+// leaving her reference photos out more than halves the cost of a check.
+export async function qaImage(brand, { candidateUrl, previousUrl = null, scene, shot, continuity }) {
+  const images = [...(previousUrl ? [previousUrl] : []), candidateUrl];
+  const system = `You are a careful photo checker for a faceless photo series. Inspect the candidate photo against the expected scene. Judge only what you can see.
 Reply with strict JSON only, no prose:
-{"decision": "pass|fail", "face_visible": false, "identity_match": 0.0, "feet_count": 2, "toes_plausible": true, "left_right_plausible": true, "extra_or_merged_items": false, "feet_clear": true, "anatomy_score": 0, "photorealism_score": 0, "wrong_uniform": false, "wrong_shoe_colour": false, "wrong_tights_colour": false, "wrong_setting": false, "continuity_score": 0.0, "text_or_lettering_present": false, "corrections": ["..."]}
-- identity_match and continuity_score are 0 to 1; anatomy_score and photorealism_score are 0 to 10.
+{"decision": "pass|fail", "face_visible": false, "feet_count": 2, "toes_plausible": true, "left_right_plausible": true, "extra_or_merged_items": false, "feet_clear": true, "anatomy_score": 0, "photorealism_score": 0, "wrong_uniform": false, "wrong_shoe_colour": false, "wrong_tights_colour": false, "wrong_setting": false, "continuity_score": 0.0, "text_or_lettering_present": false, "corrections": ["..."]}
+- continuity_score is 0 to 1; anatomy_score and photorealism_score are 0 to 10.
 - face_visible: true only if her face (eyes, nose or mouth) is in the photo.
 - feet_count: the number of her feet visible in the photo.
-- left_right_plausible: check this carefully, it is the most common failure. Trace each visible foot back up its own leg to the knee and hip, so you know which is her left foot and which is her right. On every real foot the big toe is on the inner edge, the side facing her other leg, and the toes get smaller towards the outer edge. False if either foot has its big toe on the outer edge, if both feet look like the same foot (two left or two right), or if a foot is attached to the wrong leg. When in doubt, false.
+- left_right_plausible: check this carefully, it is the most common failure. Trace each visible foot back up its own leg to the knee and hip, so you know which is her left foot and which is her right. On every real foot the big toe is on the inner edge, the side facing her other leg, and the toes get smaller towards the outer edge. False only when you can clearly see it: a foot with its big toe on the outer edge, both feet looking like the same foot (two left or two right), or a foot attached to the wrong leg. If the feet are partly hidden, overlapping, foreshortened or you can't tell, answer true.
 - extra_or_merged_items: true if anything is duplicated or impossible: an extra shoe (for example a shoe under a foot that is already in a shoe, or more shoes than she could be wearing plus one pair set down), an extra foot, toe, hand or leg, a shoe merged into a foot, or a hand that doesn't connect to an arm. Count the shoes and limbs before answering.
 - wrong_shoe_colour: true if she wears her work uniform and her shoes are not clearly navy blue (the same navy as the skirt). Shoes that look black, or so dark they could pass for black at a glance, count as wrong. wrong_tights_colour: true if her tights are anything other than sheer tan or nude.
 - text_or_lettering_present: true only for prominent words that draw the eye: a caption, watermark, overlaid text, or a large readable sign or logo. Small brand marks on shoes, insoles, clothing or products, and the small placards and exit signs that belong in an aircraft cabin, do not count.
 - corrections: at most 3 short, observable changes for the next attempt (for example "separate the feet so both silhouettes are readable"). Fix the failures above first (face, number of feet, left/right feet, extra or merged items, shoe or tights colour, prominent text); add style suggestions only if nothing failed. Empty if none.`;
-  const user = `${n ? `Images 1 to ${n} are identity references for the same woman.` : "No identity references."}${previousUrl ? ` Image ${n + 1} is the previous accepted photo in this carousel (for continuity).` : ""} The last image is the candidate.
+  const user = `${previousUrl ? "Image 1 is the previous accepted photo in this carousel (for continuity). " : ""}The last image is the candidate.
 Expected scene: ${JSON.stringify(scene)}
 Shot: ${JSON.stringify(shot)}
 Continuity: ${JSON.stringify(continuity)}

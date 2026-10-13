@@ -112,6 +112,29 @@ test("a failed photo check retries once with the same references, then keeps the
   restore();
 });
 
+test("feet problems are flagged for Tav instead of paying for a retry", async () => {
+  reset(); restore();
+  handlers.qa = () => ({ ...defaults.qa(), left_right_plausible: false, corrections: ["separate the feet"] });
+  const plan = await ig.planPhotos(BRAND, { texts: ["Heels on the jumpseat"] });
+  reset();
+  const result = await ig.generatePlannedPhoto(BRAND, { item: plan.items[0], continuity: plan.continuity });
+  assert.equal(calls.filter((c) => c.kind === "fal").length, 1, "no paid retry for feet");
+  assert.equal(result.needsCheck, true);
+  assert.match(result.checkReason, /left\/right/);
+  restore();
+});
+
+test("the photo checker never gets her reference photos", async () => {
+  reset(); restore();
+  const plan = await ig.planPhotos(BRAND, { texts: ["Feet up in the crew rest"] });
+  reset();
+  await ig.generatePlannedPhoto(BRAND, { item: plan.items[0], continuity: plan.continuity });
+  const qa = calls.find((c) => c.kind === "anthropic" && c.stage === "qa");
+  const images = qa.req.messages[0].content.filter((b) => b.type === "image");
+  assert.equal(images.length, 1, "only the candidate");
+  restore();
+});
+
 test("a passing photo is saved after one attempt, unflagged", async () => {
   reset(); restore();
   const plan = await ig.planPhotos(BRAND, { texts: ["Feet up on the crew rest bunk"] });

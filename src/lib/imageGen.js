@@ -14,9 +14,10 @@ import { directShots, selectReferences, writeShotPrompts, assemblePrompt, qaImag
 // visual pipeline (visualPipeline.js): director → reference selection →
 // prompt writer → generation with the same 2-4 identity references on every
 // attempt → vision QA. QA hard-rejects only obvious failures (feet count,
-// shoe or tights colour, a visible face, text in the image), retries at most
-// once with the last attempt's corrections, and otherwise keeps the best
-// attempt flagged "Check this" so a post never loses its photo. Every
+// shoe or tights colour, a visible face, text in the image). It retries at
+// most once, and only for a face, text or wrong colours (feet problems
+// rarely came right on a retry), then keeps the best attempt flagged
+// "Check this" so a post never loses its photo. Every
 // attempt is logged with its cost in image_attempts.
 //
 // Brands without a character (HealthCode) keep the original single-prompt
@@ -218,7 +219,7 @@ export async function generatePlannedPhoto(brand, { item, continuity, previousUr
 
     let qa = null, verdict = { pass: true, hard: [], soft: [], score: 0 }, qaCost = 0;
     try {
-      const out = await qaImage(brand, { candidateUrl: gen.url, referenceUrls: refUrls, previousUrl, scene: item.scene, shot: item.shot, continuity });
+      const out = await qaImage(brand, { candidateUrl: gen.url, previousUrl, scene: item.scene, shot: item.shot, continuity });
       qa = out.qa;
       qaCost = out.costUsd || 0;
       verdict = judgeQa(qa, { expectedFeet, laterSlide });
@@ -233,6 +234,7 @@ export async function generatePlannedPhoto(brand, { item, continuity, previousUr
     const candidate = { ...gen, qa, verdict, attempt, promptText };
     if (!best || verdict.score > best.verdict.score) best = candidate;
     if (verdict.pass) { best = candidate; break; }
+    if (!verdict.retry) break; // a retry wouldn't fix this: flag it instead of paying again
     corrections = (qa?.corrections || []).length ? qa.corrections : verdict.hard.map((h) => `fix: ${h}`);
   }
 
