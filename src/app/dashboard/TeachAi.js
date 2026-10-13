@@ -98,6 +98,106 @@ function ago(ts) {
   return d <= 0 ? "today" : d === 1 ? "yesterday" : `${d} days ago`;
 }
 
+// Blind side-by-side of image models (src/lib/modelTest.js). The same scene
+// and her same reference photos go to every model; Tav picks the best of
+// each scene before he can see which model made it.
+const TEST_COST = "about $2.20";
+const order = (id) => [...String(id)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+
+function ModelTest({ api, brand }) {
+  const [data, setData] = useState(null);
+  const [running, setRunning] = useState(false);
+  const [done, setDone] = useState(0);
+  const [errs, setErrs] = useState([]);
+
+  const load = async () => {
+    try { setData(await api.get(`/api/content/model-test?brandId=${brand.id}`)); } catch (e) { setErrs([e.message]); }
+  };
+  useEffect(() => { load(); }, [brand.id]);
+
+  const run = async () => {
+    if (!confirm(`Make each of the 5 test scenes on all 4 models? Costs ${TEST_COST} on fal and takes a few minutes.`)) return;
+    const runId = crypto.randomUUID();
+    setRunning(true); setDone(0); setErrs([]);
+    const queue = [0, 1, 2, 3, 4];
+    const worker = async () => {
+      while (queue.length) {
+        const sceneIndex = queue.shift();
+        try { await api.post("/api/content/model-test", { brandId: brand.id, runId, sceneIndex }); }
+        catch (e) { setErrs((l) => [...l, `Scene ${sceneIndex + 1}: ${e.message}`]); }
+        setDone((n) => n + 1);
+        load();
+      }
+    };
+    await Promise.all([worker(), worker()]);
+    setRunning(false);
+  };
+
+  const pick = async (id) => {
+    const scene = data.run.photos.find((p) => p.id === id)?.scene_index;
+    setData((d) => ({ ...d, run: { ...d.run, photos: d.run.photos.map((p) => (p.scene_index === scene ? { ...p, picked: p.id === id } : p)) } }));
+    try { await api.patch("/api/content/model-test", { id }); } catch (e) { alert(e.message); load(); }
+  };
+
+  const label = (key) => data?.models?.find((m) => m.key === key)?.label || key;
+  const photos = data?.run?.photos || [];
+  const scenes = [...new Set(photos.map((p) => p.scene_index))].sort((a, b) => a - b);
+  const picks = photos.filter((p) => p.picked);
+  const tally = (data?.models || []).map((m) => {
+    const mine = photos.filter((p) => p.model === m.key && p.url);
+    return { ...m, wins: picks.filter((p) => p.model === m.key).length, made: mine.length, passed: mine.filter((p) => p.qa_pass).length, cost: mine.length ? mine.reduce((s, p) => s + Number(p.cost_usd || 0), 0) / mine.length : null };
+  });
+
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <label style={lbl}>Compare image models</label>
+      <div style={{ fontSize: 12, color: C.muted, marginBottom: 10, lineHeight: 1.5 }}>
+        Makes 5 test scenes on 4 models with the same prompt and her same reference photos. Pick the best of each scene. The model names stay hidden until you pick, so it's a fair test. Nothing here goes into posts.
+      </div>
+      <button onClick={run} disabled={running} style={btn("dark", { opacity: running ? 0.6 : 1, marginBottom: 12 })}>
+        {running ? <><Spinner /> Making scenes… {done} of 5 done</> : data?.run ? `Run a new test (${TEST_COST})` : `Run the test (${TEST_COST})`}
+      </button>
+      {errs.map((e, i) => <div key={i} style={{ color: C.danger, fontSize: 12, marginBottom: 6 }}>{e}</div>)}
+
+      {scenes.map((si) => {
+        const set = photos.filter((p) => p.scene_index === si).sort((a, b) => order(a.id) - order(b.id));
+        const picked = set.some((p) => p.picked);
+        return (
+          <div key={si} style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{si + 1}. {set[0]?.scene}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>
+              {set.map((p, i) => (
+                <div key={p.id} style={{ border: `2px solid ${p.picked ? C.gold : C.border}`, borderRadius: 10, overflow: "hidden", background: C.bg }}>
+                  {p.url
+                    ? <a href={p.url} target="_blank" rel="noreferrer" style={{ display: "block", aspectRatio: "4/5" }}><img src={p.url} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></a>
+                    : <div style={{ aspectRatio: "4/5", display: "flex", alignItems: "center", justifyContent: "center", padding: 8, fontSize: 11, color: C.danger, textAlign: "center" }}>Didn't come back{picked ? `: ${p.error || ""}` : ""}</div>}
+                  <div style={{ padding: 8 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{picked ? label(p.model) : `Photo ${String.fromCharCode(65 + i)}`}</div>
+                    {picked && <div style={{ fontSize: 11, color: C.muted, marginBottom: 6, lineHeight: 1.4 }}>
+                      ${Number(p.cost_usd || 0).toFixed(3)} · {p.width && p.height ? `${p.width}×${p.height}` : "size ?"}<br />
+                      {p.qa_pass === true ? "Passed the check" : p.qa_pass === false ? `Check: ${(p.qa_hard_fails || []).join(", ")}` : "Not checked"}
+                    </div>}
+                    {p.url && <button onClick={() => pick(p.id)} style={btn(p.picked ? "primary" : "ghost", { padding: "5px 10px", fontSize: 12, width: "100%" })}>{p.picked ? "★ Best" : "Best"}</button>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+
+      {picks.length > 0 && (
+        <div style={{ background: C.bg, borderRadius: 8, padding: "10px 12px", fontSize: 12, lineHeight: 1.7 }}>
+          <b>Your picks so far ({picks.length} of {scenes.length})</b>
+          {tally.map((t) => (
+            <div key={t.key}>{t.label}: <b>{t.wins}</b> best · passed the check {t.passed}/{t.made} · {t.cost == null ? "–" : `~$${t.cost.toFixed(3)}`} a photo</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TeachPanel({ api, brand, refreshKey }) {
   const [open, setOpen] = useState(false);
   const [refs, setRefs] = useState([]);
@@ -186,6 +286,8 @@ export function TeachPanel({ api, brand, refreshKey }) {
               </div>
             </>
           )}
+
+          <ModelTest api={api} brand={brand} />
 
           <label style={lbl}>Photo check, last 7 days</label>
           {stats ? (

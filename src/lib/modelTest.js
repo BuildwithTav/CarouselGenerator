@@ -1,0 +1,156 @@
+import { supabaseAdmin, BUCKET } from "./dashboard";
+import { planPhotos, loadReferenceRows, signedUrlsFor, falGenerate } from "./imageGen";
+import { assemblePrompt, qaImage, judgeQa } from "./visualPipeline";
+
+// Side-by-side image model test (Tav, Oct 2026: "cheaper and better
+// quality"). Each scene is planned once, then the exact same prompt and the
+// same reference photos go to every model, so the only difference between
+// the photos is the model. Every photo gets the normal photo check and is
+// stored in model_tests (not the media library, so nothing here can end up
+// in a post). Tav picks the best of each scene without seeing which model
+// made it.
+export const TEST_SCENES = [
+  "Sitting on the jump seat before take-off, ankles together, navy court heels on",
+  "Feet up on the crew rest bunk after a long flight in sheer tan tights, her heels set down beside the bunk",
+  "Standing in the galley in her uniform and navy court heels",
+  "Her own view looking down at her feet in sheer tan tights, resting on the sofa at home",
+  "Bare feet resting on the edge of the bath in the hotel after a shift",
+];
+
+// Prices from fal's model pages (Oct 2026), by output size. Seedream 5 Pro
+// also charges $0.0045 for each reference photo after the first.
+const MP = (w, h) => (w && h ? (w * h) / 1e6 : null);
+export const TEST_MODELS = [
+  {
+    key: "nano-banana-pro", label: "Nano Banana Pro (current)", endpoint: "fal-ai/nano-banana-pro/edit",
+    resolutions: ["2K"], fallback: { aspect_ratio: "4:5", resolution: "2K", output_format: "jpeg" },
+    cost: (w, h) => ((MP(w, h) ?? 4) > 5 ? 0.3 : 0.15),
+  },
+  {
+    key: "seedream-5-pro", label: "Seedream 5 Pro", endpoint: "bytedance/seedream/v5/pro/edit",
+    resolutions: ["1.5K", "1.5k"], size: { width: 1360, height: 1700 }, fallback: { image_size: { width: 1360, height: 1700 } },
+    cost: (w, h, refs) => ((MP(w, h) ?? 2.3) > 2.36 ? 0.135 : 0.0675) + 0.0045 * Math.max(0, refs - 1),
+  },
+  {
+    key: "nano-banana-2", label: "Nano Banana 2", endpoint: "fal-ai/nano-banana-2/edit",
+    resolutions: ["1K"], fallback: { aspect_ratio: "4:5", resolution: "1K", output_format: "jpeg" },
+    cost: (w, h) => { const mp = MP(w, h) ?? 1; return mp > 5 ? 0.16 : mp > 1.6 ? 0.12 : 0.08; },
+  },
+  {
+    key: "seedream-4.5", label: "Seedream 4.5", endpoint: "fal-ai/bytedance/seedream/v4.5/edit",
+    resolutions: [], size: { width: 1920, height: 2400 }, fallback: { image_size: { width: 1920, height: 2400 } },
+    cost: () => 0.04,
+  },
+];
+
+// fal publishes each endpoint's input schema. Reading it means the request
+// only uses parameters the model actually has (Nano Banana takes an aspect
+// ratio and resolution, Seedream a pixel size), instead of guessing.
+async function inputSchema(endpoint) {
+  try {
+    const res = await fetch(`https://fal.ai/api/openapi/queue/openapi.json?endpoint_id=${endpoint}`, { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) return null;
+    const spec = await res.json();
+    const schemas = spec?.components?.schemas || {};
+    const ref = spec?.paths?.[`/${endpoint}`]?.post?.requestBody?.content?.["application/json"]?.schema?.$ref;
+    const props = ref ? schemas[ref.split("/").pop()]?.properties : null;
+    return props ? { props, schemas } : null;
+  } catch {
+    return null;
+  }
+}
+
+function enumOf(node, schemas, depth = 0) {
+  if (!node || depth > 4) return [];
+  if (node.$ref) return enumOf(schemas[node.$ref.split("/").pop()], schemas, depth + 1);
+  return [
+    ...(Array.isArray(node.enum) ? node.enum : []),
+    ...["anyOf", "oneOf", "allOf"].flatMap((k) => (node[k] || []).flatMap((n) => enumOf(n, schemas, depth + 1))),
+  ];
+}
+
+export function buildRequest(model, prompt, imageUrls, schema) {
+  const body = { prompt, image_urls: imageUrls, num_images: 1 };
+  if (!schema) return { ...body, ...model.fallback };
+  const { props, schemas } = schema;
+  const pick = (name, wanted) => {
+    const options = enumOf(props[name], schemas);
+    if (!options.length) return wanted[0];
+    for (const w of wanted) {
+      const hit = options.find((o) => String(o).toLowerCase() === String(w).toLowerCase());
+      if (hit !== undefined) return hit;
+    }
+    return undefined;
+  };
+  if (props.aspect_ratio) { const v = pick("aspect_ratio", ["4:5", "3:4"]); if (v) body.aspect_ratio = v; }
+  if (props.resolution && model.resolutions.length) { const v = pick("resolution", model.resolutions); if (v) body.resolution = v; }
+  if (props.image_size && model.size && !body.resolution) body.image_size = model.size;
+  if (props.output_format) { const v = pick("output_format", ["jpeg", "jpg"]); if (v) body.output_format = v; }
+  if (props.max_images) body.max_images = 1;
+  return body;
+}
+
+// Width and height straight from a JPEG or PNG, for when fal doesn't say.
+export function imageSize(buf) {
+  if (buf.length > 24 && buf.readUInt32BE(0) === 0x89504e47) return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+  if (buf[0] === 0xff && buf[1] === 0xd8) {
+    let i = 2;
+    while (i + 9 < buf.length) {
+      if (buf[i] !== 0xff) { i++; continue; }
+      const marker = buf[i + 1];
+      const len = buf.readUInt16BE(i + 2);
+      if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) return { width: buf.readUInt16BE(i + 7), height: buf.readUInt16BE(i + 5) };
+      i += 2 + len;
+    }
+  }
+  return { width: null, height: null };
+}
+
+async function runModel(brand, { model, schema, promptText, refUrls, item, continuity, runId, sceneIndex }) {
+  const request = buildRequest(model, promptText, refUrls, schema);
+  const row = { brand_id: brand.id, run_id: runId, scene_index: sceneIndex, scene: TEST_SCENES[sceneIndex], prompt: promptText, model: model.key, request: { ...request, prompt: undefined, image_urls: refUrls.length } };
+  let gen;
+  try {
+    gen = await falGenerate(model.endpoint, request);
+  } catch (e) {
+    return { ...row, error: e.message.slice(0, 500), cost_usd: e.charged ? model.cost(null, null, refUrls.length) : 0 };
+  }
+  const size = gen.width && gen.height ? { width: gen.width, height: gen.height } : imageSize(gen.buffer);
+  const png = gen.buffer.readUInt32BE(0) === 0x89504e47;
+  const storagePath = `${brand.id}/model-tests/${runId}/${sceneIndex}-${model.key}.${png ? "png" : "jpg"}`;
+  const { error: upErr } = await supabaseAdmin().storage.from(BUCKET).upload(storagePath, gen.buffer, { contentType: png ? "image/png" : "image/jpeg", upsert: true });
+  let qa = null, verdict = null, qaCost = 0;
+  try {
+    const out = await qaImage(brand, { candidateUrl: gen.url, scene: item.scene, shot: item.shot, continuity });
+    qa = out.qa; qaCost = out.costUsd || 0;
+    verdict = judgeQa(qa, { expectedFeet: item.scene?.expected_feet_count || 2 });
+  } catch (e) {
+    qa = { error: e.message.slice(0, 300) };
+  }
+  return {
+    ...row,
+    storage_path: upErr ? null : storagePath,
+    error: upErr ? `Saved image failed: ${upErr.message}` : null,
+    width: size.width, height: size.height,
+    cost_usd: Number((model.cost(size.width, size.height, refUrls.length) + qaCost).toFixed(4)),
+    qa, qa_pass: verdict ? verdict.pass : null, qa_hard_fails: verdict ? verdict.hard : null,
+  };
+}
+
+// Runs one scene on every model in parallel and stores the results.
+export async function runModelTestScene(brand, { runId, sceneIndex }) {
+  const scene = TEST_SCENES[sceneIndex];
+  if (!scene) throw new Error("No such test scene");
+  const [plan, schemas, refRows] = await Promise.all([
+    planPhotos(brand, { texts: [scene], source: "model-test" }),
+    Promise.all(TEST_MODELS.map((m) => inputSchema(m.endpoint))),
+    loadReferenceRows(brand.id),
+  ]);
+  const item = plan.items[0];
+  const refUrls = await signedUrlsFor((item.referenceIds || []).map((id) => refRows.find((r) => r.id === id)).filter(Boolean));
+  const promptText = assemblePrompt(item.prompt, { hasReferences: refUrls.length > 0 });
+  const rows = await Promise.all(TEST_MODELS.map((model, i) => runModel(brand, { model, schema: schemas[i], promptText, refUrls, item, continuity: plan.continuity, runId, sceneIndex })));
+  const { data, error } = await supabaseAdmin().from("model_tests").insert(rows).select();
+  if (error) throw new Error(error.message);
+  return data;
+}

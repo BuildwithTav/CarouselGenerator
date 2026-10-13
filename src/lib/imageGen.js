@@ -75,7 +75,7 @@ export async function loadReferenceRows(brandId) {
   return data || [];
 }
 
-async function signedUrlsFor(rows) {
+export async function signedUrlsFor(rows) {
   const supabase = supabaseAdmin();
   const urls = await Promise.all(rows.map(async (r) => {
     const { data } = await supabase.storage.from(BUCKET).createSignedUrl(r.storage_path, SIGNED_URL_TTL_SECONDS);
@@ -113,6 +113,13 @@ async function generateOnce(promptText, referenceUrls = []) {
     resolution: "2K",
     output_format: "jpeg",
   };
+  const out = await falGenerate(id, body);
+  return { ...out, model: useRefs ? `${id}, ${referenceUrls.length} ref${referenceUrls.length === 1 ? "" : "s"}` : id };
+}
+
+// One synchronous fal call for any image endpoint, returning the downloaded
+// image. Also used by the model comparison test (modelTest.js).
+export async function falGenerate(id, body) {
   const res = await fetchWithTimeout(`https://fal.run/${id}`, {
     method: "POST",
     headers: { Authorization: `Key ${process.env.FAL_API_KEY}`, "Content-Type": "application/json" },
@@ -136,7 +143,7 @@ async function generateOnce(promptText, referenceUrls = []) {
     err.charged = true;
     throw err;
   }
-  return { buffer, url, model: useRefs ? `${id}, ${referenceUrls.length} ref${referenceUrls.length === 1 ? "" : "s"}` : id };
+  return { buffer, url, width: out?.images?.[0]?.width || null, height: out?.images?.[0]?.height || null };
 }
 
 async function saveImage(brand, buffer, { note, shot = null, qa = null, needsCheck = false }) {
