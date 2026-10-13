@@ -30,7 +30,7 @@ export const VISUAL_RULES_VERSION = "2.0";
 const VISUAL_RULES = {
   "sky-high-soles": [
     "Her face is never in the photo. Frame so her head is outside the frame: the top edge of the frame cuts across her waist or hips, her own point of view looking down, a close-up of feet and ankles, or directly behind where the back of her blonde head is the only part of her head in view.",
-    "Work uniform: fitted navy pencil skirt, white blouse, sheer tan tights and navy court heels with a mid heel (the same navy as the skirt), or plain navy flats. With the uniform, shoes are always that same navy and tights always sheer tan.",
+    "Work uniform: fitted navy pencil skirt, white blouse, sheer tan tights and navy court heels with a mid heel (the same navy as the skirt), or plain navy flats. With the uniform, shoes are always that same navy, a rich mid navy that is clearly blue in the light and never near-black, and tights always sheer tan.",
     "Off duty, tights when worn are sheer tan or nude. Bare feet are fine.",
     "Settings: the aircraft (cabin aisle, jump seat, galley, crew rest), the crew room, the airport (gate, lounge, terminal floor), her home (mirror, bed, sofa, bath) or a pedicure chair. A hotel room or pool only occasionally. Never a bus, taxi, car, train, gym, street or shop.",
     "Her feet are the focal point, sharp and well lit.",
@@ -55,6 +55,18 @@ export function enforceShoeColour(brand, value) {
   if (Array.isArray(value)) return value.map((v) => enforceShoeColour(brand, v));
   if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, enforceShoeColour(brand, v)]));
   return typeof value === "string" ? value.replace(BLACK_SHOES, `${colour}$1`) : value;
+}
+
+// "Navy" alone kept rendering so dark it read as black. Every prompt that
+// puts her in shoes gets this line, written in code so it can't be dropped.
+const SHOE_COLOUR_LINE = {
+  "sky-high-soles": "Her shoes are a rich mid navy blue, exactly the navy of her skirt, clearly and visibly blue in the light.",
+};
+
+export function addShoeColourLine(brand, prompt) {
+  const line = SHOE_COLOUR_LINE[brand?.slug];
+  if (!line || !/\b(heels?|shoes?|flats?|court|pumps?)\b/i.test(prompt) || prompt.includes(line)) return prompt;
+  return `${prompt} ${line}`;
 }
 
 export function visualRules(brand) {
@@ -257,7 +269,7 @@ Order: the framing first (where the frame's edges fall, camera height, view, dis
 Translate the facts into one plausible photograph. Don't add people, objects or details the facts don't contain.
 Phrase everything positively: describe what is in the photo. Never write "no X", "without X" or "avoid".
 Feet: include this sentence, then only the left/right relationship the pose needs (for example "her left ankle rests lightly across her right ankle"): ${ANATOMY_BASELINE}
-Name colours explicitly when the uniform is worn: "navy court heels matching her navy skirt" (or "navy flats"), "sheer tan tights".
+Name colours explicitly when the uniform is worn: "rich mid navy court heels matching her navy skirt" (or "navy flats"), "sheer tan tights".
 Use plain visual language. No mood or persuasion words, no captions, quotes or lettering.${textZone ? `\nKeep the ${textZone} of the frame calm and uncluttered.` : ""}
 Reply with JSON only: {"prompts": ["...", ...]}, one per item, same order.`;
 
@@ -274,7 +286,7 @@ Items:
 ${items.map((it, i) => `${i + 1}. ${JSON.stringify({ scene: it.scene, shot: it.shot, ...(it.corrections?.length ? { corrections_from_last_attempt: it.corrections } : {}) })}`).join("\n")}`;
 
   const { json, costUsd } = await askDetailed(system, user, { maxTokens: 700 * items.length + 400, model: PIPELINE_MODEL });
-  const prompts = (Array.isArray(json.prompts) ? json.prompts : []).map((p) => enforceShoeColour(brand, sanitizeVisual(String(p || ""))));
+  const prompts = (Array.isArray(json.prompts) ? json.prompts : []).map((p) => addShoeColourLine(brand, enforceShoeColour(brand, sanitizeVisual(String(p || "")))));
   if (prompts.length !== items.length || prompts.some((p) => !p)) throw new Error("Prompt writer returned an incomplete set");
   return { prompts, costUsd };
 }
@@ -338,7 +350,7 @@ Reply with strict JSON only, no prose:
 - feet_count: the number of her feet visible in the photo.
 - left_right_plausible: check this carefully, it is the most common failure. Trace each visible foot back up its own leg to the knee and hip, so you know which is her left foot and which is her right. On every real foot the big toe is on the inner edge, the side facing her other leg, and the toes get smaller towards the outer edge. False if either foot has its big toe on the outer edge, if both feet look like the same foot (two left or two right), or if a foot is attached to the wrong leg. When in doubt, false.
 - extra_or_merged_items: true if anything is duplicated or impossible: an extra shoe (for example a shoe under a foot that is already in a shoe, or more shoes than she could be wearing plus one pair set down), an extra foot, toe, hand or leg, a shoe merged into a foot, or a hand that doesn't connect to an arm. Count the shoes and limbs before answering.
-- wrong_shoe_colour: true if she wears her work uniform and her shoes are not navy blue (the same navy as the skirt). wrong_tights_colour: true if her tights are anything other than sheer tan or nude.
+- wrong_shoe_colour: true if she wears her work uniform and her shoes are not clearly navy blue (the same navy as the skirt). Shoes that look black, or so dark they could pass for black at a glance, count as wrong. wrong_tights_colour: true if her tights are anything other than sheer tan or nude.
 - text_or_lettering_present: true only for prominent words that draw the eye: a caption, watermark, overlaid text, or a large readable sign or logo. Small brand marks on shoes, insoles, clothing or products, and the small placards and exit signs that belong in an aircraft cabin, do not count.
 - corrections: at most 3 short, observable changes for the next attempt (for example "separate the feet so both silhouettes are readable"). Fix the failures above first (face, number of feet, left/right feet, extra or merged items, shoe or tights colour, prominent text); add style suggestions only if nothing failed. Empty if none.`;
   const user = `${n ? `Images 1 to ${n} are identity references for the same woman.` : "No identity references."}${previousUrl ? ` Image ${n + 1} is the previous accepted photo in this carousel (for continuity).` : ""} The last image is the candidate.

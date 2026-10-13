@@ -41,6 +41,20 @@ What the content should include (cover all of it across posts): ${brand.pillars 
 CTA rules: ${brand.cta_rules || "(not set — end with a light, natural call to action)"}`;
 }
 
+// Opus 5 and Sonnet 5.5 think before they answer, and that thinking counts
+// towards max_tokens. A tight cap let the thinking use all of it and left no
+// answer ("Model returned no JSON"), so every call gets at least this much
+// room. Only tokens actually written are billed, so a higher cap costs nothing.
+const MIN_MAX_TOKENS = 16000;
+
+function answerText(res) {
+  const text = res.content.filter((b) => b.type === "text").map((b) => b.text).join("\n");
+  if (res.stop_reason === "max_tokens" && !text.includes("}")) {
+    throw new Error("The AI ran out of room before answering. Try again.");
+  }
+  return text;
+}
+
 function extractJson(text) {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
@@ -57,7 +71,7 @@ export async function ask(system, user, maxTokens = 8000, imageUrls = []) {
     : user;
   const res = await anthropic().messages.create({
     model: MODEL,
-    max_tokens: maxTokens,
+    max_tokens: Math.max(maxTokens, MIN_MAX_TOKENS),
     output_config: { effort: "medium" },
     system,
     messages: [{ role: "user", content }],
@@ -65,8 +79,7 @@ export async function ask(system, user, maxTokens = 8000, imageUrls = []) {
   if (res.stop_reason === "refusal") {
     throw new Error("The model declined to write this. Try a different idea or soften the brief.");
   }
-  const text = res.content.filter((b) => b.type === "text").map((b) => b.text).join("\n");
-  return extractJson(text);
+  return extractJson(answerText(res));
 }
 
 // Per-million-token prices (input, output) used to log what each visual
@@ -88,7 +101,7 @@ export async function askDetailed(system, user, { maxTokens = 8000, imageUrls = 
   const content = imageUrls.length
     ? [...imageUrls.map((url) => ({ type: "image", source: { type: "url", url } })), { type: "text", text: user }]
     : user;
-  const body = { model, max_tokens: maxTokens, output_config: { effort }, system, messages: [{ role: "user", content }] };
+  const body = { model, max_tokens: Math.max(maxTokens, MIN_MAX_TOKENS), output_config: { effort }, system, messages: [{ role: "user", content }] };
   let res;
   try {
     res = await anthropic().messages.create({ ...body, fallbacks: "default" }, { headers: { "anthropic-beta": "server-side-fallback-2026-07-01" } });
@@ -104,8 +117,7 @@ export async function askDetailed(system, user, { maxTokens = 8000, imageUrls = 
     err.costUsd = cost;
     throw err;
   }
-  const text = res.content.filter((b) => b.type === "text").map((b) => b.text).join("\n");
-  return { json: extractJson(text), usage: res.usage, model: usedModel, costUsd: cost };
+  return { json: extractJson(answerText(res)), usage: res.usage, model: usedModel, costUsd: cost };
 }
 
 export async function suggestIdeas(brand, count = 10) {

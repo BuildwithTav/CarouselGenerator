@@ -165,3 +165,21 @@ test("posting order mixes kinds instead of posting a batch back to back", async 
   assert.equal(postKind(pickNextPost([img(1), img(2)], "image")), "image");
   assert.equal(pickNextPost([], "text"), null);
 });
+
+// ── Token room and shoe colour ───────────────────────────────────────────
+test("every pipeline call leaves room for thinking plus the answer", async () => {
+  reset(); restore();
+  await ig.planPhotos(BRAND, { texts: ["a", "b", "c", "d"].map((t) => `Heels on the jumpseat ${t}`) });
+  const claude = calls.filter((c) => c.kind === "anthropic");
+  assert.ok(claude.length >= 2);
+  for (const c of claude) assert.ok(c.req.max_tokens >= 16000, `${c.stage} max_tokens ${c.req.max_tokens}`);
+});
+
+test("shoe prompts always carry the clearly-blue navy line, bare-feet prompts don't", () => {
+  const shod = vp.addShoeColourLine(BRAND, "She stands in the galley in navy court heels.");
+  assert.match(shod, /clearly and visibly blue/);
+  assert.equal(vp.addShoeColourLine(BRAND, shod), shod, "added once");
+  const bare = "Her bare feet rest on the sofa.";
+  assert.equal(vp.addShoeColourLine(BRAND, bare), bare);
+  assert.equal(vp.addShoeColourLine({ slug: "healthcode" }, "In trainers and shoes"), "In trainers and shoes");
+});
