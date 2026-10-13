@@ -29,13 +29,13 @@ export const VISUAL_RULES_VERSION = "2.0";
 // feet wrong) live here as rules, not as a growing list in every prompt.
 const VISUAL_RULES = {
   "sky-high-soles": [
-    "Her face is never in the photo. Frame so her head is outside the frame: the top edge of the frame cuts across her waist or hips, her own point of view looking down, a close-up of feet and ankles, or directly behind where the back of her blonde head is the only part of her head in view.",
+    "Her face is never in the photo. Keep her head out of the frame in a different way from photo to photo: a close-up of her feet and ankles, the frame's top edge at mid-calf, her knees or her thighs, her own point of view looking down, or directly behind her (her soles and the backs of her legs, or the back of her blonde head as the only part of her head in view). A top edge at her waist is occasional; her blouse and chest are rarely in the photo.",
     "Work uniform: fitted navy pencil skirt, white blouse, sheer tan tights and navy court heels with a mid heel (the same navy as the skirt), or plain navy flats. With the uniform, shoes are always that same navy, a rich mid navy that is clearly blue in the light and never near-black, and tights always sheer tan.",
     "Off duty, tights when worn are sheer tan or nude. Bare feet are fine.",
     "Settings: the aircraft (cabin aisle, jump seat, galley, crew rest), the crew room, the airport (gate, lounge, terminal floor), her home (mirror, bed, sofa, bath) or a pedicure chair. A hotel room or pool only occasionally. Never a bus, taxi, car, train, gym, street or shop.",
     "Her feet are the focal point, sharp and well lit.",
     "Her legs are never crossed, not at the knee and not at the ankle: both legs stay uncrossed with her two feet clearly apart, side by side or one slightly forward.",
-    "Still, simple moments only: her feet resting, stretching, or one heel loose on her toes. Her hands never hold a shoe or work on her tights or feet; they rest on her lap, the seat or a cup. Shoes are either on her feet or set on the floor clearly apart from them, one pair at most.",
+    "Simple moments, varied from photo to photo: her feet resting, up on a seat, ledge or wall, stretching, on tiptoe, one heel dangling from her toes, kneeling seen from behind, lying on her front with her feet raised, or walking away from the camera. Her hands never hold a shoe or work on her tights or feet; they rest on her lap, the seat or a cup, or stay out of the frame. Shoes are either on her feet or set on the floor clearly apart from them, one pair at most.",
     "Fully clothed above the waist. Elegant and sensual through light, pose and styling, never explicit.",
     "Her own hands are slim and feminine with a French manicure. A partner appears only as a man's hand, at most up to the wrist or forearm, entering from the edge of the frame.",
     "Anything that could carry a photo of a person (ID badge, lanyard card, photo frame, phone screen) is face-down or angled away.",
@@ -83,10 +83,11 @@ export const VISUAL_MODES = {
 
 const SHOT_DIMENSIONS = `Shot dimensions (pick one value for each, or a close natural variant):
 - distance: extreme detail, tight, medium, wider environmental
-- camera_height: floor, ankle, knee, seated eye level, own point of view
-- view: top down, three quarter, side profile, straight on feet, directly behind, soles towards the camera
-- body_position: seated, standing, reclining, legs stretched out side by side, one foot slightly forward, one foot raised, kneeling (sitting back on her heels, seen from directly behind her: the camera sees both soles, the backs of her calves and her skirt from behind, feet side by side and not overlapping) (legs always uncrossed)
-- footwear_state: both heels on, one loose, one removed, both beside her, flats, tights only, bare
+- crop (where the frame's top edge falls): feet and ankles only, mid-calf, knees, mid-thigh, waist (occasional), none (seen from behind or from her own view)
+- camera_height: floor, ankle, knee, seated eye level, overhead, own point of view
+- view: top down, three quarter, side profile, straight on feet, directly behind, low from behind, soles towards the camera
+- body_position: seated, standing, standing on tiptoe, walking away from the camera (mid-step, seen from behind), reclining, lying on her front with her lower legs raised and soles up, legs stretched out side by side, feet up on a seat, ledge or wall, perched on a counter or bunk edge with her feet hanging, one foot slightly forward, one foot raised, kneeling (sitting back on her heels, seen from directly behind her: the camera sees both soles, the backs of her calves and her skirt from behind, feet side by side and not overlapping) (legs always uncrossed)
+- footwear_state: both heels on, one heel dangling from her toes, one removed, both beside her, flats, tights only, bare
 - emphasis: toe line, arch, soles, hosiery texture, heel slipping, shoe detail, full legs, cabin context`;
 
 // Image identity lock — sent before the scene whenever reference photos are
@@ -147,6 +148,7 @@ export function normalizePlan(raw, count, lockedContinuity = null) {
       },
       shot: {
         distance: str(shot.distance, "tight"),
+        crop: str(shot.crop, "mid-calf"),
         camera_height: str(shot.camera_height, "ankle"),
         view: str(shot.view, "side profile"),
         body_position: str(shot.body_position, "seated"),
@@ -163,7 +165,7 @@ export function normalizePlan(raw, count, lockedContinuity = null) {
 // A coarse composition key, used to compare a shot against recent ones.
 export function compositionKey(shot) {
   const n = (s) => String(s || "").toLowerCase().replace(/[^a-z ]/g, "").trim();
-  return [n(shot?.distance), n(shot?.camera_height), n(shot?.view), n(shot?.body_position)].join("|");
+  return [n(shot?.distance), n(shot?.crop), n(shot?.camera_height), n(shot?.view), n(shot?.body_position)].join("|");
 }
 
 // ── Director: scene extraction + shot direction + continuity ─────────────
@@ -185,9 +187,10 @@ ${SHOT_DIMENSIONS}
 
 How to choose:
 - The set is one short photographic event: lock the setting, wardrobe, lighting period and mode for the whole set; vary camera position, crop and the next small action from photo to photo. Only change location if the texts clearly move to a new place.
-- For each scene, consider several candidate shots and pick the best, weighing: semantic fit with the scene 40%, fit with the set's story order 20%, how well her identity references cover that view 15%, novelty against the recent shots 15%, anatomical simplicity 10%. Novelty is a penalty, not the goal: the shot that best shows the action wins.
-- Never repeat a composition (same distance, camera height, view and body position) used by another photo in this set or by any recent shot listed.
-- Keep the action still: no hands holding shoes, rolling tights or touching her feet, and no shoe being put on or pulled off mid-action (these produce extra shoes, extra feet and wrong hands). Show the moment just before or after instead: heels already off and set beside her, tights already on.
+- For each scene, consider several candidate shots and pick the best, weighing: semantic fit with the scene 35%, novelty against the recent shots 30%, fit with the set's story order 15%, how well her identity references cover that view 10%, anatomical simplicity 10%.
+- The account must never look predictable. Never repeat a composition (same distance, camera height, view, body position and crop) used by another photo in this set or by any recent shot listed, and when two recent shots share a crop, view or body position, choose a different one. Lead with her feet and legs: most photos crop at the feet, calves, knees or thighs, or are seen from behind or from her own view. A waist crop is occasional, and never crop at her chest.
+- What stays the same in every photo is her: the same feet, legs and skin, and her uniform, sheer tan tights and navy heels when she's working. Everything else varies: pose, angle, crop, place and moment.
+- Keep her hands out of the action: no hands holding shoes, rolling tights or touching her feet, and no shoe being put on or pulled off mid-action (these produce extra shoes, extra feet and wrong hands). Show the moment just before or after instead: heels already off and set beside her, tights already on.
 - Keep anatomy simple. Legs are never crossed (crossed legs make the image model draw two left or two right feet). Don't combine pointed toes, extreme foreshortening, shoe removal and a floor-level camera unless the scene genuinely needs it.
 - Translate only the observable event into a plausible photograph. Drop narration, metaphor, mood, persuasion, audience reactions, other people watching, and any wording or lettering. If a scene mentions a place outside the permanent settings, show the moment just before or after it in an allowed setting.
 - expected_feet_count is 2 unless the shot is a deliberate one-foot detail.
@@ -195,7 +198,7 @@ How to choose:
 Reply with JSON only:
 {"continuity": {"setting": "...", "wardrobe": "...", "lighting": "...", "mode": "editorial|cabin_candid|lifestyle_intimate"},
  "shots": [{"scene": {"setting": "...", "subject_action": "...", "wardrobe": "...", "footwear_state": "...", "required_objects": ["..."], "expected_feet_count": 2},
-            "shot": {"distance": "...", "camera_height": "...", "view": "...", "body_position": "...", "footwear_state": "...", "emphasis": "..."},
+            "shot": {"distance": "...", "crop": "...", "camera_height": "...", "view": "...", "body_position": "...", "footwear_state": "...", "emphasis": "..."},
             "score_reason": "one short sentence"}]}
 Exactly one entry in "shots" per scene, same order. Observable facts only, no quotes.`;
 
@@ -265,7 +268,7 @@ export async function writeShotPrompts(brand, { continuity, items, textZone = nu
   const rules = visualRules(brand);
   const system = `You write image prompts for Nano Banana Pro, a photorealistic image model, from structured visual facts.
 Write the shortest prompt that completely defines each shot, normally 70 to 140 words. Never pad to reach a length.
-Order: the framing first (where the frame's edges fall, camera height, view, distance); then her pose, body position and footwear; the setting and required objects; the light and camera feel of the mode.
+Order: the framing first (where the frame's edges fall, taken from the shot's crop, then camera height, view, distance); then her pose, body position and footwear; the setting and required objects; the light and camera feel of the mode.
 Translate the facts into one plausible photograph. Don't add people, objects or details the facts don't contain.
 Phrase everything positively: describe what is in the photo. Never write "no X", "without X" or "avoid".
 Make the framing physically possible for the pose. Her soles face the camera only when the camera is beyond her feet, looking at the bottoms of them. Kneeling with her soles to the camera means she faces away from it: the frame shows her from behind (soles, the backs of her calves, her skirt) and its top edge cuts across her waist, never her lap or chest.

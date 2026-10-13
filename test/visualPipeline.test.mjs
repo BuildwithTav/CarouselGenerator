@@ -31,6 +31,7 @@ test("normalizePlan validates the director's shape and locks continuity", () => 
   const plan = vp.normalizePlan({ continuity: { mode: "nonsense" }, shots: [{ scene: {}, shot: {} }] }, 1, locked);
   assert.deepEqual(plan.continuity, locked);
   assert.equal(plan.shots[0].scene.expected_feet_count, 2);
+  assert.equal(plan.shots[0].shot.crop, "mid-calf", "a crop is always set");
   assert.throws(() => vp.normalizePlan({ shots: [] }, 2), /returned 0 shots for 2/);
   const fresh = vp.normalizePlan({ continuity: { mode: "nonsense" }, shots: [{}] }, 1);
   assert.equal(fresh.continuity.mode, "cabin_candid");
@@ -237,6 +238,16 @@ test("Tav's own photo description reaches the post writer for an image post", as
   reset();
   await generateXPost(BRAND, { slot, pillar: { label: "Feet", guidance: "" }, format: "text", photoIdea: "kneeling" });
   assert.ok(!JSON.stringify(calls.find((c) => c.kind === "anthropic").req).includes("Tav has asked for this exact photo"), "text posts ignore it");
+});
+
+test("the director is pushed to vary pose and crop, not repeat a waist or chest crop", async () => {
+  reset(); restore();
+  await ig.planPhotos(BRAND, { texts: ["Feet up after a long day"] });
+  const sys = String(calls.find((c) => c.kind === "anthropic" && c.stage === "director").req.system);
+  assert.match(sys, /never crop at her chest/);
+  assert.match(sys, /novelty against the recent shots 30%/);
+  assert.match(sys, /lying on her front with her lower legs raised/);
+  assert.notEqual(vp.compositionKey({ distance: "tight", crop: "knees", view: "side" }), vp.compositionKey({ distance: "tight", crop: "waist", view: "side" }));
 });
 
 test("the director is allowed a kneeling, soles-to-camera shot", async () => {
