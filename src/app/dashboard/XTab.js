@@ -225,6 +225,7 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("all");
   const [generating, setGenerating] = useState(null);
+  const [photoIdea, setPhotoIdea] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const brand = brands.find((b) => b.id === activeId);
 
@@ -245,7 +246,7 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
   // magnet, picked at random), one photo post, or a 4-slide carousel.
   const KINDS = {
     text: { label: "Text post", body: () => ({ slotKey: Math.random() < 0.5 ? "personality" : "conversation", format: "text" }) },
-    single: { label: "Image post", body: () => ({ slotKey: "visual", format: "single" }) },
+    single: { label: "Image post", body: () => ({ slotKey: "visual", format: "single", idea: photoIdea.trim() || undefined }) },
     carousel: { label: "4-slide carousel", body: () => ({ slotKey: "visual", format: "branded_carousel" }) },
   };
   const generate = async (kind) => {
@@ -255,6 +256,7 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
       const r = results?.[0];
       if (r?.error) alert(`${KINDS[kind].label} failed: ${r.error}`);
       else if (!r?.queued) alert("Nothing was made — try again.");
+      else if (kind === "single") setPhotoIdea("");
     } catch (e) {
       // The request can time out in the browser while the server finishes
       // anyway, so check again shortly before calling it lost.
@@ -334,6 +336,13 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
             ))}
           </div>
         </div>
+        <input
+          value={photoIdea}
+          onChange={(e) => setPhotoIdea(e.target.value)}
+          maxLength={300}
+          placeholder="Optional: describe the photo for + Image post, e.g. kneeling on the floor, soles in tights showing"
+          style={{ ...inp, fontSize: 13, marginBottom: 12 }}
+        />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
           <div style={{ fontSize: 13 }}>
             {brand.x_followers != null ? (

@@ -133,7 +133,7 @@ function withTimeout(promise, ms, label) {
   ]).finally(() => clearTimeout(timer));
 }
 
-async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, today, feedback) {
+async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, today, feedback, photoIdea = null) {
   if (format === "branded_carousel") {
     const built = await buildBrandedCarousel(brand, { pillar, recentPosts });
     await bumpMediaUse(built.mediaIds);
@@ -155,7 +155,7 @@ async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, 
     return { queued: true };
   }
 
-  const { text, scenes, postFormat } = await generateXPost(brand, { slot, pillar, format, recentPosts, feedback });
+  const { text, scenes, postFormat } = await generateXPost(brand, { slot, pillar, format, recentPosts, feedback, photoIdea });
   if (!text) return { queued: false };
 
   let slidePaths = [];
@@ -186,11 +186,11 @@ async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, 
 // One slot end to end: pick pillar/format, write it, generate its photo(s),
 // insert the draft. Returns a result object rather than throwing, so slots
 // run concurrently via Promise.all without one failure rejecting the rest.
-async function runSlot(supabase, brand, slot, recentPosts, today, feedback, formatOverride = null) {
+async function runSlot(supabase, brand, slot, recentPosts, today, feedback, formatOverride = null, photoIdea = null) {
   try {
     const pillar = pickPillar();
     const format = formatOverride || pickFormat(slot).format;
-    return await withTimeout(generateSlot(supabase, brand, slot, pillar, format, recentPosts, today, feedback), SLOT_TIMEOUT_MS, `${slot.key} (${format})`);
+    return await withTimeout(generateSlot(supabase, brand, slot, pillar, format, recentPosts, today, feedback, photoIdea), SLOT_TIMEOUT_MS, `${slot.key} (${format})`);
   } catch (e) {
     console.error(`X content generation failed for ${brand.slug} (${slot.key}):`, e.message);
     await logGenerationError(brand.id, "x-content", slot.key, e.message);
@@ -207,7 +207,7 @@ async function runSlot(supabase, brand, slot, recentPosts, today, feedback, form
 // depend on knowing that number: the dashboard's "Generate today's batch"
 // now fires one request per slot instead of one request for all 3, and the
 // daily cron is split the same way in vercel.json.
-async function runXContentGeneration(brandIdFilter, slotKeyFilter, formatOverride = null) {
+async function runXContentGeneration(brandIdFilter, slotKeyFilter, formatOverride = null, photoIdea = null) {
   const supabase = supabaseAdmin();
 
   const { data: brands } = await supabase.from("brands").select("*");
@@ -237,7 +237,7 @@ async function runXContentGeneration(brandIdFilter, slotKeyFilter, formatOverrid
     // only. The photo pipeline works from permanent rules instead (see
     // visualPipeline.js), not a growing list of past rejections.
     const feedback = await recentFeedback(brand.id);
-    const slotResults = await Promise.all(slots.map((slot) => runSlot(supabase, brand, slot, recentPosts, today, feedback, formatOverride)));
+    const slotResults = await Promise.all(slots.map((slot) => runSlot(supabase, brand, slot, recentPosts, today, feedback, formatOverride, photoIdea)));
     const queued = slotResults.filter((r) => r.queued).length;
     const errors = slotResults.map((r) => r.error).filter(Boolean);
     return errors.length ? { brand: brand.slug, queued, error: errors.join(" | ") } : { brand: brand.slug, queued };
@@ -258,8 +258,10 @@ export async function GET(req) {
 export async function POST(req) {
   if (!dashboardAuthorized(req)) return Response.json({ error: "Not authorized" }, { status: 403 });
   // `format` lets the X tab make one specific kind of post on demand:
-  // "text", "single" (one photo) or "branded_carousel" (4 slides).
-  const { brandId, slotKey, format } = await req.json().catch(() => ({}));
+  // "text", "single" (one photo) or "branded_carousel" (4 slides). `idea`
+  // is Tav's own description of the photo for a "single" post.
+  const { brandId, slotKey, format, idea } = await req.json().catch(() => ({}));
   const formatOverride = ["text", "single", "branded_carousel"].includes(format) ? format : null;
-  return Response.json({ results: await runXContentGeneration(brandId || null, slotKey || null, formatOverride) });
+  const photoIdea = formatOverride === "single" && typeof idea === "string" && idea.trim() ? idea.trim().slice(0, 300) : null;
+  return Response.json({ results: await runXContentGeneration(brandId || null, slotKey || null, formatOverride, photoIdea) });
 }

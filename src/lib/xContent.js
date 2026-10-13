@@ -161,7 +161,7 @@ function clampTweet(text) {
 // call — the caller then generates a photo FROM that description (see
 // imageGen.js), so a line like "slipped into the bath out of my tights"
 // gets a photo that actually shows that, not a vaguely-matching stock shot.
-export async function generateXPost(brand, { slot, pillar, format, recentPosts = [], feedback = [] }) {
+export async function generateXPost(brand, { slot, pillar, format, recentPosts = [], feedback = [], photoIdea = null }) {
   const needsPhotos = format === "single" || format === "carousel";
   const postFormat = pickPostFormat(slot);
 
@@ -186,7 +186,8 @@ Every scene happens in a real cabin crew life place: on the aircraft (cabin aisl
 Today's post job: ${slot.job}
 Post format for this one (follow it): ${postFormat.how}
 Content pillar: ${pillar.label}. ${pillar.guidance}
-${formatBrief}
+${formatBrief}${needsPhotos && photoIdea ? `
+Tav has asked for this exact photo: "${photoIdea}". The scene must be exactly that (keep it inside the brand's photo rules above), and the post text must be about that same moment.` : ""}
 The first line is the hook: it has to stop a thumb on its own. Flirty, quirky and specific beats clever and vague. Never ask for likes, reposts, replies or follows, and nothing crude enough that someone would mute or report it.
 
 ${recentBlock}

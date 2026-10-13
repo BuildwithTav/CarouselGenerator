@@ -211,3 +211,23 @@ test("shoe prompts always carry the clearly-blue navy line, bare-feet prompts do
   assert.equal(vp.addShoeColourLine(BRAND, bare), bare);
   assert.equal(vp.addShoeColourLine({ slug: "healthcode" }, "In trainers and shoes"), "In trainers and shoes");
 });
+
+// ── On-demand photo idea ─────────────────────────────────────────────────
+test("Tav's own photo description reaches the post writer for an image post", async () => {
+  reset(); restore();
+  const { generateXPost, X_SLOTS } = await import("@/lib/xContent");
+  const slot = X_SLOTS.find((s) => s.key === "visual");
+  await generateXPost(BRAND, { slot, pillar: { label: "Feet", guidance: "" }, format: "single", photoIdea: "kneeling on the floor, soles in tights showing" });
+  const req = JSON.stringify(calls.find((c) => c.kind === "anthropic").req);
+  assert.ok(req.includes("kneeling on the floor, soles in tights showing"));
+  reset();
+  await generateXPost(BRAND, { slot, pillar: { label: "Feet", guidance: "" }, format: "text", photoIdea: "kneeling" });
+  assert.ok(!JSON.stringify(calls.find((c) => c.kind === "anthropic").req).includes("Tav has asked for this exact photo"), "text posts ignore it");
+});
+
+test("the director is allowed a kneeling, soles-to-camera shot", async () => {
+  reset(); restore();
+  await ig.planPhotos(BRAND, { texts: ["Kneeling on the floor, soles in tights towards the camera"] });
+  const director = calls.find((c) => c.kind === "anthropic" && c.stage === "director");
+  assert.match(String(director.req.system), /kneeling \(sitting back on her heels, both soles towards the camera/);
+});

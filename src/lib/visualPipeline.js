@@ -84,10 +84,10 @@ export const VISUAL_MODES = {
 const SHOT_DIMENSIONS = `Shot dimensions (pick one value for each, or a close natural variant):
 - distance: extreme detail, tight, medium, wider environmental
 - camera_height: floor, ankle, knee, seated eye level, own point of view
-- view: top down, three quarter, side profile, straight on feet, directly behind
-- body_position: seated, standing, reclining, legs stretched out side by side, one foot slightly forward, one foot raised (legs always uncrossed)
+- view: top down, three quarter, side profile, straight on feet, directly behind, soles towards the camera
+- body_position: seated, standing, reclining, legs stretched out side by side, one foot slightly forward, one foot raised, kneeling (sitting back on her heels, both soles towards the camera, feet side by side and not overlapping) (legs always uncrossed)
 - footwear_state: both heels on, one loose, one removed, both beside her, flats, tights only, bare
-- emphasis: toe line, arch, hosiery texture, heel slipping, shoe detail, full legs, cabin context`;
+- emphasis: toe line, arch, soles, hosiery texture, heel slipping, shoe detail, full legs, cabin context`;
 
 // Image identity lock — sent before the scene whenever reference photos are
 // attached. References control identity; the brief controls everything else.
