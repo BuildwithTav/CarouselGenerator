@@ -119,12 +119,20 @@ async function generateOnce(promptText, referenceUrls = []) {
 
 // One synchronous fal call for any image endpoint, returning the downloaded
 // image. Also used by the model comparison test (modelTest.js).
-export async function falGenerate(id, body) {
-  const res = await fetchWithTimeout(`https://fal.run/${id}`, {
-    method: "POST",
-    headers: { Authorization: `Key ${process.env.FAL_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  }, TIMEOUT_MS);
+// fal allows 10 requests at once per account; a 429 for that limit isn't
+// charged, so it waits and tries again rather than failing the photo.
+const BUSY_WAITS_MS = [4000, 8000];
+export async function falGenerate(id, body, { timeoutMs = TIMEOUT_MS } = {}) {
+  let res;
+  for (let i = 0; ; i++) {
+    res = await fetchWithTimeout(`https://fal.run/${id}`, {
+      method: "POST",
+      headers: { Authorization: `Key ${process.env.FAL_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }, timeoutMs);
+    if (res.status !== 429 || i >= BUSY_WAITS_MS.length) break;
+    await new Promise((r) => setTimeout(r, BUSY_WAITS_MS[i]));
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     const err = new Error(`${id} ${res.status}: ${text.slice(0, 300)}`);

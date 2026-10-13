@@ -111,7 +111,7 @@ async function runModel(brand, { model, schema, promptText, refUrls, item, conti
   const row = { brand_id: brand.id, run_id: runId, scene_index: sceneIndex, scene: TEST_SCENES[sceneIndex], prompt: promptText, model: model.key, request: { ...request, prompt: undefined, image_urls: refUrls.length } };
   let gen;
   try {
-    gen = await falGenerate(model.endpoint, request);
+    gen = await falGenerate(model.endpoint, request, { timeoutMs: GEN_TIMEOUT_MS });
   } catch (e) {
     return { ...row, error: e.message.slice(0, 500), cost_usd: e.charged ? model.cost(null, null, refUrls.length) : 0 };
   }
@@ -137,7 +137,13 @@ async function runModel(brand, { model, schema, promptText, refUrls, item, conti
   };
 }
 
-// Runs one scene on every model in parallel and stores the results.
+// Seedream 5 Pro took over 110s once; the route allows 300s in total.
+const GEN_TIMEOUT_MS = 170000;
+
+// Runs one scene on every model in parallel (4 requests, well under fal's
+// limit of 10 at once) and stores the results. Running a scene again in the
+// same test replaces its photos, so a scene with a gap can be redone fairly:
+// every model gets the new prompt.
 export async function runModelTestScene(brand, { runId, sceneIndex }) {
   const scene = TEST_SCENES[sceneIndex];
   if (!scene) throw new Error("No such test scene");
@@ -150,6 +156,7 @@ export async function runModelTestScene(brand, { runId, sceneIndex }) {
   const refUrls = await signedUrlsFor((item.referenceIds || []).map((id) => refRows.find((r) => r.id === id)).filter(Boolean));
   const promptText = assemblePrompt(item.prompt, { hasReferences: refUrls.length > 0 });
   const rows = await Promise.all(TEST_MODELS.map((model, i) => runModel(brand, { model, schema: schemas[i], promptText, refUrls, item, continuity: plan.continuity, runId, sceneIndex })));
+  await supabaseAdmin().from("model_tests").delete().eq("run_id", runId).eq("scene_index", sceneIndex);
   const { data, error } = await supabaseAdmin().from("model_tests").insert(rows).select();
   if (error) throw new Error(error.message);
   return data;

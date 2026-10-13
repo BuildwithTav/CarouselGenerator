@@ -115,22 +115,25 @@ function ModelTest({ api, brand }) {
   };
   useEffect(() => { load(); }, [brand.id]);
 
-  const run = async () => {
-    if (!confirm(`Make each of the 5 test scenes on all 4 models? Costs ${TEST_COST} on fal and takes a few minutes.`)) return;
-    const runId = crypto.randomUUID();
+  // One scene at a time: 4 photos at once stays well under fal's limit of
+  // 10 requests at once (two scenes together hit it on the first run).
+  const runScenes = async (runId, scenes) => {
     setRunning(true); setDone(0); setErrs([]);
-    const queue = [0, 1, 2, 3, 4];
-    const worker = async () => {
-      while (queue.length) {
-        const sceneIndex = queue.shift();
-        try { await api.post("/api/content/model-test", { brandId: brand.id, runId, sceneIndex }); }
-        catch (e) { setErrs((l) => [...l, `Scene ${sceneIndex + 1}: ${e.message}`]); }
-        setDone((n) => n + 1);
-        load();
-      }
-    };
-    await Promise.all([worker(), worker()]);
+    for (const sceneIndex of scenes) {
+      try { await api.post("/api/content/model-test", { brandId: brand.id, runId, sceneIndex }); }
+      catch (e) { setErrs((l) => [...l, `Scene ${sceneIndex + 1}: ${e.message}`]); }
+      setDone((n) => n + 1);
+      await load();
+    }
     setRunning(false);
+  };
+  const run = () => {
+    if (!confirm(`Make each of the 5 test scenes on all 4 models? Costs ${TEST_COST} on fal and takes about 10 minutes.`)) return;
+    runScenes(crypto.randomUUID(), [0, 1, 2, 3, 4]);
+  };
+  const redo = (sceneIndex) => {
+    if (!confirm("Make this scene again on all 4 models? About $0.45.")) return;
+    runScenes(data.run.id, [sceneIndex]);
   };
 
   const pick = async (id) => {
@@ -155,16 +158,23 @@ function ModelTest({ api, brand }) {
         Makes 5 test scenes on 4 models with the same prompt and her same reference photos. Pick the best of each scene. The model names stay hidden until you pick, so it's a fair test. Nothing here goes into posts.
       </div>
       <button onClick={run} disabled={running} style={btn("dark", { opacity: running ? 0.6 : 1, marginBottom: 12 })}>
-        {running ? <><Spinner /> Making scenes… {done} of 5 done</> : data?.run ? `Run a new test (${TEST_COST})` : `Run the test (${TEST_COST})`}
+        {running ? <><Spinner /> Making scenes… {done} done, keep this page open</> : data?.run ? `Run a new test (${TEST_COST})` : `Run the test (${TEST_COST})`}
       </button>
       {errs.map((e, i) => <div key={i} style={{ color: C.danger, fontSize: 12, marginBottom: 6 }}>{e}</div>)}
 
       {scenes.map((si) => {
         const set = photos.filter((p) => p.scene_index === si).sort((a, b) => order(a.id) - order(b.id));
         const picked = set.some((p) => p.picked);
+        const gaps = set.filter((p) => !p.url).length;
         return (
           <div key={si} style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{si + 1}. {set[0]?.scene}</div>
+            {gaps > 0 && !running && (
+              <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>
+                {gaps} of {set.length} didn't come back, so this scene isn't a fair comparison yet.{" "}
+                <button onClick={() => redo(si)} style={btn("small", { padding: "3px 8px" })}>Redo this scene (~$0.45)</button>
+              </div>
+            )}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>
               {set.map((p, i) => (
                 <div key={p.id} style={{ border: `2px solid ${p.picked ? C.gold : C.border}`, borderRadius: 10, overflow: "hidden", background: C.bg }}>

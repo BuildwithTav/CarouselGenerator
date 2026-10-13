@@ -71,3 +71,15 @@ test("a test scene sends the same prompt and references to all 4 models and chec
   assert.ok(!calls.some((c) => c.kind === "supabase" && c.method === "POST" && c.url.includes("brand_media")), "never in the media library");
   delete handlers.falSchema;
 });
+
+test("fal's 'too many at once' limit waits and retries instead of failing the photo", async () => {
+  calls.length = 0;
+  let first = true;
+  const ok = handlers.fal;
+  handlers.fal = (body) => (first ? ((first = false), { status: 429, body: { detail: "Reached concurrent requests limit of 10", type: "concurrent_requests_limit" } }) : ok(body));
+  const rows = await mt.runModelTestScene(BRAND, { runId: "run-2", sceneIndex: 1 });
+  assert.equal(calls.filter((c) => c.kind === "fal").length, 5, "4 models + 1 retry");
+  assert.ok(rows.every((r) => !r.error && r.storage_path), "every model came back");
+  assert.ok(calls.some((c) => c.kind === "supabase" && c.method === "DELETE" && c.url.includes("model_tests")), "a redo replaces the scene");
+  handlers.fal = ok;
+});
