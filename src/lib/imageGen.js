@@ -7,8 +7,8 @@ import { directShots, selectReferences, writeShotPrompts, assemblePrompt, qaImag
 // from the browser, one slide at a time) and the X content engine (driven
 // from a cron with no browser to call that route from).
 //
-// One image model only: Nano Banana Pro at 2K, 4:5. FLUX models reject this
-// brand's content outright, so there's no fallback model.
+// The image model is set by PHOTO_MODEL / RETRY_MODEL below, chosen from
+// Tav's blind model test. FLUX models reject this brand's content outright.
 //
 // Brands with a fixed character (Sky High Soles) go through the staged
 // visual pipeline (visualPipeline.js): director → reference selection →
@@ -22,10 +22,22 @@ import { directShots, selectReferences, writeShotPrompts, assemblePrompt, qaImag
 //
 // Brands without a character (HealthCode) keep the original single-prompt
 // path below (generateMatchingPhoto's legacy branch).
-const MODEL_ID = "fal-ai/nano-banana-pro";
-const EDIT_ID = "fal-ai/nano-banana-pro/edit";
 const TIMEOUT_MS = 110000;
-const FAL_COST_USD = 0.15; // per 2K image, edit or text-to-image
+
+// Image models the photo pipeline can use, with the request settings and
+// prices from Tav's blind model test (Oct 2026, model_tests table). `edit`
+// takes reference photos, `text` is used when there are none.
+export const PHOTO_MODELS = {
+  "nano-banana-pro": { text: "fal-ai/nano-banana-pro", edit: "fal-ai/nano-banana-pro/edit", settings: { aspect_ratio: "4:5", resolution: "2K", output_format: "jpeg" }, cost: () => 0.15 },
+  "nano-banana-2": { text: "fal-ai/nano-banana-2", edit: "fal-ai/nano-banana-2/edit", settings: { aspect_ratio: "4:5", resolution: "1K", output_format: "jpeg" }, cost: () => 0.08 },
+  "seedream-5-pro": { text: "bytedance/seedream/v5/pro/text-to-image", edit: "bytedance/seedream/v5/pro/edit", settings: { image_size: { width: 1360, height: 1700 }, output_format: "jpeg" }, cost: (refs) => 0.0675 + 0.0045 * Math.max(0, refs - 1), timeoutMs: 170000 },
+  "seedream-4.5": { text: "fal-ai/bytedance/seedream/v4.5/text-to-image", edit: "fal-ai/bytedance/seedream/v4.5/edit", settings: { image_size: { width: 1920, height: 2400 }, max_images: 1 }, cost: () => 0.04 },
+};
+// Sky High Soles' photos: the model for the first try, and for the one
+// retry. Brands without a character (HealthCode) use LEGACY_MODEL.
+const PHOTO_MODEL = "nano-banana-pro";
+const RETRY_MODEL = "nano-banana-pro";
+const LEGACY_MODEL = "nano-banana-pro";
 const MAX_ATTEMPTS = 2; // the first try plus at most 1 retry (caps the worst case)
 const DEFAULT_BUDGET_MS = 170000; // no new attempt starts after this
 
@@ -102,19 +114,23 @@ async function recentShots(brandId) {
 }
 
 // ── Generation ───────────────────────────────────────────────────────────
-async function generateOnce(promptText, referenceUrls = []) {
+export function modelEndpoint(modelKey, refCount) {
+  const m = PHOTO_MODELS[modelKey];
+  return refCount > 0 ? m.edit : m.text;
+}
+
+async function generateOnce(promptText, referenceUrls = [], modelKey = PHOTO_MODEL) {
+  const m = PHOTO_MODELS[modelKey];
   const useRefs = referenceUrls.length > 0;
-  const id = useRefs ? EDIT_ID : MODEL_ID;
+  const id = modelEndpoint(modelKey, referenceUrls.length);
   const body = {
     prompt: promptText,
     ...(useRefs ? { image_urls: referenceUrls } : {}),
-    aspect_ratio: "4:5",
     num_images: 1,
-    resolution: "2K",
-    output_format: "jpeg",
+    ...m.settings,
   };
-  const out = await falGenerate(id, body);
-  return { ...out, model: useRefs ? `${id}, ${referenceUrls.length} ref${referenceUrls.length === 1 ? "" : "s"}` : id };
+  const out = await falGenerate(id, body, { timeoutMs: m.timeoutMs || TIMEOUT_MS });
+  return { ...out, costUsd: m.cost(referenceUrls.length), model: useRefs ? `${id}, ${referenceUrls.length} ref${referenceUrls.length === 1 ? "" : "s"}` : id };
 }
 
 // One synchronous fal call for any image endpoint, returning the downloaded
@@ -223,12 +239,13 @@ export async function generatePlannedPhoto(brand, { item, continuity, previousUr
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     if (attempt > 1 && Date.now() - started > budgetMs) break;
     const promptText = assemblePrompt(item.prompt, { hasReferences: refUrls.length > 0, corrections });
+    const modelKey = attempt === 1 ? PHOTO_MODEL : RETRY_MODEL;
     let gen;
     try {
-      gen = await generateOnce(promptText, refUrls);
+      gen = await generateOnce(promptText, refUrls, modelKey);
     } catch (e) {
       failures.push(e.message);
-      await logAttempt({ brand_id: brand.id, source, attempt, model: refUrls.length ? EDIT_ID : MODEL_ID, reference_count: refUrls.length, generated: false, error: e.message.slice(0, 500), fal_cost_usd: e.charged ? FAL_COST_USD : 0 });
+      await logAttempt({ brand_id: brand.id, source, attempt, model: modelEndpoint(modelKey, refUrls.length), reference_count: refUrls.length, generated: false, error: e.message.slice(0, 500), fal_cost_usd: e.charged ? PHOTO_MODELS[modelKey].cost(refUrls.length) : 0 });
       continue;
     }
 
@@ -244,7 +261,7 @@ export async function generatePlannedPhoto(brand, { item, continuity, previousUr
       qa = { error: e.message.slice(0, 300) };
       qaCost = e.costUsd || 0;
     }
-    await logAttempt({ brand_id: brand.id, source, attempt, model: gen.model, reference_count: refUrls.length, generated: true, qa_pass: qa?.error ? null : verdict.pass, qa_hard_fails: verdict.hard, qa_scores: qa, fal_cost_usd: FAL_COST_USD, claude_cost_usd: qaCost });
+    await logAttempt({ brand_id: brand.id, source, attempt, model: gen.model, reference_count: refUrls.length, generated: true, qa_pass: qa?.error ? null : verdict.pass, qa_hard_fails: verdict.hard, qa_scores: qa, fal_cost_usd: gen.costUsd, claude_cost_usd: qaCost });
 
     const candidate = { ...gen, qa, verdict, attempt, promptText };
     if (!best || verdict.score > best.verdict.score) best = candidate;
@@ -297,12 +314,12 @@ export async function generateMatchingPhoto(brand, { slideText, idea, style, pro
   const failures = [];
   for (let attempt = 1; attempt <= 2 && !gen; attempt++) {
     try {
-      gen = await generateOnce(promptText, refs);
-      await logAttempt({ brand_id: brand.id, source, attempt, model: gen.model, reference_count: refs.length, generated: true, fal_cost_usd: FAL_COST_USD });
+      gen = await generateOnce(promptText, refs, LEGACY_MODEL);
+      await logAttempt({ brand_id: brand.id, source, attempt, model: gen.model, reference_count: refs.length, generated: true, fal_cost_usd: gen.costUsd });
     } catch (e) {
       console.error(`Image generation attempt ${attempt} failed:`, e.message);
       failures.push(e.message);
-      await logAttempt({ brand_id: brand.id, source, attempt, model: refs.length ? EDIT_ID : MODEL_ID, reference_count: refs.length, generated: false, error: e.message.slice(0, 500), fal_cost_usd: e.charged ? FAL_COST_USD : 0 });
+      await logAttempt({ brand_id: brand.id, source, attempt, model: modelEndpoint(LEGACY_MODEL, refs.length), reference_count: refs.length, generated: false, error: e.message.slice(0, 500), fal_cost_usd: e.charged ? PHOTO_MODELS[LEGACY_MODEL].cost(refs.length) : 0 });
     }
   }
   if (!gen) throw new Error("Image generation failed: " + failures.join(" | "));
