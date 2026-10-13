@@ -102,13 +102,18 @@ test("a failed photo check retries once with the same references, then keeps the
     assert.ok(c.url.endsWith("/edit"), "never text-only");
     assert.deepEqual(c.body.image_urls, falCalls[0].body.image_urls, "same references every attempt");
   }
+  assert.equal(falCalls[0].url, `https://fal.run/${ig.PHOTO_MODELS[ig.PHOTO_MODEL].edit}`, "first try on the main model");
+  assert.equal(falCalls[1].url, `https://fal.run/${ig.PHOTO_MODELS[ig.RETRY_MODEL].edit}`, "retry on the other model");
+  assert.equal(falCalls[1].body.prompt.includes("IDENTITY LOCK"), true);
   assert.ok(!falCalls[0].body.prompt.includes("CORRECTIONS"));
   assert.ok(falCalls[1].body.prompt.includes("crop at the hips"));
   assert.equal(result.needsCheck, true);
   assert.match(result.checkReason, /face visible/);
   const logged = calls.filter((c) => c.kind === "supabase" && c.method === "POST" && c.url.includes("image_attempts"));
   assert.equal(logged.length, 2);
-  assert.ok(logged.every((c) => Number(c.body.fal_cost_usd) === 0.15));
+  assert.equal(Number(logged[0].body.fal_cost_usd), ig.PHOTO_MODELS[ig.PHOTO_MODEL].cost(falCalls[0].body.image_urls.length));
+  assert.equal(Number(logged[1].body.fal_cost_usd), ig.PHOTO_MODELS[ig.RETRY_MODEL].cost(falCalls[1].body.image_urls.length));
+  assert.ok(logged.every((c) => Number(c.body.fal_cost_usd) < 0.1), "both cheaper than the old $0.15");
   restore();
 });
 

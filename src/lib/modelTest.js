@@ -22,12 +22,12 @@ export const TEST_SCENES = [
 const MP = (w, h) => (w && h ? (w * h) / 1e6 : null);
 export const TEST_MODELS = [
   {
-    key: "nano-banana-pro", label: "Nano Banana Pro (current)", endpoint: "fal-ai/nano-banana-pro/edit",
+    key: "nano-banana-pro", label: "Nano Banana Pro (old)", endpoint: "fal-ai/nano-banana-pro/edit",
     resolutions: ["2K"], fallback: { aspect_ratio: "4:5", resolution: "2K", output_format: "jpeg" },
     cost: (w, h) => ((MP(w, h) ?? 4) > 5 ? 0.3 : 0.15),
   },
   {
-    key: "seedream-5-pro", label: "Seedream 5 Pro", endpoint: "bytedance/seedream/v5/pro/edit",
+    key: "seedream-5-pro", label: "Seedream 5 Pro (now in use)", endpoint: "bytedance/seedream/v5/pro/edit",
     resolutions: ["1.5K", "1.5k"], size: { width: 1360, height: 1700 }, fallback: { image_size: { width: 1360, height: 1700 } },
     cost: (w, h, refs) => ((MP(w, h) ?? 2.3) > 2.36 ? 0.135 : 0.0675) + 0.0045 * Math.max(0, refs - 1),
   },

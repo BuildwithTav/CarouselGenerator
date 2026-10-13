@@ -34,9 +34,15 @@ export const PHOTO_MODELS = {
   "seedream-4.5": { text: "fal-ai/bytedance/seedream/v4.5/text-to-image", edit: "fal-ai/bytedance/seedream/v4.5/edit", settings: { image_size: { width: 1920, height: 2400 }, max_images: 1 }, cost: () => 0.04 },
 };
 // Sky High Soles' photos: the model for the first try, and for the one
-// retry. Brands without a character (HealthCode) use LEGACY_MODEL.
-const PHOTO_MODEL = "nano-banana-pro";
-const RETRY_MODEL = "nano-banana-pro";
+// retry. The blind test (5 scenes) tied Seedream 5 Pro and Nano Banana 2 on
+// 2 wins each, both passing every photo check at about $0.08, with Nano
+// Banana Pro on 0 wins at $0.15. Seedream goes first for its sharper image
+// (1360x1704, enough for a 1080x1350 slide); the retry switches model so it
+// isn't the same model repeating the same mistake. The original
+// single-prompt path (HealthCode, her reference pack) stays on
+// LEGACY_MODEL, which wasn't part of the test.
+export const PHOTO_MODEL = "seedream-5-pro";
+export const RETRY_MODEL = "nano-banana-2";
 const LEGACY_MODEL = "nano-banana-pro";
 const MAX_ATTEMPTS = 2; // the first try plus at most 1 retry (caps the worst case)
 const DEFAULT_BUDGET_MS = 170000; // no new attempt starts after this
