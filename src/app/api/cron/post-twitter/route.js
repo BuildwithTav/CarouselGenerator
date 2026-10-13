@@ -1,13 +1,16 @@
 import { supabaseAdmin, brandPlatforms } from "@/lib/dashboard";
 import { postItemToX } from "@/lib/twitterApi";
+import { pickNextPost, postKind } from "@/lib/postOrder";
 
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
 // Fires 3x/day (see vercel.json). For every brand with "twitter" in its
-// platforms, posts the single oldest ready item due today or earlier that
-// hasn't gone out on X yet — so three firings a day post up to three times a
-// day per brand, spread across the schedule rather than all landing at once.
+// platforms, posts one ready item due today or earlier that hasn't gone out
+// on X yet — so three firings a day post up to three times a day per brand.
+// Which one is mixed, not oldest-first (see pickNextPost in postOrder.js):
+// a different kind (text / image / carousel) from the last post when one is
+// waiting, picked at random.
 //
 // Only items the X engine itself produced (always tagged with an explicit
 // platforms: ["twitter"] override) are eligible here — never a regular
@@ -38,18 +41,27 @@ export async function GET(req) {
     // batch went out with broken photos, so nothing more posts unattended
     // until the generation pipeline's been verified again.
     if (brand.x_auto_post_paused) { results.push({ brand: brand.slug, posted: false, reason: "auto-posting paused" }); continue; }
-    const { data: item } = await supabase
-      .from("content_items")
-      .select("*")
-      .eq("brand_id", brand.id)
-      .eq("status", "ready")
-      .lte("scheduled_for", today)
-      .is("posted_twitter_at", null)
-      .contains("platforms", ["twitter"])
-      .order("scheduled_for", { ascending: true })
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
+    const [{ data: ready }, { data: last }] = await Promise.all([
+      supabase
+        .from("content_items")
+        .select("*")
+        .eq("brand_id", brand.id)
+        .eq("status", "ready")
+        .lte("scheduled_for", today)
+        .is("posted_twitter_at", null)
+        .contains("platforms", ["twitter"])
+        .order("created_at", { ascending: true })
+        .limit(100),
+      supabase
+        .from("content_items")
+        .select("template, slide_paths")
+        .eq("brand_id", brand.id)
+        .not("posted_twitter_at", "is", null)
+        .order("posted_twitter_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    const item = pickNextPost(ready || [], last ? postKind(last) : null);
 
     if (!item) { results.push({ brand: brand.slug, posted: false, reason: "nothing ready" }); continue; }
 

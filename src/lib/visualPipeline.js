@@ -35,6 +35,7 @@ const VISUAL_RULES = {
     "Settings: the aircraft (cabin aisle, jump seat, galley, crew rest), the crew room, the airport (gate, lounge, terminal floor), her home (mirror, bed, sofa, bath) or a pedicure chair. A hotel room or pool only occasionally. Never a bus, taxi, car, train, gym, street or shop.",
     "Her feet are the focal point, sharp and well lit.",
     "Her legs are never crossed, not at the knee and not at the ankle: both legs stay uncrossed with her two feet clearly apart, side by side or one slightly forward.",
+    "Still, simple moments only: her feet resting, stretching, or one heel loose on her toes. Her hands never hold a shoe or work on her tights or feet; they rest on her lap, the seat or a cup. Shoes are either on her feet or set on the floor clearly apart from them, one pair at most.",
     "Fully clothed above the waist. Elegant and sensual through light, pose and styling, never explicit.",
     "Her own hands are slim and feminine with a French manicure. A partner appears only as a man's hand, at most up to the wrist or forearm, entering from the edge of the frame.",
     "Anything that could carry a photo of a person (ID badge, lanyard card, photo frame, phone screen) is face-down or angled away.",
@@ -174,6 +175,7 @@ How to choose:
 - The set is one short photographic event: lock the setting, wardrobe, lighting period and mode for the whole set; vary camera position, crop and the next small action from photo to photo. Only change location if the texts clearly move to a new place.
 - For each scene, consider several candidate shots and pick the best, weighing: semantic fit with the scene 40%, fit with the set's story order 20%, how well her identity references cover that view 15%, novelty against the recent shots 15%, anatomical simplicity 10%. Novelty is a penalty, not the goal: the shot that best shows the action wins.
 - Never repeat a composition (same distance, camera height, view and body position) used by another photo in this set or by any recent shot listed.
+- Keep the action still: no hands holding shoes, rolling tights or touching her feet, and no shoe being put on or pulled off mid-action (these produce extra shoes, extra feet and wrong hands). Show the moment just before or after instead: heels already off and set beside her, tights already on.
 - Keep anatomy simple. Legs are never crossed (crossed legs make the image model draw two left or two right feet). Don't combine pointed toes, extreme foreshortening, shoe removal and a floor-level camera unless the scene genuinely needs it.
 - Translate only the observable event into a plausible photograph. Drop narration, metaphor, mood, persuasion, audience reactions, other people watching, and any wording or lettering. If a scene mentions a place outside the permanent settings, show the moment just before or after it in an allowed setting.
 - expected_feet_count is 2 unless the shot is a deliberate one-foot detail.
@@ -307,6 +309,7 @@ export function judgeQa(qa, { expectedFeet = 2, faceAllowed = false, laterSlide 
   // Two left (or two right) feet is Tav's most repeated rejection, so it's a
   // hard failure like the wrong number of feet.
   if (qa?.left_right_plausible === false) hard.push("left/right feet wrong");
+  if (qa?.extra_or_merged_items === true) hard.push("extra or merged shoe/foot/limb");
 
   const soft = [];
   const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
@@ -329,14 +332,15 @@ export async function qaImage(brand, { candidateUrl, referenceUrls = [], previou
   const n = referenceUrls.length;
   const system = `You are a strict photo checker for a faceless photo series. Inspect the candidate photo against the identity references and the expected scene. Judge only what you can see.
 Reply with strict JSON only, no prose:
-{"decision": "pass|fail", "face_visible": false, "identity_match": 0.0, "feet_count": 2, "toes_plausible": true, "left_right_plausible": true, "feet_clear": true, "anatomy_score": 0, "photorealism_score": 0, "wrong_uniform": false, "wrong_shoe_colour": false, "wrong_tights_colour": false, "wrong_setting": false, "continuity_score": 0.0, "text_or_lettering_present": false, "corrections": ["..."]}
+{"decision": "pass|fail", "face_visible": false, "identity_match": 0.0, "feet_count": 2, "toes_plausible": true, "left_right_plausible": true, "extra_or_merged_items": false, "feet_clear": true, "anatomy_score": 0, "photorealism_score": 0, "wrong_uniform": false, "wrong_shoe_colour": false, "wrong_tights_colour": false, "wrong_setting": false, "continuity_score": 0.0, "text_or_lettering_present": false, "corrections": ["..."]}
 - identity_match and continuity_score are 0 to 1; anatomy_score and photorealism_score are 0 to 10.
 - face_visible: true only if her face (eyes, nose or mouth) is in the photo.
 - feet_count: the number of her feet visible in the photo.
 - left_right_plausible: check this carefully, it is the most common failure. Trace each visible foot back up its own leg to the knee and hip, so you know which is her left foot and which is her right. On every real foot the big toe is on the inner edge, the side facing her other leg, and the toes get smaller towards the outer edge. False if either foot has its big toe on the outer edge, if both feet look like the same foot (two left or two right), or if a foot is attached to the wrong leg. When in doubt, false.
+- extra_or_merged_items: true if anything is duplicated or impossible: an extra shoe (for example a shoe under a foot that is already in a shoe, or more shoes than she could be wearing plus one pair set down), an extra foot, toe, hand or leg, a shoe merged into a foot, or a hand that doesn't connect to an arm. Count the shoes and limbs before answering.
 - wrong_shoe_colour: true if she wears her work uniform and her shoes are not navy blue (the same navy as the skirt). wrong_tights_colour: true if her tights are anything other than sheer tan or nude.
 - text_or_lettering_present: true only for prominent words that draw the eye: a caption, watermark, overlaid text, or a large readable sign or logo. Small brand marks on shoes, insoles, clothing or products, and the small placards and exit signs that belong in an aircraft cabin, do not count.
-- corrections: at most 3 short, observable changes for the next attempt (for example "separate the feet so both silhouettes are readable"). Fix the failures above first (face, number of feet, left/right feet, shoe or tights colour, prominent text); add style suggestions only if nothing failed. Empty if none.`;
+- corrections: at most 3 short, observable changes for the next attempt (for example "separate the feet so both silhouettes are readable"). Fix the failures above first (face, number of feet, left/right feet, extra or merged items, shoe or tights colour, prominent text); add style suggestions only if nothing failed. Empty if none.`;
   const user = `${n ? `Images 1 to ${n} are identity references for the same woman.` : "No identity references."}${previousUrl ? ` Image ${n + 1} is the previous accepted photo in this carousel (for continuity).` : ""} The last image is the candidate.
 Expected scene: ${JSON.stringify(scene)}
 Shot: ${JSON.stringify(shot)}

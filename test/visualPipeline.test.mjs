@@ -55,7 +55,7 @@ test("selectReferences always picks at least 2 when 2 exist, at most 4", () => {
 test("judgeQa hard-fails only the obvious failures", () => {
   const good = handlers.qa();
   assert.equal(vp.judgeQa(good).pass, true);
-  for (const [field, value] of [["face_visible", true], ["feet_count", 3], ["left_right_plausible", false], ["wrong_shoe_colour", true], ["wrong_tights_colour", true], ["text_or_lettering_present", true]]) {
+  for (const [field, value] of [["face_visible", true], ["feet_count", 3], ["left_right_plausible", false], ["extra_or_merged_items", true], ["wrong_shoe_colour", true], ["wrong_tights_colour", true], ["text_or_lettering_present", true]]) {
     assert.equal(vp.judgeQa({ ...good, [field]: value }).pass, false, field);
   }
   // Soft problems are scored but never fail the photo on their own.
@@ -147,4 +147,21 @@ test("the photo checker failing never costs the post its photo", async () => {
   assert.ok(result.media);
   assert.equal(calls.filter((c) => c.kind === "fal").length, 1);
   restore();
+});
+
+// ── Posting order ────────────────────────────────────────────────────────
+test("posting order mixes kinds instead of posting a batch back to back", async () => {
+  const { pickNextPost, postKind } = await import("@/lib/postOrder");
+  const img = (id) => ({ id, template: "x-post", slide_paths: ["a.jpg"] });
+  const txt = (id) => ({ id, template: "x-post", slide_paths: [] });
+  const car = (id) => ({ id, template: "elegant", slide_paths: ["1.png", "2.png"] });
+  assert.equal(postKind(img(1)), "image");
+  assert.equal(postKind(txt(1)), "text");
+  assert.equal(postKind(car(1)), "carousel");
+  const ready = [img(1), img(2), img(3), img(4), txt(5)];
+  // After an image, the text post goes next even though 4 images are older.
+  for (let i = 0; i < 20; i++) assert.equal(postKind(pickNextPost(ready, "image")), "text");
+  // Only images waiting: still posts one rather than nothing.
+  assert.equal(postKind(pickNextPost([img(1), img(2)], "image")), "image");
+  assert.equal(pickNextPost([], "text"), null);
 });
