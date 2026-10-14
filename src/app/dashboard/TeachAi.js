@@ -101,7 +101,7 @@ function ago(ts) {
 // Blind side-by-side of image models (src/lib/modelTest.js). The same scene
 // and her same reference photos go to every model; Tav picks the best of
 // each scene before he can see which model made it.
-const TEST_COST = "about $2.20";
+const TEST_COST = "about $2";
 const order = (id) => [...String(id)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 function ModelTest({ api, brand }) {
@@ -128,11 +128,11 @@ function ModelTest({ api, brand }) {
     setRunning(false);
   };
   const run = () => {
-    if (!confirm(`Make each of the 5 test scenes on all 4 models? Costs ${TEST_COST} on fal and takes about 10 minutes.`)) return;
+    if (!confirm(`Make each of the 5 test scenes on all ${data?.models?.length || 3} models? Costs ${TEST_COST} on fal and takes about 10 minutes.`)) return;
     runScenes(crypto.randomUUID(), [0, 1, 2, 3, 4]);
   };
   const redo = (sceneIndex) => {
-    if (!confirm("Make this scene again on all 4 models? About $0.45.")) return;
+    if (!confirm("Make this scene again on every model? About $0.40.")) return;
     runScenes(data.run.id, [sceneIndex]);
   };
 
@@ -142,7 +142,7 @@ function ModelTest({ api, brand }) {
     try { await api.patch("/api/content/model-test", { id }); } catch (e) { alert(e.message); load(); }
   };
 
-  const label = (key) => data?.models?.find((m) => m.key === key)?.label || key;
+  const label = (key) => data?.models?.find((m) => m.key === key)?.label || data?.oldLabels?.[key] || key;
   const photos = data?.run?.photos || [];
   const scenes = [...new Set(photos.map((p) => p.scene_index))].sort((a, b) => a - b);
   const picks = photos.filter((p) => p.picked);
@@ -155,7 +155,7 @@ function ModelTest({ api, brand }) {
     <div style={{ marginBottom: 18 }}>
       <label style={lbl}>Compare image models</label>
       <div style={{ fontSize: 12, color: C.muted, marginBottom: 10, lineHeight: 1.5 }}>
-        Makes 5 test scenes on 4 models with the same prompt and her same reference photos. Pick the best of each scene. The model names stay hidden until you pick, so it's a fair test. Nothing here goes into posts.
+        Makes 5 test scenes on each model with the same prompt and her same reference photos. Pick the best of each scene. The model names stay hidden until you pick, so it's a fair test. Nothing here goes into posts.
       </div>
       <button onClick={run} disabled={running} style={btn("dark", { opacity: running ? 0.6 : 1, marginBottom: 12 })}>
         {running ? <><Spinner /> Making scenes… {done} done, keep this page open</> : data?.run ? `Run a new test (${TEST_COST})` : `Run the test (${TEST_COST})`}
@@ -172,7 +172,7 @@ function ModelTest({ api, brand }) {
             {gaps > 0 && !running && (
               <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>
                 {gaps} of {set.length} didn't come back, so this scene isn't a fair comparison yet.{" "}
-                <button onClick={() => redo(si)} style={btn("small", { padding: "3px 8px" })}>Redo this scene (~$0.45)</button>
+                <button onClick={() => redo(si)} style={btn("small", { padding: "3px 8px" })}>Redo this scene (~$0.40)</button>
               </div>
             )}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>

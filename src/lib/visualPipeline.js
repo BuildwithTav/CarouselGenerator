@@ -76,9 +76,9 @@ export function visualRules(brand) {
 export const ANATOMY_BASELINE = "Both complete feet are clearly readable and naturally oriented as a matched left and right pair, each big toe on the inner edge of its foot, the side facing her other foot. Keep them separated enough that each silhouette and toe line is individually clear.";
 
 export const VISUAL_MODES = {
-  editorial: "Campaign-like, polished imagery: controlled warm light, deliberate composition. Lens language (35, 50 or 85mm equivalent) only when it defines the perspective or depth.",
+  editorial: "Campaign-like but lived in: controlled warm light, deliberate composition, real props and textures, never a bare studio set. Lens language (35, 50 or 85mm equivalent) only when it defines the perspective or depth.",
   cabin_candid: "A believable on-duty or post-shift moment: modern phone-camera feel, ambient aircraft or terminal light, moderate depth, natural perspective, slight imperfection.",
-  lifestyle_intimate: "A home, hotel or pedicure scene: warm practical lamps, close framing, believable high-quality lifestyle photography.",
+  lifestyle_intimate: "A home, hotel or pedicure scene that feels lived in: warm practical lamps and candlelight, soft throws, real everyday clutter, close framing, believable high-quality lifestyle photography.",
 };
 
 const SHOT_DIMENSIONS = `Shot dimensions (pick one value for each, or a close natural variant):
@@ -143,7 +143,7 @@ export function normalizePlan(raw, count, lockedContinuity = null) {
         subject_action: str(scene.subject_action, "seated, relaxing her feet"),
         wardrobe: str(scene.wardrobe, continuity.wardrobe),
         footwear_state: str(scene.footwear_state, str(shot.footwear_state, "both heels on")),
-        required_objects: (Array.isArray(scene.required_objects) ? scene.required_objects : []).map((o) => str(o)).filter(Boolean).slice(0, 5),
+        required_objects: (Array.isArray(scene.required_objects) ? scene.required_objects : []).map((o) => str(o)).filter(Boolean).slice(0, 6),
         expected_feet_count: feet === 1 ? 1 : 2,
       },
       shot: {
@@ -192,7 +192,7 @@ How to choose:
 - What stays the same in every photo is her: the same feet, legs and skin, and her uniform, sheer tan tights and navy heels when she's working. Everything else varies: pose, angle, crop, place and moment.
 - Keep her hands out of the action: no hands holding shoes, rolling tights or touching her feet, and no shoe being put on or pulled off mid-action (these produce extra shoes, extra feet and wrong hands). Show the moment just before or after instead: heels already off and set beside her, tights already on.
 - Keep anatomy simple. Legs are never crossed (crossed legs make the image model draw two left or two right feet). Don't combine pointed toes, extreme foreshortening, shoe removal and a floor-level camera unless the scene genuinely needs it.
-- Translate only the observable event into a plausible photograph. Drop narration, metaphor, mood, persuasion, audience reactions, other people watching, and any wording or lettering. If a scene mentions a place outside the permanent settings, show the moment just before or after it in an allowed setting.
+- Translate the event into a plausible, lived-in photograph that tells the scene's story without words. Give each scene 3 to 6 required_objects: small real details that belong to that exact moment (for example a mug of tea, a kettle, an open nail polish bottle, her folded uniform jacket with its wings badge, a candle, a throw blanket, her crew bag, a boarding card face-down), and put the time of day in the lighting. Details are plain and unbranded, with no words on them. Drop narration, metaphor, audience reactions and other people. If a scene mentions a place outside the permanent settings, show the moment just before or after it in an allowed setting.
 - expected_feet_count is 2 unless the shot is a deliberate one-foot detail.
 
 Reply with JSON only:
@@ -266,15 +266,15 @@ function identityNotes(brand) {
 
 export async function writeShotPrompts(brand, { continuity, items, textZone = null }) {
   const rules = visualRules(brand);
-  const system = `You write image prompts for Nano Banana Pro, a photorealistic image model, from structured visual facts.
-Write the shortest prompt that completely defines each shot, normally 70 to 140 words. Never pad to reach a length.
-Order: the framing first (where the frame's edges fall, taken from the shot's crop, then camera height, view, distance); then her pose, body position and footwear; the setting and required objects; the light and camera feel of the mode.
-Translate the facts into one plausible photograph. Don't add people, objects or details the facts don't contain.
+  const system = `You write image prompts for a photorealistic image model, from structured visual facts.
+Write a rich, specific prompt, normally 120 to 200 words, that reads like a description of a real photo taken that day, not a studio shoot.
+Order: the framing first (where the frame's edges fall, taken from the shot's crop, then camera height, view, distance); then her pose, body position and footwear; then the setting and every required object, with its materials and textures; then the light (its source, direction, warmth and the time of day) and the camera feel of the mode (lens, depth of field, a little natural grain).
+Translate the facts into one plausible photograph. You may add small textures and surface details that fit the facts; never add people or extra objects.
 Phrase everything positively: describe what is in the photo. Never write "no X", "without X" or "avoid".
 Make the framing physically possible for the pose. Her soles face the camera only when the camera is beyond her feet, looking at the bottoms of them. Kneeling with her soles to the camera means she faces away from it: the frame shows her from behind (soles, the backs of her calves, her skirt) and its top edge cuts across her waist, never her lap or chest.
 Feet: include this sentence, then only the left/right relationship the pose needs (for example "her left ankle rests lightly across her right ankle"): ${ANATOMY_BASELINE}
 Name colours explicitly when the uniform is worn: "rich mid navy court heels matching her navy skirt" (or "navy flats"), "sheer tan tights".
-Use plain visual language. No mood or persuasion words, no captions, quotes or lettering.${textZone ? `\nKeep the ${textZone} of the frame calm and uncluttered.` : ""}
+Use concrete visual language (light, texture, warmth, materials) rather than mood or persuasion words. No captions, quotes or lettering.${textZone ? `\nKeep the ${textZone} of the frame calm and uncluttered.` : ""}
 Reply with JSON only: {"prompts": ["...", ...]}, one per item, same order.`;
 
   const user = `Permanent visual rules:

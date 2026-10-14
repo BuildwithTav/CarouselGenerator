@@ -19,19 +19,28 @@ const spec = (endpoint, properties, extra = {}) => ({
 
 test("requests use each model's own size settings from its schema", () => {
   const nb = spec("x", { aspect_ratio: { enum: ["1:1", "4:5", "9:16"] }, resolution: { enum: ["1K", "2K", "4K"] }, output_format: { enum: ["jpeg", "png"] } });
-  const nbBody = mt.buildRequest(model("nano-banana-pro"), "p", ["r1", "r2"], { props: nb.components.schemas.Input.properties, schemas: nb.components.schemas });
-  assert.deepEqual([nbBody.aspect_ratio, nbBody.resolution, nbBody.output_format], ["4:5", "2K", "jpeg"]);
+  const nbBody = mt.buildRequest(model("nano-banana-2"), "p", ["r1", "r2"], { props: nb.components.schemas.Input.properties, schemas: nb.components.schemas });
+  assert.deepEqual([nbBody.aspect_ratio, nbBody.resolution, nbBody.output_format], ["4:5", "1K", "jpeg"]);
   assert.deepEqual(nbBody.image_urls, ["r1", "r2"]);
 
   const sd5 = { aspect_ratio: { anyOf: [{ enum: ["1:1", "3:4", "4:3"] }] }, resolution: { enum: ["1k", "1.5k", "2k"] }, image_size: {} };
   const sd5Body = mt.buildRequest(model("seedream-5-pro"), "p", [], { props: sd5, schemas: {} });
   assert.deepEqual([sd5Body.aspect_ratio, sd5Body.resolution, sd5Body.image_size], ["3:4", "1.5k", undefined]);
 
-  const sd45 = spec("y", { image_size: { anyOf: [{ $ref: "#/components/schemas/ImageSize" }, { enum: ["square_hd", "auto_2K"] }] }, max_images: {} }, { ImageSize: { properties: { width: {}, height: {} } } });
-  const sd45Body = mt.buildRequest(model("seedream-4.5"), "p", [], { props: sd45.components.schemas.Input.properties, schemas: sd45.components.schemas });
-  assert.deepEqual(sd45Body.image_size, { width: 1920, height: 2400 });
-  assert.equal(sd45Body.aspect_ratio, undefined);
-  assert.equal(sd45Body.max_images, 1);
+  // A size that takes either a named preset or {width, height}: the object wins.
+  const sdObj = spec("y", { image_size: { anyOf: [{ $ref: "#/components/schemas/ImageSize" }, { enum: ["square_hd", "auto_2K"] }] }, max_images: {} }, { ImageSize: { properties: { width: {}, height: {} } } });
+  const sdObjBody = mt.buildRequest(model("seedream-5-pro"), "p", [], { props: sdObj.components.schemas.Input.properties, schemas: sdObj.components.schemas });
+  assert.deepEqual(sdObjBody.image_size, { width: 1360, height: 1700 });
+  assert.equal(sdObjBody.max_images, 1);
+
+  // GPT Image 2: named sizes only, and quality set to high when it exists.
+  const gpt = { image_size: { enum: ["auto", "1024x1024", "1536x1024", "1024x1536"] }, quality: { enum: ["low", "medium", "high"] } };
+  const gptBody = mt.buildRequest(model("gpt-image-2"), "p", ["r1"], { props: gpt, schemas: {} });
+  assert.equal(gptBody.image_size, "1024x1536");
+  assert.equal(gptBody.quality, "high");
+  const gptObj = mt.buildRequest(model("gpt-image-2"), "p", [], { props: { image_size: { type: "object" }, quality: {} }, schemas: {} });
+  assert.deepEqual(gptObj.image_size, { width: 1024, height: 1280 });
+  assert.equal(gptObj.quality, "high");
 
   assert.deepEqual(mt.buildRequest(model("nano-banana-2"), "p", [], null).resolution, "1K");
 });
@@ -50,14 +59,14 @@ test("Seedream 5 Pro is priced by size and extra references", () => {
   assert.equal(model("nano-banana-2").cost(1792, 2240), 0.12);
 });
 
-test("a test scene sends the same prompt and references to all 4 models and checks each", async () => {
+test("a test scene sends the same prompt and references to every model and checks each", async () => {
   calls.length = 0;
   handlers.falSchema = (endpoint) => endpoint.includes("nano-banana")
     ? spec(endpoint, { aspect_ratio: { enum: ["4:5"] }, resolution: { enum: ["1K", "2K"] } })
     : null;
   const rows = await mt.runModelTestScene(BRAND, { runId: "run-1", sceneIndex: 0 });
   const fal = calls.filter((c) => c.kind === "fal");
-  assert.equal(fal.length, 4);
+  assert.equal(fal.length, mt.TEST_MODELS.length);
   assert.deepEqual(new Set(fal.map((c) => c.url)), new Set(mt.TEST_MODELS.map((m) => `https://fal.run/${m.endpoint}`)));
   for (const c of fal) {
     assert.equal(c.body.prompt, fal[0].body.prompt, "same prompt");
@@ -65,8 +74,8 @@ test("a test scene sends the same prompt and references to all 4 models and chec
   }
   assert.ok(fal[0].body.image_urls.length >= 2);
   const qa = calls.filter((c) => c.kind === "anthropic" && c.stage === "qa");
-  assert.equal(qa.length, 4);
-  assert.equal(rows.length, 4);
+  assert.equal(qa.length, mt.TEST_MODELS.length);
+  assert.equal(rows.length, mt.TEST_MODELS.length);
   assert.ok(rows.every((r) => r.qa_pass === true && r.storage_path && Number(r.cost_usd) > 0));
   assert.ok(!calls.some((c) => c.kind === "supabase" && c.method === "POST" && c.url.includes("brand_media")), "never in the media library");
   delete handlers.falSchema;
@@ -78,7 +87,7 @@ test("fal's 'too many at once' limit waits and retries instead of failing the ph
   const ok = handlers.fal;
   handlers.fal = (body) => (first ? ((first = false), { status: 429, body: { detail: "Reached concurrent requests limit of 10", type: "concurrent_requests_limit" } }) : ok(body));
   const rows = await mt.runModelTestScene(BRAND, { runId: "run-2", sceneIndex: 1 });
-  assert.equal(calls.filter((c) => c.kind === "fal").length, 5, "4 models + 1 retry");
+  assert.equal(calls.filter((c) => c.kind === "fal").length, mt.TEST_MODELS.length + 1, "every model + 1 retry");
   assert.ok(rows.every((r) => !r.error && r.storage_path), "every model came back");
   assert.ok(calls.some((c) => c.kind === "supabase" && c.method === "DELETE" && c.url.includes("model_tests")), "a redo replaces the scene");
   handlers.fal = ok;

@@ -1,6 +1,6 @@
 import { dashboardAuthorized, unauthorized, supabaseAdmin, signPaths } from "@/lib/dashboard";
 import { characterOf } from "@/lib/brandTemplate";
-import { runModelTestScene, TEST_SCENES, TEST_MODELS } from "@/lib/modelTest";
+import { runModelTestScene, TEST_SCENES, TEST_MODELS, OLD_MODEL_LABELS } from "@/lib/modelTest";
 import { logGenerationError, friendlyError } from "@/lib/genLog";
 
 export const maxDuration = 300;
@@ -32,7 +32,7 @@ export async function GET(req) {
   if (!brandId) return Response.json({ error: "brandId is required" }, { status: 400 });
   const supabase = supabaseAdmin();
   const { data: latest } = await supabase.from("model_tests").select("run_id").eq("brand_id", brandId).order("created_at", { ascending: false }).limit(1);
-  const meta = { scenes: TEST_SCENES, models: TEST_MODELS.map(({ key, label }) => ({ key, label })) };
+  const meta = { scenes: TEST_SCENES, models: TEST_MODELS.map(({ key, label }) => ({ key, label })), oldLabels: OLD_MODEL_LABELS };
   if (!latest?.length) return Response.json({ run: null, ...meta });
   const { data: rows, error } = await supabase.from("model_tests").select("id, run_id, scene_index, scene, model, storage_path, width, height, cost_usd, qa_pass, qa_hard_fails, error, picked, created_at").eq("run_id", latest[0].run_id).order("scene_index");
   if (error) return Response.json({ error: error.message }, { status: 500 });

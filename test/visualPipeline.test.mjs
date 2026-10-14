@@ -250,6 +250,18 @@ test("the director is pushed to vary pose and crop, not repeat a waist or chest 
   assert.notEqual(vp.compositionKey({ distance: "tight", crop: "knees", view: "side" }), vp.compositionKey({ distance: "tight", crop: "waist", view: "side" }));
 });
 
+test("scenes keep their story: lived-in details and a fuller prompt", async () => {
+  reset(); restore();
+  await ig.planPhotos(BRAND, { texts: ["Day off: dressing gown, wet nail polish, kettle on"] });
+  const director = String(calls.find((c) => c.kind === "anthropic" && c.stage === "director").req.system);
+  const writer = String(calls.find((c) => c.kind === "anthropic" && c.stage === "writer").req.system);
+  assert.match(director, /3 to 6 required_objects/);
+  assert.match(writer, /normally 120 to 200 words/);
+  assert.doesNotMatch(writer, /shortest prompt/);
+  const plan = vp.normalizePlan({ shots: [{ scene: { required_objects: ["a", "b", "c", "d", "e", "f", "g"] }, shot: {} }] }, 1);
+  assert.equal(plan.shots[0].scene.required_objects.length, 6);
+});
+
 test("the director is allowed a kneeling, soles-to-camera shot", async () => {
   reset(); restore();
   await ig.planPhotos(BRAND, { texts: ["Kneeling on the floor, soles in tights towards the camera"] });

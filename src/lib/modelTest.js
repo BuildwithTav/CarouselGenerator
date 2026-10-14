@@ -10,22 +10,17 @@ import { assemblePrompt, qaImage, judgeQa } from "./visualPipeline";
 // in a post). Tav picks the best of each scene without seeing which model
 // made it.
 export const TEST_SCENES = [
+  "Day off uniform: dressing gown, wet nail polish, kettle on. The heels don't get a say until Thursday",
   "Sitting on the jump seat before take-off, ankles together, navy court heels on",
   "Feet up on the crew rest bunk after a long flight in sheer tan tights, her heels set down beside the bunk",
-  "Standing in the galley in her uniform and navy court heels",
-  "Her own view looking down at her feet in sheer tan tights, resting on the sofa at home",
-  "Bare feet resting on the edge of the bath in the hotel after a shift",
+  "Kneeling on the galley floor in sheer tan tights, soles to the camera, heels off beside her",
+  "Bare feet up on the edge of the bath at home after a 14-hour shift, candles lit",
 ];
 
 // Prices from fal's model pages (Oct 2026), by output size. Seedream 5 Pro
 // also charges $0.0045 for each reference photo after the first.
 const MP = (w, h) => (w && h ? (w * h) / 1e6 : null);
 export const TEST_MODELS = [
-  {
-    key: "nano-banana-pro", label: "Nano Banana Pro (old)", endpoint: "fal-ai/nano-banana-pro/edit",
-    resolutions: ["2K"], fallback: { aspect_ratio: "4:5", resolution: "2K", output_format: "jpeg" },
-    cost: (w, h) => ((MP(w, h) ?? 4) > 5 ? 0.3 : 0.15),
-  },
   {
     key: "seedream-5-pro", label: "Seedream 5 Pro (now in use)", endpoint: "bytedance/seedream/v5/pro/edit",
     resolutions: ["1.5K", "1.5k"], size: { width: 1360, height: 1700 }, fallback: { image_size: { width: 1360, height: 1700 } },
@@ -36,12 +31,17 @@ export const TEST_MODELS = [
     resolutions: ["1K"], fallback: { aspect_ratio: "4:5", resolution: "1K", output_format: "jpeg" },
     cost: (w, h) => { const mp = MP(w, h) ?? 1; return mp > 5 ? 0.16 : mp > 1.6 ? 0.12 : 0.08; },
   },
+  // What ChatGPT itself uses. Priced by tokens on fal; about $0.19 a photo
+  // at high quality (third-party estimate, Oct 2026).
   {
-    key: "seedream-4.5", label: "Seedream 4.5", endpoint: "fal-ai/bytedance/seedream/v4.5/edit",
-    resolutions: [], size: { width: 1920, height: 2400 }, fallback: { image_size: { width: 1920, height: 2400 } },
-    cost: () => 0.04,
+    key: "gpt-image-2", label: "GPT Image 2 (ChatGPT's model)", endpoint: "openai/gpt-image-2/edit",
+    resolutions: [], size: { width: 1024, height: 1280 }, sizeNames: ["1024x1536", "portrait_4_3", "portrait"],
+    extra: { quality: "high" }, fallback: { image_size: { width: 1024, height: 1280 }, quality: "high" },
+    cost: () => 0.19,
   },
 ];
+// Models from earlier tests, so their photos still get a name.
+export const OLD_MODEL_LABELS = { "nano-banana-pro": "Nano Banana Pro (old)", "seedream-4.5": "Seedream 4.5" };
 
 // fal publishes each endpoint's input schema. Reading it means the request
 // only uses parameters the model actually has (Nano Banana takes an aspect
@@ -69,6 +69,14 @@ function enumOf(node, schemas, depth = 0) {
   ];
 }
 
+// True when a schema node accepts a {width, height} object.
+function allowsObject(node, schemas, depth = 0) {
+  if (!node || depth > 4) return false;
+  if (node.$ref) return allowsObject(schemas[node.$ref.split("/").pop()], schemas, depth + 1);
+  if (node.type === "object" || node.properties) return true;
+  return ["anyOf", "oneOf", "allOf"].some((k) => (node[k] || []).some((n) => allowsObject(n, schemas, depth + 1)));
+}
+
 export function buildRequest(model, prompt, imageUrls, schema) {
   const body = { prompt, image_urls: imageUrls, num_images: 1 };
   if (!schema) return { ...body, ...model.fallback };
@@ -84,7 +92,18 @@ export function buildRequest(model, prompt, imageUrls, schema) {
   };
   if (props.aspect_ratio) { const v = pick("aspect_ratio", ["4:5", "3:4"]); if (v) body.aspect_ratio = v; }
   if (props.resolution && model.resolutions.length) { const v = pick("resolution", model.resolutions); if (v) body.resolution = v; }
-  if (props.image_size && model.size && !body.resolution) body.image_size = model.size;
+  if (props.image_size && !body.resolution) {
+    const named = enumOf(props.image_size, schemas);
+    if (named.length && !allowsObject(props.image_size, schemas)) {
+      const v = pick("image_size", model.sizeNames || []);
+      if (v) body.image_size = v;
+    } else if (model.size) body.image_size = model.size;
+  }
+  for (const [k, v] of Object.entries(model.extra || {})) {
+    if (!props[k]) continue;
+    const options = enumOf(props[k], schemas);
+    if (!options.length || options.includes(v)) body[k] = v;
+  }
   if (props.output_format) { const v = pick("output_format", ["jpeg", "jpg"]); if (v) body.output_format = v; }
   if (props.max_images) body.max_images = 1;
   return body;
