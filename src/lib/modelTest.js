@@ -31,13 +31,14 @@ export const TEST_MODELS = [
     resolutions: ["1K"], fallback: { aspect_ratio: "4:5", resolution: "1K", output_format: "jpeg" },
     cost: (w, h) => { const mp = MP(w, h) ?? 1; return mp > 5 ? 0.16 : mp > 1.6 ? 0.12 : 0.08; },
   },
-  // What ChatGPT itself uses. Priced by tokens on fal; about $0.19 a photo
-  // at high quality (third-party estimate, Oct 2026).
+  // What ChatGPT itself uses. Priced by tokens on fal: about $0.07 a photo
+  // at medium quality, $0.19 at high (third-party estimates, Oct 2026).
+  // Tav ruled out high on price, so it's tested at medium.
   {
-    key: "gpt-image-2", label: "GPT Image 2 (ChatGPT's model)", endpoint: "openai/gpt-image-2/edit",
+    key: "gpt-image-2", label: "GPT Image 2 (ChatGPT's model, medium)", endpoint: "openai/gpt-image-2/edit",
     resolutions: [], size: { width: 1024, height: 1280 }, sizeNames: ["1024x1536", "portrait_4_3", "portrait"],
-    extra: { quality: "high" }, fallback: { image_size: { width: 1024, height: 1280 }, quality: "high" },
-    cost: () => 0.19,
+    extra: { quality: "medium" }, fallback: { image_size: { width: 1024, height: 1280 }, quality: "medium" },
+    cost: () => 0.07,
   },
 ];
 // Models from earlier tests, so their photos still get a name.

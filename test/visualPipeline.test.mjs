@@ -250,16 +250,18 @@ test("the director is pushed to vary pose and crop, not repeat a waist or chest 
   assert.notEqual(vp.compositionKey({ distance: "tight", crop: "knees", view: "side" }), vp.compositionKey({ distance: "tight", crop: "waist", view: "side" }));
 });
 
-test("scenes keep their story: lived-in details and a fuller prompt", async () => {
+test("the director works out the moment instead of illustrating every word", async () => {
   reset(); restore();
-  await ig.planPhotos(BRAND, { texts: ["Day off: dressing gown, wet nail polish, kettle on"] });
+  await ig.planPhotos(BRAND, { texts: ["Day off uniform: dressing gown, wet nail polish, kettle on. The heels don't get a say until Thursday"] });
   const director = String(calls.find((c) => c.kind === "anthropic" && c.stage === "director").req.system);
   const writer = String(calls.find((c) => c.kind === "anthropic" && c.stage === "writer").req.system);
-  assert.match(director, /3 to 6 required_objects/);
+  assert.match(director, /Never illustrate every word/);
+  assert.match(director, /"kettle on" means she has settled in at home, not that a kettle is in the frame/);
+  assert.match(director, /Off duty means off duty: no uniform, no work heels/);
+  assert.match(director, /0 to 4 things the moment genuinely needs/);
   assert.match(writer, /normally 120 to 200 words/);
-  assert.doesNotMatch(writer, /shortest prompt/);
-  const plan = vp.normalizePlan({ shots: [{ scene: { required_objects: ["a", "b", "c", "d", "e", "f", "g"] }, shot: {} }] }, 1);
-  assert.equal(plan.shots[0].scene.required_objects.length, 6);
+  const plan = vp.normalizePlan({ shots: [{ scene: { required_objects: ["a", "b", "c", "d", "e", "f"] }, shot: {} }] }, 1);
+  assert.equal(plan.shots[0].scene.required_objects.length, 4);
 });
 
 test("the director is allowed a kneeling, soles-to-camera shot", async () => {

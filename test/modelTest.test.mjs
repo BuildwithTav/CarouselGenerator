@@ -33,14 +33,14 @@ test("requests use each model's own size settings from its schema", () => {
   assert.deepEqual(sdObjBody.image_size, { width: 1360, height: 1700 });
   assert.equal(sdObjBody.max_images, 1);
 
-  // GPT Image 2: named sizes only, and quality set to high when it exists.
+  // GPT Image 2: named sizes only, and quality set to medium when it exists.
   const gpt = { image_size: { enum: ["auto", "1024x1024", "1536x1024", "1024x1536"] }, quality: { enum: ["low", "medium", "high"] } };
   const gptBody = mt.buildRequest(model("gpt-image-2"), "p", ["r1"], { props: gpt, schemas: {} });
   assert.equal(gptBody.image_size, "1024x1536");
-  assert.equal(gptBody.quality, "high");
+  assert.equal(gptBody.quality, "medium");
   const gptObj = mt.buildRequest(model("gpt-image-2"), "p", [], { props: { image_size: { type: "object" }, quality: {} }, schemas: {} });
   assert.deepEqual(gptObj.image_size, { width: 1024, height: 1280 });
-  assert.equal(gptObj.quality, "high");
+  assert.equal(gptObj.quality, "medium");
 
   assert.deepEqual(mt.buildRequest(model("nano-banana-2"), "p", [], null).resolution, "1K");
 });

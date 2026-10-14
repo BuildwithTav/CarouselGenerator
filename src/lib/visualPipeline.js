@@ -143,7 +143,7 @@ export function normalizePlan(raw, count, lockedContinuity = null) {
         subject_action: str(scene.subject_action, "seated, relaxing her feet"),
         wardrobe: str(scene.wardrobe, continuity.wardrobe),
         footwear_state: str(scene.footwear_state, str(shot.footwear_state, "both heels on")),
-        required_objects: (Array.isArray(scene.required_objects) ? scene.required_objects : []).map((o) => str(o)).filter(Boolean).slice(0, 6),
+        required_objects: (Array.isArray(scene.required_objects) ? scene.required_objects : []).map((o) => str(o)).filter(Boolean).slice(0, 4),
         expected_feet_count: feet === 1 ? 1 : 2,
       },
       shot: {
@@ -192,7 +192,10 @@ How to choose:
 - What stays the same in every photo is her: the same feet, legs and skin, and her uniform, sheer tan tights and navy heels when she's working. Everything else varies: pose, angle, crop, place and moment.
 - Keep her hands out of the action: no hands holding shoes, rolling tights or touching her feet, and no shoe being put on or pulled off mid-action (these produce extra shoes, extra feet and wrong hands). Show the moment just before or after instead: heels already off and set beside her, tights already on.
 - Keep anatomy simple. Legs are never crossed (crossed legs make the image model draw two left or two right feet). Don't combine pointed toes, extreme foreshortening, shoe removal and a floor-level camera unless the scene genuinely needs it.
-- Translate the event into a plausible, lived-in photograph that tells the scene's story without words. Give each scene 3 to 6 required_objects: small real details that belong to that exact moment (for example a mug of tea, a kettle, an open nail polish bottle, her folded uniform jacket with its wings badge, a candle, a throw blanket, her crew bag, a boarding card face-down), and put the time of day in the lighting. Details are plain and unbranded, with no words on them. Drop narration, metaphor, audience reactions and other people. If a scene mentions a place outside the permanent settings, show the moment just before or after it in an allowed setting.
+- Read each scene like a photographer reading a brief: work out the real moment (where she is, what she is doing, the time of day, how relaxed or busy she is) and photograph that moment. Never illustrate every word. Figures of speech, jokes and asides are not objects: "kettle on" means she has settled in at home, not that a kettle is in the frame; "the heels don't get a say until Thursday" means there are no heels today. Anything the text says is absent, finished or for later stays out of the photo.
+- Off duty means off duty: no uniform, no work heels and no crew bag unless the text clearly puts them in this moment. On duty, she is in her uniform.
+- required_objects: 0 to 4 things the moment genuinely needs, chosen for the photo, not copied from the words. Add at most one or two small lived-in details (a throw, a mug, lamplight) only where they make that moment feel real; a cleaner frame often reads better. Details are plain and unbranded, with no words on them, and the time of day goes in the lighting.
+- Drop narration, metaphor, audience reactions and other people. If a scene mentions a place outside the permanent settings, show the moment just before or after it in an allowed setting.
 - expected_feet_count is 2 unless the shot is a deliberate one-foot detail.
 
 Reply with JSON only:
