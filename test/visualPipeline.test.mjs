@@ -225,6 +225,10 @@ test("shoe prompts always carry the clearly-blue navy line, bare-feet prompts do
   const bare = "Her bare feet rest on the sofa.";
   assert.equal(vp.addShoeColourLine(BRAND, bare), bare);
   assert.equal(vp.addShoeColourLine({ slug: "healthcode" }, "In trainers and shoes"), "In trainers and shoes");
+  // Barefoot scenes stay barefoot even when the wording says "flat" or "heel".
+  const barefoot = "She stands barefoot, feet flat on the kitchen floor, the heel of each foot lit.";
+  assert.equal(vp.addShoeColourLine(BRAND, barefoot, vp.shoeFacts({ scene: { footwear_state: "bare", required_objects: ["kettle", "mug"] }, shot: { footwear_state: "bare" } })), barefoot);
+  assert.match(vp.addShoeColourLine(BRAND, "Tights only, legs up on the seat.", vp.shoeFacts({ scene: { footwear_state: "tights only", required_objects: ["one pair of navy court heels on the floor"] }, shot: {} })), /clearly and visibly blue/);
 });
 
 // ── On-demand photo idea ─────────────────────────────────────────────────

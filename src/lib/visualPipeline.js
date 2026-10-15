@@ -63,9 +63,18 @@ const SHOE_COLOUR_LINE = {
   "sky-high-soles": "Her shoes are a rich mid navy blue, exactly the navy of her skirt, clearly and visibly blue in the light.",
 };
 
-export function addShoeColourLine(brand, prompt) {
+// `facts` is what the director said about her footwear and the objects in
+// the shot. It decides, not the prompt's wording: "feet flat on the floor"
+// or "the heel of her foot" in a barefoot scene used to add the shoe line,
+// which put shoes into photos that shouldn't have any.
+const SHOE_WORDS = /\b(heels?|court|shoes?|flats|pumps?|stilettos?)\b/i;
+export function shoeFacts(item) {
+  return [item?.scene?.footwear_state, item?.shot?.footwear_state, ...(item?.scene?.required_objects || [])].filter(Boolean).join("; ");
+}
+
+export function addShoeColourLine(brand, prompt, facts = prompt) {
   const line = SHOE_COLOUR_LINE[brand?.slug];
-  if (!line || !/\b(heels?|shoes?|flats?|court|pumps?)\b/i.test(prompt) || prompt.includes(line)) return prompt;
+  if (!line || !SHOE_WORDS.test(facts) || prompt.includes(line)) return prompt;
   return `${prompt} ${line}`;
 }
 
@@ -297,7 +306,7 @@ Items:
 ${items.map((it, i) => `${i + 1}. ${JSON.stringify({ scene: it.scene, shot: it.shot, ...(it.corrections?.length ? { corrections_from_last_attempt: it.corrections } : {}) })}`).join("\n")}`;
 
   const { json, costUsd } = await askDetailed(system, user, { maxTokens: 700 * items.length + 400, model: PIPELINE_MODEL });
-  const prompts = (Array.isArray(json.prompts) ? json.prompts : []).map((p) => addShoeColourLine(brand, enforceShoeColour(brand, sanitizeVisual(String(p || "")))));
+  const prompts = (Array.isArray(json.prompts) ? json.prompts : []).map((p, i) => addShoeColourLine(brand, enforceShoeColour(brand, sanitizeVisual(String(p || ""))), shoeFacts(items[i])));
   if (prompts.length !== items.length || prompts.some((p) => !p)) throw new Error("Prompt writer returned an incomplete set");
   return { prompts, costUsd };
 }
