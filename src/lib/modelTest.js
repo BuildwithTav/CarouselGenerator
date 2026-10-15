@@ -26,11 +26,6 @@ export const TEST_MODELS = [
     resolutions: ["1.5K", "1.5k"], size: { width: 1360, height: 1700 }, fallback: { image_size: { width: 1360, height: 1700 } },
     cost: (w, h, refs) => ((MP(w, h) ?? 2.3) > 2.36 ? 0.135 : 0.0675) + 0.0045 * Math.max(0, refs - 1),
   },
-  {
-    key: "nano-banana-2", label: "Nano Banana 2", endpoint: "fal-ai/nano-banana-2/edit",
-    resolutions: ["1K"], fallback: { aspect_ratio: "4:5", resolution: "1K", output_format: "jpeg" },
-    cost: (w, h) => { const mp = MP(w, h) ?? 1; return mp > 5 ? 0.16 : mp > 1.6 ? 0.12 : 0.08; },
-  },
   // What ChatGPT itself uses. Priced by tokens on fal: about $0.07 a photo
   // at medium quality, $0.19 at high (third-party estimates, Oct 2026).
   // Tav ruled out high on price, so it's tested at medium.
@@ -68,7 +63,7 @@ export function shortPrompt(item, hasReferences) {
   ].filter(Boolean).join("\n");
 }
 // Models from earlier tests, so their photos still get a name.
-export const OLD_MODEL_LABELS = { "nano-banana-pro": "Nano Banana Pro (old)", "seedream-4.5": "Seedream 4.5" };
+export const OLD_MODEL_LABELS = { "nano-banana-pro": "Nano Banana Pro (old)", "seedream-4.5": "Seedream 4.5", "nano-banana-2": "Nano Banana 2" };
 
 // fal publishes each endpoint's input schema. Reading it means the request
 // only uses parameters the model actually has (Nano Banana takes an aspect

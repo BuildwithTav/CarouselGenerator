@@ -11,7 +11,9 @@ await import("@anthropic-ai/sdk/shims/web");
 
 const mt = await import("@/lib/modelTest");
 const BRAND = { id: "brand-1", slug: "sky-high-soles", name: "Sky High Soles" };
-const model = (key) => mt.TEST_MODELS.find((m) => m.key === key);
+// A Nano Banana style model (aspect ratio + resolution), for the request builder.
+const NB = { key: "nb", resolutions: ["1K"], fallback: { aspect_ratio: "4:5", resolution: "1K", output_format: "jpeg" } };
+const model = (key) => (key === "nb" ? NB : mt.TEST_MODELS.find((m) => m.key === key));
 const spec = (endpoint, properties, extra = {}) => ({
   paths: { [`/${endpoint}`]: { post: { requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Input" } } } } } } },
   components: { schemas: { Input: { properties }, ...extra } },
@@ -19,7 +21,7 @@ const spec = (endpoint, properties, extra = {}) => ({
 
 test("requests use each model's own size settings from its schema", () => {
   const nb = spec("x", { aspect_ratio: { enum: ["1:1", "4:5", "9:16"] }, resolution: { enum: ["1K", "2K", "4K"] }, output_format: { enum: ["jpeg", "png"] } });
-  const nbBody = mt.buildRequest(model("nano-banana-2"), "p", ["r1", "r2"], { props: nb.components.schemas.Input.properties, schemas: nb.components.schemas });
+  const nbBody = mt.buildRequest(model("nb"), "p", ["r1", "r2"], { props: nb.components.schemas.Input.properties, schemas: nb.components.schemas });
   assert.deepEqual([nbBody.aspect_ratio, nbBody.resolution, nbBody.output_format], ["4:5", "1K", "jpeg"]);
   assert.deepEqual(nbBody.image_urls, ["r1", "r2"]);
 
@@ -42,7 +44,7 @@ test("requests use each model's own size settings from its schema", () => {
   assert.deepEqual(gptObj.image_size, { width: 1024, height: 1280 });
   assert.equal(gptObj.quality, "medium");
 
-  assert.deepEqual(mt.buildRequest(model("nano-banana-2"), "p", [], null).resolution, "1K");
+  assert.deepEqual(mt.buildRequest(model("nb"), "p", [], null).resolution, "1K");
 });
 
 test("image sizes are read from PNG and JPEG headers", () => {
@@ -55,8 +57,6 @@ test("image sizes are read from PNG and JPEG headers", () => {
 test("Seedream 5 Pro is priced by size and extra references", () => {
   assert.equal(model("seedream-5-pro").cost(1360, 1700, 4).toFixed(4), "0.0810");
   assert.equal(model("seedream-5-pro").cost(2048, 2048, 1), 0.135);
-  assert.equal(model("nano-banana-2").cost(928, 1152), 0.08);
-  assert.equal(model("nano-banana-2").cost(1792, 2240), 0.12);
 });
 
 test("a test scene sends the same prompt and references to every model and checks each", async () => {
