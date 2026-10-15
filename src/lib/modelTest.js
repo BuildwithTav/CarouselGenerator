@@ -40,7 +40,21 @@ export const TEST_MODELS = [
     extra: { quality: "medium" }, fallback: { image_size: { width: 1024, height: 1280 }, quality: "medium" },
     cost: () => 0.07,
   },
+  // Tav's ChatGPT experiment, reproduced: the same model and her same
+  // references, but only the plain caption, none of our planned prompt.
+  // Shows whether our prompt actually beats a plain caption.
+  {
+    key: "gpt-image-2-caption", label: "GPT Image 2, caption only (like ChatGPT)", endpoint: "openai/gpt-image-2/edit",
+    promptMode: "caption",
+    resolutions: [], size: { width: 1024, height: 1280 }, sizeNames: ["1024x1536", "portrait_4_3", "portrait"],
+    extra: { quality: "medium" }, fallback: { image_size: { width: 1024, height: 1280 }, quality: "medium" },
+    cost: () => 0.07,
+  },
 ];
+
+export function captionPrompt(scene, hasReferences) {
+  return `Make an image to match this caption: ${scene}${hasReferences ? "\nThe woman is the one in the reference photos." : ""}`;
+}
 // Models from earlier tests, so their photos still get a name.
 export const OLD_MODEL_LABELS = { "nano-banana-pro": "Nano Banana Pro (old)", "seedream-4.5": "Seedream 4.5" };
 
@@ -175,7 +189,8 @@ export async function runModelTestScene(brand, { runId, sceneIndex }) {
   const item = plan.items[0];
   const refUrls = await signedUrlsFor((item.referenceIds || []).map((id) => refRows.find((r) => r.id === id)).filter(Boolean));
   const promptText = assemblePrompt(item.prompt, { hasReferences: refUrls.length > 0 });
-  const rows = await Promise.all(TEST_MODELS.map((model, i) => runModel(brand, { model, schema: schemas[i], promptText, refUrls, item, continuity: plan.continuity, runId, sceneIndex })));
+  const plainPrompt = captionPrompt(scene, refUrls.length > 0);
+  const rows = await Promise.all(TEST_MODELS.map((model, i) => runModel(brand, { model, schema: schemas[i], promptText: model.promptMode === "caption" ? plainPrompt : promptText, refUrls, item, continuity: plan.continuity, runId, sceneIndex })));
   await supabaseAdmin().from("model_tests").delete().eq("run_id", runId).eq("scene_index", sceneIndex);
   const { data, error } = await supabaseAdmin().from("model_tests").insert(rows).select();
   if (error) throw new Error(error.message);
