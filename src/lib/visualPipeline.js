@@ -32,7 +32,7 @@ const VISUAL_RULES = {
     "Her face is never in the photo. Keep her head out of the frame in a different way from photo to photo: a close-up of her feet and ankles, the frame's top edge at mid-calf, her knees or her thighs, her own point of view looking down, or directly behind her (her soles and the backs of her legs, or the back of her blonde head as the only part of her head in view). A top edge at her waist is occasional; her blouse and chest are rarely in the photo.",
     "Work uniform: fitted navy pencil skirt, white blouse, sheer tan tights and navy court heels with a mid heel (the same navy as the skirt), or plain navy flats. With the uniform, shoes are always that same navy, a rich mid navy that is clearly blue in the light and never near-black, and tights always sheer tan.",
     "Off duty, tights when worn are sheer tan or nude. Bare feet are fine.",
-    "Settings: the aircraft (cabin aisle, jump seat, galley, crew rest), the crew room, the airport (gate, lounge, terminal floor), her home (mirror, bed, sofa, bath) or a pedicure chair. A hotel room or pool only occasionally. Never a bus, taxi, car, train, gym, street or shop.",
+    "Settings: the aircraft (cabin aisle, jump seat, galley, crew rest), the crew room, the airport (gate, lounge, terminal floor), her home (mirror, bed, sofa, bath, kitchen, balcony) or a pedicure chair. A hotel room or pool only occasionally. Never a bus, taxi, car, train, gym, street or shop.",
     "Her feet are the focal point, sharp and well lit.",
     "Her legs are never crossed, not at the knee and not at the ankle: both legs stay uncrossed with her two feet clearly apart, side by side or one slightly forward.",
     "Simple moments, varied from photo to photo: her feet resting, up on a seat, ledge or wall, stretching, on tiptoe, one heel dangling from her toes, kneeling seen from behind, lying on her front with her feet raised, or walking away from the camera. Her hands never hold a shoe or work on her tights or feet; they rest on her lap, the seat or a cup, or stay out of the frame. Shoes are either on her feet or set on the floor clearly apart from them, one pair at most.",
@@ -192,7 +192,9 @@ How to choose:
 - What stays the same in every photo is her: the same feet, legs and skin, and her uniform, sheer tan tights and navy heels when she's working. Everything else varies: pose, angle, crop, place and moment.
 - Keep her hands out of the action: no hands holding shoes, rolling tights or touching her feet, and no shoe being put on or pulled off mid-action (these produce extra shoes, extra feet and wrong hands). Show the moment just before or after instead: heels already off and set beside her, tights already on.
 - Keep anatomy simple. Legs are never crossed (crossed legs make the image model draw two left or two right feet). Don't combine pointed toes, extreme foreshortening, shoe removal and a floor-level camera unless the scene genuinely needs it.
-- Read each scene like a photographer reading a brief: work out the real moment (where she is, what she is doing, the time of day, how relaxed or busy she is) and photograph that moment. Never illustrate every word. Figures of speech, jokes and asides are not objects: "kettle on" means she has settled in at home, not that a kettle is in the frame; "the heels don't get a say until Thursday" means there are no heels today. Anything the text says is absent, finished or for later stays out of the photo.
+- Read each scene like a photographer reading a brief: work out the real moment (where she is, what she is doing, the time of day, how relaxed or busy she is) and photograph that moment. Never illustrate every word.
+- Set the scene in order: first decide exactly where she is, then where the camera stands, then what is physically in that spot and inside that frame. Only those things can appear. Something the text mentions that lives somewhere else stays out: "relaxing on a day off, kettle's boiled, feet up on the balcony" is a balcony photo with her feet up and maybe a mug beside her, never a kettle. Figures of speech, jokes and asides are not objects: "the heels don't get a say until Thursday" means there are no heels today. Anything the text says is absent, finished or for later stays out of the photo.
+- Before answering, check every required object, the wardrobe and the footwear: would it really be in this spot, in this frame, at this moment? If it is only there because the words mention it, remove it.
 - Off duty means off duty: no uniform, no work heels and no crew bag unless the text clearly puts them in this moment. On duty, she is in her uniform.
 - required_objects: 0 to 4 things the moment genuinely needs, chosen for the photo, not copied from the words. Add at most one or two small lived-in details (a throw, a mug, lamplight) only where they make that moment feel real; a cleaner frame often reads better. Details are plain and unbranded, with no words on them, and the time of day goes in the lighting.
 - Drop narration, metaphor, audience reactions and other people. If a scene mentions a place outside the permanent settings, show the moment just before or after it in an allowed setting.
@@ -211,7 +213,9 @@ ${recentShots.length ? recentShots.map((s) => `- ${JSON.stringify(s)}`).join("\n
 Scenes, in order:
 ${texts.map((t, i) => `${i + 1}. ${t || "(cover photo for the set)"}`).join("\n")}`;
 
-  const { json, costUsd } = await askDetailed(system, user, { maxTokens: 800 * texts.length + 800, model: PIPELINE_MODEL });
+  // High effort: setting the scene is reasoning (where she is, what's in
+  // view there, what the words only mention), not copying words across.
+  const { json, costUsd } = await askDetailed(system, user, { maxTokens: 800 * texts.length + 800, model: PIPELINE_MODEL, effort: "high" });
   const plan = enforceShoeColour(brand, normalizePlan(json, texts.length, lockedContinuity));
   return { ...plan, costUsd };
 }

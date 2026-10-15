@@ -256,7 +256,10 @@ test("the director works out the moment instead of illustrating every word", asy
   const director = String(calls.find((c) => c.kind === "anthropic" && c.stage === "director").req.system);
   const writer = String(calls.find((c) => c.kind === "anthropic" && c.stage === "writer").req.system);
   assert.match(director, /Never illustrate every word/);
-  assert.match(director, /"kettle on" means she has settled in at home, not that a kettle is in the frame/);
+  assert.match(director, /feet up on the balcony" is a balcony photo with her feet up and maybe a mug beside her, never a kettle/);
+  assert.match(director, /If it is only there because the words mention it, remove it/);
+  assert.match(director, /balcony\) or a pedicure chair/);
+  assert.equal(calls.find((c) => c.kind === "anthropic" && c.stage === "director").req.output_config.effort, "high");
   assert.match(director, /Off duty means off duty: no uniform, no work heels/);
   assert.match(director, /0 to 4 things the moment genuinely needs/);
   assert.match(writer, /normally 120 to 200 words/);
