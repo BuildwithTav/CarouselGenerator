@@ -33,10 +33,14 @@ const pill = (plan) => {
   return { background: bg, color: col, padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 700, display: "inline-block" };
 };
 
+// The server only answers admin calls for a logged-in admin account, so this
+// sends the studio login saved in this browser.
+const getToken = () => { try { return localStorage.getItem("cs_token") || ""; } catch { return ""; } };
+
 async function adminCall(action, payload = {}) {
   const res = await fetch("/api/auth", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + getToken() },
     body: JSON.stringify({ action, ...payload }),
   });
   const data = await res.json();
@@ -46,7 +50,7 @@ async function adminCall(action, payload = {}) {
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
-  const [password, setPassword] = useState("");
+  const [gateMsg, setGateMsg] = useState("Checking your login...");
   const [tab, setTab] = useState("users");
   const [users, setUsers] = useState([]);
   const [commissions, setCommissions] = useState([]);
@@ -75,10 +79,9 @@ export default function AdminPage() {
     setSendingUpdate(false);
   };
 
-  const checkPassword = () => {
-    if (password === "tav_admin_2026") setAuthed(true);
-    else flash("Wrong password", false);
-  };
+  useEffect(() => {
+    adminCall("admin_get_users").then(() => setAuthed(true)).catch(e => setGateMsg(e.message));
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -144,12 +147,10 @@ export default function AdminPage() {
       <div style={{ background: A.surface, border: `1.5px solid ${A.border}`, borderRadius: 16, padding: 40, width: 340 }}>
         <div style={{ fontFamily: "Montserrat,sans-serif", fontSize: 22, fontWeight: 900, marginBottom: 4 }}>Admin Panel</div>
         <div style={{ fontSize: 13, color: A.muted, marginBottom: 24 }}>Carousel Studio</div>
-        <input type="password" placeholder="Password" value={password}
-          onChange={e => setPassword(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && checkPassword()}
-          style={{ ...inp, marginBottom: 12, fontSize: 14 }} />
-        <button onClick={checkPassword} style={{ ...btn(A.text, A.accentText), width: "100%", padding: "11px", fontSize: 14 }}>Sign In</button>
-        {msg.text && <div style={{ marginTop: 12, fontSize: 12, color: msg.ok ? "#2e7d32" : "#c62828", textAlign: "center" }}>{msg.text}</div>}
+        <div style={{ fontSize: 14, marginBottom: 16, lineHeight: 1.5 }}>{gateMsg}</div>
+        {gateMsg !== "Checking your login..." && (
+          <a href="/" style={{ ...btn(A.text, A.accentText), display: "block", textAlign: "center", textDecoration: "none", padding: "11px", fontSize: 14 }}>Log in with your admin account</a>
+        )}
       </div>
     </div>
   );
@@ -264,12 +265,12 @@ export default function AdminPage() {
                   {commissions.map((c, i) => (
                     <tr key={c.id || i} style={{ borderBottom: `1px solid ${A.border}`, background: i % 2 === 0 ? A.surface : A.bg }}>
                       <td style={{ padding: "9px 14px", fontSize: 11 }}>{c.affiliate_id}</td>
-                      <td style={{ padding: "9px 14px", fontSize: 12 }}>{c.referred_email}</td>
-                      <td style={{ padding: "9px 14px", fontWeight: 700, color: "#2e7d32" }}>${(c.amount || 0).toFixed(2)}</td>
+                      <td style={{ padding: "9px 14px", fontSize: 12 }}>{c.subscriber_email}</td>
+                      <td style={{ padding: "9px 14px", fontWeight: 700, color: "#2e7d32" }}>${Number(c.commission_amount || 0).toFixed(2)}</td>
                       <td style={{ padding: "9px 14px" }}>{c.commission_rate}%</td>
                       <td style={{ padding: "9px 14px" }}>T{c.tier || 1}</td>
                       <td style={{ padding: "9px 14px" }}><span style={pill(c.status)}>{c.status}</span></td>
-                      <td style={{ padding: "9px 14px", fontSize: 11, color: A.muted }}>{c.created_at ? new Date(c.created_at).toLocaleDateString("en-GB") : "—"}</td>
+                      <td style={{ padding: "9px 14px", fontSize: 11, color: A.muted }}>{c.earned_at ? new Date(c.earned_at).toLocaleDateString("en-GB") : "—"}</td>
                     </tr>
                   ))}
                 </tbody>

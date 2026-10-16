@@ -6,6 +6,16 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
+// verifyOtp saves the user's session on the client it runs on, and every later
+// query from that client then runs as that user. Since RLS went on (no
+// policies) that user can read nothing, so logins found no account. Sign-ins
+// get their own throwaway client and `supabase` stays the server.
+const authClient = () => createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY,
+  { auth: { persistSession: false, autoRefreshToken: false } }
+);
+
 const SYSTEME_API_KEY = process.env.SYSTEME_API_KEY;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL = "Carousel Studio <tav@mail.buildwithtav.co>";
@@ -192,7 +202,7 @@ export async function POST(req) {
     }
 
     if (action === "verify-otp") {
-      const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+      const { data, error } = await authClient().auth.verifyOtp({ email, token, type: "email" });
       if (error) return NextResponse.json({ error: "Invalid code — check your email and try again." }, { status: 400 });
 
       const user = data.user;
@@ -437,13 +447,22 @@ export async function POST(req) {
       return NextResponse.json({ success: true });
     }
 
+    // Admin actions need a logged-in account with is_admin set.
+    if (typeof action === "string" && action.startsWith("admin_")) {
+      const t = (req.headers.get("authorization") || "").replace("Bearer ", "");
+      const { data: { user: adminUser } = {} } = t ? await supabase.auth.getUser(t) : {};
+      if (!adminUser) return NextResponse.json({ error: "Log in to Carousel Studio first" }, { status: 401 });
+      const { data: adminProfile } = await supabase.from("users").select("is_admin").eq("email", adminUser.email).single();
+      if (!adminProfile?.is_admin) return NextResponse.json({ error: "This account is not an admin" }, { status: 403 });
+    }
+
     if (action === "admin_get_users") {
       const { data: users } = await supabase.from("users").select("*").order("created_at", { ascending: false }).limit(300);
       return NextResponse.json({ users: users || [] });
     }
 
     if (action === "admin_get_commissions") {
-      const { data: commissions } = await supabase.from("commissions").select("*").order("created_at", { ascending: false }).limit(300);
+      const { data: commissions } = await supabase.from("commissions").select("*").order("earned_at", { ascending: false }).limit(300);
       return NextResponse.json({ commissions: commissions || [] });
     }
 
