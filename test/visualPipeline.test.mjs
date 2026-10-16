@@ -67,14 +67,16 @@ test("judgeQa hard-fails only the obvious failures", () => {
   assert.equal(vp.judgeQa({ ...good, feet_count: 1 }, { expectedFeet: 1 }).pass, true);
 });
 
-test("assemblePrompt adds the identity lock only with references, and only the last corrections", () => {
-  const withRefs = vp.assemblePrompt("Scene text", { hasReferences: true, corrections: ["separate the feet"] });
-  assert.ok(withRefs.startsWith("IDENTITY LOCK"));
-  assert.ok(withRefs.includes("CORRECTIONS FROM THE LAST ATTEMPT\n- separate the feet"));
+test("assemblePrompt is short and plain: scene, who she is (with references), last fixes, format", () => {
+  const withRefs = vp.assemblePrompt("A photo of her feet up on the sofa.", { hasReferences: true, corrections: ["separate the feet"] });
+  assert.ok(withRefs.startsWith("A photo of her feet up on the sofa."));
+  assert.ok(withRefs.includes(vp.IDENTITY_LOCK));
+  assert.ok(withRefs.includes("Fix from the last try: separate the feet."));
   assert.ok(withRefs.endsWith(vp.OUTPUT_LINE));
-  const noRefs = vp.assemblePrompt("Scene text", { hasReferences: false });
-  assert.ok(!noRefs.includes("IDENTITY LOCK"));
-  assert.ok(!noRefs.includes("CORRECTIONS"));
+  assert.ok(!/IDENTITY LOCK|SCENE\n|CORRECTIONS/.test(withRefs), "no shouty section headers");
+  const noRefs = vp.assemblePrompt("A photo of her feet.", { hasReferences: false });
+  assert.ok(!noRefs.includes(vp.IDENTITY_LOCK));
+  assert.ok(!noRefs.includes("Fix from the last try"));
 });
 
 // ── Integration with mocked fetch ────────────────────────────────────────
@@ -105,8 +107,8 @@ test("a failed photo check retries once with the same references, then keeps the
   }
   assert.equal(falCalls[0].url, `https://fal.run/${ig.PHOTO_MODELS[ig.PHOTO_MODEL].edit}`, "first try on the main model");
   assert.equal(falCalls[1].url, `https://fal.run/${ig.PHOTO_MODELS[ig.RETRY_MODEL].edit}`, "retry on the other model");
-  assert.equal(falCalls[1].body.prompt.includes("IDENTITY LOCK"), true);
-  assert.ok(!falCalls[0].body.prompt.includes("CORRECTIONS"));
+  assert.equal(falCalls[1].body.prompt.includes(vp.IDENTITY_LOCK), true);
+  assert.ok(!falCalls[0].body.prompt.includes("Fix from the last try"));
   assert.ok(falCalls[1].body.prompt.includes("crop at the hips"));
   assert.equal(result.needsCheck, true);
   assert.match(result.checkReason, /face visible/);
@@ -266,7 +268,10 @@ test("the director works out the moment instead of illustrating every word", asy
   assert.equal(calls.find((c) => c.kind === "anthropic" && c.stage === "director").req.output_config.effort, "high");
   assert.match(director, /Off duty means off duty: no uniform, no work heels/);
   assert.match(director, /0 to 4 things the moment genuinely needs/);
-  assert.match(writer, /normally 120 to 200 words/);
+  assert.match(writer, /the way a person would ask ChatGPT for a photo/);
+  assert.match(writer, /normally 60 to 110 words/);
+  assert.match(writer, /No camera jargon/);
+  assert.match(director, /Choose the photo she would actually take of that moment/);
   const plan = vp.normalizePlan({ shots: [{ scene: { required_objects: ["a", "b", "c", "d", "e", "f"] }, shot: {} }] }, 1);
   assert.equal(plan.shots[0].scene.required_objects.length, 4);
 });

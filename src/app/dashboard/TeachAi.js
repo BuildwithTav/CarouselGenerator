@@ -101,7 +101,7 @@ function ago(ts) {
 // Blind side-by-side of image models (src/lib/modelTest.js). The same scene
 // and her same reference photos go to every model; Tav picks the best of
 // each scene before he can see which model made it.
-const TEST_COST = "about $1.50";
+const TEST_COST = "about $1";
 const order = (id) => [...String(id)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 function ModelTest({ api, brand }) {
@@ -132,7 +132,7 @@ function ModelTest({ api, brand }) {
     runScenes(crypto.randomUUID(), [0, 1, 2, 3, 4]);
   };
   const redo = (sceneIndex) => {
-    if (!confirm("Make this scene again on every model? About $0.30.")) return;
+    if (!confirm("Make this scene again on every model? About $0.20.")) return;
     runScenes(data.run.id, [sceneIndex]);
   };
 
@@ -172,7 +172,7 @@ function ModelTest({ api, brand }) {
             {gaps > 0 && !running && (
               <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>
                 {gaps} of {set.length} didn't come back, so this scene isn't a fair comparison yet.{" "}
-                <button onClick={() => redo(si)} style={btn("small", { padding: "3px 8px" })}>Redo this scene (~$0.30)</button>
+                <button onClick={() => redo(si)} style={btn("small", { padding: "3px 8px" })}>Redo this scene (~$0.20)</button>
               </div>
             )}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>

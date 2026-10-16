@@ -30,40 +30,15 @@ export const TEST_MODELS = [
   // at medium quality, $0.19 at high (third-party estimates, Oct 2026).
   // Tav ruled out high on price, so it's tested at medium.
   {
-    key: "gpt-image-2", label: "GPT Image 2 (ChatGPT's model, medium)", endpoint: "openai/gpt-image-2/edit",
-    resolutions: [], size: { width: 1024, height: 1280 }, sizeNames: ["1024x1536", "portrait_4_3", "portrait"],
-    extra: { quality: "medium" }, fallback: { image_size: { width: 1024, height: 1280 }, quality: "medium" },
-    cost: () => 0.07,
-  },
-  // Tav's ChatGPT experiment, with the logic kept: the director still works
-  // out the moment (what's in view, what the words only mention), but the
-  // model gets it as a short plain description instead of our long written
-  // prompt. Shows whether the long prompt beats a short one.
-  {
-    key: "gpt-image-2-short", label: "GPT Image 2, short plain prompt", endpoint: "openai/gpt-image-2/edit",
-    promptMode: "short",
+    key: "gpt-image-2", label: "GPT Image 2 (ChatGPT's model)", endpoint: "openai/gpt-image-2/edit",
     resolutions: [], size: { width: 1024, height: 1280 }, sizeNames: ["1024x1536", "portrait_4_3", "portrait"],
     extra: { quality: "medium" }, fallback: { image_size: { width: 1024, height: 1280 }, quality: "medium" },
     cost: () => 0.07,
   },
 ];
 
-// The director's scene (already reasoned through) as one short request,
-// the way you'd ask ChatGPT for it.
-export function shortPrompt(item, hasReferences) {
-  const sc = item?.scene || {}, sh = item?.shot || {};
-  const objects = (sc.required_objects || []).filter(Boolean);
-  return [
-    `Make a photo of this moment: ${sc.subject_action || ""}`.trim(),
-    sc.setting ? `Where: ${sc.setting}.` : "",
-    [sc.wardrobe, sc.footwear_state].filter(Boolean).length ? `She's wearing ${[sc.wardrobe, sc.footwear_state].filter(Boolean).join("; ")}.` : "",
-    objects.length ? `Also in the shot: ${objects.join(", ")}.` : "",
-    `Framing: ${[sh.distance, sh.crop && `cropped at ${sh.crop}`, sh.view, sh.camera_height && `camera at ${sh.camera_height}`].filter(Boolean).join(", ")}. Her face is not in the photo.`,
-    hasReferences ? "The woman is the one in the reference photos." : "",
-  ].filter(Boolean).join("\n");
-}
 // Models from earlier tests, so their photos still get a name.
-export const OLD_MODEL_LABELS = { "nano-banana-pro": "Nano Banana Pro (old)", "seedream-4.5": "Seedream 4.5", "nano-banana-2": "Nano Banana 2" };
+export const OLD_MODEL_LABELS = { "nano-banana-pro": "Nano Banana Pro (old)", "seedream-4.5": "Seedream 4.5", "nano-banana-2": "Nano Banana 2", "gpt-image-2-short": "GPT Image 2, short plain prompt" };
 
 // fal publishes each endpoint's input schema. Reading it means the request
 // only uses parameters the model actually has (Nano Banana takes an aspect
@@ -196,8 +171,7 @@ export async function runModelTestScene(brand, { runId, sceneIndex }) {
   const item = plan.items[0];
   const refUrls = await signedUrlsFor((item.referenceIds || []).map((id) => refRows.find((r) => r.id === id)).filter(Boolean));
   const promptText = assemblePrompt(item.prompt, { hasReferences: refUrls.length > 0 });
-  const plainPrompt = shortPrompt(item, refUrls.length > 0);
-  const rows = await Promise.all(TEST_MODELS.map((model, i) => runModel(brand, { model, schema: schemas[i], promptText: model.promptMode === "short" ? plainPrompt : promptText, refUrls, item, continuity: plan.continuity, runId, sceneIndex })));
+  const rows = await Promise.all(TEST_MODELS.map((model, i) => runModel(brand, { model, schema: schemas[i], promptText, refUrls, item, continuity: plan.continuity, runId, sceneIndex })));
   await supabaseAdmin().from("model_tests").delete().eq("run_id", runId).eq("scene_index", sceneIndex);
   const { data, error } = await supabaseAdmin().from("model_tests").insert(rows).select();
   if (error) throw new Error(error.message);

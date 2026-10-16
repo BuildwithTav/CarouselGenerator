@@ -68,14 +68,11 @@ test("a test scene sends the same prompt and references to every model and check
   const fal = calls.filter((c) => c.kind === "fal");
   assert.equal(fal.length, mt.TEST_MODELS.length);
   assert.deepEqual(new Set(fal.map((c) => c.url)), new Set(mt.TEST_MODELS.map((m) => `https://fal.run/${m.endpoint}`)));
-  const planned = fal.filter((c) => !c.body.prompt.startsWith("Make a photo of this moment"));
-  const plain = fal.filter((c) => c.body.prompt.startsWith("Make a photo of this moment"));
-  assert.equal(plain.length, mt.TEST_MODELS.filter((m) => m.promptMode === "short").length, "the short variant gets the plain description");
-  assert.ok(plain[0].body.prompt.includes("seated after shift"), "built from the director's reasoned scene");
-  assert.ok(!plain[0].body.prompt.includes(mt.TEST_SCENES[0]), "never the raw caption");
-  assert.ok(!plain[0].body.prompt.includes("IDENTITY LOCK"));
-  for (const c of planned) assert.equal(c.body.prompt, planned[0].body.prompt, "same planned prompt");
-  for (const c of fal) assert.deepEqual(c.body.image_urls, fal[0].body.image_urls, "same references for every model");
+  for (const c of fal) {
+    assert.equal(c.body.prompt, fal[0].body.prompt, "same prompt for every model");
+    assert.deepEqual(c.body.image_urls, fal[0].body.image_urls, "same references for every model");
+  }
+  assert.ok(!fal[0].body.prompt.includes(mt.TEST_SCENES[0]), "never the raw caption");
   assert.ok(fal[0].body.image_urls.length >= 2);
   const qa = calls.filter((c) => c.kind === "anthropic" && c.stage === "qa");
   assert.equal(qa.length, mt.TEST_MODELS.length);

@@ -82,10 +82,10 @@ export function visualRules(brand) {
   return VISUAL_RULES[brand?.slug] || [];
 }
 
-export const ANATOMY_BASELINE = "Both complete feet are clearly readable and naturally oriented as a matched left and right pair, each big toe on the inner edge of its foot, the side facing her other foot. Keep them separated enough that each silhouette and toe line is individually clear.";
+export const ANATOMY_BASELINE = "Her two feet look natural: a matching left and right foot, each big toe on the inside, with a little space between them.";
 
 export const VISUAL_MODES = {
-  editorial: "Campaign-like but lived in: controlled warm light, deliberate composition, real props and textures, never a bare studio set. Lens language (35, 50 or 85mm equivalent) only when it defines the perspective or depth.",
+  editorial: "Polished but lived in: warm, flattering light, a considered composition, real props and textures, never a bare studio set.",
   cabin_candid: "A believable on-duty or post-shift moment: modern phone-camera feel, ambient aircraft or terminal light, moderate depth, natural perspective, slight imperfection.",
   lifestyle_intimate: "A home, hotel or pedicure scene that feels lived in: warm practical lamps and candlelight, soft throws, real everyday clutter, close framing, believable high-quality lifestyle photography.",
 };
@@ -101,13 +101,9 @@ const SHOT_DIMENSIONS = `Shot dimensions (pick one value for each, or a close na
 
 // Image identity lock — sent before the scene whenever reference photos are
 // attached. References control identity; the brief controls everything else.
-export const IDENTITY_LOCK = `IDENTITY LOCK
-Use the supplied reference images as the authoritative identity of the same established woman. Preserve her established body proportions, leg shape, ankle shape, foot shape, arch profile, toe proportions, skin tone, nail shape and nail colour.
-The references control identity. The scene brief controls pose, camera position, clothing, location and lighting. Do not blend identities, invent a different body type or reinterpret the referenced anatomy.
-Clothing, shoes and their colours come only from the scene brief, never from the reference images.
-Create one new photograph of this same established person.`;
+export const IDENTITY_LOCK = "She is the woman in the reference photos: the same legs, feet, toes and skin. Her clothes, shoes and nail polish come from this description, not from those photos.";
 
-export const OUTPUT_LINE = "OUTPUT\nVertical 4 by 5 photograph. No words, captions, signs, logos or added typography.";
+export const OUTPUT_LINE = "A vertical 4:5 photo with no text or logos in it.";
 
 // ── Sanitising director output ───────────────────────────────────────────
 // Anything copy-like that slips through the director is stripped before it
@@ -202,6 +198,7 @@ How to choose:
 - Keep her hands out of the action: no hands holding shoes, rolling tights or touching her feet, and no shoe being put on or pulled off mid-action (these produce extra shoes, extra feet and wrong hands). Show the moment just before or after instead: heels already off and set beside her, tights already on.
 - Keep anatomy simple. Legs are never crossed (crossed legs make the image model draw two left or two right feet). Don't combine pointed toes, extreme foreshortening, shoe removal and a floor-level camera unless the scene genuinely needs it.
 - Read each scene like a photographer reading a brief: work out the real moment (where she is, what she is doing, the time of day, how relaxed or busy she is) and photograph that moment. Never illustrate every word.
+- Choose the photo she would actually take of that moment, or a friend would snap: the natural, inviting version, often her own view on her phone. A caption's objects are clues to her mood and where she is, not a list to stage: "day off, dressing gown, wet nail polish, kettle on" is her curled up on the sofa in her gown with a cuppa and freshly painted toes, not her standing beside the kettle.
 - Set the scene in order: first decide exactly where she is, then where the camera stands, then what is physically in that spot and inside that frame. Only those things can appear. Something the text mentions that lives somewhere else stays out: "relaxing on a day off, kettle's boiled, feet up on the balcony" is a balcony photo with her feet up and maybe a mug beside her, never a kettle. Figures of speech, jokes and asides are not objects: "the heels don't get a say until Thursday" means there are no heels today. Anything the text says is absent, finished or for later stays out of the photo.
 - Before answering, check every required object, the wardrobe and the footwear: would it really be in this spot, in this frame, at this moment? If it is only there because the words mention it, remove it.
 - Off duty means off duty: no uniform, no work heels and no crew bag unless the text clearly puts them in this moment. On duty, she is in her uniform.
@@ -283,14 +280,14 @@ function identityNotes(brand) {
 export async function writeShotPrompts(brand, { continuity, items, textZone = null }) {
   const rules = visualRules(brand);
   const system = `You write image prompts for a photorealistic image model, from structured visual facts.
-Write a rich, specific prompt, normally 120 to 200 words, that reads like a description of a real photo taken that day, not a studio shoot.
-Order: the framing first (where the frame's edges fall, taken from the shot's crop, then camera height, view, distance); then her pose, body position and footwear; then the setting and every required object, with its materials and textures; then the light (its source, direction, warmth and the time of day) and the camera feel of the mode (lens, depth of field, a little natural grain).
-Translate the facts into one plausible photograph. You may add small textures and surface details that fit the facts; never add people or extra objects.
+Write each one the way a person would ask ChatGPT for a photo: plain, natural sentences, normally 60 to 110 words, describing a real photo taken that day. Start with "A photo of".
+Cover, in this order: the moment and where she is; exactly how the photo is framed (where the frame cuts her, taken from the shot's crop, and where it's taken from) and her pose, specific enough that the pose can't be mistaken; what she's wearing on her legs and feet; the few objects in the shot; the light and time of day. End with "Her face is not in the photo."
+No camera jargon (no lens sizes, apertures or depth-of-field terms) and no mood or persuasion words. Never add people or objects the facts don't contain.
 Phrase everything positively: describe what is in the photo. Never write "no X", "without X" or "avoid".
 Make the framing physically possible for the pose. Her soles face the camera only when the camera is beyond her feet, looking at the bottoms of them. Kneeling with her soles to the camera means she faces away from it: the frame shows her from behind (soles, the backs of her calves, her skirt) and its top edge cuts across her waist, never her lap or chest.
-Feet: include this sentence, then only the left/right relationship the pose needs (for example "her left ankle rests lightly across her right ankle"): ${ANATOMY_BASELINE}
-Name colours explicitly when the uniform is worn: "rich mid navy court heels matching her navy skirt" (or "navy flats"), "sheer tan tights".
-Use concrete visual language (light, texture, warmth, materials) rather than mood or persuasion words. No captions, quotes or lettering.${textZone ? `\nKeep the ${textZone} of the frame calm and uncluttered.` : ""}
+When both feet are in the photo, include this sentence: ${ANATOMY_BASELINE}
+Name colours plainly when the uniform is worn: "navy heels the same navy as her skirt" (or "navy flats"), "sheer tan tights".
+No captions, quotes or lettering.${textZone ? `\nKeep the ${textZone} of the frame calm and uncluttered.` : ""}
 Reply with JSON only: {"prompts": ["...", ...]}, one per item, same order.`;
 
   const user = `Permanent visual rules:
@@ -314,11 +311,15 @@ ${items.map((it, i) => `${i + 1}. ${JSON.stringify({ scene: it.scene, shot: it.s
 // The full text sent to the image model: identity lock (only when reference
 // photos are attached), the scene prompt, the previous attempt's
 // corrections (only those), and the output line.
+// The final prompt reads like a person asking for a photo: the scene, who
+// she is (when her reference photos are attached), any fixes from the last
+// try, and the format. Tav's test showed a short plain prompt beating the
+// old long, technical one on the same model.
 export function assemblePrompt(prompt, { hasReferences, corrections = [] } = {}) {
   return [
+    prompt,
     hasReferences ? IDENTITY_LOCK : null,
-    `SCENE\n${prompt}`,
-    corrections.length ? `CORRECTIONS FROM THE LAST ATTEMPT\n${corrections.map((c) => `- ${c}`).join("\n")}` : null,
+    corrections.length ? `Fix from the last try: ${corrections.join("; ")}.` : null,
     OUTPUT_LINE,
   ].filter(Boolean).join("\n\n");
 }
