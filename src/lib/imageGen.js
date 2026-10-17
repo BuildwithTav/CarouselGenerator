@@ -1,7 +1,7 @@
 import { supabaseAdmin, BUCKET, SIGNED_URL_TTL_SECONDS } from "./dashboard";
 import { imagePrompt, lockModelDescription, SHOT_VARIETY } from "./contentAi";
 import { themeOf, characterOf } from "./brandTemplate";
-import { directShots, selectReferences, writeShotPrompts, assemblePrompt, qaImage, judgeQa } from "./visualPipeline";
+import { directShots, selectReferences, writeShotPrompts, assemblePrompt, qaImage, judgeQa, plainPrompts } from "./visualPipeline";
 
 // Shared AI photo generation — used by /api/content/generate-image (driven
 // from the browser, one slide at a time) and the X content engine (driven
@@ -44,6 +44,13 @@ export const PHOTO_MODELS = {
 export const PHOTO_MODEL = "seedream-5-pro";
 export const RETRY_MODEL = "nano-banana-2";
 const LEGACY_MODEL = "nano-banana-pro";
+
+// How Sky High photos are planned. "plain" (Tav, Oct 2026: "strip back all
+// the reference images and prompts"): one short ChatGPT-style request per
+// photo, no reference photos, no forced poses or camera angles. "staged" is
+// the earlier director + references + long prompt pipeline, kept intact so
+// it can come back with this one line (her starred photos are untouched).
+export const PHOTO_PIPELINE = "plain";
 const MAX_ATTEMPTS = 2; // the first try plus at most 1 retry (caps the worst case)
 const DEFAULT_BUDGET_MS = 170000; // no new attempt starts after this
 
@@ -105,6 +112,19 @@ export async function signedUrlsFor(rows) {
 // Signed URLs for the brand's starred references (legacy path).
 export async function loadReferenceUrls(brandId) {
   return signedUrlsFor((await loadReferenceRows(brandId)).slice(0, 4));
+}
+
+// Short descriptions of the brand's last 6 AI photos, so plain prompts can
+// look different from them. Older staged photos describe their shot instead.
+async function recentPrompts(brandId) {
+  const { data } = await supabaseAdmin()
+    .from("brand_media")
+    .select("shot")
+    .eq("brand_id", brandId)
+    .not("shot", "is", null)
+    .order("uploaded_at", { ascending: false })
+    .limit(6);
+  return (data || []).map(({ shot: s }) => s?.scene?.description || [s?.shot?.body_position, s?.shot?.view, s?.shot?.crop, s?.scene?.setting].filter(Boolean).join(", ")).filter(Boolean).map((t) => t.slice(0, 300));
 }
 
 // Shot specs of the brand's last 8 accepted AI images, for novelty.
@@ -206,7 +226,8 @@ async function saveImage(brand, buffer, { note, shot = null, qa = null, needsChe
 // Plans a set of photos: director → per-shot references → prompt writer.
 // `texts` are scene/slide texts — the only copy that enters the visual
 // stages, and only the director reads it.
-export async function planPhotos(brand, { texts, lockedContinuity = null, avoidShots = [], textZone = null, source = "plan" }) {
+export async function planPhotos(brand, { texts, lockedContinuity = null, avoidShots = [], textZone = null, source = "plan", pipeline = PHOTO_PIPELINE }) {
+  if (pipeline === "plain") return planPlainPhotos(brand, { texts, lockedContinuity, avoidShots, textZone, source });
   const [refs, recent] = await Promise.all([loadReferenceRows(brand.id), recentShots(brand.id)]);
   const directed = await directShots(brand, { texts, recentShots: recent, lockedContinuity, avoidShots });
   const { prompts, costUsd: writeCost } = await writeShotPrompts(brand, { continuity: directed.continuity, items: directed.shots, textZone });
@@ -223,6 +244,22 @@ export async function planPhotos(brand, { texts, lockedContinuity = null, avoidS
   };
 }
 
+// Plain mode: one short request per photo, no references. A plan item has
+// the same shape as a staged one so the rest of the pipeline (generation,
+// photo check, carousels) works unchanged; the prompt doubles as the scene
+// the photo check compares against.
+async function planPlainPhotos(brand, { texts, lockedContinuity, avoidShots, textZone, source }) {
+  const keep = lockedContinuity?.look || (lockedContinuity?.setting ? `${lockedContinuity.setting}; ${lockedContinuity.wardrobe || ""}; ${lockedContinuity.lighting || ""}` : null);
+  const avoid = (avoidShots || []).map((s) => s?.prompt || [s?.body_position, s?.view, s?.crop].filter(Boolean).join(", ")).filter(Boolean);
+  const recent = await recentPrompts(brand.id);
+  const { prompts, costUsd } = await plainPrompts(brand, { texts, recent, keep, avoid, textZone });
+  await logAttempt({ brand_id: brand.id, source, kind: "plan", claude_cost_usd: costUsd || 0 });
+  return {
+    continuity: { mode: "plain", look: lockedContinuity?.look || prompts[0] },
+    items: prompts.map((prompt) => ({ plain: true, scene: { description: prompt }, shot: { prompt }, reason: "", prompt, referenceIds: [] })),
+  };
+}
+
 // Generates one planned photo with QA. Every attempt uses the same
 // references; a retry only adds the previous attempt's corrections. Throws
 // only if no attempt produced an image at all.
@@ -236,7 +273,8 @@ export async function generatePlannedPhoto(brand, { item, continuity, previousUr
   // silently generating text-only.
   if ((item.referenceIds || []).length && !refUrls.length) throw new Error("Her reference photos couldn't be loaded — check the reference pack in the X tab");
 
-  const expectedFeet = item.scene?.expected_feet_count || 2;
+  // A plain prompt doesn't fix how many feet show, so the check doesn't either.
+  const expectedFeet = item.plain ? null : (item.scene?.expected_feet_count || 2);
   const laterSlide = !!previousUrl;
   let corrections = [];
   let best = null;

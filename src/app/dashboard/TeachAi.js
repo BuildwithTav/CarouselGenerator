@@ -279,7 +279,7 @@ export function TeachPanel({ api, brand, refreshKey }) {
 
           <label style={lbl}>Her look</label>
           <div style={{ fontSize: 12, color: C.muted, marginBottom: 10, lineHeight: 1.5 }}>
-            Every new photo is made from 2 to 4 of the starred photos below, picked to suit the shot: A legs, B feet from above, C feet from the side, D uniform with tights and navy heels. Aim for one good photo of each. Real photos of her work best: upload them in Brand → Media library, star them, and set what each one shows. Or create the missing shots below and star the ones that look exactly like her.
+            New photos are currently made in natural mode, without reference photos: her look comes from a short written description, so poses can be relaxed and varied. Your starred photos below are kept, so if her look drifts too much from photo to photo they can be switched back on. A legs, B feet from above, C feet from the side, D uniform with tights and navy heels.
           </div>
           <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 6, marginBottom: 10 }}>
             {refs.length === 0 && <div style={{ fontSize: 12, color: C.muted, padding: "8px 0" }}>No reference photos yet, so she's drawn from the written description only.</div>}

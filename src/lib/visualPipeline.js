@@ -324,6 +324,48 @@ export function assemblePrompt(prompt, { hasReferences, corrections = [] } = {})
   ].filter(Boolean).join("\n\n");
 }
 
+// ── Plain prompts (live default since Tav's strip-back, Oct 2026) ───────
+// What a person would type into ChatGPT: the natural moment in plain words,
+// with only the brand's must-haves. No shot vocabulary, no foot positions,
+// no rule list, no reference photos. Tav's tests showed the long technical
+// prompts and posed reference photos made every photo stiff and alike.
+const PLAIN_ESSENTIALS = {
+  "sky-high-soles": [
+    "Her face is never in the photo (her own view, cropped below her shoulders, or from behind).",
+    "At work she wears her cabin crew uniform: fitted navy pencil skirt, white blouse, sheer tan nylon tights over her legs and feet (the soft sheen and reinforced toe showing) and navy heels the same navy as her skirt, clearly blue rather than black. Off duty, whatever fits the moment.",
+    "She is slim, with long light-blonde hair if any hair shows, and nude-pink toenails unless the moment says otherwise.",
+    "Tasteful and fully clothed above the waist; nothing explicit, and clothes are never described as falling open or coming off.",
+    "Plain, unbranded things with no words on them.",
+  ],
+};
+export const PLAIN_FACE_LINE = "Her face is not in the photo.";
+
+// texts: the scene(s); recent: short descriptions of her latest photos, to
+// look different from; keep: a photo from the same set whose place, outfit
+// and light to keep; avoid: other photos in this set, not to repeat.
+export async function plainPrompts(brand, { texts, recent = [], keep = null, avoid = [], textZone = null }) {
+  const musts = PLAIN_ESSENTIALS[brand?.slug] || [];
+  const system = `You turn the scene(s) for a social post into requests for photos, each written the way a person would ask ChatGPT for an image. Reply with JSON only: {"prompts": ["...", ...]}, one per scene, same order.
+For each scene, work out the real moment and the photo someone would naturally take of it: candid, relaxed, real life, not posed or styled. Include only what would really be there; things the words only mention, or that live somewhere else, stay out.
+Each prompt is 40 to 80 words of plain everyday language. No camera jargon, and never tell her how to place her feet or legs: let the moment decide how she sits, stands or lies.
+More than one scene means one set: the same place, outfit and light throughout, with the moment and angle changing from photo to photo.
+Make each photo look different from the recent ones listed: a different place, pose or angle.${textZone ? `\nKeep the ${textZone} of each photo calm and uncluttered; text goes there.` : ""}${musts.length ? `\nEvery photo must still hold to these:\n${musts.map((m) => `- ${m}`).join("\n")}` : ""}`;
+  const user = [
+    keep ? `This photo belongs to a set. Keep the same place, outfit and light as this photo from it:\n${keep}` : "",
+    avoid.length ? `Other photos already in this set (show a different moment or angle):\n${avoid.map((a) => `- ${a}`).join("\n")}` : "",
+    `Her recent photos (look different from these):\n${recent.length ? recent.map((r) => `- ${r}`).join("\n") : "- none yet"}`,
+    `Scenes, in order:\n${texts.map((t, i) => `${i + 1}. ${t || "(cover photo for the set)"}`).join("\n")}`,
+  ].filter(Boolean).join("\n\n");
+  const { json, costUsd } = await askDetailed(system, user, { model: PIPELINE_MODEL, effort: "medium" });
+  const raw = Array.isArray(json.prompts) ? json.prompts : [];
+  const prompts = texts.map((t, i) => {
+    let p = enforceShoeColour(brand, sanitizeVisual(String(raw[i] || "").trim())) || `A candid photo: ${t}`;
+    if (!p.includes(PLAIN_FACE_LINE)) p = `${p} ${PLAIN_FACE_LINE}`;
+    return p;
+  });
+  return { prompts, costUsd };
+}
+
 // ── Vision QA ────────────────────────────────────────────────────────────
 // Hard rejection only for obvious failures (Tav's call): extra/missing feet,
 // wrong shoe colour, wrong tights colour, a visible face, unintended text.
@@ -382,7 +424,7 @@ Reply with strict JSON only, no prose:
 - left_right_plausible: check this carefully, it is the most common failure. Trace each visible foot back up its own leg to the knee and hip, so you know which is her left foot and which is her right. On every real foot the big toe is on the inner edge, the side facing her other leg, and the toes get smaller towards the outer edge. False only when you can clearly see it: a foot with its big toe on the outer edge, both feet looking like the same foot (two left or two right), or a foot attached to the wrong leg. If the feet are partly hidden, overlapping, foreshortened or you can't tell, answer true.
 - pose_matches: false only when her body position is clearly different from the shot's body_position (for example sitting with her legs stretched out when the shot says kneeling, or standing when it says lying down). A different angle or crop of the right pose still matches.
 - extra_or_merged_items: true if anything is duplicated or impossible: an extra shoe (for example a shoe under a foot that is already in a shoe, or more shoes than she could be wearing plus one pair set down), an extra foot, toe, hand or leg, a shoe merged into a foot, or a hand that doesn't connect to an arm. Count the shoes and limbs before answering.
-- wrong_shoe_colour: true if she wears her work uniform and her shoes are not clearly navy blue (the same navy as the skirt). Shoes that look black, or so dark they could pass for black at a glance, count as wrong. wrong_tights_colour: true if her tights are anything other than sheer tan or nude.
+- wrong_shoe_colour: true if she wears her work uniform and her shoes are not clearly navy blue (the same navy as the skirt). Shoes that look black, or so dark they could pass for black at a glance, count as wrong. wrong_tights_colour: true if her tights are anything other than sheer tan or nude, or if the expected scene has her in tights and her legs or feet are bare.
 - text_or_lettering_present: true only for prominent words that draw the eye: a caption, watermark, overlaid text, or a large readable sign or logo. Small brand marks on shoes, insoles, clothing or products, and the small placards and exit signs that belong in an aircraft cabin, do not count.
 - corrections: at most 3 short, observable changes for the next attempt (for example "separate the feet so both silhouettes are readable"). Fix the failures above first (face, number of feet, left/right feet, extra or merged items, shoe or tights colour, prominent text); add style suggestions only if nothing failed. Empty if none.`;
   const user = `${previousUrl ? "Image 1 is the previous accepted photo in this carousel (for continuity). " : ""}The last image is the candidate.

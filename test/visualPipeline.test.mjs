@@ -82,7 +82,7 @@ test("assemblePrompt is short and plain: scene, who she is (with references), la
 // ── Integration with mocked fetch ────────────────────────────────────────
 test("captions, hashtags and brand voice never reach the prompt writer", async () => {
   reset(); restore();
-  const plan = await ig.planPhotos(BRAND, { texts: ['Heels off the second we land "link in bio" #crewlife'] });
+  const plan = await ig.planPhotos(BRAND, { pipeline: "staged", texts: ['Heels off the second we land "link in bio" #crewlife'] });
   const writer = calls.find((c) => c.kind === "anthropic" && c.stage === "writer");
   const payload = JSON.stringify(writer.req);
   assert.ok(!payload.includes("link in bio"));
@@ -96,7 +96,7 @@ test("captions, hashtags and brand voice never reach the prompt writer", async (
 test("a failed photo check retries once with the same references, then keeps the best flagged", async () => {
   reset(); restore();
   handlers.qa = () => ({ ...defaults.qa(), face_visible: true, corrections: ["crop at the hips"] });
-  const plan = await ig.planPhotos(BRAND, { texts: ["Heel slipping off on the jumpseat"] });
+  const plan = await ig.planPhotos(BRAND, { pipeline: "staged", texts: ["Heel slipping off on the jumpseat"] });
   reset();
   const result = await ig.generatePlannedPhoto(BRAND, { item: plan.items[0], continuity: plan.continuity });
   const falCalls = calls.filter((c) => c.kind === "fal");
@@ -124,7 +124,7 @@ test("the wrong pose gets one retry on the other model", async () => {
   reset(); restore();
   let n = 0;
   handlers.qa = () => ({ ...defaults.qa(), pose_matches: ++n > 1, corrections: ["kneel, seen from behind"] });
-  const plan = await ig.planPhotos(BRAND, { texts: ["Kneeling on the galley floor, soles to the camera"] });
+  const plan = await ig.planPhotos(BRAND, { pipeline: "staged", texts: ["Kneeling on the galley floor, soles to the camera"] });
   reset();
   const result = await ig.generatePlannedPhoto(BRAND, { item: plan.items[0], continuity: plan.continuity });
   const fal = calls.filter((c) => c.kind === "fal");
@@ -137,7 +137,7 @@ test("the wrong pose gets one retry on the other model", async () => {
 test("feet problems are flagged for Tav instead of paying for a retry", async () => {
   reset(); restore();
   handlers.qa = () => ({ ...defaults.qa(), left_right_plausible: false, corrections: ["separate the feet"] });
-  const plan = await ig.planPhotos(BRAND, { texts: ["Heels on the jumpseat"] });
+  const plan = await ig.planPhotos(BRAND, { pipeline: "staged", texts: ["Heels on the jumpseat"] });
   reset();
   const result = await ig.generatePlannedPhoto(BRAND, { item: plan.items[0], continuity: plan.continuity });
   assert.equal(calls.filter((c) => c.kind === "fal").length, 1, "no paid retry for feet");
@@ -148,7 +148,7 @@ test("feet problems are flagged for Tav instead of paying for a retry", async ()
 
 test("the photo checker never gets her reference photos", async () => {
   reset(); restore();
-  const plan = await ig.planPhotos(BRAND, { texts: ["Feet up in the crew rest"] });
+  const plan = await ig.planPhotos(BRAND, { pipeline: "staged", texts: ["Feet up in the crew rest"] });
   reset();
   await ig.generatePlannedPhoto(BRAND, { item: plan.items[0], continuity: plan.continuity });
   const qa = calls.find((c) => c.kind === "anthropic" && c.stage === "qa");
@@ -159,7 +159,7 @@ test("the photo checker never gets her reference photos", async () => {
 
 test("a passing photo is saved after one attempt, unflagged", async () => {
   reset(); restore();
-  const plan = await ig.planPhotos(BRAND, { texts: ["Feet up on the crew rest bunk"] });
+  const plan = await ig.planPhotos(BRAND, { pipeline: "staged", texts: ["Feet up on the crew rest bunk"] });
   reset();
   const result = await ig.generatePlannedPhoto(BRAND, { item: plan.items[0], continuity: plan.continuity });
   assert.equal(calls.filter((c) => c.kind === "fal").length, 1);
@@ -173,7 +173,7 @@ test("a generation error retries with the same references, never text-only", asy
   reset(); restore();
   let n = 0;
   handlers.fal = () => (++n === 1 ? { status: 500, body: { detail: "boom" } } : defaults.fal());
-  const plan = await ig.planPhotos(BRAND, { texts: ["Slipping into flats in the crew room"] });
+  const plan = await ig.planPhotos(BRAND, { pipeline: "staged", texts: ["Slipping into flats in the crew room"] });
   reset();
   const result = await ig.generatePlannedPhoto(BRAND, { item: plan.items[0], continuity: plan.continuity });
   const falCalls = calls.filter((c) => c.kind === "fal");
@@ -186,7 +186,7 @@ test("a generation error retries with the same references, never text-only", asy
 test("the photo checker failing never costs the post its photo", async () => {
   reset(); restore();
   handlers.qa = () => { throw new Error("checker down"); };
-  const plan = await ig.planPhotos(BRAND, { texts: ["Barefoot on the galley floor"] });
+  const plan = await ig.planPhotos(BRAND, { pipeline: "staged", texts: ["Barefoot on the galley floor"] });
   reset();
   const result = await ig.generatePlannedPhoto(BRAND, { item: plan.items[0], continuity: plan.continuity });
   assert.ok(result.media);
@@ -214,7 +214,7 @@ test("posting order mixes kinds instead of posting a batch back to back", async 
 // ── Token room and shoe colour ───────────────────────────────────────────
 test("every pipeline call leaves room for thinking plus the answer", async () => {
   reset(); restore();
-  await ig.planPhotos(BRAND, { texts: ["a", "b", "c", "d"].map((t) => `Heels on the jumpseat ${t}`) });
+  await ig.planPhotos(BRAND, { pipeline: "staged", texts: ["a", "b", "c", "d"].map((t) => `Heels on the jumpseat ${t}`) });
   const claude = calls.filter((c) => c.kind === "anthropic");
   assert.ok(claude.length >= 2);
   for (const c of claude) assert.ok(c.req.max_tokens >= 16000, `${c.stage} max_tokens ${c.req.max_tokens}`);
@@ -248,7 +248,7 @@ test("Tav's own photo description reaches the post writer for an image post", as
 
 test("the director is pushed to vary pose and crop, not repeat a waist or chest crop", async () => {
   reset(); restore();
-  await ig.planPhotos(BRAND, { texts: ["Feet up after a long day"] });
+  await ig.planPhotos(BRAND, { pipeline: "staged", texts: ["Feet up after a long day"] });
   const sys = String(calls.find((c) => c.kind === "anthropic" && c.stage === "director").req.system);
   assert.match(sys, /never crop at her chest/);
   assert.match(sys, /novelty against the recent shots 30%/);
@@ -258,7 +258,7 @@ test("the director is pushed to vary pose and crop, not repeat a waist or chest 
 
 test("the director works out the moment instead of illustrating every word", async () => {
   reset(); restore();
-  await ig.planPhotos(BRAND, { texts: ["Day off uniform: dressing gown, wet nail polish, kettle on. The heels don't get a say until Thursday"] });
+  await ig.planPhotos(BRAND, { pipeline: "staged", texts: ["Day off uniform: dressing gown, wet nail polish, kettle on. The heels don't get a say until Thursday"] });
   const director = String(calls.find((c) => c.kind === "anthropic" && c.stage === "director").req.system);
   const writer = String(calls.find((c) => c.kind === "anthropic" && c.stage === "writer").req.system);
   assert.match(director, /Never illustrate every word/);
@@ -278,9 +278,48 @@ test("the director works out the moment instead of illustrating every word", asy
 
 test("the director is allowed a kneeling, soles-to-camera shot", async () => {
   reset(); restore();
-  await ig.planPhotos(BRAND, { texts: ["Kneeling on the floor, soles in tights towards the camera"] });
+  await ig.planPhotos(BRAND, { pipeline: "staged", texts: ["Kneeling on the floor, soles in tights towards the camera"] });
   const director = calls.find((c) => c.kind === "anthropic" && c.stage === "director");
   assert.match(String(director.req.system), /kneeling \(sitting back on her heels, seen from directly behind her/);
   const writer = calls.find((c) => c.kind === "anthropic" && c.stage === "writer");
   assert.match(String(writer.req.system), /Kneeling with her soles to the camera means she faces away from it/);
+});
+
+// ── Plain mode (the live default) ────────────────────────────────────────
+test("plain mode: one short request per photo, no references, no director", async () => {
+  reset(); restore();
+  assert.equal(ig.PHOTO_PIPELINE, "plain");
+  const plan = await ig.planPhotos(BRAND, { texts: ["Day off uniform: dressing gown, wet nail polish, kettle on"] });
+  const claude = calls.filter((c) => c.kind === "anthropic");
+  assert.deepEqual(claude.map((c) => c.stage), ["plain"], "just the one plain-prompt call");
+  const sys = String(claude[0].req.system);
+  assert.match(sys, /never tell her how to place her feet or legs/);
+  assert.match(sys, /sheer tan nylon tights over her legs and feet/);
+  assert.equal(plan.items.length, 1);
+  assert.deepEqual(plan.items[0].referenceIds, []);
+  assert.ok(plan.items[0].prompt.endsWith(vp.PLAIN_FACE_LINE));
+  reset();
+  const result = await ig.generatePlannedPhoto(BRAND, { item: plan.items[0], continuity: plan.continuity });
+  const fal = calls.filter((c) => c.kind === "fal");
+  assert.equal(fal.length, 1);
+  assert.equal(fal[0].url, `https://fal.run/${ig.PHOTO_MODELS[ig.PHOTO_MODEL].text}`, "text-to-image, no reference photos");
+  assert.equal(fal[0].body.image_urls, undefined);
+  assert.ok(!fal[0].body.prompt.includes(vp.IDENTITY_LOCK));
+  assert.ok(fal[0].body.prompt.startsWith("A candid photo"));
+  assert.equal(result.needsCheck, false);
+  restore();
+});
+
+test("plain mode: a carousel is one set, and a re-planned slide keeps the set's look", async () => {
+  reset(); restore();
+  const plan = await ig.planPhotos(BRAND, { texts: ["Galley before boarding", "Jump seat at take-off", "Heels off in the crew rest"], textZone: "bottom" });
+  assert.equal(plan.items.length, 3);
+  const sys = String(calls.find((c) => c.stage === "plain").req.system);
+  assert.match(sys, /More than one scene means one set/);
+  assert.match(sys, /Keep the bottom of each photo calm/);
+  reset();
+  await ig.planPhotos(BRAND, { texts: ["Heels off in the crew rest"], lockedContinuity: plan.continuity, avoidShots: [plan.items[0].shot] });
+  const user = JSON.stringify(calls.find((c) => c.stage === "plain").req.messages);
+  assert.ok(user.includes("Keep the same place, outfit and light"));
+  assert.ok(user.includes("Other photos already in this set"));
 });

@@ -164,7 +164,9 @@ export async function runModelTestScene(brand, { runId, sceneIndex }) {
   const scene = TEST_SCENES[sceneIndex];
   if (!scene) throw new Error("No such test scene");
   const [plan, schemas, refRows] = await Promise.all([
-    planPhotos(brand, { texts: [scene], source: "model-test" }),
+    // The comparison sends her reference photos to edit endpoints, so it
+    // plans with the staged pipeline whatever the live default is.
+    planPhotos(brand, { texts: [scene], source: "model-test", pipeline: "staged" }),
     Promise.all(TEST_MODELS.map((m) => inputSchema(m.endpoint))),
     loadReferenceRows(brand.id),
   ]);

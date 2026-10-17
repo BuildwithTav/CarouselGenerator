@@ -6,6 +6,7 @@ export const handlers = {
   director: (n = 1) => ({ continuity: { setting: "aircraft jumpseat", wardrobe: "established uniform, sheer tan tights, black patent court heels", lighting: "warm ambient cabin light", mode: "cabin_candid" }, shots: Array.from({ length: n }, () => ({ scene: { setting: "aircraft jumpseat", subject_action: "seated after shift", wardrobe: "uniform", footwear_state: "one heel removed", required_objects: ["jumpseat"], expected_feet_count: 2 }, shot: { distance: "tight", camera_height: "ankle", view: "side profile", body_position: "seated", footwear_state: "one heel removed", emphasis: "heel slipping" }, score_reason: "fits" })) }),
   writer: (n) => ({ prompts: Array.from({ length: n }, (_, i) => `Tight ankle-height side view ${i + 1}, sheer tan tights, black patent court heels.`) }),
   qa: () => ({ decision: "pass", face_visible: false, identity_match: 0.92, feet_count: 2, toes_plausible: true, left_right_plausible: true, extra_or_merged_items: false, feet_clear: true, anatomy_score: 9, photorealism_score: 9, wrong_uniform: false, wrong_shoe_colour: false, wrong_tights_colour: false, wrong_setting: false, continuity_score: 0.9, text_or_lettering_present: false, corrections: [] }),
+  plain: (n) => ({ prompts: Array.from({ length: n }, (_, i) => `A candid photo of her curled up on the sofa on her day off, a mug of tea beside her, ${i + 1}.`) }),
   fal: () => ({ status: 200, body: { images: [{ url: "https://fake.fal.media/out.jpg" }] } }),
   refs: () => [
     { id: "ref-a", storage_path: "b/ref-a.jpg", reference_view: "A" },
@@ -27,6 +28,7 @@ export async function mockFetch(input, init = {}) {
     if (sys.includes("visual director")) { stage = "director"; out = handlers.director((userText.split("Scenes, in order")[1]?.match(/\\n\d+\. /g) || []).length || 1); }
     else if (sys.includes("You write image prompts")) { stage = "writer"; out = handlers.writer((userText.match(/\\n\d+\. \{/g) || []).length || 1); }
     else if (sys.includes("photo checker")) { stage = "qa"; out = handlers.qa(); }
+    else if (sys.includes("each written the way a person would ask ChatGPT")) { stage = "plain"; out = handlers.plain((userText.split("Scenes, in order")[1]?.match(/\\n\d+\. /g) || []).length || 1); }
     else { stage = "other"; out = {}; }
     calls.push({ kind: "anthropic", stage, req });
     return json({ id: "m", type: "message", role: "assistant", model: req.model, stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify(out) }], usage: { input_tokens: 1000, output_tokens: 200 } });
