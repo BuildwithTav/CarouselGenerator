@@ -35,7 +35,7 @@ const VISUAL_RULES = {
     "Settings: the aircraft (cabin aisle, jump seat, galley, crew rest), the crew room, the airport (gate, lounge, terminal floor), her home (mirror, bed, sofa, bath, kitchen, balcony) or a pedicure chair. A hotel room or pool only occasionally. Never a bus, taxi, car, train, gym, street or shop.",
     "Her feet are the focal point, sharp and well lit.",
     "Her legs are never crossed, not at the knee and not at the ankle: both legs stay uncrossed with her two feet clearly apart, side by side or one slightly forward.",
-    "Simple moments, varied from photo to photo: her feet resting, up on a seat, ledge or wall, stretching, on tiptoe, one heel dangling from her toes, kneeling seen from behind, lying on her front with her feet raised, or walking away from the camera. Her hands never hold a shoe or work on her tights or feet; they rest on her lap, the seat or a cup, or stay out of the frame. Shoes are either on her feet or set on the floor clearly apart from them, one pair at most.",
+    "Simple moments, varied from photo to photo: her feet resting, up on a seat, ledge or wall, stretching, on tiptoe, kneeling seen from behind, lying on her front with her feet raised, or walking away from the camera. Her hands never hold a shoe or work on her tights or feet; they rest on her lap, the seat or a cup, or stay out of the frame. Shoes are either properly on her feet or resting on the floor or a surface, one pair at most; never dangling from her toes, half on or in mid-air (image models draw those floating).",
     "Fully clothed above the waist. Elegant and sensual through light, pose and styling, never explicit.",
     "Her own hands are slim and feminine with a French manicure. A partner appears only as a man's hand, at most up to the wrist or forearm, entering from the edge of the frame.",
     "Anything that could carry a photo of a person (ID badge, lanyard card, photo frame, phone screen) is face-down or angled away.",
@@ -96,7 +96,7 @@ const SHOT_DIMENSIONS = `Shot dimensions (pick one value for each, or a close na
 - camera_height: floor, ankle, knee, seated eye level, overhead, own point of view
 - view: top down, three quarter, side profile, straight on feet, directly behind, low from behind, soles towards the camera
 - body_position: seated, standing, standing on tiptoe, walking away from the camera (mid-step, seen from behind), reclining, lying on her front with her lower legs raised and soles up, legs stretched out side by side, feet up on a seat, ledge or wall, perched on a counter or bunk edge with her feet hanging, one foot slightly forward, one foot raised, kneeling (sitting back on her heels, seen from directly behind her: the camera sees both soles, the backs of her calves and her skirt from behind, feet side by side and not overlapping) (legs always uncrossed)
-- footwear_state: both heels on, one heel dangling from her toes, one removed, both beside her, flats, tights only, bare
+- footwear_state: both heels on, one removed and resting on the floor, both beside her, flats, tights only, bare
 - emphasis: toe line, arch, soles, hosiery texture, heel slipping, shoe detail, full legs, cabin context`;
 
 // Image identity lock — sent before the scene whenever reference photos are
@@ -335,6 +335,7 @@ const PLAIN_ESSENTIALS = {
     "At work she wears her cabin crew uniform: fitted navy pencil skirt, white blouse, sheer tan nylon tights over her legs and feet (the soft sheen and reinforced toe showing) and navy heels the same navy as her skirt, clearly blue rather than black. Off duty, whatever fits the moment.",
     "She is slim, with long light-blonde hair if any hair shows, and nude-pink toenails unless the moment says otherwise.",
     "Tasteful and fully clothed above the waist; nothing explicit, and clothes are never described as falling open or coming off.",
+    "Her shoes are either properly on her feet or resting on the floor or a surface; never dangling from her toes, half on or in mid-air (image models draw those floating).",
     "Plain, unbranded things with no words on them.",
   ],
 };
@@ -388,6 +389,7 @@ export function judgeQa(qa, { expectedFeet = 2, faceAllowed = false, laterSlide 
   // The post text describes the pose, so the wrong one is a mismatch Tav
   // has to reject (her sitting when the post says kneeling).
   if (qa?.pose_matches === false) hard.push("pose doesn't match the post");
+  if (qa?.floating_object === true) hard.push("floating shoe or object");
 
   const soft = [];
   const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
@@ -408,7 +410,7 @@ export function judgeQa(qa, { expectedFeet = 2, faceAllowed = false, laterSlide 
 // The only failures a paid retry reliably fixes. Feet problems (left/right,
 // count, extra shoe) came back on 5 of 6 retries, so those are flagged
 // "Check this" for Tav instead of paying for another try.
-export const RETRY_FIXES = ["face visible", "text in image", "wrong shoe colour", "wrong tights colour", "pose doesn't match the post"];
+export const RETRY_FIXES = ["face visible", "text in image", "wrong shoe colour", "wrong tights colour", "pose doesn't match the post", "floating shoe or object"];
 
 // The checker sees only the candidate (plus the previous slide in a
 // carousel). Every pass/fail check is answerable from the photo alone, and
@@ -417,12 +419,13 @@ export async function qaImage(brand, { candidateUrl, previousUrl = null, scene, 
   const images = [...(previousUrl ? [previousUrl] : []), candidateUrl];
   const system = `You are a careful photo checker for a faceless photo series. Inspect the candidate photo against the expected scene. Judge only what you can see.
 Reply with strict JSON only, no prose:
-{"decision": "pass|fail", "face_visible": false, "pose_matches": true, "feet_count": 2, "toes_plausible": true, "left_right_plausible": true, "extra_or_merged_items": false, "feet_clear": true, "anatomy_score": 0, "photorealism_score": 0, "wrong_uniform": false, "wrong_shoe_colour": false, "wrong_tights_colour": false, "wrong_setting": false, "continuity_score": 0.0, "text_or_lettering_present": false, "corrections": ["..."]}
+{"decision": "pass|fail", "face_visible": false, "pose_matches": true, "floating_object": false, "feet_count": 2, "toes_plausible": true, "left_right_plausible": true, "extra_or_merged_items": false, "feet_clear": true, "anatomy_score": 0, "photorealism_score": 0, "wrong_uniform": false, "wrong_shoe_colour": false, "wrong_tights_colour": false, "wrong_setting": false, "continuity_score": 0.0, "text_or_lettering_present": false, "corrections": ["..."]}
 - continuity_score is 0 to 1; anatomy_score and photorealism_score are 0 to 10.
 - face_visible: true only if her face (eyes, nose or mouth) is in the photo.
 - feet_count: the number of her feet visible in the photo.
 - left_right_plausible: check this carefully, it is the most common failure. Trace each visible foot back up its own leg to the knee and hip, so you know which is her left foot and which is her right. On every real foot the big toe is on the inner edge, the side facing her other leg, and the toes get smaller towards the outer edge. False only when you can clearly see it: a foot with its big toe on the outer edge, both feet looking like the same foot (two left or two right), or a foot attached to the wrong leg. If the feet are partly hidden, overlapping, foreshortened or you can't tell, answer true.
 - pose_matches: false only when her body position is clearly different from the shot's body_position (for example sitting with her legs stretched out when the shot says kneeling, or standing when it says lying down). A different angle or crop of the right pose still matches.
+- floating_object: true if a shoe or any other object hangs in mid-air with nothing holding it up, for example a shoe hovering beside or under her foot instead of being on it or resting on the floor.
 - extra_or_merged_items: true if anything is duplicated or impossible: an extra shoe (for example a shoe under a foot that is already in a shoe, or more shoes than she could be wearing plus one pair set down), an extra foot, toe, hand or leg, a shoe merged into a foot, or a hand that doesn't connect to an arm. Count the shoes and limbs before answering.
 - wrong_shoe_colour: true if she wears her work uniform and her shoes are not clearly navy blue (the same navy as the skirt). Shoes that look black, or so dark they could pass for black at a glance, count as wrong. wrong_tights_colour: true if her tights are anything other than sheer tan or nude, or if the expected scene has her in tights and her legs or feet are bare.
 - text_or_lettering_present: true only for prominent words that draw the eye: a caption, watermark, overlaid text, or a large readable sign or logo. Small brand marks on shoes, insoles, clothing or products, and the small placards and exit signs that belong in an aircraft cabin, do not count.

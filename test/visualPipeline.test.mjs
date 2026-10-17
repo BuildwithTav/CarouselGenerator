@@ -56,7 +56,7 @@ test("selectReferences always picks at least 2 when 2 exist, at most 4", () => {
 test("judgeQa hard-fails only the obvious failures", () => {
   const good = handlers.qa();
   assert.equal(vp.judgeQa(good).pass, true);
-  for (const [field, value] of [["face_visible", true], ["feet_count", 3], ["left_right_plausible", false], ["extra_or_merged_items", true], ["pose_matches", false], ["wrong_shoe_colour", true], ["wrong_tights_colour", true], ["text_or_lettering_present", true]]) {
+  for (const [field, value] of [["face_visible", true], ["feet_count", 3], ["left_right_plausible", false], ["extra_or_merged_items", true], ["pose_matches", false], ["floating_object", true], ["wrong_shoe_colour", true], ["wrong_tights_colour", true], ["text_or_lettering_present", true]]) {
     assert.equal(vp.judgeQa({ ...good, [field]: value }).pass, false, field);
   }
   // Soft problems are scored but never fail the photo on their own.
@@ -295,6 +295,7 @@ test("plain mode: one short request per photo, no references, no director", asyn
   const sys = String(claude[0].req.system);
   assert.match(sys, /never tell her how to place her feet or legs/);
   assert.match(sys, /sheer tan nylon tights over her legs and feet/);
+  assert.match(sys, /never dangling from her toes, half on or in mid-air/);
   assert.equal(plan.items.length, 1);
   assert.deepEqual(plan.items[0].referenceIds, []);
   assert.ok(plan.items[0].prompt.endsWith(vp.PLAIN_FACE_LINE));
