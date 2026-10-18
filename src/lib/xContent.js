@@ -149,10 +149,11 @@ Lean into suggestive and seductive, genuinely — a real physical, sensory momen
 export const TEXT_FOCUS = {
   "sky-high-soles": {
     links: { wishlist: "throne.com/skyhighsoles", onlyfans: "onlyfans.com/skyhighsoles" },
-    // Share of text posts that carry the actual link; the rest say it's in
-    // her bio. Every post since X said (July 2026) it dropped its reach
-    // penalty for link posts. Lower it if link posts start getting less reach.
-    linkChance: 1,
+    // How text posts end, mixed so the account doesn't read like the same
+    // advert every time (Tav): the actual link, "in my bio", or no call to
+    // action at all, just her. Posts about the wishlist or OnlyFans always
+    // point to it one way or the other.
+    ctaMix: { link: 0.5, bio: 0.3, none: 0.2 },
   },
 };
 
@@ -213,10 +214,16 @@ async function generateFindomTextPost(brand, { slot, recentPosts = [], feedback 
   const postFormat = formats[Math.floor(rand() * formats.length)];
   const target = theme.link || (rand() < 0.6 ? "wishlist" : "onlyfans");
   const page = target === "onlyfans" ? "her OnlyFans" : "her Throne wishlist";
-  const withLink = rand() < focus.linkChance;
-  const cta = withLink
-    ? `End by pointing to ${page} with this exact link, written exactly as given: ${focus.links[target]}`
-    : `End by pointing to ${page} and saying it's in her bio (for example "wishlist in bio" or "OF in bio"). No link in this one.`;
+  const roll = rand();
+  const mix = focus.ctaMix;
+  let ctaKind = roll < mix.link ? "link" : roll < mix.link + mix.bio ? "bio" : "none";
+  if (ctaKind === "none" && theme.link) ctaKind = "bio";
+  const varied = "Word it your own way, differently from the recent posts (never the same closing line twice); it doesn't have to be the last line.";
+  const cta = ctaKind === "link"
+    ? `Point to ${page} with this exact link, written exactly as given: ${focus.links[target]}. ${varied}`
+    : ctaKind === "bio"
+    ? `Point to ${page} by saying it's in her bio, no link in this one. ${varied}`
+    : "No call to action in this one: no link and no mention of her wishlist or OnlyFans, just her.";
 
   const recentBlock = recentPosts.length
     ? `Recent posts from this account (do not repeat their hook, angle or sentence structure):\n${recentPosts.map((p) => `- ${p}`).join("\n")}`
@@ -234,12 +241,12 @@ This post is text only. ${cta}
 
 ${recentBlock}
 ${feedbackBlock(feedback)}
-Before answering, check: is it short, confident and bratty rather than needy? Does it follow the format and the theme? Does it point to ${page} the way asked? Does it have 2 to 5 fitting hashtags? Is it clearly different from the recent posts? Is it free of em dashes and AI-sounding phrases, and inside every "never" above?
+Before answering, check: is it short, confident and bratty rather than needy? Does it follow the format and the theme? ${ctaKind === "none" ? "Is it free of any link or call to action?" : `Does it point to ${page} the way asked, worded differently from the recent posts?`} Does it have 2 to 5 fitting hashtags? Is it clearly different from the recent posts? Is it free of em dashes and AI-sounding phrases, and inside every "never" above?
 
 Write the post.`;
 
   const out = await ask(system, user, 800);
-  return { text: clampTweet(String(out.text || "").trim()), scenes: [], postFormat: `findom_${postFormat.key}`, theme: theme.label };
+  return { text: clampTweet(String(out.text || "").trim()), scenes: [], postFormat: `findom_${postFormat.key}_${ctaKind}`, theme: theme.label };
 }
 
 // `recentPosts` is a short list of recent captions (already posted or

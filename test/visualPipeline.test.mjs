@@ -341,19 +341,18 @@ test("Sky High text posts use the findom brief; photo posts keep the cabin-crew 
   assert.ok(Object.values(TEXT_FOCUS["sky-high-soles"].links).some((l) => user.includes(l)), "the exact link is given");
   assert.match(out.postFormat, /^findom_/);
   assert.ok(out.theme);
-  // The link goes in every post by default.
+  // A high roll: no link, either "in her bio" or no call to action at all.
   reset();
-  await generateXPost(BRAND, { slot, pillar, format: "text", rand: () => 0.99 });
-  assert.ok(Object.values(TEXT_FOCUS["sky-high-soles"].links).some((l) => JSON.stringify(calls.find((c) => c.kind === "anthropic").req.messages).includes(l)));
-  // With linkChance lowered, the rest point to the bio instead.
-  const saved = TEXT_FOCUS["sky-high-soles"].linkChance;
-  TEXT_FOCUS["sky-high-soles"].linkChance = 0;
-  reset();
-  await generateXPost(BRAND, { slot, pillar, format: "text", rand: () => 0.5 });
+  const out2 = await generateXPost(BRAND, { slot, pillar, format: "text", rand: () => 0.99 });
   const user2 = JSON.stringify(calls.find((c) => c.kind === "anthropic").req.messages);
-  TEXT_FOCUS["sky-high-soles"].linkChance = saved;
-  assert.ok(user2.includes("in her bio"));
   assert.ok(!Object.values(TEXT_FOCUS["sky-high-soles"].links).some((l) => user2.includes(l)), "no link in this one");
+  assert.ok(user2.includes("in her bio") || user2.includes("No call to action in this one"));
+  assert.match(out2.postFormat, /_(bio|none)$/);
+  // The call to action is worded differently each time.
+  assert.ok(user.includes("never the same closing line twice"));
+  // Over many posts the mix lands near 50% link, 30% bio, 20% none.
+  const mix = TEXT_FOCUS["sky-high-soles"].ctaMix;
+  assert.equal(Math.round((mix.link + mix.bio + mix.none) * 100), 100);
   // Photo posts: unchanged brief, still never mentions OnlyFans.
   reset();
   await generateXPost(BRAND, { slot: X_SLOTS.find((s) => s.key === "visual"), pillar, format: "single" });
