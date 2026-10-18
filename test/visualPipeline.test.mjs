@@ -324,3 +324,40 @@ test("plain mode: a carousel is one set, and a re-planned slide keeps the set's 
   assert.ok(user.includes("Keep the same place, outfit and light"));
   assert.ok(user.includes("Other photos already in this set"));
 });
+
+// ── Findom text posts ────────────────────────────────────────────────────
+test("Sky High text posts use the findom brief; photo posts keep the cabin-crew one", async () => {
+  reset(); restore();
+  const { generateXPost, X_SLOTS, TEXT_FOCUS } = await import("@/lib/xContent");
+  const slot = X_SLOTS.find((s) => s.key === "personality");
+  const pillar = { label: "Cabin crew reality", guidance: "" };
+  // rand() always 0: first format, link included.
+  const out = await generateXPost(BRAND, { slot, pillar, format: "text", rand: () => 0 });
+  const req = calls.find((c) => c.kind === "anthropic").req;
+  const sys = String(req.system), user = JSON.stringify(req.messages);
+  assert.match(sys, /runs a findom page/);
+  assert.match(sys, /Nothing sexually explicit/);
+  assert.match(sys, /minors or youthfulness/);
+  assert.ok(Object.values(TEXT_FOCUS["sky-high-soles"].links).some((l) => user.includes(l)), "the exact link is given");
+  assert.match(out.postFormat, /^findom_/);
+  assert.ok(out.theme);
+  // Without the link: points to the bio instead.
+  reset();
+  await generateXPost(BRAND, { slot, pillar, format: "text", rand: () => 0.99 });
+  const user2 = JSON.stringify(calls.find((c) => c.kind === "anthropic").req.messages);
+  assert.ok(user2.includes("in her bio"));
+  assert.ok(!Object.values(TEXT_FOCUS["sky-high-soles"].links).some((l) => user2.includes(l)), "no link in this one");
+  // Photo posts: unchanged brief, still never mentions OnlyFans.
+  reset();
+  await generateXPost(BRAND, { slot: X_SLOTS.find((s) => s.key === "visual"), pillar, format: "single" });
+  const visualSys = String(calls.find((c) => c.kind === "anthropic").req.system);
+  assert.match(visualSys, /Never mention OnlyFans/);
+  assert.doesNotMatch(visualSys, /findom/);
+});
+
+test("other brands' text posts keep the normal brief", async () => {
+  reset(); restore();
+  const { generateXPost, X_SLOTS } = await import("@/lib/xContent");
+  await generateXPost({ ...BRAND, slug: "healthcode" }, { slot: X_SLOTS[0], pillar: { label: "x", guidance: "" }, format: "text" });
+  assert.doesNotMatch(String(calls.find((c) => c.kind === "anthropic").req.system), /findom/);
+});

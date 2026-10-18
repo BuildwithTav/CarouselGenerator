@@ -155,7 +155,9 @@ async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, 
     return { queued: true };
   }
 
-  const { text, scenes, postFormat } = await generateXPost(brand, { slot, pillar, format, recentPosts, feedback, photoIdea });
+  const { text, scenes, postFormat, theme } = await generateXPost(brand, { slot, pillar, format, recentPosts, feedback, photoIdea });
+  // Findom text posts pick their own theme instead of a cabin-crew pillar.
+  const topic = theme || pillar.label;
   if (!text) return { queued: false };
 
   let slidePaths = [];
@@ -169,8 +171,8 @@ async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, 
 
   const { error: insErr } = await supabase.from("content_items").insert({
     brand_id: brand.id,
-    idea: `X · ${slot.key} · ${postFormat} · ${pillar.label}`,
-    pillar: pillar.label,
+    idea: `X · ${slot.key} · ${postFormat} · ${topic}`,
+    pillar: topic,
     status: "draft",
     scheduled_for: today,
     slide_paths: slidePaths,

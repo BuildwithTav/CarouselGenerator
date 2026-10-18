@@ -141,6 +141,106 @@ For a single-image or carousel post, never just describe what's visible in the p
 
 Lean into suggestive and seductive, genuinely — a real physical, sensory moment, not just a mood word dropped in. Think specific detail: the heat, the relief of slipping out of a hot shoe on a break, the stretch after a long shift, bare feet on cool tile after being in heels for hours, the exact feeling of a moment like that. That specificity is what makes it land as alluring instead of generic. This is a tone, not a licence: still fully clothed above the waist always, nothing explicit, no crude language, nothing beyond what the brand's existing boudoir-style editorial photography already does. Absolute rule, not a style preference, and unrelated to the above: no wordplay, puns, or jokes about feet, toes, or soles, however mild. Never use the words "feet pics", "fetish", "worship", "soles", or "toes" as the subject of a joke. This account has already been banned once and warned multiple times for content that read as sexual or suggestive, including a pun that was never explicit in its wording. Feet can appear in photos and in genuine, factual, positive context (see the feet-facts pillar) but are never the punchline, never the explicit subject of a joke, and never described in explicit or crude language. Suggestive and sensory is encouraged; a foot-specific joke or pun is not, ever — those are different things and this distinction matters. To be direct about what that actually means: say "feet", "legs", "tights", "heels" plainly when that's genuinely what the post is about — don't dance around the words with vague euphemisms. The rule above is specifically about turning them into a joke or pun, not about avoiding naming them. Mentioning them directly, including sensually, is exactly what this account is for.`;
 
+// ── Findom text posts (Tav, Oct 2026) ────────────────────────────────────
+// Sky High Soles' text posts are aimed at the findom world: paypigs,
+// daddies, being spoiled, gifts, pointing to her Throne wishlist and her
+// OnlyFans. Photo posts keep the cabin-crew brief above. Tav approves every
+// draft before it goes out.
+export const TEXT_FOCUS = {
+  "sky-high-soles": {
+    links: { wishlist: "throne.com/skyhighsoles", onlyfans: "onlyfans.com/skyhighsoles" },
+    // X cuts the reach of posts with links (OnlyFans links most of all), so
+    // the link itself goes in about 1 post in 3; the rest say it's in her bio.
+    linkChance: 1 / 3,
+  },
+};
+
+const FINDOM_JOBS = {
+  personality: "Scroll-stopper. A bratty, confident statement a paypig or daddy stops scrolling for: what she expects, what she deserves, how it feels when a tribute lands. A statement, not a question.",
+  conversation: "Reply magnet. Built so paypigs and daddies want to answer: a this-or-that, a specific question she answers first herself, or a playful \"who's first today\".",
+};
+
+export const FINDOM_THEMES = [
+  { key: "spoil_me", label: "Being spoiled", weight: 25, guidance: "What she deserves after a long shift (new heels, a pedicure, a spa day, a first-class seat for once), said as an expectation, never a hope. Points to her wishlist.", link: "wishlist" },
+  { key: "tributes", label: "Tributes", weight: 20, guidance: "The thrill of a tribute landing, the ones who know their place, who sent one today, said with bratty confidence. Points to her wishlist.", link: "wishlist" },
+  { key: "daddies", label: "Daddies", weight: 15, guidance: "The generous man who treats her: what a good one does without being asked, light teasing of the ones who only talk.", link: null },
+  { key: "wishlist", label: "Wishlist", weight: 15, guidance: "Her Throne wishlist: that there's something on it with someone's name on it, whose turn it is. Keep it general, never invent a specific item.", link: "wishlist" },
+  { key: "onlyfans_tease", label: "OnlyFans tease", weight: 15, guidance: "What's waiting on her OnlyFans (her feet in nylons, heels, slow reveals), and that it's earned, not free. Suggestive, never explicit.", link: "onlyfans" },
+  { key: "crew_flavour", label: "Crew life, spoiled", weight: 10, guidance: "Her flight-attendant life as the setting for being spoiled: the salary doesn't cover the heels, that's what you're for; a long-haul, the crew room, a layover.", link: null },
+];
+
+const FINDOM_FORMATS = {
+  personality: [
+    { key: "demand", how: "A short, confident demand: what she wants and who's providing it. No question." },
+    { key: "confession", how: "A bratty little confession about being spoiled or about tributes, specific and cheeky." },
+    { key: "rules", how: "Her rules, as 2 or 3 short numbered lines: how a proper tribute works, or what a good paypig does. Playful and dominant." },
+    { key: "moment", how: "A tiny moment in one or two lines (a tribute landing mid-shift, opening a gift after a long-haul) with a cheeky, concrete punchline." },
+  ],
+  conversation: [
+    { key: "this_or_that", how: "Two things she could be treated to; she picks one, and it's clear which one 'you' are covering." },
+    { key: "answer_first", how: "A specific question for her paypigs or daddies, with her own answer first so they want to add theirs. Never a broad \"thoughts?\"." },
+    { key: "whos_first", how: "A playful \"who's first today?\" style post about the first tribute or gift of the day, with a reason today is the day." },
+    { key: "rank_it", how: "A quick numbered ranking of 3 ways to spoil her, cheeky and specific, so people reply with theirs." },
+  ],
+};
+
+const FINDOM_VOICE = `You write as a confident, bratty, spoiled 30-year-old flight attendant who runs a findom page on her own X account. She expects to be spoiled, teases her paypigs and daddies, and treats tributes and gifts as her due. Playful dominance and teasing, never needy or desperate. This is an 18+ account for an adult audience who come looking for exactly this. British English, natural punctuation, sentence fragments are fine. Emojis sparingly, from this set only: 👠 💸 🖤 👑 💅 🎁 ✈️ 😮‍💨.
+
+Never use an em dash or en dash (—, –); use a comma, full stop or a new sentence. Plain everyday words, nothing that sounds like a marketer or an AI wrote it. Never use these phrases or anything like them: ${BANNED_PHRASES}.
+
+Length: short. 5 to 25 words of post before any link and hashtags; 35 words is a hard ceiling. The whole post, link and hashtags included, stays well under 280 characters.
+
+Findom words are fine and expected: findom, paypig, finsub, tribute, spoil, daddy, wallet, wishlist, worship, feet, nylons, heels.
+What it never does:
+- Nothing sexually explicit: no sex acts, nothing about nudity or genitals. Suggestive and teasing only.
+- No threats, blackmail, exposing anyone, debts, or guilt about money someone can't afford. No promises to meet up or of any contact outside her pages.
+- Nothing that hints at minors or youthfulness (school, teen, young, little, barely legal), non-consent or violence, in the words or the hashtags.
+- Never ask for likes, reposts, replies or follows.
+
+Hashtags: 2 to 5, inside the post, from the findom and fetish world and fitting this post (for example #findom #paypig #finsub #tribute #spoilme #footfetish #nylonfeet #pantyhose #sugardaddy). Never tags about minors, non-consent or violence.`;
+
+function weekdayLondon(date = new Date()) {
+  return date.toLocaleDateString("en-GB", { weekday: "long", timeZone: "Europe/London" });
+}
+
+// One findom text post. Returns the same shape as generateXPost, plus the
+// theme it was written on.
+async function generateFindomTextPost(brand, { slot, recentPosts = [], feedback = [], rand = Math.random }) {
+  const focus = TEXT_FOCUS[brand?.slug];
+  const theme = weightedPick(FINDOM_THEMES);
+  const formats = FINDOM_FORMATS[slot.key] || FINDOM_FORMATS.personality;
+  const postFormat = formats[Math.floor(rand() * formats.length)];
+  const target = theme.link || (rand() < 0.6 ? "wishlist" : "onlyfans");
+  const page = target === "onlyfans" ? "her OnlyFans" : "her Throne wishlist";
+  const withLink = rand() < focus.linkChance;
+  const cta = withLink
+    ? `End by pointing to ${page} with this exact link, written exactly as given: ${focus.links[target]}`
+    : `End by pointing to ${page} and saying it's in her bio (for example "wishlist in bio" or "OF in bio"). No link in this one.`;
+
+  const recentBlock = recentPosts.length
+    ? `Recent posts from this account (do not repeat their hook, angle or sentence structure):\n${recentPosts.map((p) => `- ${p}`).join("\n")}`
+    : "No recent post history yet.";
+
+  const system = `You write one X (Twitter) post for an adult creator's account. Reply with JSON only: {"text": "..."}.
+${FINDOM_VOICE}`;
+  const user = `${brandContext(brand)}
+
+Today is ${weekdayLondon()}. Day themes like Tribute Tuesday or Wallet Wednesday are fine when they fit, never forced.
+Today's post job: ${FINDOM_JOBS[slot.key] || FINDOM_JOBS.personality}
+Theme: ${theme.label}. ${theme.guidance}
+Format (follow it): ${postFormat.how}
+This post is text only. ${cta}
+
+${recentBlock}
+${feedbackBlock(feedback)}
+Before answering, check: is it short, confident and bratty rather than needy? Does it follow the format and the theme? Does it point to ${page} the way asked? Does it have 2 to 5 fitting hashtags? Is it clearly different from the recent posts? Is it free of em dashes and AI-sounding phrases, and inside every "never" above?
+
+Write the post.`;
+
+  const out = await ask(system, user, 800);
+  return { text: clampTweet(String(out.text || "").trim()), scenes: [], postFormat: `findom_${postFormat.key}`, theme: theme.label };
+}
+
 // `recentPosts` is a short list of recent captions (already posted or
 // queued) for this brand, used purely to stop the model repeating a hook,
 // joke, question, or structure it's already used in roughly the last month.
@@ -161,7 +261,8 @@ function clampTweet(text) {
 // call — the caller then generates a photo FROM that description (see
 // imageGen.js), so a line like "slipped into the bath out of my tights"
 // gets a photo that actually shows that, not a vaguely-matching stock shot.
-export async function generateXPost(brand, { slot, pillar, format, recentPosts = [], feedback = [], photoIdea = null }) {
+export async function generateXPost(brand, { slot, pillar, format, recentPosts = [], feedback = [], photoIdea = null, rand = Math.random }) {
+  if (format === "text" && TEXT_FOCUS[brand?.slug]) return generateFindomTextPost(brand, { slot, recentPosts, feedback, rand });
   const needsPhotos = format === "single" || format === "carousel";
   const postFormat = pickPostFormat(slot);
 
