@@ -91,6 +91,12 @@ export async function PATCH(req) {
   if (!id) return Response.json({ error: "id is required" }, { status: 400 });
   const supabase = supabaseAdmin();
 
+  // A ChatGPT photo post can't be approved until its photo is attached.
+  if (body.status === "ready") {
+    const { data: cur } = await supabase.from("content_items").select("needs_photo").eq("id", id).single();
+    if (cur?.needs_photo) return Response.json({ error: "Add the photo first" }, { status: 400 });
+  }
+
   let update = { updated_at: new Date().toISOString() };
 
   if (action === "mark_posted" || action === "unmark_posted") {

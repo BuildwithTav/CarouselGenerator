@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { C, inp, lbl, card, btn, Badge, STATUS_COLOR, Spinner, CopyButton } from "./ui";
 import { CarouselEditor } from "./CarouselsTab";
 import { itemPlatforms, THEME_DEFAULTS } from "@/lib/brandTemplate";
@@ -40,6 +40,33 @@ function tweetUrl(item) {
   return item.twitter_post_id ? `https://x.com/i/status/${item.twitter_post_id}` : null;
 }
 
+// ChatGPT saves big PNGs and a request to the site can carry ~4.5MB, so a
+// photo Tav uploads is shrunk to a JPEG in the browser before it's sent.
+async function toJpeg(file, maxSide = 2048, quality = 0.9) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error("That file isn't a photo this browser can open"));
+      i.src = url;
+    });
+    const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+    if (!blob) throw new Error("Couldn't prepare the photo — try again");
+    return new File([blob], "chatgpt.jpg", { type: "image/jpeg" });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 // Raw X posts only: 0-4 photos attached as-is, no template, no slide fields —
 // the caption is the whole post. A full branded carousel going to X opens in
 // CarouselEditor instead (see XTab's open-item routing below).
@@ -50,6 +77,7 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
   const [caption, setCaption] = useState("");
   const [rejecting, setRejecting] = useState(false);
   const [refPaths, setRefPaths] = useState(new Set());
+  const fileRef = useRef(null);
 
   const load = async () => {
     try {
@@ -76,6 +104,20 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
   const save = () => run("save", () => api.patch("/api/content", { id: item.id, tw_caption: caption }));
   const setStatus = (status) => run(status, () => api.patch("/api/content", { id: item.id, status }));
   const postNow = () => run("post", () => api.post("/api/content/post-now", { id: item.id }));
+  // Photo actions keep any unsaved edit to the post text.
+  const runPhoto = async (label, fn) => {
+    setBusy(label); setErr("");
+    try { const { item: next } = await fn(); setItem(next); onChanged?.(next); } catch (e) { setErr(e.message); }
+    setBusy(null);
+  };
+  const attach = (file) => file && runPhoto("upload", async () => {
+    const form = new FormData();
+    form.append("id", item.id);
+    form.append("file", await toJpeg(file));
+    return api.upload("/api/content/x-photo", form);
+  });
+  const makeWithAi = () => runPhoto("ai", () => api.post("/api/content/x-photo", { id: item.id }));
+  const blockPost = dirty ? "Save first" : item.needs_photo ? "Add the photo first" : item.brands?.x_auto_post_paused ? "Auto-posting is paused" : "";
   const onStar = (media) => {
     if (!media) return;
     setRefPaths((set) => {
@@ -95,7 +137,9 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
         <Badge color={STATUS_COLOR[xStatus(item)]}>{xStatus(item)}</Badge>
         <span style={{ fontSize: 12, color: C.muted }}>{item.brands?.name} · {item.pillar || "X post"}</span>
         <div style={{ flex: 1 }} />
-        {item.status === "draft" && <button onClick={() => setStatus("ready")} disabled={!!busy} style={btn("primary")}>{busy === "ready" ? "…" : "Approve → Ready"}</button>}
+        {item.status === "draft" && (item.needs_photo
+          ? <span style={{ fontSize: 12, color: C.muted }}>Add the photo to approve</span>
+          : <button onClick={() => setStatus("ready")} disabled={!!busy} style={btn("primary")}>{busy === "ready" ? "…" : "Approve → Ready"}</button>)}
         {item.status === "ready" && <button onClick={() => setStatus("draft")} disabled={!!busy} style={btn("ghost")}>Back to draft</button>}
       </div>
 
@@ -108,7 +152,7 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
         </div>
       )}
 
-      <div style={{ ...card, marginBottom: 14 }}>
+      {(photos.length > 0 || !item.photo_prompt) && <div style={{ ...card, marginBottom: 14 }}>
         <label style={{ ...lbl, marginBottom: 8, display: "block" }}>Photos {photos.length ? `(${photos.length})` : "— none, text-only post"}</label>
         {photos.length > 0 && (
           <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, marginBottom: 4 }}>
@@ -122,8 +166,24 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
             ))}
           </div>
         )}
-        <div style={{ fontSize: 11, color: C.muted }}>Generated to match exactly what the post text describes. If she looks exactly right, star it (☆ Her look) and new photos will copy her from it. If it's wrong, Delete and say why.</div>
-      </div>
+        {!item.photo_prompt && <div style={{ fontSize: 11, color: C.muted }}>Generated to match exactly what the post text describes. If she looks exactly right, star it (☆ Her look) and new photos will copy her from it. If it's wrong, Delete and say why.</div>}
+      </div>}
+
+      {item.photo_prompt && !item.posted_twitter_at && (
+        <div style={{ ...card, marginBottom: 14, ...(item.needs_photo ? { borderColor: C.gold } : {}) }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+            <label style={{ ...lbl, margin: 0 }}>{item.needs_photo ? "Make the photo in ChatGPT" : "ChatGPT request"}</label>
+            <CopyButton text={item.photo_prompt} label="Copy" kind="small" />
+          </div>
+          <textarea readOnly value={item.photo_prompt} rows={6} style={{ ...inp, resize: "vertical", lineHeight: 1.5, fontSize: 13 }} />
+          <div style={{ fontSize: 11, color: C.muted, margin: "6px 0 10px" }}>Paste it into ChatGPT and change anything you like there. Use the same ChatGPT chat every time so she looks the same.</div>
+          <input ref={fileRef} type="file" accept="image/*" onChange={(e) => { attach(e.target.files?.[0]); e.target.value = ""; }} style={{ display: "none" }} />
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button onClick={() => fileRef.current?.click()} disabled={!!busy} style={btn("primary")}>{busy === "upload" ? <><Spinner /> Uploading…</> : item.needs_photo ? "Upload photo" : "Replace photo"}</button>
+            {item.needs_photo && <button onClick={makeWithAi} disabled={!!busy} style={btn("ghost")}>{busy === "ai" ? <><Spinner /> Making photo… (1-2 min)</> : "Make it with AI instead (about $0.08)"}</button>}
+          </div>
+        </div>
+      )}
 
       <div style={{ ...card, marginBottom: 14 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
@@ -150,7 +210,7 @@ function XPostEditor({ api, itemId, onBack, onChanged }) {
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={save} disabled={!dirty || !!busy} style={btn("primary", { flex: 1, background: dirty ? C.gold : C.border, cursor: dirty ? "pointer" : "default" })}>{busy === "save" ? "Saving…" : dirty ? "Save changes" : "Saved"}</button>
         {!item.posted_twitter_at && (
-          <button onClick={postNow} disabled={!!busy || dirty || item.brands?.x_auto_post_paused} title={dirty ? "Save first" : item.brands?.x_auto_post_paused ? "Auto-posting is paused" : ""} style={btn("dark", { opacity: dirty || item.brands?.x_auto_post_paused ? 0.5 : 1 })}>{busy === "post" ? <><Spinner /> Posting…</> : "Post now →"}</button>
+          <button onClick={postNow} disabled={!!busy || !!blockPost} title={blockPost} style={btn("dark", { opacity: blockPost ? 0.5 : 1 })}>{busy === "post" ? <><Spinner /> Posting…</> : "Post now →"}</button>
         )}
         <button onClick={() => setRejecting(true)} style={btn("danger")}>Delete</button>
       </div>
@@ -176,6 +236,7 @@ function XRow({ api, item, onOpen, onChanged }) {
   const hasPhotos = (item.slide_paths?.length || 0) > 0;
   const photoBroken = hasPhotos && !item.thumb_url;
   const posted = !!item.posted_twitter_at;
+  const kind = item.template !== "x-post" ? "carousel" : hasPhotos ? `${item.slide_paths.length} photo${item.slide_paths.length > 1 ? "s" : ""}` : item.needs_photo ? "needs photo" : "text";
 
   const run = async (label, fn) => {
     setBusy(label);
@@ -190,13 +251,13 @@ function XRow({ api, item, onOpen, onChanged }) {
     <div style={{ ...card, padding: 14 }}>
       <div onClick={onOpen} style={{ display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
         <div style={{ width: 52, aspectRatio: "1080/1350", borderRadius: 6, background: C.bg, border: `1px solid ${photoBroken ? C.danger : C.border}`, overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {item.thumb_url ? <img src={item.thumb_url} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : photoBroken ? <span style={{ fontSize: 9, color: C.danger, textAlign: "center", padding: "0 2px" }}>photo missing</span> : <span style={{ fontSize: 9, color: C.muted }}>text</span>}
+          {item.thumb_url ? <img src={item.thumb_url} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : photoBroken ? <span style={{ fontSize: 9, color: C.danger, textAlign: "center", padding: "0 2px" }}>photo missing</span> : item.needs_photo ? <span style={{ fontSize: 9, color: C.gold, fontWeight: 700, textAlign: "center", padding: "0 2px" }}>add photo</span> : <span style={{ fontSize: 9, color: C.muted }}>text</span>}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.tw_caption || item.idea}</div>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
             <Badge color={STATUS_COLOR[xStatus(item)]}>{xStatus(item)}</Badge>
-            <Badge color={item.template === "x-post" ? C.muted : C.gold}>{item.template === "x-post" ? (hasPhotos ? `${item.slide_paths.length} photo${item.slide_paths.length > 1 ? "s" : ""}` : "text") : "carousel"}</Badge>
+            <Badge color={item.template !== "x-post" || item.needs_photo ? C.gold : C.muted}>{kind}</Badge>
             {photoBroken && <Badge color={C.danger}>photo missing</Badge>}
             {item.check_notes?.length > 0 && <Badge color={C.danger}>check this</Badge>}
             <span style={{ fontSize: 11, color: C.muted }}>{item.scheduled_for}</span>
@@ -207,7 +268,8 @@ function XRow({ api, item, onOpen, onChanged }) {
         <span style={{ color: C.muted }}>›</span>
       </div>
       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
-        {item.status === "draft" && <button onClick={(e) => setStatus(e, "ready")} disabled={!!busy} style={btn("primary", { fontSize: 11, padding: "5px 10px" })}>{busy === "ready" ? "…" : "Approve"}</button>}
+        {item.status === "draft" && !item.needs_photo && <button onClick={(e) => setStatus(e, "ready")} disabled={!!busy} style={btn("primary", { fontSize: 11, padding: "5px 10px" })}>{busy === "ready" ? "…" : "Approve"}</button>}
+        {item.status === "draft" && item.needs_photo && <button onClick={onOpen} style={btn("ghost", { fontSize: 11, padding: "5px 10px" })}>Add photo</button>}
         {item.status === "ready" && !posted && <button onClick={(e) => setStatus(e, "draft")} disabled={!!busy} style={btn("ghost", { fontSize: 11, padding: "5px 10px" })}>{busy === "draft" ? "…" : "Pause — don't post"}</button>}
         {!posted && (
           <input type="date" value={item.scheduled_for} onClick={(e) => e.stopPropagation()} onChange={reschedule} disabled={!!busy} style={{ ...inp, width: "auto", padding: "4px 8px", fontSize: 11 }} />
@@ -243,20 +305,26 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
   };
 
   // One post at a time, on demand: a text post (scroll-stopper or reply
-  // magnet, picked at random), one photo post, or a 4-slide carousel.
+  // magnet, picked at random), one photo post, or a 4-slide carousel. With
+  // ChatGPT photos on, photo posts come with a ChatGPT request instead of a
+  // photo, and can be made 10 at a time. Carousels always use AI photos.
+  const manual = !!brand?.x_manual_photos;
   const KINDS = {
-    text: { label: "Text post", body: () => ({ slotKey: Math.random() < 0.5 ? "personality" : "conversation", format: "text" }) },
-    single: { label: "Image post", body: () => ({ slotKey: "visual", format: "single", idea: photoIdea.trim() || undefined }) },
-    carousel: { label: "4-slide carousel", body: () => ({ slotKey: "visual", format: "branded_carousel" }) },
+    text: { label: "Text post", busy: "Writing…", body: () => ({ slotKey: Math.random() < 0.5 ? "personality" : "conversation", format: "text" }) },
+    single: { label: "Image post", busy: manual ? "Writing…" : "Making photo… (1-2 min)", body: () => ({ slotKey: "visual", format: "single", idea: photoIdea.trim() || undefined }) },
+    ...(manual ? { batch: { label: "10 photo posts", busy: "Writing 10… (1-2 min)", body: () => ({ slotKey: "visual", format: "single", count: 10 }) } } : {}),
+    carousel: { label: "4-slide carousel", busy: "Making carousel… (2-4 min)", body: () => ({ slotKey: "visual", format: "branded_carousel" }) },
   };
   const generate = async (kind) => {
     setGenerating(kind);
     try {
       const { results } = await api.post("/api/cron/x-content", { brandId: activeId, ...KINDS[kind].body() });
       const r = results?.[0];
-      if (r?.error) alert(`${KINDS[kind].label} failed: ${r.error}`);
+      if (r?.error && r?.queued) alert(`Made ${r.queued}. ${r.error}.`);
+      else if (r?.error) alert(`${KINDS[kind].label} failed: ${r.error}`);
       else if (!r?.queued) alert("Nothing was made — try again.");
       else if (kind === "single") setPhotoIdea("");
+      if (kind === "batch" && r?.queued) setFilter("needs_photo");
     } catch (e) {
       // The request can time out in the browser while the server finishes
       // anyway, so check again shortly before calling it lost.
@@ -277,12 +345,13 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
     setRefreshing(false);
   };
 
-  const togglePause = async (paused) => {
+  const patchBrand = async (fields) => {
     try {
-      const { brand: next } = await api.patch("/api/brands", { id: activeId, x_auto_post_paused: paused });
+      const { brand: next } = await api.patch("/api/brands", { id: activeId, ...fields });
       onBrandsChange(brands.map((b) => (b.id === activeId ? next : b)));
     } catch (e) { alert(e.message); }
   };
+  const togglePause = (paused) => patchBrand({ x_auto_post_paused: paused });
 
   if (openItemId) {
     const openItem = items.find((i) => i.id === openItemId);
@@ -304,7 +373,8 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
   // inherit twitter from the brand's platform list stay in the Carousels
   // tab until "Send to X" is pressed on them.
   const xItems = items.filter((i) => Array.isArray(i.platforms) && i.platforms.includes("twitter"));
-  const visible = xItems.filter((i) => filter === "all" || xStatus(i) === filter);
+  const visible = xItems.filter((i) => filter === "all" || (filter === "needs_photo" ? i.needs_photo : xStatus(i) === filter));
+  const needPhotos = xItems.filter((i) => i.needs_photo).length;
   const queuedReady = xItems.filter((i) => i.status === "ready" && !i.posted_twitter_at).length;
   const followerDelta = brand.x_followers != null && brand.x_followers_prev != null ? brand.x_followers - brand.x_followers_prev : null;
 
@@ -331,10 +401,17 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
             {!paused && <button onClick={() => togglePause(true)} style={btn("ghost", { color: C.danger, borderColor: C.danger + "88" })}>Pause auto-posting</button>}
             {Object.entries(KINDS).map(([kind, k]) => (
               <button key={kind} onClick={() => generate(kind)} disabled={!!generating} style={btn(kind === "text" ? "ghost" : "primary", { opacity: generating && generating !== kind ? 0.5 : 1 })}>
-                {generating === kind ? <><Spinner /> {kind === "carousel" ? "Making carousel… (2-4 min)" : kind === "single" ? "Making photo… (1-2 min)" : "Writing…"}</> : `+ ${k.label}`}
+                {generating === kind ? <><Spinner /> {k.busy}</> : `+ ${k.label}`}
               </button>
             ))}
           </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+          <span style={{ fontSize: 12, fontWeight: 700 }}>Photos:</span>
+          {[[true, "ChatGPT (I make them)"], [false, "AI (fal)"]].map(([on, label]) => (
+            <button key={label} onClick={() => patchBrand({ x_manual_photos: on })} disabled={manual === on} style={btn("small", manual === on ? { background: C.text, color: C.accentText, borderColor: C.text } : {})}>{label}</button>
+          ))}
+          <span style={{ fontSize: 11, color: C.muted }}>{manual ? "Photo posts come with a ChatGPT request and you add the photo, so no fal cost. Carousels still use AI." : "Photo posts get an AI photo (about $0.08 each)."}</span>
         </div>
         <input
           value={photoIdea}
@@ -356,7 +433,7 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
       <TeachPanel api={api} brand={brand} refreshKey={items.length} />
 
       <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
-        {[["all", "All"], ["draft", "Drafts"], ["ready", "Ready"], ["posted", "Posted"]].map(([id, label]) => (
+        {[["all", "All"], ["draft", "Drafts"], ...(manual || needPhotos ? [["needs_photo", `Needs photo${needPhotos ? ` (${needPhotos})` : ""}`]] : []), ["ready", "Ready"], ["posted", "Posted"]].map(([id, label]) => (
           <button key={id} onClick={() => setFilter(id)} style={btn("small", filter === id ? { background: C.text, color: C.accentText, borderColor: C.text } : {})}>{label}</button>
         ))}
         {loading && <Spinner />}

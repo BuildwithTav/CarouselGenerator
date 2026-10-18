@@ -7,6 +7,10 @@ export const handlers = {
   writer: (n) => ({ prompts: Array.from({ length: n }, (_, i) => `Tight ankle-height side view ${i + 1}, sheer tan tights, black patent court heels.`) }),
   qa: () => ({ decision: "pass", face_visible: false, identity_match: 0.92, feet_count: 2, toes_plausible: true, left_right_plausible: true, extra_or_merged_items: false, feet_clear: true, anatomy_score: 9, photorealism_score: 9, wrong_uniform: false, wrong_shoe_colour: false, wrong_tights_colour: false, wrong_setting: false, continuity_score: 0.9, text_or_lettering_present: false, corrections: [] }),
   plain: (n) => ({ prompts: Array.from({ length: n }, (_, i) => `A candid photo of her curled up on the sofa on her day off, a mug of tea beside her, ${i + 1}.`) }),
+  xpost: (n) => ({ text: `Feet up after a long one, number ${n} ✈️ #cabincrew`, scenes: [`Feet up on the crew rest bunk in sheer tan tights, ${n}`] }),
+  // Tests set this to answer a Supabase REST call themselves: return
+  // { status, body } to answer, or nothing to fall through to the defaults.
+  rest: null,
   fal: () => ({ status: 200, body: { images: [{ url: "https://fake.fal.media/out.jpg" }] } }),
   refs: () => [
     { id: "ref-a", storage_path: "b/ref-a.jpg", reference_view: "A" },
@@ -29,6 +33,7 @@ export async function mockFetch(input, init = {}) {
     else if (sys.includes("You write image prompts")) { stage = "writer"; out = handlers.writer((userText.match(/\\n\d+\. \{/g) || []).length || 1); }
     else if (sys.includes("photo checker")) { stage = "qa"; out = handlers.qa(); }
     else if (sys.includes("each written the way a person would ask ChatGPT")) { stage = "plain"; out = handlers.plain((userText.split("Scenes, in order")[1]?.match(/\\n\d+\. /g) || []).length || 1); }
+    else if (sys.includes("You write one X (Twitter) post")) { stage = "xpost"; out = handlers.xpost(calls.filter((c) => c.stage === "xpost").length + 1); }
     else { stage = "other"; out = {}; }
     calls.push({ kind: "anthropic", stage, req });
     return json({ id: "m", type: "message", role: "assistant", model: req.model, stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify(out) }], usage: { input_tokens: 1000, output_tokens: 200 } });
@@ -46,7 +51,11 @@ export async function mockFetch(input, init = {}) {
   }
   if (url.startsWith("https://fake.fal.media/")) return new Response(new Uint8Array(400000), { status: 200, headers: { "content-type": "image/jpeg" } });
   if (url.includes("fake.supabase.co")) {
-    calls.push({ kind: "supabase", method, url: decodeURIComponent(url), body: body ? JSON.parse(body) : null });
+    const parsed = body ? JSON.parse(body) : null;
+    calls.push({ kind: "supabase", method, url: decodeURIComponent(url), body: parsed });
+    const own = handlers.rest?.({ method, url: decodeURIComponent(url), body: parsed });
+    if (own) return own.body === undefined ? new Response(null, { status: own.status || 204 }) : json(own.body, own.status || 200);
+    if (url.includes("/storage/v1/object/sign/") && Array.isArray(parsed?.paths)) return json(parsed.paths.map((p) => ({ path: p, signedURL: `/object/sign/brand-media/${p}?token=t` })));
     if (url.includes("/storage/v1/object/sign/")) return json({ signedURL: "/object/sign/" + url.split("/sign/")[1].split("?")[0] + "?token=t" });
     if (url.includes("/storage/v1/object/")) return json({ Key: "brand-media/x.jpg" });
     if (url.includes("/rest/v1/image_attempts")) return new Response(null, { status: 201 });

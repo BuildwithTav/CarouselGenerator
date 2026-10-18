@@ -1,7 +1,7 @@
 import { dashboardAuthorized, supabaseAdmin, brandPlatforms, bumpMediaUse, BUCKET } from "@/lib/dashboard";
-import { X_SLOTS, pickPillar, pickFormat, generateXPost, generateBrandedCarouselIdea, generatePackage } from "@/lib/xContent";
+import { X_SLOTS, X_PILLARS, pickPillar, pickFormat, generateXPost, generateBrandedCarouselIdea, generatePackage } from "@/lib/xContent";
 import { imagePromptsBatch } from "@/lib/contentAi";
-import { generateMatchingPhoto, planPhotos, generatePlannedPhoto } from "@/lib/imageGen";
+import { generateMatchingPhoto, planPhotos, generatePlannedPhoto, chatgptPhotoPrompts } from "@/lib/imageGen";
 import { recentFeedback } from "@/lib/feedback";
 import { logGenerationError, friendlyError } from "@/lib/genLog";
 import { buildBrandSlides, slideText, themeOf, characterOf } from "@/lib/brandTemplate";
@@ -162,7 +162,11 @@ async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, 
 
   let slidePaths = [];
   let checkNotes = [];
-  if (scenes.length) {
+  let photoPrompt = null;
+  if (scenes.length && brand.x_manual_photos) {
+    // ChatGPT photos: a request for Tav to paste, no fal photo.
+    [photoPrompt] = await chatgptPhotoPrompts(brand, scenes.slice(0, 1), { source: "x-content" });
+  } else if (scenes.length) {
     const photos = await photosForScenes(brand, scenes);
     slidePaths = photos.paths;
     checkNotes = photos.checkNotes;
@@ -180,9 +184,77 @@ async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, 
     platforms: ["twitter"],
     template: "x-post",
     check_notes: checkNotes.length ? checkNotes : null,
+    ...(photoPrompt ? { needs_photo: true, photo_prompt: photoPrompt } : {}),
   });
   if (insErr) throw new Error(`insert failed (${slot.key}): ${insErr.message}`);
   return { queued: true };
+}
+
+// Tav's ChatGPT batch (Oct 2026): up to 10 photo posts at once, each a draft
+// with a ready-to-paste ChatGPT request and no photo yet, so nothing is spent
+// on fal. The posts are written in two waves, each on different topics: the
+// second sees the first's captions and its photo requests see the first's,
+// so nothing repeats. Each wave is saved as soon as it's done, so a slow run
+// still keeps the first half.
+const MAX_BATCH = 10;
+
+function distinctPillars(n) {
+  const picked = [];
+  while (picked.length < n) {
+    const p = pickPillar();
+    if (!picked.includes(p) || picked.length >= X_PILLARS.length) picked.push(p);
+  }
+  return picked;
+}
+
+async function runPhotoBatch(supabase, brand, count, recentPosts, today, feedback) {
+  const slot = X_SLOTS.find((s) => s.key === "visual");
+  const total = Math.min(Math.max(1, Math.floor(count)), MAX_BATCH);
+  const errors = [];
+  let queued = 0;
+
+  const writeWave = async (size, seen) => (await Promise.all(distinctPillars(size).map(async (pillar) => {
+    try {
+      const post = await generateXPost(brand, { slot, pillar, format: "single", recentPosts: seen, feedback });
+      return post.text && post.scenes.length ? { ...post, pillar } : null;
+    } catch (e) {
+      errors.push(e.message);
+      await logGenerationError(brand.id, "x-content", "photo batch", e.message);
+      return null;
+    }
+  }))).filter(Boolean);
+
+  const saveWave = async (posts, earlier = []) => {
+    if (!posts.length) return [];
+    const prompts = await chatgptPhotoPrompts(brand, posts.map((p) => p.scenes[0]), { source: "x-content", earlier });
+    const { error: insErr } = await supabase.from("content_items").insert(posts.map((p, i) => ({
+      brand_id: brand.id,
+      idea: `X · ${slot.key} · ${p.postFormat} · ${p.pillar.label}`,
+      pillar: p.pillar.label,
+      status: "draft",
+      scheduled_for: today,
+      slide_paths: [],
+      tw_caption: p.text,
+      platforms: ["twitter"],
+      template: "x-post",
+      needs_photo: true,
+      photo_prompt: prompts[i],
+    })));
+    if (insErr) throw new Error(`insert failed (photo batch): ${insErr.message}`);
+    queued += posts.length;
+    return prompts;
+  };
+
+  // The second wave is written while the first wave's photo requests are.
+  const first = await writeWave(Math.ceil(total / 2), recentPosts);
+  const [firstPrompts, second] = await Promise.all([
+    saveWave(first),
+    writeWave(Math.floor(total / 2), [...first.map((p) => p.text), ...recentPosts]),
+  ]);
+  await saveWave(second, firstPrompts);
+
+  if (!queued) return { queued: 0, error: errors.length ? friendlyError(errors[0]) : "Nothing was written — try again." };
+  return queued < total ? { queued, error: `${total - queued} of ${total} couldn't be written` } : { queued };
 }
 
 // One slot end to end: pick pillar/format, write it, generate its photo(s),
@@ -209,17 +281,24 @@ async function runSlot(supabase, brand, slot, recentPosts, today, feedback, form
 // depend on knowing that number: the dashboard's "Generate today's batch"
 // now fires one request per slot instead of one request for all 3, and the
 // daily cron is split the same way in vercel.json.
-async function runXContentGeneration(brandIdFilter, slotKeyFilter, formatOverride = null, photoIdea = null) {
+//
+// `count` above 1 makes a batch of ChatGPT photo posts (runPhotoBatch). While
+// a brand has ChatGPT photos on, the scheduled photo slot is skipped: Tav
+// makes his photo posts in those batches instead of one a day.
+async function runXContentGeneration({ brandIdFilter = null, slotKeyFilter = null, formatOverride = null, photoIdea = null, count = 1, scheduled = false } = {}) {
   const supabase = supabaseAdmin();
 
   const { data: brands } = await supabase.from("brands").select("*");
   let twitterBrands = (brands || []).filter((b) => brandPlatforms(b).includes("twitter"));
   if (brandIdFilter) twitterBrands = twitterBrands.filter((b) => b.id === brandIdFilter);
-  const slots = slotKeyFilter ? X_SLOTS.filter((s) => s.key === slotKeyFilter) : X_SLOTS;
+  const allSlots = slotKeyFilter ? X_SLOTS.filter((s) => s.key === slotKeyFilter) : X_SLOTS;
   const today = new Date().toISOString().slice(0, 10);
   const since = new Date(Date.now() - RECENT_DAYS * 86400000).toISOString().slice(0, 10);
 
   const results = await Promise.all(twitterBrands.map(async (brand) => {
+    const slots = scheduled && brand.x_manual_photos ? allSlots.filter((s) => s.key !== "visual") : allSlots;
+    if (!slots.length) return { brand: brand.slug, queued: 0, note: "ChatGPT photos are on, so the daily photo post is skipped" };
+    if (count > 1 && !brand.x_manual_photos) return { brand: brand.slug, queued: 0, error: "Batches are for ChatGPT photos — switch Photos to ChatGPT first." };
     let recentPosts = [];
     try {
       const { data: recent } = await supabase
@@ -239,6 +318,15 @@ async function runXContentGeneration(brandIdFilter, slotKeyFilter, formatOverrid
     // only. The photo pipeline works from permanent rules instead (see
     // visualPipeline.js), not a growing list of past rejections.
     const feedback = await recentFeedback(brand.id);
+    if (count > 1) {
+      try {
+        return { brand: brand.slug, ...(await withTimeout(runPhotoBatch(supabase, brand, count, recentPosts, today, feedback), SLOT_TIMEOUT_MS, "photo batch")) };
+      } catch (e) {
+        console.error(`X photo batch failed for ${brand.slug}:`, e.message);
+        await logGenerationError(brand.id, "x-content", "photo batch", e.message);
+        return { brand: brand.slug, queued: 0, error: friendlyError(e.message) };
+      }
+    }
     const slotResults = await Promise.all(slots.map((slot) => runSlot(supabase, brand, slot, recentPosts, today, feedback, formatOverride, photoIdea)));
     const queued = slotResults.filter((r) => r.queued).length;
     const errors = slotResults.map((r) => r.error).filter(Boolean);
@@ -254,16 +342,18 @@ export async function GET(req) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const slot = new URL(req.url).searchParams.get("slot");
-  return Response.json({ results: await runXContentGeneration(null, slot || null) });
+  return Response.json({ results: await runXContentGeneration({ slotKeyFilter: slot || null, scheduled: true }) });
 }
 
 export async function POST(req) {
   if (!dashboardAuthorized(req)) return Response.json({ error: "Not authorized" }, { status: 403 });
   // `format` lets the X tab make one specific kind of post on demand:
   // "text", "single" (one photo) or "branded_carousel" (4 slides). `idea`
-  // is Tav's own description of the photo for a "single" post.
-  const { brandId, slotKey, format, idea } = await req.json().catch(() => ({}));
+  // is Tav's own description of the photo for a "single" post. `count`
+  // (with "single") makes a batch of ChatGPT photo posts.
+  const { brandId, slotKey, format, idea, count } = await req.json().catch(() => ({}));
   const formatOverride = ["text", "single", "branded_carousel"].includes(format) ? format : null;
   const photoIdea = formatOverride === "single" && typeof idea === "string" && idea.trim() ? idea.trim().slice(0, 300) : null;
-  return Response.json({ results: await runXContentGeneration(brandId || null, slotKey || null, formatOverride, photoIdea) });
+  const batch = formatOverride === "single" && Number(count) > 1 ? Number(count) : 1;
+  return Response.json({ results: await runXContentGeneration({ brandIdFilter: brandId || null, slotKeyFilter: batch > 1 ? "visual" : slotKey || null, formatOverride, photoIdea, count: batch }) });
 }

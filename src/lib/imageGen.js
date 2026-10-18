@@ -1,7 +1,7 @@
 import { supabaseAdmin, BUCKET, SIGNED_URL_TTL_SECONDS } from "./dashboard";
 import { imagePrompt, lockModelDescription, SHOT_VARIETY } from "./contentAi";
 import { themeOf, characterOf } from "./brandTemplate";
-import { directShots, selectReferences, writeShotPrompts, assemblePrompt, qaImage, judgeQa, plainPrompts } from "./visualPipeline";
+import { directShots, selectReferences, writeShotPrompts, assemblePrompt, qaImage, judgeQa, plainPrompts, OUTPUT_LINE, PLAIN_FACE_LINE } from "./visualPipeline";
 
 // Shared AI photo generation — used by /api/content/generate-image (driven
 // from the browser, one slide at a time) and the X content engine (driven
@@ -196,9 +196,9 @@ export async function falGenerate(id, body, { timeoutMs = TIMEOUT_MS } = {}) {
   return { buffer, url, width: out?.images?.[0]?.width || null, height: out?.images?.[0]?.height || null };
 }
 
-async function saveImage(brand, buffer, { note, shot = null, qa = null, needsCheck = false }) {
+async function saveImage(brand, buffer, { note, shot = null, qa = null, needsCheck = false, maker = "ai" }) {
   const supabase = supabaseAdmin();
-  const storagePath = `${brand.id}/gen-${Date.now()}-${Math.floor(Math.random() * 1000)}.jpg`;
+  const storagePath = `${brand.id}/${maker === "ai" ? "gen" : maker}-${Date.now()}-${Math.floor(Math.random() * 1000)}.jpg`;
   const { error: upErr } = await supabase.storage.from(BUCKET).upload(storagePath, buffer, { contentType: "image/jpeg", upsert: false });
   if (upErr) throw new Error(upErr.message);
   const { data: row, error: insErr } = await supabase
@@ -207,7 +207,7 @@ async function saveImage(brand, buffer, { note, shot = null, qa = null, needsChe
       brand_id: brand.id,
       storage_path: storagePath,
       file_type: "image",
-      original_filename: `ai-${Date.now()}.jpg`,
+      original_filename: `${maker}-${Date.now()}.jpg`,
       mime_type: "image/jpeg",
       size_bytes: buffer.length,
       note: String(note || "").slice(0, 1000),
@@ -248,6 +248,10 @@ export async function planPhotos(brand, { texts, lockedContinuity = null, avoidS
 // the same shape as a staged one so the rest of the pipeline (generation,
 // photo check, carousels) works unchanged; the prompt doubles as the scene
 // the photo check compares against.
+export function plainItem(prompt) {
+  return { plain: true, scene: { description: prompt }, shot: { prompt }, reason: "", prompt, referenceIds: [] };
+}
+
 async function planPlainPhotos(brand, { texts, lockedContinuity, avoidShots, textZone, source }) {
   const keep = lockedContinuity?.look || (lockedContinuity?.setting ? `${lockedContinuity.setting}; ${lockedContinuity.wardrobe || ""}; ${lockedContinuity.lighting || ""}` : null);
   const avoid = (avoidShots || []).map((s) => s?.prompt || [s?.body_position, s?.view, s?.crop].filter(Boolean).join(", ")).filter(Boolean);
@@ -256,8 +260,45 @@ async function planPlainPhotos(brand, { texts, lockedContinuity, avoidShots, tex
   await logAttempt({ brand_id: brand.id, source, kind: "plan", claude_cost_usd: costUsd || 0 });
   return {
     continuity: { mode: "plain", look: lockedContinuity?.look || prompts[0] },
-    items: prompts.map((prompt) => ({ plain: true, scene: { description: prompt }, shot: { prompt }, reason: "", prompt, referenceIds: [] })),
+    items: prompts.map((prompt) => plainItem(prompt)),
   };
+}
+
+// ── ChatGPT photos (Tav, Oct 2026) ───────────────────────────────────────
+// The request without its format line: the scene a photo is made from.
+const scenePart = (photoPrompt) => String(photoPrompt || "").replace(OUTPUT_LINE, "").trim();
+
+// Tav makes photo posts' photos himself in ChatGPT, so those posts get a
+// ready-to-paste request instead of a fal photo. The requests are written
+// together as separate posts, not a set, so each looks different from the
+// others, from her recent photos and from `earlier` requests in the batch.
+export async function chatgptPhotoPrompts(brand, scenes, { source = "chatgpt", earlier = [] } = {}) {
+  let prompts;
+  try {
+    const recent = [...earlier.map((p) => scenePart(p).slice(0, 300)), ...await recentPrompts(brand.id)];
+    const out = await plainPrompts(brand, { texts: scenes, recent, asSet: false });
+    prompts = out.prompts;
+    await logAttempt({ brand_id: brand.id, source, kind: "plan", claude_cost_usd: out.costUsd || 0 });
+  } catch (e) {
+    // The posts are already written: their scenes beat losing the batch,
+    // and Tav can adjust them in ChatGPT.
+    console.error("ChatGPT photo prompts failed:", e.message);
+    prompts = scenes.map((s) => `A candid photo: ${s} ${PLAIN_FACE_LINE}`);
+  }
+  return prompts.map((p) => `${p}\n\n${OUTPUT_LINE}`);
+}
+
+// A photo Tav made in ChatGPT goes into the library like an AI photo,
+// described by the request it came from, so later requests look different.
+export function saveChatgptPhoto(brand, buffer, photoPrompt) {
+  const description = scenePart(photoPrompt);
+  return saveImage(brand, buffer, { note: `ChatGPT: ${description}`, shot: { scene: { description }, source: "chatgpt" }, maker: "chatgpt" });
+}
+
+// "Make it with AI instead": the same request on fal, with the photo check.
+export function generatePhotoFromPrompt(brand, photoPrompt, opts = {}) {
+  const prompt = scenePart(photoPrompt);
+  return generatePlannedPhoto(brand, { item: plainItem(prompt), continuity: { mode: "plain", look: prompt }, ...opts });
 }
 
 // Generates one planned photo with QA. Every attempt uses the same

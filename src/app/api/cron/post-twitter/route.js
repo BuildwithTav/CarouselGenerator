@@ -61,7 +61,8 @@ export async function GET(req) {
         .limit(1)
         .maybeSingle(),
     ]);
-    const item = pickNextPost(ready || [], last ? postKind(last) : null);
+    // A ChatGPT photo post still waiting for its photo never goes out.
+    const item = pickNextPost((ready || []).filter((i) => !i.needs_photo), last ? postKind(last) : null);
 
     if (!item) { results.push({ brand: brand.slug, posted: false, reason: "nothing ready" }); continue; }
 

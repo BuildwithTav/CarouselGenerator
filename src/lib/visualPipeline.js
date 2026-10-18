@@ -344,12 +344,14 @@ export const PLAIN_FACE_LINE = "Her face is not in the photo.";
 // texts: the scene(s); recent: short descriptions of her latest photos, to
 // look different from; keep: a photo from the same set whose place, outfit
 // and light to keep; avoid: other photos in this set, not to repeat.
-export async function plainPrompts(brand, { texts, recent = [], keep = null, avoid = [], textZone = null }) {
+// asSet: false for separate posts (Tav's ChatGPT batches), which should
+// each look different instead of sharing one place, outfit and light.
+export async function plainPrompts(brand, { texts, recent = [], keep = null, avoid = [], textZone = null, asSet = true }) {
   const musts = PLAIN_ESSENTIALS[brand?.slug] || [];
   const system = `You turn the scene(s) for a social post into requests for photos, each written the way a person would ask ChatGPT for an image. Reply with JSON only: {"prompts": ["...", ...]}, one per scene, same order.
 For each scene, work out the real moment and the photo someone would naturally take of it: candid, relaxed, real life, not posed or styled. Include only what would really be there; things the words only mention, or that live somewhere else, stay out.
 Each prompt is 40 to 80 words of plain everyday language. No camera jargon, and never tell her how to place her feet or legs: let the moment decide how she sits, stands or lies.
-More than one scene means one set: the same place, outfit and light throughout, with the moment and angle changing from photo to photo.
+${asSet ? "More than one scene means one set: the same place, outfit and light throughout, with the moment and angle changing from photo to photo." : "Each scene is a separate post for a different day, not a set: give each its own place, outfit and light as its scene allows, so no two photos look alike."}
 Make each photo look different from the recent ones listed: a different place, pose or angle.${textZone ? `\nKeep the ${textZone} of each photo calm and uncluttered; text goes there.` : ""}${musts.length ? `\nEvery photo must still hold to these:\n${musts.map((m) => `- ${m}`).join("\n")}` : ""}`;
   const user = [
     keep ? `This photo belongs to a set. Keep the same place, outfit and light as this photo from it:\n${keep}` : "",
