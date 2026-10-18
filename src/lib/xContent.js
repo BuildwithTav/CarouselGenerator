@@ -149,9 +149,10 @@ Lean into suggestive and seductive, genuinely — a real physical, sensory momen
 export const TEXT_FOCUS = {
   "sky-high-soles": {
     links: { wishlist: "throne.com/skyhighsoles", onlyfans: "onlyfans.com/skyhighsoles" },
-    // X cuts the reach of posts with links (OnlyFans links most of all), so
-    // the link itself goes in about 1 post in 3; the rest say it's in her bio.
-    linkChance: 1 / 3,
+    // Share of text posts that carry the actual link; the rest say it's in
+    // her bio. Every post since X said (July 2026) it dropped its reach
+    // penalty for link posts. Lower it if link posts start getting less reach.
+    linkChance: 1,
   },
 };
 

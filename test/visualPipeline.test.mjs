@@ -341,10 +341,17 @@ test("Sky High text posts use the findom brief; photo posts keep the cabin-crew 
   assert.ok(Object.values(TEXT_FOCUS["sky-high-soles"].links).some((l) => user.includes(l)), "the exact link is given");
   assert.match(out.postFormat, /^findom_/);
   assert.ok(out.theme);
-  // Without the link: points to the bio instead.
+  // The link goes in every post by default.
   reset();
   await generateXPost(BRAND, { slot, pillar, format: "text", rand: () => 0.99 });
+  assert.ok(Object.values(TEXT_FOCUS["sky-high-soles"].links).some((l) => JSON.stringify(calls.find((c) => c.kind === "anthropic").req.messages).includes(l)));
+  // With linkChance lowered, the rest point to the bio instead.
+  const saved = TEXT_FOCUS["sky-high-soles"].linkChance;
+  TEXT_FOCUS["sky-high-soles"].linkChance = 0;
+  reset();
+  await generateXPost(BRAND, { slot, pillar, format: "text", rand: () => 0.5 });
   const user2 = JSON.stringify(calls.find((c) => c.kind === "anthropic").req.messages);
+  TEXT_FOCUS["sky-high-soles"].linkChance = saved;
   assert.ok(user2.includes("in her bio"));
   assert.ok(!Object.values(TEXT_FOCUS["sky-high-soles"].links).some((l) => user2.includes(l)), "no link in this one");
   // Photo posts: unchanged brief, still never mentions OnlyFans.
