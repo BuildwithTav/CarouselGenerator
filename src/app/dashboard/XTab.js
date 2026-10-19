@@ -307,12 +307,13 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
   // One post at a time, on demand: a text post (scroll-stopper or reply
   // magnet, picked at random), one photo post, or a 4-slide carousel. With
   // ChatGPT photos on, photo posts come with a ChatGPT request instead of a
-  // photo, and can be made 10 at a time. Carousels always use AI photos.
+  // photo, and can be made 5 at a time, all different. Carousels always use
+  // AI photos.
   const manual = !!brand?.x_manual_photos;
   const KINDS = {
     text: { label: "Text post", busy: "Writing…", body: () => ({ slotKey: Math.random() < 0.5 ? "personality" : "conversation", format: "text" }) },
     single: { label: "Image post", busy: manual ? "Writing…" : "Making photo… (1-2 min)", body: () => ({ slotKey: "visual", format: "single", idea: photoIdea.trim() || undefined }) },
-    ...(manual ? { batch: { label: "10 photo posts", busy: "Writing 10… (1-2 min)", body: () => ({ slotKey: "visual", format: "single", count: 10 }) } } : {}),
+    ...(manual ? { batch: { label: "5 photo posts", busy: "Writing 5… (about 1 min)", body: () => ({ slotKey: "visual", format: "single", count: 5 }) } } : {}),
     carousel: { label: "4-slide carousel", busy: "Making carousel… (2-4 min)", body: () => ({ slotKey: "visual", format: "branded_carousel" }) },
   };
   const generate = async (kind) => {

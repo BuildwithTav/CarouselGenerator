@@ -8,6 +8,7 @@ export const handlers = {
   qa: () => ({ decision: "pass", face_visible: false, identity_match: 0.92, feet_count: 2, toes_plausible: true, left_right_plausible: true, extra_or_merged_items: false, feet_clear: true, anatomy_score: 9, photorealism_score: 9, wrong_uniform: false, wrong_shoe_colour: false, wrong_tights_colour: false, wrong_setting: false, continuity_score: 0.9, text_or_lettering_present: false, corrections: [] }),
   plain: (n) => ({ prompts: Array.from({ length: n }, (_, i) => `A candid photo of her curled up on the sofa on her day off, a mug of tea beside her, ${i + 1}.`) }),
   xpost: (n) => ({ text: `Feet up after a long one, number ${n} ✈️ #cabincrew`, scenes: [`Feet up on the crew rest bunk in sheer tan tights, ${n}`] }),
+  xbatch: (n) => ({ posts: Array.from({ length: n }, (_, i) => ({ text: `Batch post ${i + 1} ✈️ #cabincrew`, scene: `Batch scene ${i + 1} in sheer tan tights` })) }),
   // Tests set this to answer a Supabase REST call themselves: return
   // { status, body } to answer, or nothing to fall through to the defaults.
   rest: null,
@@ -34,6 +35,7 @@ export async function mockFetch(input, init = {}) {
     else if (sys.includes("photo checker")) { stage = "qa"; out = handlers.qa(); }
     else if (sys.includes("each written the way a person would ask ChatGPT")) { stage = "plain"; out = handlers.plain((userText.split("Scenes, in order")[1]?.match(/\\n\d+\. /g) || []).length || 1); }
     else if (sys.includes("You write one X (Twitter) post")) { stage = "xpost"; out = handlers.xpost(calls.filter((c) => c.stage === "xpost").length + 1); }
+    else if (/You write \d+ X \(Twitter\) posts/.test(sys)) { stage = "xbatch"; out = handlers.xbatch(Number(sys.match(/You write (\d+) X/)[1])); }
     else { stage = "other"; out = {}; }
     calls.push({ kind: "anthropic", stage, req });
     return json({ id: "m", type: "message", role: "assistant", model: req.model, stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify(out) }], usage: { input_tokens: 1000, output_tokens: 200 } });

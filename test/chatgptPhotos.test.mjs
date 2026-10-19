@@ -16,6 +16,7 @@ delete process.env.ANTHROPIC_BASE_URL;
 await import("@anthropic-ai/sdk/shims/web");
 
 const { OUTPUT_LINE } = await import("@/lib/visualPipeline");
+const { PHOTO_PLACES } = await import("@/lib/xContent");
 const xContent = await import("@/app/api/cron/x-content/route");
 const xPhoto = await import("@/app/api/content/x-photo/route");
 const content = await import("@/app/api/content/route");
@@ -57,40 +58,42 @@ test("with ChatGPT photos on, an image post gets a ChatGPT request and no fal ph
   assert.ok(row.photo_prompt.endsWith(OUTPUT_LINE), "ready to paste: ends with the format line");
 });
 
-test("+ 10 photo posts: two waves of different posts and ChatGPT requests, no fal", async () => {
-  reset(db());
-  const res = await xContent.POST(dashPost("/api/cron/x-content", { brandId: BRAND.id, format: "single", count: 10 }));
+test("+ 5 photo posts: written together, each a different place, topic and format, no fal", async () => {
+  const waiting = `A candid photo of her at the departure gate, heels off beside her case. Her face is not in the photo.\n\n${OUTPUT_LINE}`;
+  const base = db();
+  reset((req) => (req.url.includes("needs_photo=eq.true") ? { body: [{ photo_prompt: waiting }] } : base(req)));
+  const res = await xContent.POST(dashPost("/api/cron/x-content", { brandId: BRAND.id, format: "single", count: 5 }));
   const { results } = await res.json();
-  assert.equal(results[0].queued, 10);
+  assert.equal(results[0].queued, 5);
   assert.equal(results[0].error, undefined);
   assert.equal(fal().length, 0);
-  const writes = anthropic("xpost");
-  assert.equal(writes.length, 10);
-  // The second wave sees the first wave's posts, so it doesn't repeat them.
-  const firstWave = [1, 2, 3, 4, 5].map((n) => handlers.xpost(n).text);
-  for (const w of writes.slice(5)) {
-    const user = JSON.stringify(w.req.messages);
-    assert.ok(firstWave.every((t) => user.includes(t.split(" ✈️")[0])), "wave 2 is told about wave 1");
-  }
-  const plain = anthropic("plain");
-  assert.equal(plain.length, 2, "one set of requests per wave");
-  for (const p of plain) {
-    assert.match(String(p.req.system), /separate post for a different day, not a set/);
-    assert.doesNotMatch(String(p.req.system), /More than one scene means one set/);
-  }
-  // The second wave's requests are told to look different from the first's.
-  assert.ok(JSON.stringify(plain[1].req.messages).includes(handlers.plain(5).prompts[4]));
-  // Each wave is saved as soon as it's done.
-  assert.equal(calls.filter((c) => c.kind === "supabase" && c.method === "POST" && c.url.includes("/rest/v1/content_items")).length, 2);
+  assert.deepEqual(anthropic().map((c) => c.stage), ["xbatch", "plain"], "one call writes all 5, one writes their photo requests");
+  const user = JSON.stringify(anthropic("xbatch")[0].req.messages);
+  const places = PHOTO_PLACES.filter((pl) => user.includes(`Place: ${pl}.`));
+  assert.equal(places.length, 5, "5 different places");
+  const topics = new Set([...user.matchAll(/Topic: ([^.]+)\./g)].map((m) => m[1]));
+  assert.equal(topics.size, 5, "5 different topics");
+  assert.equal(user.split("A short flirty this-or-that").length - 1, 1, "only one this-or-that question");
+  assert.match(user, /never two on the same idea/);
+  const plain = anthropic("plain")[0];
+  assert.match(String(plain.req.system), /separate post for a different day, not a set/);
+  // Their photos are kept apart from the ones still waiting for a photo.
+  const plainUser = JSON.stringify(plain.req.messages);
+  assert.ok(plainUser.includes("at the departure gate, heels off beside her case"));
+  assert.ok(!plainUser.includes(OUTPUT_LINE));
   const rows = inserted();
-  assert.equal(rows.length, 10);
+  assert.equal(rows.length, 5);
   assert.ok(rows.every((r) => r.needs_photo === true && r.slide_paths.length === 0 && r.photo_prompt.endsWith(OUTPUT_LINE)));
-  assert.equal(new Set(rows.map((r) => r.tw_caption)).size, 10);
+  assert.equal(new Set(rows.map((r) => r.tw_caption)).size, 5);
+  // Asking for more still makes 5.
+  reset(db());
+  const big = await (await xContent.POST(dashPost("/api/cron/x-content", { brandId: BRAND.id, format: "single", count: 10 }))).json();
+  assert.equal(big.results[0].queued, 5);
 });
 
 test("a batch is refused while photos are on AI, so it can't spend on fal", async () => {
   reset(db({ ...BRAND, x_manual_photos: false }));
-  const { results } = await (await xContent.POST(dashPost("/api/cron/x-content", { brandId: BRAND.id, format: "single", count: 10 }))).json();
+  const { results } = await (await xContent.POST(dashPost("/api/cron/x-content", { brandId: BRAND.id, format: "single", count: 5 }))).json();
   assert.equal(results[0].queued, 0);
   assert.match(results[0].error, /ChatGPT/);
   assert.equal(anthropic().length, 0);

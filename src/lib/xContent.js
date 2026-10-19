@@ -67,7 +67,7 @@ const POST_FORMATS = {
   ],
   visual: [
     { key: "photo_line", how: "One short flirty line that adds a feeling or a moment to the photo, never a description of it." },
-    { key: "photo_this_or_that", how: "A short flirty this-or-that about something in the photo (heels on or off; tights or bare), she gives her answer." },
+    { key: "photo_this_or_that", how: "A short flirty this-or-that about something in the photo or the moment, she gives her answer. A choice that belongs to this place, not heels on or off or tights or bare every time." },
     { key: "photo_moment", how: "A specific little moment the photo was taken in, told in one or two lines, sensual and real." },
   ],
 };
@@ -264,6 +264,16 @@ function clampTweet(text) {
   return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim();
 }
 
+// How a photo post's scene is written: shared by single posts and batches.
+const PHOTO_DIRECTION = `You are also directing the photo(s) that go with this post — they don't exist yet, you're describing exactly what to generate. For each photo, write one vivid, concrete scene description (setting, pose, specific action, props — enough detail that a photographer could shoot exactly this): a precise physical scene, not a mood or a vibe. The post's words and the scene(s) must describe the same real moment — if the text says something specific happened ("slipped into the bath out of my tights"), the scene has to show exactly that, tights included. Describe the natural version of the moment, the photo she'd actually take of it, the way a photographer would see it, not a list of every noun in the post: jokes and figures of speech in the post ("kettle on", "the heels don't get a say") are not props, only things physically where she is can be in the scene (feet up on the balcony with the kettle boiled is a balcony scene with no kettle), anything the post says is absent or for later stays out of the scene, and off duty means no uniform and no work heels. Always fully clothed above the waist, nothing explicit, her head out of the frame (consistent with this brand's existing photo direction).
+Every scene happens in a real cabin crew life place: on the aircraft (cabin aisle, jump seat, galley, crew rest), the crew room, the airport, her own home (getting ready, bed, sofa, bath, kitchen, balcony), a pedicure chair, or now and then a hotel room or pool. Layovers and hotels are overused on this account: don't make the post about a layover or set it in a hotel unless it's genuinely the point, and never if one of the recent posts above already was. Pick a moment for the post that happens in one of those places, so the words and the photo match: never a bus, taxi, car, train, gym, street or shop. With her uniform, her shoes are navy court heels or navy flats (the same navy as her skirt) and her tights are sheer tan; never black shoes. Vary the moment, the pose and the place from post to post so the account never looks predictable: feet up on a seat or window ledge, lying on the crew bunk on her front with her feet raised, kneeling seen from behind, on tiptoe reaching into a galley locker, walking away down the aisle, stretching her feet after a shift, heels off beside her. Her shoes are on her feet or resting on the floor, never dangling from her toes. Never her hands busy putting on or pulling off shoes or tights.`;
+
+function recentPostsBlock(recentPosts) {
+  return recentPosts.length
+    ? `Recent posts from this account (do not repeat their hook, joke, question, topic angle, or sentence structure — the execution must be noticeably different even if the broad topic recurs):\n${recentPosts.map((p) => `- ${p}`).join("\n")}`
+    : "No recent post history yet.";
+}
+
 // Text-first, not photo-first: for "single"/"carousel" this writes the post
 // AND a precise description of what each attached photo must show, in one
 // call — the caller then generates a photo FROM that description (see
@@ -276,8 +286,7 @@ export async function generateXPost(brand, { slot, pillar, format, recentPosts =
 
   const system = `You write one X (Twitter) post for a brand's account. Reply with JSON only: ${needsPhotos ? `{"text": "...", "scenes": ["...", ...]}` : `{"text": "..."}`}.
 ${VOICE_RULES}
-${needsPhotos ? `\nYou are also directing the photo(s) that go with this post — they don't exist yet, you're describing exactly what to generate. For each photo, write one vivid, concrete scene description (setting, pose, specific action, props — enough detail that a photographer could shoot exactly this): a precise physical scene, not a mood or a vibe. The post's words and the scene(s) must describe the same real moment — if the text says something specific happened ("slipped into the bath out of my tights"), the scene has to show exactly that, tights included. Describe the natural version of the moment, the photo she'd actually take of it, the way a photographer would see it, not a list of every noun in the post: jokes and figures of speech in the post ("kettle on", "the heels don't get a say") are not props, only things physically where she is can be in the scene (feet up on the balcony with the kettle boiled is a balcony scene with no kettle), anything the post says is absent or for later stays out of the scene, and off duty means no uniform and no work heels. Always fully clothed above the waist, nothing explicit, her head out of the frame (consistent with this brand's existing photo direction).
-Every scene happens in a real cabin crew life place: on the aircraft (cabin aisle, jump seat, galley, crew rest), the crew room, the airport, her own home (getting ready, bed, sofa, bath, kitchen, balcony), a pedicure chair, or now and then a hotel room or pool. Layovers and hotels are overused on this account: don't make the post about a layover or set it in a hotel unless it's genuinely the point, and never if one of the recent posts above already was. Pick a moment for the post that happens in one of those places, so the words and the photo match: never a bus, taxi, car, train, gym, street or shop. With her uniform, her shoes are navy court heels or navy flats (the same navy as her skirt) and her tights are sheer tan; never black shoes. Vary the moment, the pose and the place from post to post so the account never looks predictable: feet up on a seat or window ledge, lying on the crew bunk on her front with her feet raised, kneeling seen from behind, on tiptoe reaching into a galley locker, walking away down the aisle, stretching her feet after a shift, heels off beside her. Her shoes are on her feet or resting on the floor, never dangling from her toes. Never her hands busy putting on or pulling off shoes or tights.` : ""}`;
+${needsPhotos ? `\n${PHOTO_DIRECTION}` : ""}`;
 
   const formatBrief =
     format === "text"
@@ -286,9 +295,7 @@ Every scene happens in a real cabin crew life place: on the aircraft (cabin aisl
       ? "This post gets one photo, generated to match. \"scenes\" is an array with exactly one entry. 3 to 25 words of post text — never a caption that just describes the photo, but it has to genuinely depict the same moment as the scene you describe, not a generic line."
       : "This post gets 2 to 4 photos, generated to match, in a short sequence that tells a tiny story or shows real progression (e.g. getting ready, then heels, then aircraft, then shoes off). \"scenes\" is an array with one entry per photo, in order. Write one short line of post text for the whole set, not per-photo captions.";
 
-  const recentBlock = recentPosts.length
-    ? `Recent posts from this account (do not repeat their hook, joke, question, topic angle, or sentence structure — the execution must be noticeably different even if the broad topic recurs):\n${recentPosts.map((p) => `- ${p}`).join("\n")}`
-    : "No recent post history yet.";
+  const recentBlock = recentPostsBlock(recentPosts);
 
   const user = `${brandContext(brand)}
 
@@ -309,6 +316,72 @@ Write the post${needsPhotos ? " and its scene description(s)" : ""}.`;
   const text = clampTweet(String(out.text || "").trim());
   const scenes = needsPhotos ? (Array.isArray(out.scenes) ? out.scenes.map((s) => String(s || "").trim()).filter(Boolean) : []) : [];
   return { text, scenes, postFormat: postFormat.key };
+}
+
+// ── Photo post batches (Tav's ChatGPT photos: 5 at a time, all different) ──
+// Every place the photo direction allows except hotels (overused). Each post
+// in a batch gets a different one.
+export const PHOTO_PLACES = [
+  "the aircraft cabin aisle", "her jump seat", "the galley", "the crew rest bunk", "the crew room", "the airport gate or terminal",
+  "getting ready at home", "her bed", "her sofa", "her bath", "her kitchen", "her balcony", "a pedicure chair",
+];
+
+function shuffled(list, rand) {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+// A different place, topic and format for each post, with only one
+// this-or-that question per batch (half of Tav's first batch of 10 were
+// this-or-that questions, two of them nearly the same).
+function batchBriefs(n, rand) {
+  const places = shuffled(PHOTO_PLACES, rand).slice(0, n);
+  const pillars = [];
+  while (pillars.length < n) {
+    const p = weightedPick(X_PILLARS);
+    if (!pillars.includes(p) || pillars.length >= X_PILLARS.length) pillars.push(p);
+  }
+  const question = POST_FORMATS.visual.find((f) => f.key === "photo_this_or_that");
+  const others = POST_FORMATS.visual.filter((f) => f !== question);
+  const formats = shuffled([question, ...Array.from({ length: n - 1 }, (_, i) => others[i % others.length])], rand);
+  return places.map((place, i) => ({ place, pillar: pillars[i], format: formats[i] }));
+}
+
+// Writes a batch of photo posts in one call, so the writer sees them side
+// by side and keeps every one different. Returns the posts it managed:
+// [{ text, scene, postFormat, pillar }].
+export async function generateXPhotoBatch(brand, { count, recentPosts = [], feedback = [], rand = Math.random }) {
+  const slot = X_SLOTS.find((s) => s.key === "visual");
+  const briefs = batchBriefs(count, rand);
+  const n = briefs.length;
+  const system = `You write ${n} X (Twitter) posts for a brand's account, each with one photo. Reply with JSON only: {"posts": [{"text": "...", "scene": "..."}, ...]}, one per brief, in the same order.
+${VOICE_RULES}
+
+${PHOTO_DIRECTION}`;
+  const user = `${brandContext(brand)}
+
+The posts' job: ${slot.job}
+Each post gets one photo, generated to match: 3 to 25 words of post text, never a caption that just describes the photo, and one scene showing the same moment the text is about.
+Briefs, one post each (follow its place and format):
+${briefs.map((b, i) => `${i + 1}. Place: ${b.place}. Format: ${b.format.how} Topic: ${b.pillar.label}. ${b.pillar.guidance}`).join("\n")}
+The ${n} posts go out on different days, so they must all be clearly different from each other: a different moment, hook and ending each, never two on the same idea (not two pedicure posts, not two "heels on or off" questions).
+The first line of each is the hook: it has to stop a thumb on its own. Flirty, quirky and specific beats clever and vague. Never ask for likes, reposts, replies or follows, and nothing crude enough that someone would mute or report it.
+
+${recentPostsBlock(recentPosts)}
+${feedbackBlock(feedback)}
+Before answering, check each post: Is it genuinely short? Does it have 2-5 hashtags that fit it? Is it flirty, suggestive and alluring, not flat? Does it sound like a real person, not an automated account? Is it clearly different from the recent posts above and from the other posts here? Is the language natural, no em dashes, no jargon? Does it follow its format, and only end on a question if its format calls for one? Does its scene show that same moment in its place, specifically enough to shoot? If it touches feet, is it lifestyle or fact framing, with zero wordplay or joking?
+
+Write the ${n} posts and their scenes.`;
+
+  const out = await ask(system, user, 4000);
+  const posts = Array.isArray(out.posts) ? out.posts : [];
+  return briefs
+    .map((b, i) => ({ text: clampTweet(String(posts[i]?.text || "").trim()), scene: String(posts[i]?.scene || "").trim(), postFormat: b.format.key, pillar: b.pillar }))
+    .filter((p) => p.text && p.scene);
 }
 
 // Hands off to the real branded carousel system (same one Instagram content

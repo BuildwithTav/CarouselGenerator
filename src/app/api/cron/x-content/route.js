@@ -1,5 +1,5 @@
 import { dashboardAuthorized, supabaseAdmin, brandPlatforms, bumpMediaUse, BUCKET } from "@/lib/dashboard";
-import { X_SLOTS, X_PILLARS, pickPillar, pickFormat, generateXPost, generateBrandedCarouselIdea, generatePackage } from "@/lib/xContent";
+import { X_SLOTS, pickPillar, pickFormat, generateXPost, generateXPhotoBatch, generateBrandedCarouselIdea, generatePackage } from "@/lib/xContent";
 import { imagePromptsBatch } from "@/lib/contentAi";
 import { generateMatchingPhoto, planPhotos, generatePlannedPhoto, chatgptPhotoPrompts } from "@/lib/imageGen";
 import { recentFeedback } from "@/lib/feedback";
@@ -190,71 +190,43 @@ async function generateSlot(supabase, brand, slot, pillar, format, recentPosts, 
   return { queued: true };
 }
 
-// Tav's ChatGPT batch (Oct 2026): up to 10 photo posts at once, each a draft
+// Tav's ChatGPT batches (Oct 2026): 5 photo posts at a time, each a draft
 // with a ready-to-paste ChatGPT request and no photo yet, so nothing is spent
-// on fal. The posts are written in two waves, each on different topics: the
-// second sees the first's captions and its photo requests see the first's,
-// so nothing repeats. Each wave is saved as soon as it's done, so a slow run
-// still keeps the first half.
-const MAX_BATCH = 10;
-
-function distinctPillars(n) {
-  const picked = [];
-  while (picked.length < n) {
-    const p = pickPillar();
-    if (!picked.includes(p) || picked.length >= X_PILLARS.length) picked.push(p);
-  }
-  return picked;
-}
+// on fal. All 5 are written in one go, each with its own place, topic and
+// format (generateXPhotoBatch), so no two are alike; their photo requests
+// are written together and kept apart from the ones still waiting for a
+// photo.
+const MAX_BATCH = 5;
 
 async function runPhotoBatch(supabase, brand, count, recentPosts, today, feedback) {
-  const slot = X_SLOTS.find((s) => s.key === "visual");
   const total = Math.min(Math.max(1, Math.floor(count)), MAX_BATCH);
-  const errors = [];
-  let queued = 0;
+  const posts = await generateXPhotoBatch(brand, { count: total, recentPosts, feedback });
+  if (!posts.length) return { queued: 0, error: "Nothing was written — try again." };
 
-  const writeWave = async (size, seen) => (await Promise.all(distinctPillars(size).map(async (pillar) => {
-    try {
-      const post = await generateXPost(brand, { slot, pillar, format: "single", recentPosts: seen, feedback });
-      return post.text && post.scenes.length ? { ...post, pillar } : null;
-    } catch (e) {
-      errors.push(e.message);
-      await logGenerationError(brand.id, "x-content", "photo batch", e.message);
-      return null;
-    }
-  }))).filter(Boolean);
-
-  const saveWave = async (posts, earlier = []) => {
-    if (!posts.length) return [];
-    const prompts = await chatgptPhotoPrompts(brand, posts.map((p) => p.scenes[0]), { source: "x-content", earlier });
-    const { error: insErr } = await supabase.from("content_items").insert(posts.map((p, i) => ({
-      brand_id: brand.id,
-      idea: `X · ${slot.key} · ${p.postFormat} · ${p.pillar.label}`,
-      pillar: p.pillar.label,
-      status: "draft",
-      scheduled_for: today,
-      slide_paths: [],
-      tw_caption: p.text,
-      platforms: ["twitter"],
-      template: "x-post",
-      needs_photo: true,
-      photo_prompt: prompts[i],
-    })));
-    if (insErr) throw new Error(`insert failed (photo batch): ${insErr.message}`);
-    queued += posts.length;
-    return prompts;
-  };
-
-  // The second wave is written while the first wave's photo requests are.
-  const first = await writeWave(Math.ceil(total / 2), recentPosts);
-  const [firstPrompts, second] = await Promise.all([
-    saveWave(first),
-    writeWave(Math.floor(total / 2), [...first.map((p) => p.text), ...recentPosts]),
-  ]);
-  await saveWave(second, firstPrompts);
-
-  if (!queued) return { queued: 0, error: errors.length ? friendlyError(errors[0]) : "Nothing was written — try again." };
-  return queued < total ? { queued, error: `${total - queued} of ${total} couldn't be written` } : { queued };
+  const { data: waiting } = await supabase
+    .from("content_items")
+    .select("photo_prompt")
+    .eq("brand_id", brand.id)
+    .eq("needs_photo", true)
+    .order("created_at", { ascending: false })
+    .limit(8);
+  const earlier = (waiting || []).map((w) => w.photo_prompt).filter(Boolean);
+  const prompts = await chatgptPhotoPrompts(brand, posts.map((p) => p.scene), { source: "x-content", earlier });
+  const { error: insErr } = await supabase.from("content_items").insert(posts.map((p, i) => ({
+    brand_id: brand.id,
+    idea: `X · visual · ${p.postFormat} · ${p.pillar.label}`,
+    pillar: p.pillar.label,
+    status: "draft",
+    scheduled_for: today,
+    slide_paths: [],
+    tw_caption: p.text,
+    platforms: ["twitter"],
+    template: "x-post",
+    needs_photo: true,
+    photo_prompt: prompts[i],
+  })));
+  if (insErr) throw new Error(`insert failed (photo batch): ${insErr.message}`);
+  return posts.length < total ? { queued: posts.length, error: `${total - posts.length} of ${total} couldn't be written` } : { queued: posts.length };
 }
 
 // One slot end to end: pick pillar/format, write it, generate its photo(s),
