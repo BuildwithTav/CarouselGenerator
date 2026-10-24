@@ -268,11 +268,11 @@ async function planPlainPhotos(brand, { texts, lockedContinuity, avoidShots, tex
 // The request without its format line: the scene a photo is made from.
 const scenePart = (photoPrompt) => String(photoPrompt || "").replace(OUTPUT_LINE, "").trim();
 
-// Tav makes photo posts' photos himself in ChatGPT, so those posts get a
-// ready-to-paste request instead of a fal photo. The requests are written
-// together as separate posts, not a set, so each looks different from the
-// others, from her recent photos and from `earlier` requests in the batch.
-export async function chatgptPhotoPrompts(brand, scenes, { source = "chatgpt", earlier = [] } = {}) {
+// Photo requests for separate posts: written together, not as a set, so
+// each looks different from the others, from her recent photos and from
+// `earlier` requests. With ChatGPT photos on, Tav pastes them into ChatGPT;
+// otherwise they're made on fal (generatePhotoFromPrompt).
+export async function photoPromptsForPosts(brand, scenes, { source = "chatgpt", earlier = [] } = {}) {
   let prompts;
   try {
     const recent = [...earlier.map((p) => scenePart(p).slice(0, 300)), ...await recentPrompts(brand.id)];

@@ -40,6 +40,18 @@ function tweetUrl(item) {
   return item.twitter_post_id ? `https://x.com/i/status/${item.twitter_post_id}` : null;
 }
 
+function Choice({ label, value, options, onPick, hint }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+      <span style={{ fontSize: 12, fontWeight: 700 }}>{label}:</span>
+      {options.map(([v, text]) => (
+        <button key={text} onClick={() => onPick(v)} disabled={value === v} style={btn("small", value === v ? { background: C.text, color: C.accentText, borderColor: C.text } : {})}>{text}</button>
+      ))}
+      <span style={{ fontSize: 11, color: C.muted }}>{hint}</span>
+    </div>
+  );
+}
+
 // ChatGPT saves big PNGs and a request to the site can carry ~4.5MB, so a
 // photo Tav uploads is shrunk to a JPEG in the browser before it's sent.
 async function toJpeg(file, maxSide = 2048, quality = 0.9) {
@@ -304,16 +316,16 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
     if (next) setItems((list) => list.some((i) => i.id === next.id) ? list.map((i) => (i.id === next.id ? next : i)) : [next, ...list]);
   };
 
-  // One post at a time, on demand: a text post (scroll-stopper or reply
-  // magnet, picked at random), one photo post, or a 4-slide carousel. With
-  // ChatGPT photos on, photo posts come with a ChatGPT request instead of a
-  // photo, and can be made 5 at a time, all different. Carousels always use
-  // AI photos.
+  // Posts on demand: a text post (scroll-stopper or reply magnet, picked at
+  // random), one image post, 3 image posts at once (all different), or a
+  // 4-slide carousel. With ChatGPT photos on, image posts come with a
+  // ChatGPT request instead of a photo. Carousels always use AI photos.
   const manual = !!brand?.x_manual_photos;
+  const daily = brand?.x_daily_posts !== false;
   const KINDS = {
     text: { label: "Text post", busy: "Writing…", body: () => ({ slotKey: Math.random() < 0.5 ? "personality" : "conversation", format: "text" }) },
     single: { label: "Image post", busy: manual ? "Writing…" : "Making photo… (1-2 min)", body: () => ({ slotKey: "visual", format: "single", idea: photoIdea.trim() || undefined }) },
-    ...(manual ? { batch: { label: "5 photo posts", busy: "Writing 5… (about 1 min)", body: () => ({ slotKey: "visual", format: "single", count: 5 }) } } : {}),
+    batch: { label: "3 image posts", busy: manual ? "Writing 3… (about 1 min)" : "Making 3… (2-3 min)", body: () => ({ slotKey: "visual", format: "single", count: 3 }) },
     carousel: { label: "4-slide carousel", busy: "Making carousel… (2-4 min)", body: () => ({ slotKey: "visual", format: "branded_carousel" }) },
   };
   const generate = async (kind) => {
@@ -325,7 +337,7 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
       else if (r?.error) alert(`${KINDS[kind].label} failed: ${r.error}`);
       else if (!r?.queued) alert("Nothing was made — try again.");
       else if (kind === "single") setPhotoIdea("");
-      if (kind === "batch" && r?.queued) setFilter("needs_photo");
+      if (kind === "batch" && r?.queued) setFilter(manual ? "needs_photo" : "draft");
     } catch (e) {
       // The request can time out in the browser while the server finishes
       // anyway, so check again shortly before calling it lost.
@@ -396,7 +408,7 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: C.muted, textTransform: "uppercase" }}>Automation</div>
-            <div style={{ fontSize: 13 }}>Next batch written <b>{BATCH_TIME_UTC} UTC</b> · next posting window <b>{paused ? "paused" : nextWindow()}</b> · <b>{queuedReady}</b> queued and ready</div>
+            <div style={{ fontSize: 13 }}>{daily && <>Next drafts written <b>{BATCH_TIME_UTC} UTC</b> · </>}Next posting window <b>{paused ? "paused" : nextWindow()}</b> · <b>{queuedReady}</b> queued and ready</div>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {!paused && <button onClick={() => togglePause(true)} style={btn("ghost", { color: C.danger, borderColor: C.danger + "88" })}>Pause auto-posting</button>}
@@ -407,12 +419,11 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
             ))}
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 700 }}>Photos:</span>
-          {[[true, "ChatGPT (I make them)"], [false, "AI (fal)"]].map(([on, label]) => (
-            <button key={label} onClick={() => patchBrand({ x_manual_photos: on })} disabled={manual === on} style={btn("small", manual === on ? { background: C.text, color: C.accentText, borderColor: C.text } : {})}>{label}</button>
-          ))}
-          <span style={{ fontSize: 11, color: C.muted }}>{manual ? "Photo posts come with a ChatGPT request and you add the photo, so no fal cost. Carousels still use AI." : "Photo posts get an AI photo (about $0.08 each)."}</span>
+        <div style={{ marginBottom: 12 }}>
+          <Choice label="Daily drafts" value={daily} options={[[true, "On"], [false, "Off"]]} onPick={(on) => patchBrand({ x_daily_posts: on })}
+            hint={daily ? "New drafts are written every morning for you to approve." : "Nothing is written unless you press a button above."} />
+          <Choice label="Photos" value={manual} options={[[false, "AI"], [true, "ChatGPT (I make them)"]]} onPick={(on) => patchBrand({ x_manual_photos: on })}
+            hint={manual ? "Image posts come with a ChatGPT request and you add the photo, so no fal cost. Carousels still use AI." : "Image posts come with an AI photo (about $0.08 each)."} />
         </div>
         <input
           value={photoIdea}

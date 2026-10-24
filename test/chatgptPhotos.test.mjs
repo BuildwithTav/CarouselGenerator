@@ -58,21 +58,21 @@ test("with ChatGPT photos on, an image post gets a ChatGPT request and no fal ph
   assert.ok(row.photo_prompt.endsWith(OUTPUT_LINE), "ready to paste: ends with the format line");
 });
 
-test("+ 5 photo posts: written together, each a different place, topic and format, no fal", async () => {
+test("+ 3 image posts with ChatGPT photos: written together, each a different place, topic and format, no fal", async () => {
   const waiting = `A candid photo of her at the departure gate, heels off beside her case. Her face is not in the photo.\n\n${OUTPUT_LINE}`;
   const base = db();
   reset((req) => (req.url.includes("needs_photo=eq.true") ? { body: [{ photo_prompt: waiting }] } : base(req)));
-  const res = await xContent.POST(dashPost("/api/cron/x-content", { brandId: BRAND.id, format: "single", count: 5 }));
+  const res = await xContent.POST(dashPost("/api/cron/x-content", { brandId: BRAND.id, format: "single", count: 3 }));
   const { results } = await res.json();
-  assert.equal(results[0].queued, 5);
+  assert.equal(results[0].queued, 3);
   assert.equal(results[0].error, undefined);
   assert.equal(fal().length, 0);
-  assert.deepEqual(anthropic().map((c) => c.stage), ["xbatch", "plain"], "one call writes all 5, one writes their photo requests");
+  assert.deepEqual(anthropic().map((c) => c.stage), ["xbatch", "plain"], "one call writes all 3, one writes their photo requests");
   const user = JSON.stringify(anthropic("xbatch")[0].req.messages);
   const places = PHOTO_PLACES.filter((pl) => user.includes(`Place: ${pl}.`));
-  assert.equal(places.length, 5, "5 different places");
+  assert.equal(places.length, 3, "3 different places");
   const topics = new Set([...user.matchAll(/Topic: ([^.]+)\./g)].map((m) => m[1]));
-  assert.equal(topics.size, 5, "5 different topics");
+  assert.equal(topics.size, 3, "3 different topics");
   assert.equal(user.split("A short flirty this-or-that").length - 1, 1, "only one this-or-that question");
   assert.match(user, /never two on the same idea/);
   const plain = anthropic("plain")[0];
@@ -82,22 +82,61 @@ test("+ 5 photo posts: written together, each a different place, topic and forma
   assert.ok(plainUser.includes("at the departure gate, heels off beside her case"));
   assert.ok(!plainUser.includes(OUTPUT_LINE));
   const rows = inserted();
-  assert.equal(rows.length, 5);
+  assert.equal(rows.length, 3);
   assert.ok(rows.every((r) => r.needs_photo === true && r.slide_paths.length === 0 && r.photo_prompt.endsWith(OUTPUT_LINE)));
-  assert.equal(new Set(rows.map((r) => r.tw_caption)).size, 5);
-  // Asking for more still makes 5.
+  assert.equal(new Set(rows.map((r) => r.tw_caption)).size, 3);
+  // Asking for more still makes 3.
   reset(db());
   const big = await (await xContent.POST(dashPost("/api/cron/x-content", { brandId: BRAND.id, format: "single", count: 10 }))).json();
-  assert.equal(big.results[0].queued, 5);
+  assert.equal(big.results[0].queued, 3);
 });
 
-test("a batch is refused while photos are on AI, so it can't spend on fal", async () => {
+test("+ 3 image posts with AI photos: each post gets its own photo, and one that fails is left out", async () => {
   reset(db({ ...BRAND, x_manual_photos: false }));
-  const { results } = await (await xContent.POST(dashPost("/api/cron/x-content", { brandId: BRAND.id, format: "single", count: 5 }))).json();
-  assert.equal(results[0].queued, 0);
-  assert.match(results[0].error, /ChatGPT/);
+  // Both tries at the second photo fail.
+  handlers.fal = (body) => (body.prompt.includes("beside her, 2.") ? { status: 500, body: { detail: "boom" } } : defaults.fal());
+  const { results } = await (await xContent.POST(dashPost("/api/cron/x-content", { brandId: BRAND.id, format: "single", count: 3 }))).json();
+  assert.equal(results[0].queued, 2);
+  assert.match(results[0].error, /1 of 3 couldn't be made/);
+  const rows = inserted();
+  assert.equal(rows.length, 2);
+  assert.ok(rows.every((r) => r.slide_paths.length === 1 && !r.needs_photo && !r.photo_prompt), "a photo each, nothing for Tav to make");
+  assert.ok(fal().every((c) => c.body.image_urls === undefined), "plain requests, no reference photos");
+  assert.equal(fal().length, 4, "one try each, plus the failed photo's retry");
+  assert.ok(calls.some((c) => c.kind === "supabase" && c.method === "POST" && c.url.includes("/rest/v1/generation_log")), "the failure is logged");
+});
+
+test("daily drafts off: the morning run writes nothing", async () => {
+  reset(db({ ...BRAND, x_daily_posts: false }));
+  for (const slot of ["personality", "visual", "conversation"]) {
+    const res = await xContent.GET(new Request(`https://studio.test/api/cron/x-content?slot=${slot}`, { headers: { authorization: "Bearer cron" } }));
+    assert.equal((await res.json()).results[0].queued, 0);
+  }
   assert.equal(anthropic().length, 0);
-  assert.equal(fal().length, 0);
+  assert.equal(inserted().length, 0);
+  // The buttons still work.
+  reset(db({ ...BRAND, x_daily_posts: false }));
+  const { results } = await (await xContent.POST(dashPost("/api/cron/x-content", { brandId: BRAND.id, slotKey: "visual", format: "single" }))).json();
+  assert.equal(results[0].queued, 1);
+});
+
+test("a failed post to X is logged and explained, not just lost in Vercel's logs", async () => {
+  const ready = { id: "item-9", brand_id: BRAND.id, template: "x-post", status: "ready", needs_photo: false, platforms: ["twitter"], slide_paths: [], tw_caption: "Feet up", scheduled_for: "2026-01-01", brands: BRAND };
+  reset(({ url }) => {
+    if (url.includes("/rest/v1/brands")) return { body: [BRAND] };
+    if (url.includes("/rest/v1/content_items") && url.includes("status=eq.ready")) return { body: [ready] };
+  });
+  const cron = await postTwitter.GET(new Request("https://studio.test/api/cron/post-twitter", { headers: { authorization: "Bearer cron" } }));
+  const { results } = await cron.json();
+  assert.equal(results[0].posted, false);
+  const logged = calls.find((c) => c.kind === "supabase" && c.method === "POST" && c.url.includes("/rest/v1/generation_log"));
+  assert.equal(logged.body.source, "post-twitter");
+  assert.match(logged.body.error, /Invalid or expired token/);
+
+  reset(db(BRAND, ready));
+  const now = await postNow.POST(dashPost("/api/content/post-now", { id: "item-9" }));
+  assert.equal(now.status, 502);
+  assert.match((await now.json()).error, /Regenerate the Access Token and Secret/);
 });
 
 test("the daily photo slot is skipped while ChatGPT photos are on", async () => {

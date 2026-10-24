@@ -1,6 +1,7 @@
 import { supabaseAdmin, brandPlatforms } from "@/lib/dashboard";
 import { postItemToX } from "@/lib/twitterApi";
 import { pickNextPost, postKind } from "@/lib/postOrder";
+import { logGenerationError } from "@/lib/genLog";
 
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
@@ -71,6 +72,9 @@ export async function GET(req) {
       results.push({ brand: brand.slug, posted: true, itemId: item.id });
     } catch (e) {
       console.error(`Twitter post failed for ${brand.slug}:`, e.message);
+      // Recorded so a run of failed posts shows up in the database, not
+      // only in Vercel's logs (X's login lapsed for 2 days unnoticed).
+      await logGenerationError(brand.id, "post-twitter", item.id, e.message);
       results.push({ brand: brand.slug, posted: false, error: e.message });
     }
   }

@@ -18,6 +18,7 @@ export function explainError(message) {
   if (/fal/i.test(m) && /locked|top_?up|balance|insufficient|exhausted|billing/i.test(m)) return "Your fal.ai balance has run out. Top up at fal.ai (Billing), then generate again.";
   if (/fal/i.test(m) && /\b401\b|unauthori[sz]ed|invalid key/i.test(m)) return "fal.ai rejected the API key (FAL_API_KEY in Vercel).";
   if (/credit balance is too low/i.test(m)) return "Your Anthropic API credit has run out. Top up at console.anthropic.com, then generate again.";
+  if (/Twitter/i.test(m) && /Invalid or expired token|"code":\s*89|\b401\b/i.test(m)) return "X logged the dashboard out (it happens when the account is closed or the password changes). Regenerate the Access Token and Secret in the X developer portal, put them in Vercel (TWITTER_ACCESS_TOKEN / TWITTER_ACCESS_TOKEN_SECRET), then redeploy.";
   if (/blank\/blocked/i.test(m)) return "The image model's safety filter blocked the photo on both tries.";
   if (/declined to write/i.test(m)) return "Claude refused to write this one.";
   if (/took too long|timed out/i.test(m)) return "The image took too long to come back.";

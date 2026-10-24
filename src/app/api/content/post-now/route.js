@@ -1,5 +1,6 @@
 import { dashboardAuthorized, unauthorized, supabaseAdmin, attachSlideUrls } from "@/lib/dashboard";
 import { postItemToX } from "@/lib/twitterApi";
+import { logGenerationError, friendlyError } from "@/lib/genLog";
 
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
@@ -27,6 +28,7 @@ export async function POST(req) {
     const updated = await postItemToX(supabase, item, item.brands);
     return Response.json({ item: await attachSlideUrls({ ...updated, brands: item.brands }) });
   } catch (e) {
-    return Response.json({ error: e.message }, { status: 502 });
+    await logGenerationError(item.brand_id, "post-now", item.id, e.message);
+    return Response.json({ error: friendlyError(e.message) }, { status: 502 });
   }
 }
