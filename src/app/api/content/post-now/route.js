@@ -1,5 +1,5 @@
 import { dashboardAuthorized, unauthorized, supabaseAdmin, attachSlideUrls } from "@/lib/dashboard";
-import { postItemToX } from "@/lib/twitterApi";
+import { postItemToX, xAppConfigured } from "@/lib/twitterApi";
 import { logGenerationError, friendlyError } from "@/lib/genLog";
 
 export const maxDuration = 30;
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 // section's "Post now" button. Same underlying postItemToX() as the cron.
 export async function POST(req) {
   if (!dashboardAuthorized(req)) return unauthorized();
-  if (!process.env.TWITTER_API_KEY || !process.env.TWITTER_API_SECRET || !process.env.TWITTER_ACCESS_TOKEN || !process.env.TWITTER_ACCESS_TOKEN_SECRET) {
+  if (!xAppConfigured()) {
     return Response.json({ error: "Twitter API keys are not set" }, { status: 500 });
   }
   const { id } = await req.json().catch(() => ({}));

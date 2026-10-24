@@ -54,9 +54,10 @@ export async function mockFetch(input, init = {}) {
   if (url.startsWith("https://fake.fal.media/")) return new Response(new Uint8Array(400000), { status: 200, headers: { "content-type": "image/jpeg" } });
   // X: by default the login has lapsed, as after Tav closed the account.
   if (url.startsWith("https://api.twitter.com/") || url.startsWith("https://upload.twitter.com/")) {
-    calls.push({ kind: "twitter", method, url });
+    calls.push({ kind: "twitter", method, url, auth: new Headers(init.headers).get("authorization") || "" });
     const r = handlers.twitter?.(url) || { status: 401, body: { errors: [{ message: "Invalid or expired token", code: 89 }] } };
-    return json(r.body, r.status);
+    // X's sign-in steps answer in form encoding, not JSON.
+    return r.text !== undefined ? new Response(r.text, { status: r.status || 200 }) : json(r.body, r.status);
   }
   if (url.includes("fake.supabase.co")) {
     const parsed = body ? JSON.parse(body) : null;

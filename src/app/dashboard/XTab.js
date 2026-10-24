@@ -40,6 +40,59 @@ function tweetUrl(item) {
   return item.twitter_post_id ? `https://x.com/i/status/${item.twitter_post_id}` : null;
 }
 
+// Which X account the dashboard posts as, a red warning when posting has
+// stopped, and "Reconnect X": X's own sign-in page, then the short code it
+// shows, typed here. Nothing to copy into Vercel.
+function XLogin({ api, brandId }) {
+  const [status, setStatus] = useState(null);
+  const [link, setLink] = useState(null);
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const load = async () => {
+    try { setStatus(await api.get(`/api/x/connect?brandId=${brandId}`)); } catch (e) { setErr(e.message); }
+  };
+  useEffect(() => { setLink(null); setCode(""); setErr(""); load(); }, [brandId]);
+
+  const start = async () => {
+    setBusy(true); setErr("");
+    try { const { authorizeUrl } = await api.post("/api/x/connect", { brandId, step: "start" }); setLink(authorizeUrl); setCode(""); } catch (e) { setErr(e.message); }
+    setBusy(false);
+  };
+  const finish = async () => {
+    setBusy(true); setErr("");
+    try { await api.post("/api/x/connect", { brandId, step: "finish", pin: code }); setLink(null); setCode(""); await load(); } catch (e) { setErr(e.message); }
+    setBusy(false);
+  };
+
+  const failing = status?.failing;
+  return (
+    <div style={{ ...card, marginBottom: 14, padding: 14, ...(failing ? { background: C.danger + "14", borderColor: C.danger } : {}) }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ fontSize: 13 }}>
+          {failing
+            ? <><div style={{ fontWeight: 800, color: C.danger }}>{failing.loggedOut ? "X has logged the dashboard out, so nothing is posting" : "The last post to X failed"}</div><div style={{ fontSize: 12, color: C.muted }}>{new Date(failing.at).toLocaleString()} · {failing.message}</div></>
+            : <>X account: <b>{status?.screenName ? `@${status.screenName}` : "connected with the original keys"}</b>{status?.connectedAt && <span style={{ color: C.muted }}> · reconnected {new Date(status.connectedAt).toLocaleDateString()}</span>}</>}
+        </div>
+        {!link && <button onClick={start} disabled={busy} style={btn(failing ? "dark" : "small")}>{busy ? "…" : "Reconnect X"}</button>}
+      </div>
+      {link && (
+        <div style={{ marginTop: 10, fontSize: 13 }}>
+          <div style={{ marginBottom: 8 }}>1. <a href={link} target="_blank" rel="noreferrer" style={{ color: C.text, fontWeight: 800 }}>Open X and press Authorize app →</a> (be logged in as the Sky High Soles account)</div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <span>2. Type the code X shows:</span>
+            <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" placeholder="1234567" style={{ ...inp, width: 130, padding: "6px 10px" }} />
+            <button onClick={finish} disabled={busy || !code.trim()} style={btn("primary")}>{busy ? "…" : "Connect"}</button>
+            <button onClick={() => { setLink(null); setErr(""); }} disabled={busy} style={btn("ghost")}>Cancel</button>
+          </div>
+        </div>
+      )}
+      {err && <div style={{ color: C.danger, fontSize: 12, marginTop: 8 }}>{err}</div>}
+    </div>
+  );
+}
+
 function Choice({ label, value, options, onPick, hint }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
@@ -395,6 +448,7 @@ export function XTab({ api, brands, activeId, setActiveId, openItemId, setOpenIt
 
   return (
     <div>
+      <XLogin api={api} brandId={activeId} />
       {paused && (
         <div style={{ ...card, marginBottom: 14, background: C.danger + "14", borderColor: C.danger, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <div>

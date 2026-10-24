@@ -1,5 +1,5 @@
 import { dashboardAuthorized, unauthorized, supabaseAdmin } from "@/lib/dashboard";
-import { fetchTweetMetrics, fetchFollowerCount } from "@/lib/twitterApi";
+import { fetchTweetMetrics, fetchFollowerCount, xCredentials, xAppConfigured } from "@/lib/twitterApi";
 
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 // pay-per-use pricing, so it only runs when asked.
 export async function POST(req) {
   if (!dashboardAuthorized(req)) return unauthorized();
-  if (!process.env.TWITTER_API_KEY || !process.env.TWITTER_API_SECRET || !process.env.TWITTER_ACCESS_TOKEN || !process.env.TWITTER_ACCESS_TOKEN_SECRET) {
+  if (!xAppConfigured()) {
     return Response.json({ error: "Twitter API keys are not set" }, { status: 500 });
   }
   const { brandId } = await req.json().catch(() => ({}));
@@ -19,6 +19,8 @@ export async function POST(req) {
 
   const { data: brand, error: bErr } = await supabase.from("brands").select("*").eq("id", brandId).single();
   if (bErr || !brand) return Response.json({ error: "Brand not found" }, { status: 404 });
+  const creds = await xCredentials(supabase, brandId);
+  if (!creds) return Response.json({ error: "X isn't connected — press Reconnect X." }, { status: 400 });
 
   const since = new Date(Date.now() - 30 * 86400000).toISOString();
   const { data: items } = await supabase
@@ -31,7 +33,7 @@ export async function POST(req) {
 
   let metrics = {};
   try {
-    metrics = await fetchTweetMetrics((items || []).map((i) => i.twitter_post_id));
+    metrics = await fetchTweetMetrics((items || []).map((i) => i.twitter_post_id), creds);
   } catch (e) {
     return Response.json({ error: "Follower count/post refresh failed: " + e.message }, { status: 502 });
   }
@@ -43,7 +45,7 @@ export async function POST(req) {
 
   let followers = brand.x_followers;
   try {
-    const count = await fetchFollowerCount();
+    const count = await fetchFollowerCount(creds);
     if (count != null) {
       const today = new Date().toISOString().slice(0, 10);
       const lastDay = brand.x_followers_updated_at ? brand.x_followers_updated_at.slice(0, 10) : null;

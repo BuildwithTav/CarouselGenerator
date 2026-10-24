@@ -1,5 +1,5 @@
 import { supabaseAdmin, brandPlatforms } from "@/lib/dashboard";
-import { postItemToX } from "@/lib/twitterApi";
+import { postItemToX, xAppConfigured } from "@/lib/twitterApi";
 import { pickNextPost, postKind } from "@/lib/postOrder";
 import { logGenerationError } from "@/lib/genLog";
 
@@ -27,7 +27,7 @@ export async function GET(req) {
   if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!process.env.TWITTER_API_KEY || !process.env.TWITTER_API_SECRET || !process.env.TWITTER_ACCESS_TOKEN || !process.env.TWITTER_ACCESS_TOKEN_SECRET) {
+  if (!xAppConfigured()) {
     return Response.json({ error: "Twitter API keys are not set" }, { status: 500 });
   }
   const supabase = supabaseAdmin();

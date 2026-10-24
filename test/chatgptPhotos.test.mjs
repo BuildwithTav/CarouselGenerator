@@ -136,7 +136,58 @@ test("a failed post to X is logged and explained, not just lost in Vercel's logs
   reset(db(BRAND, ready));
   const now = await postNow.POST(dashPost("/api/content/post-now", { id: "item-9" }));
   assert.equal(now.status, 502);
-  assert.match((await now.json()).error, /Regenerate the Access Token and Secret/);
+  assert.match((await now.json()).error, /Press Reconnect X/);
+});
+
+test("Reconnect X: X's sign-in page and code give a fresh login, used for posting from then on", async () => {
+  const xConnect = await import("@/app/api/x/connect/route");
+  const saved = {};
+  const ready = { id: "item-10", brand_id: BRAND.id, template: "x-post", status: "ready", needs_photo: false, platforms: ["twitter"], slide_paths: [], tw_caption: "Feet up", brands: BRAND };
+  const rest = ({ method, url, body }) => {
+    if (url.includes("/rest/v1/x_credentials")) {
+      if (method === "POST" || method === "PATCH") { Object.assign(saved, body); return { body: [saved] }; }
+      return { body: saved.request_token || saved.access_token ? [saved] : [] };
+    }
+    if (url.includes("/rest/v1/generation_log") && method === "GET") return { body: [{ created_at: "2026-10-23T09:03:00Z", error: 'Twitter media upload 401: {"errors":[{"message":"Invalid or expired token","code":89}]}' }] };
+    if (url.includes("/rest/v1/content_items") && url.includes("posted_twitter_at=not.is.null")) return { body: [{ posted_twitter_at: "2026-10-22T18:40:30Z" }] };
+    if (url.includes("/rest/v1/content_items") && method === "PATCH") return { body: { ...ready, ...body } };
+    if (url.includes("/rest/v1/content_items") && url.includes("id=eq.")) return { body: ready };
+  };
+  reset(rest);
+  handlers.twitter = (url) => {
+    if (url.includes("/oauth/request_token")) return { text: "oauth_token=req123&oauth_token_secret=reqsecret&oauth_callback_confirmed=true" };
+    if (url.includes("/oauth/access_token")) return { text: "oauth_token=acc123&oauth_token_secret=accsecret&user_id=42&screen_name=skyhighsoles" };
+    if (url.includes("/2/tweets")) return { status: 201, body: { data: { id: "999" } } };
+  };
+  const status = async () => (await xConnect.GET(new Request(`https://studio.test/api/x/connect?brandId=${BRAND.id}`, { headers: { "x-dashboard-key": "dash" } }))).json();
+
+  // Before: posting has stopped because X logged the dashboard out.
+  const before = await status();
+  assert.equal(before.connected, false);
+  assert.equal(before.failing.loggedOut, true);
+
+  const started = await (await xConnect.POST(dashPost("/api/x/connect", { brandId: BRAND.id, step: "start" }))).json();
+  assert.match(started.authorizeUrl, /oauth\/authorize\?oauth_token=req123/);
+  assert.match(calls.find((c) => c.kind === "twitter" && c.url.includes("request_token")).auth, /oauth_callback="oob"/);
+  assert.equal(saved.access_token, undefined, "the current login is untouched until the new one works");
+
+  const bad = await xConnect.POST(dashPost("/api/x/connect", { brandId: BRAND.id, step: "finish", pin: "ab" }));
+  assert.equal(bad.status, 400);
+  const done = await (await xConnect.POST(dashPost("/api/x/connect", { brandId: BRAND.id, step: "finish", pin: "1234567" }))).json();
+  assert.equal(done.screenName, "skyhighsoles");
+  const finishAuth = calls.find((c) => c.kind === "twitter" && c.url.includes("access_token")).auth;
+  assert.match(finishAuth, /oauth_verifier="1234567"/);
+  assert.match(finishAuth, /oauth_token="req123"/);
+  assert.equal(saved.access_token, "acc123");
+  assert.equal(saved.request_token, null);
+
+  // After: the warning clears and posts go out with the new login.
+  const after = await status();
+  assert.equal(after.connected, true);
+  assert.equal(after.failing, null);
+  const posted = await postNow.POST(dashPost("/api/content/post-now", { id: "item-10" }));
+  assert.equal(posted.status, 200);
+  assert.match(calls.find((c) => c.kind === "twitter" && c.url.includes("/2/tweets")).auth, /oauth_token="acc123"/);
 });
 
 test("the daily photo slot is skipped while ChatGPT photos are on", async () => {
