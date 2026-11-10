@@ -56,6 +56,10 @@ function oauthHeader(method, url, { params = {}, creds = envCreds(), oauth: extr
   return "OAuth " + Object.keys(headerParams).sort().map((k) => `${pct(k)}="${pct(headerParams[k])}"`).join(", ");
 }
 
+// Each call to X gets this long, so a hang is reported as an error rather
+// than the posting job being cut off at its 30 seconds with no trace.
+const X_TIMEOUT_MS = 12000;
+
 // Uploads one image via X's v1.1 media endpoint (the v2 API has no media
 // upload of its own, every account still goes through this one) and returns
 // a media_id to attach to a post. Simple (non-chunked) upload tops out at
@@ -64,7 +68,7 @@ export async function uploadMedia(buffer, mimeType = "image/png", creds = envCre
   const url = "https://upload.twitter.com/1.1/media/upload.json";
   const form = new FormData();
   form.append("media", new Blob([buffer], { type: mimeType }), "slide.png");
-  const res = await fetch(url, { method: "POST", headers: { Authorization: oauthHeader("POST", url, { creds }) }, body: form });
+  const res = await fetch(url, { method: "POST", headers: { Authorization: oauthHeader("POST", url, { creds }) }, body: form, signal: AbortSignal.timeout(X_TIMEOUT_MS) });
   const text = await res.text();
   if (!res.ok) throw new Error(`Twitter media upload ${res.status}: ${text.slice(0, 400)}`);
   let out;
@@ -85,6 +89,7 @@ export async function postTweet(text, mediaIds, creds = envCreds()) {
     method: "POST",
     headers: { Authorization: oauthHeader("POST", url, { creds }), "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(X_TIMEOUT_MS),
   });
   const out = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(`Twitter post ${res.status}: ${JSON.stringify(out).slice(0, 400)}`);

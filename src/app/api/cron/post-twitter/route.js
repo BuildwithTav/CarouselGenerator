@@ -22,17 +22,44 @@ export const dynamic = "force-dynamic";
 // images per post, so auto-posting one meant silently cutting it to 4 and
 // dropping the rest with no warning — found after every auto-post since
 // this was built turned out to be exactly that.
+// Every run leaves a row in cron_runs, whatever happens, including runs
+// that stop early or crash: in Nov 2026 posting slots were missed with no
+// trace anywhere, and Vercel's logs can't be read from here.
+async function recordRun(outcome, detail = null) {
+  try {
+    const { error } = await supabaseAdmin().from("cron_runs").insert({ job: "post-twitter", outcome, detail: detail ? String(detail).slice(0, 2000) : null });
+    if (error) console.error("Couldn't write cron_runs:", error.message);
+  } catch (e) {
+    console.error("Couldn't write cron_runs:", e.message);
+  }
+}
+
 export async function GET(req) {
   const authHeader = req.headers.get("authorization");
   if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    await recordRun("unauthorized", authHeader ? "wrong secret" : "no secret sent");
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!xAppConfigured()) {
+    await recordRun("failed", "Twitter API keys are not set");
     return Response.json({ error: "Twitter API keys are not set" }, { status: 500 });
   }
+  try {
+    const results = await postNextForEachBrand();
+    await recordRun(results.some((r) => r.posted) ? "posted" : results.some((r) => r.error) ? "failed" : "nothing posted", JSON.stringify(results));
+    return Response.json({ results });
+  } catch (e) {
+    console.error("post-twitter crashed:", e);
+    await recordRun("crashed", e.message);
+    return Response.json({ error: e.message }, { status: 500 });
+  }
+}
+
+async function postNextForEachBrand() {
   const supabase = supabaseAdmin();
 
-  const { data: brands } = await supabase.from("brands").select("*");
+  const { data: brands, error: brandsErr } = await supabase.from("brands").select("*");
+  if (brandsErr) throw new Error("Couldn't load brands: " + brandsErr.message);
   const twitterBrands = (brands || []).filter((b) => brandPlatforms(b).includes("twitter"));
   const today = new Date().toISOString().slice(0, 10);
 
@@ -42,7 +69,7 @@ export async function GET(req) {
     // batch went out with broken photos, so nothing more posts unattended
     // until the generation pipeline's been verified again.
     if (brand.x_auto_post_paused) { results.push({ brand: brand.slug, posted: false, reason: "auto-posting paused" }); continue; }
-    const [{ data: ready }, { data: last }] = await Promise.all([
+    const [{ data: ready, error: readyErr }, { data: last }] = await Promise.all([
       supabase
         .from("content_items")
         .select("*")
@@ -62,10 +89,11 @@ export async function GET(req) {
         .limit(1)
         .maybeSingle(),
     ]);
+    if (readyErr) { results.push({ brand: brand.slug, posted: false, error: "Couldn't load the queue: " + readyErr.message }); continue; }
     // A ChatGPT photo post still waiting for its photo never goes out.
     const item = pickNextPost((ready || []).filter((i) => !i.needs_photo), last ? postKind(last) : null);
 
-    if (!item) { results.push({ brand: brand.slug, posted: false, reason: "nothing ready" }); continue; }
+    if (!item) { results.push({ brand: brand.slug, posted: false, reason: "nothing ready", waiting: (ready || []).length }); continue; }
 
     try {
       await postItemToX(supabase, item, brand);
@@ -78,6 +106,5 @@ export async function GET(req) {
       results.push({ brand: brand.slug, posted: false, error: e.message });
     }
   }
-
-  return Response.json({ results });
+  return results;
 }

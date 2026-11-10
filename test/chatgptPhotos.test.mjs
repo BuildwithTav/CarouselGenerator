@@ -132,6 +132,19 @@ test("a failed post to X is logged and explained, not just lost in Vercel's logs
   const logged = calls.find((c) => c.kind === "supabase" && c.method === "POST" && c.url.includes("/rest/v1/generation_log"));
   assert.equal(logged.body.source, "post-twitter");
   assert.match(logged.body.error, /Invalid or expired token/);
+  // Every run leaves a record of what happened, so a missed slot can be traced.
+  const run = calls.find((c) => c.kind === "supabase" && c.method === "POST" && c.url.includes("/rest/v1/cron_runs")).body;
+  assert.equal(run.job, "post-twitter");
+  assert.equal(run.outcome, "failed");
+  assert.match(run.detail, /Invalid or expired token/);
+  reset(() => {});
+  const denied = await postTwitter.GET(new Request("https://studio.test/api/cron/post-twitter", { headers: { authorization: "Bearer wrong" } }));
+  assert.equal(denied.status, 401);
+  assert.equal(calls.find((c) => c.url?.includes("/rest/v1/cron_runs")).body.outcome, "unauthorized");
+  reset(({ url }) => (url.includes("/rest/v1/brands") ? { status: 500, body: { message: "db down" } } : undefined));
+  const crashed = await postTwitter.GET(new Request("https://studio.test/api/cron/post-twitter", { headers: { authorization: "Bearer cron" } }));
+  assert.equal(crashed.status, 500);
+  assert.equal(calls.find((c) => c.url?.includes("/rest/v1/cron_runs")).body.outcome, "crashed");
 
   reset(db(BRAND, ready));
   const now = await postNow.POST(dashPost("/api/content/post-now", { id: "item-9" }));
